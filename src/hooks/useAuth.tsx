@@ -52,13 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function checkAdminStatus(userId: string) {
+    // Check user_roles table for ADMIN role (more secure than profiles.role)
     const { data } = await supabase
-      .from("profiles")
+      .from("user_roles")
       .select("role")
       .eq("user_id", userId)
-      .single();
+      .eq("role", "ADMIN")
+      .maybeSingle();
     
-    setIsAdmin(data?.role === "ADMIN");
+    setIsAdmin(!!data);
   }
 
   async function signIn(email: string, password: string) {
