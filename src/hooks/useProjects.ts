@@ -23,6 +23,7 @@ export type ProjectWithCategory = Project & {
     name: string;
     slug: string;
     theme: string;
+    icon: string | null;
   } | null;
 };
 
@@ -38,7 +39,8 @@ export function useProjects(includeInactive = false, categoryId?: string) {
             id,
             name,
             slug,
-            theme
+            theme,
+            icon
           )
         `)
         .order("sort_order", { ascending: true });
@@ -70,7 +72,8 @@ export function useProject(id: string) {
             id,
             name,
             slug,
-            theme
+            theme,
+            icon
           )
         `)
         .eq("id", id)
