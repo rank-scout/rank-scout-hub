@@ -7,6 +7,9 @@ import { AuthProvider } from "@/hooks/useAuth";
 
 // Pages
 import Index from "./pages/Index";
+import Categories from "./pages/Categories";
+import CategoryDetail from "./pages/CategoryDetail";
+import GoRedirect from "./pages/GoRedirect";
 import NotFound from "./pages/NotFound";
 import AdminLogin from "./pages/admin/Login";
 import AdminLayout from "./pages/admin/Layout";
@@ -27,6 +30,9 @@ const App = () => (
           <Routes>
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
+            <Route path="/kategorien" element={<Categories />} />
+            <Route path="/kategorien/:slug" element={<CategoryDetail />} />
+            <Route path="/go/:slug" element={<GoRedirect />} />
             
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />

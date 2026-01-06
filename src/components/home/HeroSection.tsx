@@ -1,6 +1,7 @@
 import { useHeroTitle, useHeroSubtitle, useTrendingLinks } from "@/hooks/useSettings";
 import { SearchBar } from "./SearchBar";
 import { TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function HeroSection() {
   const heroTitle = useHeroTitle();
@@ -44,16 +45,31 @@ export function HeroSection() {
           {trendingLinks.length > 0 && (
             <div className="flex flex-wrap items-center justify-center gap-3 animate-slide-up" style={{ animationDelay: "0.3s" }}>
               <span className="text-sm text-muted-foreground">Trending:</span>
-              {trendingLinks.map((link, index) => (
-                <a
-                  key={index}
-                  href={link.url}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm font-medium text-foreground transition-all hover:scale-105"
-                >
-                  {link.emoji && <span>{link.emoji}</span>}
-                  {link.label}
-                </a>
-              ))}
+              {trendingLinks.map((link, index) => {
+                const isInternal = link.url.startsWith("/");
+                if (isInternal) {
+                  return (
+                    <Link
+                      key={index}
+                      to={link.url}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm font-medium text-foreground transition-all hover:scale-105"
+                    >
+                      {link.emoji && <span>{link.emoji}</span>}
+                      {link.label}
+                    </Link>
+                  );
+                }
+                return (
+                  <a
+                    key={index}
+                    href={link.url}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm font-medium text-foreground transition-all hover:scale-105"
+                  >
+                    {link.emoji && <span>{link.emoji}</span>}
+                    {link.label}
+                  </a>
+                );
+              })}
             </div>
           )}
         </div>

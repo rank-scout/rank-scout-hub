@@ -50,7 +50,7 @@ export function SearchBar() {
       {isOpen && filteredProjects.length > 0 && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-50 animate-fade-in">
           {filteredProjects.map((project) => (
-            <SearchResultItem key={project.id} project={project} />
+            <SearchResultItem key={project.id} project={project} onClose={() => setIsOpen(false)} />
           ))}
         </div>
       )}
@@ -64,18 +64,17 @@ export function SearchBar() {
   );
 }
 
-function SearchResultItem({ project }: { project: ProjectWithCategory }) {
+function SearchResultItem({ project, onClose }: { project: ProjectWithCategory; onClose: () => void }) {
   const themeColor = getThemeColor(project.categories?.theme);
 
   return (
     <a
-      href={project.url}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={`/go/${project.slug}`}
+      onClick={onClose}
       className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 group"
     >
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${themeColor}`}>
-        <span className="text-lg">{project.categories?.name?.charAt(0) || "📊"}</span>
+        <span className="text-lg">{project.categories?.icon || "📊"}</span>
       </div>
       <div className="flex-1 min-w-0">
         <h4 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
