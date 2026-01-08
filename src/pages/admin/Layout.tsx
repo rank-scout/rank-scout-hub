@@ -1,5 +1,7 @@
 import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   LayoutDashboard, 
   FolderTree, 
@@ -23,11 +25,26 @@ const navItems = [
 ];
 
 export default function AdminLayout() {
-  const { user, isLoading, isAdmin, signOut } = useAuth();
+  const { user, isLoading, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (isLoading) {
+  // Server-side admin verification - critical for security
+  const { data: isServerAdmin, isLoading: isVerifyingAdmin } = useQuery({
+    queryKey: ['verify-admin', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc('verify_admin_access');
+      if (error) {
+        console.error('Admin verification failed:', error);
+        return false;
+      }
+      return data === true;
+    },
+    enabled: !!user,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+  });
+
+  if (isLoading || isVerifyingAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-sidebar">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -37,6 +54,11 @@ export default function AdminLayout() {
 
   if (!user) {
     return <Navigate to="/admin/login" replace />;
+  }
+
+  // Server-side admin check - prevents UI bypass attacks
+  if (!isServerAdmin) {
+    return <Navigate to="/" replace />;
   }
 
   return (
@@ -109,7 +131,7 @@ export default function AdminLayout() {
                   {user.email}
                 </p>
                 <p className="text-xs text-sidebar-foreground/60">
-                  {isAdmin ? "Administrator" : "Benutzer"}
+                  {isServerAdmin ? "Administrator" : "Benutzer"}
                 </p>
               </div>
             </div>

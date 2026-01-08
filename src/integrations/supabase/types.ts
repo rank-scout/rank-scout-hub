@@ -190,6 +190,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      verify_admin_access: { Args: never; Returns: boolean }
     }
     Enums: {
       category_theme: "DATING" | "ADULT" | "CASINO" | "GENERIC"
