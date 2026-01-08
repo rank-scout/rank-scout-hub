@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useDuplicateCategory, type Category } from "@/hooks/useCategories";
+import { useCategoryProjects, useUpdateCategoryProjects } from "@/hooks/useCategoryProjects";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { categorySchema, type CategoryInput } from "@/lib/schemas";
@@ -14,7 +15,20 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, MapPin } from "lucide-react";
+import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
+import CityExportDialog from "@/components/admin/CityExportDialog";
+
+// Helper to generate slug from city name
+function generateSlug(name: string): string {
+  return `singles-${name.toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
+}
 
 export default function AdminCategories() {
   const { data: categories = [], isLoading } = useCategories(true);
@@ -22,9 +36,25 @@ export default function AdminCategories() {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const duplicateCategory = useDuplicateCategory();
+  const updateCategoryProjects = useUpdateCategoryProjects();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  const [exportCategory, setExportCategory] = useState<Category | null>(null);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+
+  // Fetch assigned projects when editing
+  const { data: categoryProjects = [] } = useCategoryProjects(editingCategory?.id);
+
+  useEffect(() => {
+    if (categoryProjects.length > 0) {
+      const sorted = [...categoryProjects].sort((a, b) => a.sort_order - b.sort_order);
+      setSelectedProjectIds(sorted.map((cp) => cp.project_id));
+    } else if (!editingCategory) {
+      setSelectedProjectIds([]);
+    }
+  }, [categoryProjects, editingCategory]);
 
   const {
     register,
@@ -36,7 +66,7 @@ export default function AdminCategories() {
   } = useForm<CategoryInput>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
-      theme: "GENERIC",
+      theme: "DATING",
       is_active: true,
       sort_order: 0,
     },
@@ -44,15 +74,24 @@ export default function AdminCategories() {
 
   const theme = watch("theme");
   const isActive = watch("is_active");
+  const nameValue = watch("name");
+
+  // Auto-generate slug when name changes (only for new cities)
+  useEffect(() => {
+    if (!editingCategory && nameValue) {
+      setValue("slug", generateSlug(nameValue));
+    }
+  }, [nameValue, editingCategory, setValue]);
 
   function openCreateDialog() {
     setEditingCategory(null);
+    setSelectedProjectIds([]);
     reset({
       slug: "",
       name: "",
       description: "",
-      icon: "📊",
-      theme: "GENERIC",
+      icon: "📍",
+      theme: "DATING",
       meta_title: "",
       meta_description: "",
       h1_title: "",
@@ -70,7 +109,7 @@ export default function AdminCategories() {
       slug: category.slug,
       name: category.name,
       description: category.description || "",
-      icon: category.icon || "📊",
+      icon: category.icon || "📍",
       theme: category.theme,
       meta_title: category.meta_title || "",
       meta_description: category.meta_description || "",
@@ -85,13 +124,24 @@ export default function AdminCategories() {
 
   async function onSubmit(data: CategoryInput) {
     try {
+      let categoryId: string;
+      
       if (editingCategory) {
         await updateCategory.mutateAsync({ id: editingCategory.id, input: data });
-        toast({ title: "Kategorie aktualisiert" });
+        categoryId = editingCategory.id;
+        toast({ title: "Stadt aktualisiert" });
       } else {
-        await createCategory.mutateAsync(data);
-        toast({ title: "Kategorie erstellt" });
+        const result = await createCategory.mutateAsync(data);
+        categoryId = result.id;
+        toast({ title: "Stadt erstellt" });
       }
+
+      // Update project assignments
+      await updateCategoryProjects.mutateAsync({
+        categoryId,
+        projectIds: selectedProjectIds,
+      });
+
       setIsDialogOpen(false);
     } catch (error) {
       toast({
@@ -103,14 +153,14 @@ export default function AdminCategories() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Möchtest du diese Kategorie wirklich löschen?")) return;
+    if (!confirm("Möchtest du diese Stadt wirklich löschen?")) return;
     try {
       await deleteCategory.mutateAsync(id);
-      toast({ title: "Kategorie gelöscht" });
+      toast({ title: "Stadt gelöscht" });
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Kategorie konnte nicht gelöscht werden",
+        description: "Stadt konnte nicht gelöscht werden",
         variant: "destructive",
       });
     }
@@ -119,11 +169,11 @@ export default function AdminCategories() {
   async function handleDuplicate(category: Category) {
     try {
       await duplicateCategory.mutateAsync(category);
-      toast({ title: "Kategorie dupliziert", description: "Du kannst die Kopie jetzt bearbeiten." });
+      toast({ title: "Stadt dupliziert", description: "Du kannst die Kopie jetzt bearbeiten." });
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Kategorie konnte nicht dupliziert werden",
+        description: "Stadt konnte nicht dupliziert werden",
         variant: "destructive",
       });
     }
@@ -172,6 +222,11 @@ export default function AdminCategories() {
     }
   }
 
+  function handleExport(category: Category) {
+    setExportCategory(category);
+    setIsExportOpen(true);
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -184,28 +239,33 @@ export default function AdminCategories() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="font-display text-2xl font-bold text-foreground">Kategorien</h2>
-          <p className="text-muted-foreground">Verwalte deine Landingpages und SEO-Inhalte.</p>
+          <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
+            <MapPin className="w-6 h-6 text-primary" />
+            Städte-Landingpages
+          </h2>
+          <p className="text-muted-foreground">Erstelle und verwalte Stadt-Landingpages für Dating-Apps.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openCreateDialog} className="gap-2">
               <Plus className="w-4 h-4" />
-              Neue Kategorie
+              Neue Stadt
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle className="font-display">
-                {editingCategory ? "Kategorie bearbeiten" : "Neue Kategorie"}
+              <DialogTitle className="font-display flex items-center gap-2">
+                <MapPin className="w-5 h-5" />
+                {editingCategory ? "Stadt bearbeiten" : "Neue Stadt anlegen"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
+                <TabsList className="grid w-full grid-cols-4">
                   <TabsTrigger value="basic">Grunddaten</TabsTrigger>
                   <TabsTrigger value="seo">SEO</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
+                  <TabsTrigger value="projects">Apps</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="basic" className="space-y-4 pt-4">
@@ -216,25 +276,26 @@ export default function AdminCategories() {
                         id="icon"
                         {...register("icon")}
                         className="text-center text-2xl"
-                        placeholder="📊"
+                        placeholder="📍"
                       />
                     </div>
                     <div className="col-span-3">
-                      <Label htmlFor="name">Name</Label>
-                      <Input id="name" {...register("name")} placeholder="Dating Apps" />
+                      <Label htmlFor="name">Stadtname</Label>
+                      <Input id="name" {...register("name")} placeholder="z.B. Salzburg, Linz, Graz" />
                       {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                      <p className="text-xs text-muted-foreground mt-1">Der Slug wird automatisch generiert.</p>
                     </div>
                   </div>
 
                   <div>
-                    <Label htmlFor="slug">Slug</Label>
-                    <Input id="slug" {...register("slug")} placeholder="dating-apps" />
+                    <Label htmlFor="slug">Slug (URL)</Label>
+                    <Input id="slug" {...register("slug")} placeholder="singles-salzburg" />
                     {errors.slug && <p className="text-sm text-destructive mt-1">{errors.slug.message}</p>}
                   </div>
 
                   <div>
                     <Label htmlFor="description">Kurzbeschreibung</Label>
-                    <Textarea id="description" {...register("description")} placeholder="Die besten Dating Apps..." rows={2} />
+                    <Textarea id="description" {...register("description")} placeholder="Die besten Dating Apps in Salzburg..." rows={2} />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
@@ -245,8 +306,8 @@ export default function AdminCategories() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="GENERIC">Generisch</SelectItem>
                           <SelectItem value="DATING">Dating</SelectItem>
+                          <SelectItem value="GENERIC">Generisch</SelectItem>
                           <SelectItem value="CASINO">Casino</SelectItem>
                           <SelectItem value="ADULT">Adult</SelectItem>
                         </SelectContent>
@@ -265,8 +326,13 @@ export default function AdminCategories() {
 
                 <TabsContent value="seo" className="space-y-4 pt-4">
                   <div>
+                    <Label htmlFor="h1_title">H1 Titel</Label>
+                    <Input id="h1_title" {...register("h1_title")} placeholder="Singles in Salzburg - Die besten Dating Apps" />
+                  </div>
+                  
+                  <div>
                     <Label htmlFor="meta_title">Meta Title (max. 60 Zeichen)</Label>
-                    <Input id="meta_title" {...register("meta_title")} placeholder="Beste Dating Apps 2025 im Vergleich" maxLength={60} />
+                    <Input id="meta_title" {...register("meta_title")} placeholder="Singles Salzburg 2025 » Top Dating Apps im Vergleich" maxLength={60} />
                     {errors.meta_title && <p className="text-sm text-destructive mt-1">{errors.meta_title.message}</p>}
                   </div>
 
@@ -275,42 +341,62 @@ export default function AdminCategories() {
                     <Textarea 
                       id="meta_description" 
                       {...register("meta_description")} 
-                      placeholder="Vergleiche die besten Dating Apps und finde die perfekte App für dich..."
+                      placeholder="Finde Singles in Salzburg mit den besten Dating Apps. ✓ Kostenlos testen ✓ Echte Matches ✓ Seriöse Plattformen"
                       maxLength={160}
                       rows={3}
                     />
                     {errors.meta_description && <p className="text-sm text-destructive mt-1">{errors.meta_description.message}</p>}
                   </div>
-
-                  <div>
-                    <Label htmlFor="h1_title">H1 Titel</Label>
-                    <Input id="h1_title" {...register("h1_title")} placeholder="Die besten Dating Apps im Vergleich" />
-                  </div>
                 </TabsContent>
 
                 <TabsContent value="content" className="space-y-4 pt-4">
                   <div>
-                    <Label htmlFor="long_content_top">Content oben (HTML)</Label>
+                    <Label htmlFor="long_content_top">Content oben (HTML) - USP-Cards, Einleitung</Label>
                     <Textarea 
                       id="long_content_top" 
                       {...register("long_content_top")} 
-                      placeholder="<p>Einleitungstext für die Landingpage...</p>"
-                      rows={8}
+                      placeholder={`<div class="usp-section">
+  <div class="usp-grid">
+    <div class="usp-card">
+      <div class="usp-icon">💕</div>
+      <h3>Echte Singles</h3>
+      <p>Verifizierte Profile aus deiner Stadt</p>
+    </div>
+  </div>
+</div>`}
+                      rows={12}
                       className="font-mono text-sm"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">HTML-formatierter Content, der oberhalb der Projektliste angezeigt wird.</p>
+                    <p className="text-xs text-muted-foreground mt-1">HTML-Content oberhalb der App-Liste. Nutze USP-Cards, Einleitungstexte etc.</p>
                   </div>
 
                   <div>
-                    <Label htmlFor="long_content_bottom">Content unten (HTML)</Label>
+                    <Label htmlFor="long_content_bottom">Content unten (HTML) - SEO-Text, FAQs</Label>
                     <Textarea 
                       id="long_content_bottom" 
                       {...register("long_content_bottom")} 
-                      placeholder="<h2>FAQ</h2><p>Häufig gestellte Fragen...</p>"
-                      rows={8}
+                      placeholder={`<h2>Häufig gestellte Fragen</h2>
+<details>
+  <summary>Welche Dating App ist in Salzburg am beliebtesten?</summary>
+  <p>In Salzburg sind besonders Tinder und Bumble beliebt...</p>
+</details>`}
+                      rows={12}
                       className="font-mono text-sm"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">HTML-formatierter Content, der unterhalb der Projektliste angezeigt wird.</p>
+                    <p className="text-xs text-muted-foreground mt-1">HTML-Content unterhalb der App-Liste. Nutze FAQs, SEO-Texte etc.</p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="projects" className="space-y-4 pt-4">
+                  <div>
+                    <Label className="text-base font-semibold">Welche Apps sollen auf dieser Seite erscheinen?</Label>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Wähle die Apps aus und ordne sie per Pfeilen. Die Reihenfolge bestimmt die Anzeige.
+                    </p>
+                    <ProjectCheckboxList
+                      selectedIds={selectedProjectIds}
+                      onChange={setSelectedProjectIds}
+                    />
                   </div>
                 </TabsContent>
               </Tabs>
@@ -318,12 +404,12 @@ export default function AdminCategories() {
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={createCategory.isPending || updateCategory.isPending}
+                disabled={createCategory.isPending || updateCategory.isPending || updateCategoryProjects.isPending}
               >
-                {(createCategory.isPending || updateCategory.isPending) && (
+                {(createCategory.isPending || updateCategory.isPending || updateCategoryProjects.isPending) && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
-                {editingCategory ? "Speichern" : "Erstellen"}
+                {editingCategory ? "Speichern" : "Stadt erstellen"}
               </Button>
             </form>
           </DialogContent>
@@ -336,8 +422,8 @@ export default function AdminCategories() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">Ord.</TableHead>
-                <TableHead>Kategorie</TableHead>
-                <TableHead>Theme</TableHead>
+                <TableHead>Stadt</TableHead>
+                <TableHead>Slug</TableHead>
                 <TableHead>SEO</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
@@ -347,7 +433,7 @@ export default function AdminCategories() {
               {categories.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Keine Kategorien vorhanden. Erstelle deine erste Kategorie.
+                    Keine Städte vorhanden. Erstelle deine erste Stadt-Landingpage.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -373,22 +459,15 @@ export default function AdminCategories() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">{category.icon || "📊"}</span>
+                        <span className="text-xl">{category.icon || "📍"}</span>
                         <div>
                           <p className="font-medium text-foreground">{category.name}</p>
-                          <p className="text-xs text-muted-foreground">/{category.slug}</p>
+                          <p className="text-xs text-muted-foreground">{category.theme}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        category.theme === "DATING" ? "bg-dating/10 text-dating" :
-                        category.theme === "CASINO" ? "bg-casino/10 text-casino" :
-                        category.theme === "ADULT" ? "bg-adult/10 text-adult" :
-                        "bg-primary/10 text-primary"
-                      }`}>
-                        {category.theme}
-                      </span>
+                      <code className="text-xs bg-muted px-2 py-1 rounded">/{category.slug}</code>
                     </TableCell>
                     <TableCell>
                       {category.meta_title ? (
@@ -405,6 +484,15 @@ export default function AdminCategories() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleExport(category)}
+                          title="FTP-Export"
+                          className="text-primary hover:text-primary"
+                        >
+                          <Download className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -439,6 +527,12 @@ export default function AdminCategories() {
           </Table>
         </CardContent>
       </Card>
+
+      <CityExportDialog
+        open={isExportOpen}
+        onOpenChange={setIsExportOpen}
+        category={exportCategory}
+      />
     </div>
   );
 }
