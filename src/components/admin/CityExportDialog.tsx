@@ -39,6 +39,12 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <title id="page-title">Singles Salzburg | Beste Dating Apps & Treffpunkte 2026</title>
     <meta id="meta-description" name="description" content="Du suchst Singles in Salzburg? Wir haben den großen Vergleich 2026 für Stadt & Land. ➤ Finde Dates in Salzburg, Hallein & Umgebung. Jetzt kostenlos testen!">
     <meta name="robots" content="index, follow">
+    
+    <!-- JSON-LD Schema -->
+    <script type="application/ld+json" id="json-ld-schema">{}</script>
+    
+    <!-- Custom CSS Container -->
+    <style id="custom-css"></style>
 
     <!-- Fonts -->
     <style type="text/css">
@@ -155,12 +161,41 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             padding: 2px 5px;
             text-transform: uppercase;
         }
+        
+        /* Top Bar Styles */
+        .top-bar {
+            background: linear-gradient(90deg, #c41e3a, #ff4d6d);
+        }
+        
+        /* Exit Intent Popup */
+        .popup-overlay {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(4px);
+        }
+        
+        /* Testimonials Slider */
+        .testimonial-card {
+            transition: all 0.3s ease;
+        }
+        .testimonial-card:hover {
+            transform: translateY(-4px);
+        }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-brand-bg">
 
+    <!-- TOP BAR (dynamisch) -->
+    <div id="top-bar" class="top-bar text-white text-center py-2 px-4 text-sm font-medium hidden fixed top-0 left-0 right-0 z-[60]">
+        <a id="top-bar-link" href="#" class="hover:underline">
+            <span id="top-bar-text">🔥 Jetzt kostenlos anmelden!</span>
+        </a>
+        <button onclick="closeTopBar()" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white">
+            <i class="fas fa-times"></i>
+        </button>
+    </div>
+
     <!-- HEADER -->
-    <header class="w-full bg-brand-black text-white py-3 px-4 shadow-md sticky top-0 z-50">
+    <header id="main-header" class="w-full bg-brand-black text-white py-3 px-4 shadow-md sticky top-0 z-50">
         <div class="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-2">
             <a href="https://dating.rank-scout.com" class="font-heading font-bold text-xl tracking-tight text-brand-gold hover:text-brand-light transition-colors">
                 SinglesSalzburgAT
@@ -319,195 +354,27 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
 
             <!-- PROJECT LIST CONTAINER -->
             <div id="project-list-container" class="space-y-6">
-                <!-- Platz 1 - TESTSIEGER -->
-                <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border-2 border-brand-gold ring-2 ring-brand-gold/20">
-                    <div class="p-1">
-                        <span class="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-brand-gold to-yellow-500 text-brand-black">
-                            <i class="fas fa-trophy mr-1"></i> Testsieger Salzburg
-                        </span>
-                    </div>
-                    <div class="p-6 pt-2">
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <div class="flex-shrink-0">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center">
-                                    <i class="fas fa-comments text-brand-primary text-3xl"></i>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="font-heading font-bold text-xl text-gray-900 mb-2">Chatten2000</h3>
-                                <div class="flex items-center gap-2 mb-4">
-                                    <div class="flex text-brand-gold">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="font-bold text-gray-900">9.8 / 10</span>
-                                    <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Top in Sbg-Stadt</span>
-                                </div>
-                                <div class="space-y-2 mb-4">
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Höchste Erfolgsquote für Singles in Salzburg</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Hohe Dichte an Profilen im Flachgau</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Schneller Kontakt, wenig Fake-Profile</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Ideal für spontane Dates</p>
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0 flex items-center">
-                                <a href="#" class="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover btn-shimmer">
-                                    Kostenlos Registrieren <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Platz 2 -->
-                <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-                    <div class="p-1">
-                        <span class="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
-                            Platz 2
-                        </span>
-                    </div>
-                    <div class="p-6 pt-2">
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <div class="flex-shrink-0">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center">
-                                    <i class="fas fa-search text-brand-primary text-3xl"></i>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="font-heading font-bold text-xl text-gray-900 mb-2">SingleFINDER</h3>
-                                <div class="flex items-center gap-2 mb-4">
-                                    <div class="flex text-brand-gold">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="font-bold text-gray-900">9.2 / 10</span>
-                                </div>
-                                <div class="space-y-2 mb-4">
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Lockere Atmosphäre für Salzburger Singles</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Viele Neuanmeldungen aus Tennengau/Pongau</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Offen für Flirts, Dates & Freizeitpartner</p>
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0 flex items-center">
-                                <a href="#" class="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover btn-shimmer">
-                                    Kostenlos Anmelden <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Platz 3 -->
-                <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-                    <div class="p-1">
-                        <span class="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
-                            Platz 3
-                        </span>
-                    </div>
-                    <div class="p-6 pt-2">
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <div class="flex-shrink-0">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center">
-                                    <i class="fas fa-heart text-brand-primary text-3xl"></i>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="font-heading font-bold text-xl text-gray-900 mb-2">XCRUSH</h3>
-                                <div class="flex items-center gap-2 mb-4">
-                                    <div class="flex text-brand-gold">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="font-bold text-gray-900">8.8 / 10</span>
-                                </div>
-                                <div class="space-y-2 mb-4">
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Spannende Alternative für Neugierige</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Wachsende Community in Salzburg</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Fokus auf aktive Dates</p>
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0 flex items-center">
-                                <a href="#" class="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover btn-shimmer">
-                                    Kostenlos Registrieren <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Platz 4 -->
-                <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-                    <div class="p-1">
-                        <span class="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
-                            Platz 4
-                        </span>
-                    </div>
-                    <div class="p-6 pt-2">
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <div class="flex-shrink-0">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center">
-                                    <i class="fas fa-infinity text-brand-primary text-3xl"></i>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="font-heading font-bold text-xl text-gray-900 mb-2">BeLoops</h3>
-                                <div class="flex items-center gap-2 mb-4">
-                                    <div class="flex text-brand-gold">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="font-bold text-gray-900">8.7 / 10</span>
-                                </div>
-                                <div class="space-y-2 mb-4">
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Gute Option für den Alpenraum</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Seriöse Profile</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Stark bei 30+</p>
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0 flex items-center">
-                                <a href="#" class="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover btn-shimmer">
-                                    Kostenlos Registrieren <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Platz 5 -->
-                <div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100">
-                    <div class="p-1">
-                        <span class="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700">
-                            Platz 5
-                        </span>
-                    </div>
-                    <div class="p-6 pt-2">
-                        <div class="flex flex-col md:flex-row gap-6">
-                            <div class="flex-shrink-0">
-                                <div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center">
-                                    <i class="fas fa-kiss-wink-heart text-brand-primary text-3xl"></i>
-                                </div>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="font-heading font-bold text-xl text-gray-900 mb-2">XKUSS</h3>
-                                <div class="flex items-center gap-2 mb-4">
-                                    <div class="flex text-brand-gold">
-                                        <i class="fas fa-star"></i>
-                                    </div>
-                                    <span class="font-bold text-gray-900">8.6 / 10</span>
-                                </div>
-                                <div class="space-y-2 mb-4">
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Geheimtipp für Salzburg</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Einfache Bedienung</p>
-                                    <p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>Schnelle Anmeldung</p>
-                                </div>
-                            </div>
-                            <div class="flex-shrink-0 flex items-center">
-                                <a href="#" class="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover btn-shimmer">
-                                    Kostenlos Registrieren <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Wird dynamisch befüllt -->
+                <div class="text-center py-8 text-gray-400">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                    <p>Lade Projekte...</p>
                 </div>
             </div>
 
             <p class="text-center text-gray-500 text-xs mt-8">*Werbung / Affiliate Links</p>
+        </div>
+    </section>
+
+    <!-- TESTIMONIALS SECTION -->
+    <section id="testimonials-section" class="py-16 bg-white hidden">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="text-center mb-10">
+                <h2 class="font-heading font-bold text-2xl md:text-3xl text-gray-900 mb-2">Das sagen unsere User</h2>
+                <p class="text-gray-600">Echte Erfahrungen von Singles aus der Region</p>
+            </div>
+            <div id="testimonials-container" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Wird dynamisch befüllt -->
+            </div>
         </div>
     </section>
 
@@ -536,10 +403,9 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <!-- FOOTER -->
     <footer class="bg-brand-black text-gray-400 py-12">
         <div class="max-w-6xl mx-auto px-4 text-center">
-            <p class="text-sm">&copy; 2026 dating.rank-scout.com - Alle Rechte vorbehalten.</p>
-            <div class="mt-4 flex justify-center gap-6 text-xs">
-                <a href="https://dating.rank-scout.com/impressum/" class="hover:text-white transition-colors">Impressum</a>
-                <a href="https://dating.rank-scout.com/datenschutz/" class="hover:text-white transition-colors">Datenschutz</a>
+            <p id="footer-copyright" class="text-sm">&copy; 2026 dating.rank-scout.com - Alle Rechte vorbehalten.</p>
+            <div id="footer-links" class="mt-4 flex justify-center gap-6 text-xs flex-wrap">
+                <!-- Wird dynamisch befüllt -->
             </div>
         </div>
     </footer>
@@ -558,56 +424,82 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <!-- COOKIE BANNER -->
     <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 bg-brand-black text-white p-4 z-50 hidden">
         <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-            <p class="text-sm text-gray-300">Diese Website verwendet Cookies. Mit der Nutzung stimmst du zu.</p>
-            <div class="flex gap-2">
-                <button onclick="acceptCookies()" class="bg-brand-gold text-brand-black px-4 py-2 rounded-full text-sm font-bold hover:bg-brand-luxury transition-colors">Akzeptieren</button>
-                <a href="/datenschutz" class="text-gray-400 hover:text-white text-sm underline">Mehr erfahren</a>
+            <p class="text-sm text-gray-300">
+                Diese Website verwendet Cookies, um dir das beste Erlebnis zu bieten. 
+                <a href="/datenschutz" class="underline text-brand-gold">Mehr erfahren</a>
+            </p>
+            <button onclick="acceptCookies()" class="bg-brand-gold hover:bg-brand-luxury text-brand-black font-bold py-2 px-6 rounded-full transition-all whitespace-nowrap">
+                OK, verstanden
+            </button>
+        </div>
+    </div>
+
+    <!-- EXIT INTENT POPUP -->
+    <div id="exit-popup" class="fixed inset-0 popup-overlay z-[100] hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 relative animate-bounce-in">
+            <button onclick="closePopup()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+            <div class="text-center">
+                <div class="w-16 h-16 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i class="fas fa-heart text-brand-primary text-2xl"></i>
+                </div>
+                <h3 id="popup-headline" class="font-heading font-bold text-xl text-gray-900 mb-2">Nicht so schnell!</h3>
+                <p id="popup-text" class="text-gray-600 mb-6">Sichere dir jetzt deinen kostenlosen Account und finde noch heute Singles in deiner Nähe.</p>
+                <a id="popup-link" href="#" class="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-8 rounded-full transition-all">
+                    <i class="fas fa-arrow-right"></i> Jetzt kostenlos starten
+                </a>
             </div>
         </div>
     </div>
 
-    <!-- JSON-LD SCHEMA -->
-    <script id="json-ld-schema" type="application/ld+json"></script>
-
-    <!-- ANALYTICS CONTAINER -->
-    <div id="analytics-container"></div>
-
-    <!-- ============================================================= -->
-    <!-- INJEKTIONS-SCRIPT: Clean & Smart Edition -->
-    <!-- ============================================================= -->
+    <!-- ========== JAVASCRIPT INJEKTION ========== -->
     <script>
-    // Cookie-Funktionen (global)
-    function acceptCookies() {
-        localStorage.setItem('cookies_accepted', 'true');
-        document.getElementById('cookie-banner').classList.add('hidden');
-    }
-
     (async function() {
+        'use strict';
+        
         // ========== KONFIGURATION ==========
         const SUPABASE_URL = '${supabaseUrl}';
         const SUPABASE_KEY = '${supabaseKey}';
         
-        // Slug aus URL erkennen
-        const pathParts = window.location.pathname.split('/').filter(p => p && p !== 'index.html');
-        const SLUG = pathParts[pathParts.length - 1] || 'singles-salzburg';
+        // Slug aus URL extrahieren
+        const pathParts = window.location.pathname.split('/').filter(Boolean);
+        const SLUG = pathParts[0] || 'salzburg';
         
-        console.log('[Rank-Scout] Loading data for slug:', SLUG);
-
-        // ========== HILFSFUNKTIONEN ==========
+        // Helfer
         function el(id) { return document.getElementById(id); }
+        function qs(selector) { return document.querySelector(selector); }
         
-        // SubID an Affiliate-Links anhängen
+        // Sub-ID an Links anhängen
         function addSubId(link) {
             if (!link) return '#';
             const separator = link.includes('?') ? '&' : '?';
             return link + separator + 'subid=' + SLUG;
         }
         
-        // Auto-Datum (aktuelles Jahr)
         function getCurrentYear() {
             return new Date().getFullYear();
         }
         
+        // ========== GLOBALE FUNKTIONEN ==========
+        window.acceptCookies = function() {
+            localStorage.setItem('cookies_accepted', 'true');
+            el('cookie-banner').classList.add('hidden');
+        };
+        
+        window.closeTopBar = function() {
+            el('top-bar').classList.add('hidden');
+            el('main-header').style.top = '0';
+            sessionStorage.setItem('top_bar_closed', 'true');
+        };
+        
+        window.closePopup = function() {
+            el('exit-popup').classList.add('hidden');
+            el('exit-popup').classList.remove('flex');
+            sessionStorage.setItem('popup_shown', 'true');
+        };
+        
+        // ========== GENERATORS ==========
         function generateProjectCard(project, index) {
             const isFirst = index === 0;
             const badgeText = isFirst ? (project.badge_text || 'Testsieger') : 'Platz ' + (index + 1);
@@ -621,7 +513,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 '<p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>' + f + '</p>'
             ).join('');
 
-            const rating = project.rating ? (project.rating / 10).toFixed(1) : '9.5';
+            const rating = project.rating ? project.rating.toFixed(1) : '9.5';
             const logoUrl = project.logo_url || '';
             const logoHtml = logoUrl 
                 ? '<img src="' + logoUrl + '" alt="' + project.name + '" class="w-full h-full object-cover">'
@@ -660,7 +552,23 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             '</div>';
         }
         
-        // JSON-LD Schema generieren
+        function generateTestimonialCard(testimonial) {
+            const stars = '<i class="fas fa-star"></i>'.repeat(Math.round(testimonial.rating || 5));
+            return '<div class="testimonial-card bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-100 shadow-sm">' +
+                '<div class="flex text-brand-gold text-sm mb-3">' + stars + '</div>' +
+                '<p class="text-gray-700 mb-4 italic">"' + (testimonial.text || '') + '"</p>' +
+                '<div class="flex items-center gap-3">' +
+                    '<div class="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center">' +
+                        '<i class="fas fa-user text-brand-primary"></i>' +
+                    '</div>' +
+                    '<div>' +
+                        '<p class="font-semibold text-gray-900">' + (testimonial.name || 'Anonym') + '</p>' +
+                        '<p class="text-xs text-gray-500">' + (testimonial.city_reference || '') + '</p>' +
+                    '</div>' +
+                '</div>' +
+            '</div>';
+        }
+        
         function generateJsonLd(category, projects) {
             const year = getCurrentYear();
             const schema = {
@@ -680,8 +588,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             return JSON.stringify(schema, null, 2);
         }
 
-        // ========== STICKY CTA & COOKIE BANNER ==========
-        // Sticky CTA nach Scroll anzeigen
+        // ========== SCROLL & EVENTS ==========
         window.addEventListener('scroll', function() {
             const sticky = el('sticky-cta');
             if (window.scrollY > 400) {
@@ -691,7 +598,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             }
         });
         
-        // Cookie Banner anzeigen (wenn nicht akzeptiert)
+        // Cookie Banner
         if (!localStorage.getItem('cookies_accepted')) {
             setTimeout(function() {
                 el('cookie-banner').classList.remove('hidden');
@@ -700,93 +607,157 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
 
         // ========== DATEN LADEN ==========
         try {
-            // 1. Kategorie laden
-            const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?slug=eq.' + SLUG + '&is_active=eq.true&select=*', {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-            });
+            const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+            
+            // 1. Settings laden (Top-Bar, Custom CSS, Footer)
+            const settingsRes = await fetch(SUPABASE_URL + '/rest/v1/settings?select=*', { headers });
+            const settingsArr = await settingsRes.json();
+            const settings = {};
+            (settingsArr || []).forEach(s => settings[s.key] = s.value);
+            
+            // Custom CSS injizieren
+            if (settings.custom_css && settings.custom_css !== '') {
+                el('custom-css').textContent = settings.custom_css;
+            }
+            
+            // Top-Bar aktivieren
+            if (settings.top_bar_active === true && !sessionStorage.getItem('top_bar_closed')) {
+                el('top-bar').classList.remove('hidden');
+                if (settings.top_bar_text) el('top-bar-text').textContent = settings.top_bar_text;
+                if (settings.top_bar_link) el('top-bar-link').href = addSubId(settings.top_bar_link);
+                el('main-header').style.top = '36px';
+            }
+            
+            // Footer Copyright
+            if (settings.footer_copyright) {
+                el('footer-copyright').textContent = settings.footer_copyright.replace('2026', getCurrentYear());
+            }
+            
+            // 2. Footer Links laden
+            const footerRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?is_active=eq.true&order=sort_order.asc&select=*', { headers });
+            const footerLinks = await footerRes.json();
+            if (footerLinks && footerLinks.length > 0) {
+                const linksHtml = footerLinks.map(l => 
+                    '<a href="' + l.url + '" class="hover:text-white transition-colors">' + l.label + '</a>'
+                ).join('');
+                el('footer-links').innerHTML = linksHtml;
+            }
+            
+            // 3. Kategorie laden
+            const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?slug=eq.' + SLUG + '&is_active=eq.true&select=*', { headers });
             const categories = await catRes.json();
             
             if (!categories || categories.length === 0) {
                 console.log('[Rank-Scout] Category not found:', SLUG);
+                el('project-list-container').innerHTML = '<p class="text-center text-gray-500">Kategorie nicht gefunden.</p>';
                 return;
             }
             
             const category = categories[0];
             const year = getCurrentYear();
             
-            // 2. SEO-Felder setzen
-            if (category.meta_title) el('page-title').textContent = category.meta_title.replace('2026', year);
-            if (category.meta_description) el('meta-description').setAttribute('content', category.meta_description.replace('2026', year));
+            // 4. SEO-Felder setzen
+            if (category.meta_title) el('page-title').textContent = category.meta_title.replace(/2026/g, year);
+            if (category.meta_description) el('meta-description').setAttribute('content', category.meta_description.replace(/2026/g, year));
             el('canonical-link').setAttribute('href', 'https://dating.rank-scout.com/' + SLUG + '/');
             
-            // 3. Hero-Texte ersetzen
+            // 5. Hero-Texte ersetzen
             const locationName = category.name.replace(/^Singles\\s*/i, '').trim() || category.name;
-            if (category.h1_title) el('hero-subtitle').textContent = category.h1_title.replace('2026', year);
+            if (category.h1_title) el('hero-subtitle').textContent = category.h1_title.replace(/2026/g, year);
             el('hero-title').textContent = locationName + ' & Umgebung';
             if (category.description) el('hero-description').textContent = category.description;
             el('hero-cta').textContent = locationName + 'er Singles finden';
             el('hero-badge').textContent = 'Geprüft für Stadt & Land ' + locationName;
             
-            // 4. Intro-Texte
+            // 6. Intro-Texte
             el('intro-title').textContent = 'Dein Dating-Guide für ' + locationName;
             el('list-title').textContent = 'Top 5 Apps für Singles in ' + locationName;
             
-            // 5. Long Content
+            // 7. Long Content
             if (category.long_content_top) el('long-content-top').innerHTML = category.long_content_top;
             if (category.long_content_bottom) el('long-content-bottom').innerHTML = category.long_content_bottom;
             
-            // 6. Banner
+            // 8. Banner
             if (category.banner_override) el('banner-container').innerHTML = category.banner_override;
             
-            // 7. Analytics
+            // 9. Analytics
             if (category.analytics_code) el('analytics-container').innerHTML = category.analytics_code;
             
-            // 8. Sticky CTA
+            // 10. Sticky CTA
             if (category.sticky_cta_text) el('sticky-cta-text').textContent = category.sticky_cta_text;
             if (category.sticky_cta_link) el('sticky-cta-link').setAttribute('href', addSubId(category.sticky_cta_link));
             
-            // 9. Projekte laden (mit Fallback auf Default-Projekte)
+            // 11. Exit Intent Popup
+            if (category.popup_headline && category.popup_text && !sessionStorage.getItem('popup_shown')) {
+                el('popup-headline').textContent = category.popup_headline;
+                el('popup-text').textContent = category.popup_text;
+                if (category.popup_link) el('popup-link').href = addSubId(category.popup_link);
+                
+                // Exit Intent Detection
+                let popupTriggered = false;
+                document.addEventListener('mouseleave', function(e) {
+                    if (e.clientY < 10 && !popupTriggered) {
+                        popupTriggered = true;
+                        el('exit-popup').classList.remove('hidden');
+                        el('exit-popup').classList.add('flex');
+                    }
+                });
+                
+                // Timer fallback (15 Sekunden)
+                setTimeout(function() {
+                    if (!popupTriggered && !sessionStorage.getItem('popup_shown')) {
+                        popupTriggered = true;
+                        el('exit-popup').classList.remove('hidden');
+                        el('exit-popup').classList.add('flex');
+                    }
+                }, 15000);
+            }
+            
+            // 12. Testimonials laden
+            const testRes = await fetch(SUPABASE_URL + '/rest/v1/testimonials?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&limit=3&select=*', { headers });
+            const testimonials = await testRes.json();
+            if (testimonials && testimonials.length > 0) {
+                el('testimonials-section').classList.remove('hidden');
+                const testimonialsHtml = testimonials.map(t => generateTestimonialCard(t)).join('');
+                el('testimonials-container').innerHTML = testimonialsHtml;
+            }
+            
+            // 13. Projekte laden (mit Fallback auf Default-Projekte)
             let projects = [];
             
-            const cpRes = await fetch(SUPABASE_URL + '/rest/v1/category_projects?category_id=eq.' + category.id + '&select=project_id,sort_order&order=sort_order.asc', {
-                headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-            });
+            const cpRes = await fetch(SUPABASE_URL + '/rest/v1/category_projects?category_id=eq.' + category.id + '&select=project_id,sort_order&order=sort_order.asc', { headers });
             const categoryProjects = await cpRes.json();
             
             if (categoryProjects && categoryProjects.length > 0) {
-                // Seiten-spezifische Projekte laden
                 const projectIds = categoryProjects.map(cp => cp.project_id);
-                const projRes = await fetch(SUPABASE_URL + '/rest/v1/projects?id=in.(' + projectIds.join(',') + ')&is_active=eq.true&select=*', {
-                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-                });
+                const projRes = await fetch(SUPABASE_URL + '/rest/v1/projects?id=in.(' + projectIds.join(',') + ')&is_active=eq.true&select=*', { headers });
                 projects = await projRes.json();
                 
-                // Nach sort_order sortieren
                 const orderMap = {};
                 categoryProjects.forEach(cp => orderMap[cp.project_id] = cp.sort_order);
                 projects.sort((a, b) => (orderMap[a.id] || 0) - (orderMap[b.id] || 0));
             } else {
-                // FALLBACK: Default-Projekte laden
                 console.log('[Rank-Scout] No category projects found, loading defaults...');
-                const defaultRes = await fetch(SUPABASE_URL + '/rest/v1/projects?is_default=eq.true&is_active=eq.true&select=*&order=sort_order.asc&limit=5', {
-                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
-                });
+                const defaultRes = await fetch(SUPABASE_URL + '/rest/v1/projects?is_default=eq.true&is_active=eq.true&select=*&order=sort_order.asc&limit=5', { headers });
                 projects = await defaultRes.json();
             }
             
-            // 10. Projekte in Container injizieren
+            // 14. Projekte in Container injizieren
             if (projects && projects.length > 0) {
                 const projectsHtml = projects.map((p, i) => generateProjectCard(p, i)).join('');
                 el('project-list-container').innerHTML = projectsHtml;
                 
-                // 11. JSON-LD Schema
+                // 15. JSON-LD Schema
                 el('json-ld-schema').textContent = generateJsonLd(category, projects);
+            } else {
+                el('project-list-container').innerHTML = '<p class="text-center text-gray-500">Keine Projekte gefunden.</p>';
             }
             
-            console.log('[Rank-Scout] ✓ Data loaded for:', category.name, '| Projects:', projects.length);
+            console.log('[Rank-Scout] ✓ Data loaded for:', category.name, '| Projects:', projects.length, '| Testimonials:', (testimonials || []).length);
             
         } catch (error) {
             console.error('[Rank-Scout] Error loading data:', error);
+            el('project-list-container').innerHTML = '<p class="text-center text-red-500">Fehler beim Laden der Daten.</p>';
         }
     })();
     </script>
@@ -818,7 +789,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         <DialogHeader>
           <DialogTitle>Universal Master-Template (Injektions-Methode)</DialogTitle>
           <DialogDescription>
-            <strong>Statisches HTML + Script am Ende.</strong> Das Script lädt Daten aus der DB und ersetzt Texte per getElementById.
+            <strong>Statisches HTML + Script am Ende.</strong> Alle Features: Top-Bar, Exit-Intent Popup, Testimonials, Custom CSS, dynamischer Footer.
             <br />Eine Datei für alle Städte! Der Slug wird automatisch aus der URL erkannt.
           </DialogDescription>
         </DialogHeader>
