@@ -17,6 +17,8 @@ export const categorySchema = z.object({
   description: z.string().max(500).optional(),
   icon: z.string().max(10).optional(),
   theme: categoryThemeEnum,
+  meta_title: z.string().max(60).optional(),
+  meta_description: z.string().max(160).optional(),
   is_active: z.boolean().default(true),
   sort_order: z.number().int().min(0).default(0),
 });
@@ -35,6 +37,10 @@ export const projectSchema = z.object({
     "URL muss http:// oder https:// verwenden"
   ),
   short_description: z.string().max(300).optional(),
+  description: z.string().optional(),
+  logo_url: z.string().url("Ungültige Logo-URL").optional().or(z.literal("")),
+  affiliate_link: z.string().url("Ungültiger Affiliate-Link").optional().or(z.literal("")),
+  rating: z.number().min(0).max(10).default(9.8),
   country_scope: countryScopeEnum.default("DACH"),
   tags: z.array(z.string()).default([]),
   is_active: z.boolean().default(true),

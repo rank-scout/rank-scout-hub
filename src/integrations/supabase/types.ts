@@ -21,6 +21,8 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          meta_description: string | null
+          meta_title: string | null
           name: string
           slug: string
           sort_order: number
@@ -33,6 +35,8 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           name: string
           slug: string
           sort_order?: number
@@ -45,6 +49,8 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
           name?: string
           slug?: string
           sort_order?: number
@@ -85,12 +91,16 @@ export type Database = {
       }
       projects: {
         Row: {
+          affiliate_link: string | null
           category_id: string | null
           country_scope: Database["public"]["Enums"]["country_scope"]
           created_at: string
+          description: string | null
           id: string
           is_active: boolean
+          logo_url: string | null
           name: string
+          rating: number | null
           short_description: string | null
           slug: string
           sort_order: number
@@ -99,12 +109,16 @@ export type Database = {
           url: string
         }
         Insert: {
+          affiliate_link?: string | null
           category_id?: string | null
           country_scope?: Database["public"]["Enums"]["country_scope"]
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean
+          logo_url?: string | null
           name: string
+          rating?: number | null
           short_description?: string | null
           slug: string
           sort_order?: number
@@ -113,12 +127,16 @@ export type Database = {
           url: string
         }
         Update: {
+          affiliate_link?: string | null
           category_id?: string | null
           country_scope?: Database["public"]["Enums"]["country_scope"]
           created_at?: string
+          description?: string | null
           id?: string
           is_active?: boolean
+          logo_url?: string | null
           name?: string
+          rating?: number | null
           short_description?: string | null
           slug?: string
           sort_order?: number
