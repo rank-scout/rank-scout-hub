@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { useNavLinks } from "@/hooks/useSettings";
 import { Search, Menu, X } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 
 export function Header() {
   const navLinks = useNavLinks();
@@ -37,21 +36,13 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Admin Link + Mobile Toggle */}
-          <div className="flex items-center gap-4">
-            <Link to="/admin">
-              <Button variant="outline" size="sm" className="hidden md:flex border-white/20 hover:bg-white/10">
-                Admin
-              </Button>
-            </Link>
-            
-            <button
-              className="md:hidden p-2 text-foreground"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
+          {/* Mobile Toggle */}
+          <button
+            className="md:hidden p-2 text-foreground"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
         </div>
 
         {/* Mobile Menu */}
@@ -68,12 +59,6 @@ export function Header() {
                 {link.label}
               </a>
             ))}
-            <Link
-              to="/admin"
-              className="block py-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              Admin Login
-            </Link>
           </nav>
         )}
       </div>
