@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin Cockpit</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    :root {
+      --primary: #10b981;
+      --primary-dark: #059669;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding-bottom: 80px;
+      overflow-x: hidden;
+    }
+    
+    /* Login Screen */
+    #login-screen {
+      position: fixed;
+      inset: 0;
+      background: var(--card);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      z-index: 9999;
+    }
+    
+    #login-screen.hidden { display: none; }
+    
+    .login-logo {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    .login-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    
+    .login-subtitle {
+      color: var(--text-muted);
+      margin-bottom: 32px;
+    }
+    
+    .pin-input {
+      width: 100%;
+      max-width: 280px;
+      padding: 16px;
+      font-size: 24px;
+      text-align: center;
+      letter-spacing: 8px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      -webkit-text-security: disc;
+    }
+    
+    .pin-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .login-btn {
+      width: 100%;
+      max-width: 280px;
+      padding: 16px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    
+    .login-btn:active { background: var(--primary-dark); }
+    
+    .login-error {
+      color: var(--danger);
+      margin-top: 16px;
+      display: none;
+    }
+    
+    /* Header */
+    .header {
+      background: var(--card);
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    
+    .header h1 {
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .header-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    /* Main Content */
+    .main-content {
+      padding: 16px;
+      display: none;
+    }
+    
+    .main-content.active { display: block; }
+    
+    /* Cards */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: var(--shadow);
+    }
+    
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .card-value {
+      font-size: 36px;
+      font-weight: 700;
+    }
+    
+    .card-icon {
+      font-size: 32px;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    
+    .stat-card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    
+    .stat-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+    }
+    
+    /* Toggle Switch */
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    
+    .toggle-row:last-child { border-bottom: none; }
+    
+    .toggle-label {
+      font-weight: 600;
+    }
+    
+    .toggle-desc {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .toggle-switch {
+      position: relative;
+      width: 52px;
+      height: 32px;
+      flex-shrink: 0;
+    }
+    
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: var(--border);
+      border-radius: 32px;
+      transition: 0.3s;
+    }
+    
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 26px;
+      width: 26px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+      box-shadow: var(--shadow);
+    }
+    
+    input:checked + .toggle-slider {
+      background: var(--primary);
+    }
+    
+    input:checked + .toggle-slider:before {
+      transform: translateX(20px);
+    }
+    
+    /* List Items */
+    .list-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    
+    .list-item:active { transform: scale(0.98); }
+    
+    .list-item-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--bg);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    
+    .list-item-content { flex: 1; }
+    
+    .list-item-title {
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .list-item-meta {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    
+    .list-item-arrow {
+      color: var(--text-muted);
+      font-size: 20px;
+    }
+    
+    /* Status Badge */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    
+    .badge-active {
+      background: #d1fae5;
+      color: #065f46;
+    }
+    
+    .badge-inactive {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+    
+    /* Project Card (Apps Tab) */
+    .project-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: var(--shadow);
+    }
+    
+    .project-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    
+    .project-rank {
+      width: 36px;
+      height: 36px;
+      background: var(--primary);
+      color: white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+    }
+    
+    .project-name {
+      font-weight: 700;
+      font-size: 16px;
+    }
+    
+    .project-badge {
+      font-size: 13px;
+      color: var(--primary);
+    }
+    
+    .project-actions {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .project-btn {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--card);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    
+    .project-btn:active {
+      background: var(--bg);
+    }
+    
+    .project-btn.up { color: var(--primary); }
+    .project-btn.down { color: var(--danger); }
+    
+    /* Lead Item */
+    .lead-item {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--shadow);
+    }
+    
+    .lead-email {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .lead-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-primary:active { background: var(--primary-dark); }
+    
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--border);
+      color: var(--text);
+    }
+    
+    /* Form Inputs */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    
+    .form-label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .form-input, .form-textarea {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      font-size: 16px;
+      transition: border-color 0.2s;
+    }
+    
+    .form-input:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .form-textarea {
+      min-height: 100px;
+      resize: vertical;
+    }
+    
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .modal-overlay.active { display: flex; }
+    
+    .modal {
+      background: var(--card);
+      width: 100%;
+      max-height: 90vh;
+      border-radius: 20px 20px 0 0;
+      overflow-y: auto;
+      animation: slideUp 0.3s ease;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--card);
+    }
+    
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    
+    .modal-close {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: var(--bg);
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+    }
+    
+    .modal-body { padding: 20px; }
+    
+    /* Bottom Navigation */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      z-index: 100;
+    }
+    
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 16px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    
+    .nav-item.active {
+      color: var(--primary);
+    }
+    
+    .nav-icon { font-size: 24px; }
+    
+    /* Loading */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      color: var(--text-muted);
+    }
+    
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 12px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 12px;
+      font-weight: 500;
+      box-shadow: var(--shadow-lg);
+      z-index: 2000;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .toast.show { opacity: 1; }
+    
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+    
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    
+    /* Section Title */
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin: 20px 0 12px;
+    }
+    
+    /* Category Filter */
+    .filter-pills {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 12px;
+      margin-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    .filter-pill {
+      padding: 10px 16px;
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .filter-pill.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Login Screen -->
+  <div id="login-screen">
+    <div class="login-logo">🔐</div>
+    <div class="login-title">Admin Cockpit</div>
+    <div class="login-subtitle">Gib deinen Admin-PIN ein</div>
+    <input type="password" id="pin-input" class="pin-input" placeholder="••••" maxlength="6" inputmode="numeric">
+    <button class="login-btn" onclick="checkPin()">Einloggen</button>
+    <div id="login-error" class="login-error">Falscher PIN</div>
+  </div>
+
+  <!-- Header -->
+  <div class="header" id="app-header" style="display:none;">
+    <h1 id="header-title">Dashboard</h1>
+    <div class="header-subtitle" id="header-subtitle">Willkommen zurück!</div>
+  </div>
+
+  <!-- Dashboard Tab -->
+  <div class="main-content active" id="tab-dashboard">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">📧 Leads</div>
+        <div class="stat-value" id="stat-leads">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">📄 Seiten</div>
+        <div class="stat-value" id="stat-pages">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">📱 Apps</div>
+        <div class="stat-value" id="stat-apps">-</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">🔗 Redirects</div>
+        <div class="stat-value" id="stat-redirects">-</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">⚡ Quick Toggles</div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Newsletter aktiv</div>
+          <div class="toggle-desc">Zeige Newsletter-Box auf allen Seiten</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-newsletter" onchange="updateSetting('newsletter_active', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">Top-Bar aktiv</div>
+          <div class="toggle-desc">Ankündigung oben auf der Seite</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-topbar" onchange="updateSetting('top_bar_active', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div class="toggle-label">OneSignal Push</div>
+          <div class="toggle-desc">Push-Benachrichtigungen</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggle-onesignal" onchange="updateSetting('onesignal_active', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="section-title">🕐 Letzte Leads</div>
+    <div id="recent-leads"></div>
+  </div>
+
+  <!-- Pages Tab -->
+  <div class="main-content" id="tab-pages">
+    <div class="section-title">📄 Kategorien / Landingpages</div>
+    <div id="pages-list" class="loading"><div class="spinner"></div>Laden...</div>
+  </div>
+
+  <!-- Apps Tab -->
+  <div class="main-content" id="tab-apps">
+    <div class="section-title">📂 Kategorie wählen</div>
+    <div id="category-filter" class="filter-pills"></div>
+    <div class="section-title">📱 Projekte / Apps</div>
+    <div id="projects-list" class="loading"><div class="spinner"></div>Laden...</div>
+  </div>
+
+  <!-- Leads Tab -->
+  <div class="main-content" id="tab-leads">
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <button class="btn btn-outline" style="flex:1" onclick="copyLeads()">📋 Kopieren</button>
+      <button class="btn btn-primary" style="flex:1" onclick="exportCSV()">📥 CSV Export</button>
+    </div>
+    <div class="section-title">📧 Alle Leads</div>
+    <div id="leads-list" class="loading"><div class="spinner"></div>Laden...</div>
+  </div>
+
+  <!-- Settings Tab -->
+  <div class="main-content" id="tab-settings">
+    <div class="card">
+      <div class="card-title">🎨 Top-Bar</div>
+      <div class="form-group">
+        <label class="form-label">Text</label>
+        <input type="text" class="form-input" id="setting-topbar-text" placeholder="🔥 Neues Angebot!">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link</label>
+        <input type="text" class="form-input" id="setting-topbar-link" placeholder="https://...">
+      </div>
+      <button class="btn btn-primary" onclick="saveTopBar()">Speichern</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔔 OneSignal</div>
+      <div class="form-group">
+        <label class="form-label">App ID</label>
+        <input type="text" class="form-input" id="setting-onesignal-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx">
+      </div>
+      <button class="btn btn-primary" onclick="saveOneSignal()">Speichern</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">📝 Footer Copyright</div>
+      <div class="form-group">
+        <input type="text" class="form-input" id="setting-footer-copyright" placeholder="© 2025 Dein Unternehmen">
+      </div>
+      <button class="btn btn-primary" onclick="saveFooterCopyright()">Speichern</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🔐 Admin PIN ändern</div>
+      <div class="form-group">
+        <input type="password" class="form-input" id="setting-new-pin" placeholder="Neuer PIN (min. 4 Zeichen)">
+      </div>
+      <button class="btn btn-outline" onclick="savePin()">PIN ändern</button>
+    </div>
+
+    <button class="btn btn-danger" style="margin-top:20px" onclick="logout()">🚪 Ausloggen</button>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav" id="bottom-nav" style="display:none;">
+    <div class="nav-item active" data-tab="dashboard">
+      <span class="nav-icon">🏠</span>
+      <span>Dashboard</span>
+    </div>
+    <div class="nav-item" data-tab="pages">
+      <span class="nav-icon">📄</span>
+      <span>Seiten</span>
+    </div>
+    <div class="nav-item" data-tab="apps">
+      <span class="nav-icon">📱</span>
+      <span>Apps</span>
+    </div>
+    <div class="nav-item" data-tab="leads">
+      <span class="nav-icon">📧</span>
+      <span>Leads</span>
+    </div>
+    <div class="nav-item" data-tab="settings">
+      <span class="nav-icon">⚙️</span>
+      <span>Settings</span>
+    </div>
+  </div>
+
+  <!-- Edit Page Modal -->
+  <div class="modal-overlay" id="modal-page">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Seite bearbeiten</div>
+        <button class="modal-close" onclick="closeModal('modal-page')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-page-id">
+        <div class="form-group">
+          <label class="form-label">H1 Titel</label>
+          <input type="text" class="form-input" id="edit-page-h1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Beschreibung</label>
+          <textarea class="form-textarea" id="edit-page-desc"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sticky CTA Text</label>
+          <input type="text" class="form-input" id="edit-page-cta-text">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sticky CTA Link</label>
+          <input type="text" class="form-input" id="edit-page-cta-link">
+        </div>
+        <button class="btn btn-primary" onclick="savePage()">💾 Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div class="modal-overlay" id="modal-project">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Projekt bearbeiten</div>
+        <button class="modal-close" onclick="closeModal('modal-project')">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="edit-project-id">
+        <div class="form-group">
+          <label class="form-label">Name</label>
+          <input type="text" class="form-input" id="edit-project-name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Rating (1-10)</label>
+          <input type="number" class="form-input" id="edit-project-rating" min="1" max="10" step="0.1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Badge Text</label>
+          <input type="text" class="form-input" id="edit-project-badge" placeholder="z.B. Testsieger">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kurzbeschreibung</label>
+          <textarea class="form-textarea" id="edit-project-desc"></textarea>
+        </div>
+        <button class="btn btn-primary" onclick="saveProject()">💾 Speichern</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Supabase Config
+    const SUPABASE_URL = 'https://zvlrpjakdsujncmfzurk.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp2bHJwamFrZHN1am5jbWZ6dXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc2OTQ0ODksImV4cCI6MjA4MzI3MDQ4OX0.TelUj7kWZabGxfbOZTQ4uPBxLQKKkciELAJLtn6RDXc';
+    
+    let categories = [];
+    let projects = [];
+    let subscribers = [];
+    let settings = {};
+    let currentCategoryId = null;
+
+    // Helper Functions
+    async function supabaseRequest(table, method = 'GET', body = null, query = '') {
+      const url = `${SUPABASE_URL}/rest/v1/${table}${query}`;
+      const options = {
+        method,
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': method === 'POST' ? 'return=representation' : (method === 'PATCH' ? 'return=representation' : '')
+        }
+      };
+      if (body) options.body = JSON.stringify(body);
+      const res = await fetch(url, options);
+      if (!res.ok) throw new Error(`Error: ${res.status}`);
+      const text = await res.text();
+      return text ? JSON.parse(text) : null;
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('active');
+    }
+
+    // Login
+    async function checkPin() {
+      const pin = document.getElementById('pin-input').value;
+      if (!pin) return;
+      
+      try {
+        const data = await supabaseRequest('settings', 'GET', null, '?key=eq.admin_pin&select=value');
+        const storedPin = data?.[0]?.value;
+        
+        if (storedPin === pin || (typeof storedPin === 'object' && storedPin.pin === pin)) {
+          sessionStorage.setItem('admin_auth', 'true');
+          showApp();
+        } else {
+          document.getElementById('login-error').style.display = 'block';
+        }
+      } catch (e) {
+        // If no PIN set, allow default PIN '1234'
+        if (pin === '1234') {
+          sessionStorage.setItem('admin_auth', 'true');
+          showApp();
+        } else {
+          document.getElementById('login-error').style.display = 'block';
+        }
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem('admin_auth');
+      location.reload();
+    }
+
+    function showApp() {
+      document.getElementById('login-screen').classList.add('hidden');
+      document.getElementById('app-header').style.display = 'block';
+      document.getElementById('bottom-nav').style.display = 'flex';
+      loadDashboard();
+    }
+
+    // Tab Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.main-content').forEach(c => c.classList.remove('active'));
+        
+        item.classList.add('active');
+        const tab = item.dataset.tab;
+        document.getElementById(`tab-${tab}`).classList.add('active');
+        
+        const titles = {
+          dashboard: 'Dashboard',
+          pages: 'Seiten',
+          apps: 'Apps & Ranking',
+          leads: 'Leads',
+          settings: 'Einstellungen'
+        };
+        document.getElementById('header-title').textContent = titles[tab] || 'Dashboard';
+        
+        if (tab === 'pages') loadPages();
+        if (tab === 'apps') loadApps();
+        if (tab === 'leads') loadLeads();
+        if (tab === 'settings') loadSettings();
+      });
+    });
+
+    // Dashboard
+    async function loadDashboard() {
+      try {
+        // Load counts
+        const [subs, cats, projs, reds, sets] = await Promise.all([
+          supabaseRequest('subscribers', 'GET', null, '?select=id,email,created_at,source_page&order=created_at.desc'),
+          supabaseRequest('categories', 'GET', null, '?select=id'),
+          supabaseRequest('projects', 'GET', null, '?select=id'),
+          supabaseRequest('redirects', 'GET', null, '?select=id'),
+          supabaseRequest('settings', 'GET', null, '?select=key,value')
+        ]);
+        
+        subscribers = subs || [];
+        document.getElementById('stat-leads').textContent = subscribers.length;
+        document.getElementById('stat-pages').textContent = cats?.length || 0;
+        document.getElementById('stat-apps').textContent = projs?.length || 0;
+        document.getElementById('stat-redirects').textContent = reds?.length || 0;
+        
+        // Parse settings
+        settings = {};
+        (sets || []).forEach(s => {
+          settings[s.key] = typeof s.value === 'string' ? s.value : s.value;
+        });
+        
+        // Set toggles
+        document.getElementById('toggle-newsletter').checked = settings.newsletter_active === true || settings.newsletter_active === 'true';
+        document.getElementById('toggle-topbar').checked = settings.top_bar_active === true || settings.top_bar_active === 'true';
+        document.getElementById('toggle-onesignal').checked = settings.onesignal_active === true || settings.onesignal_active === 'true';
+        
+        // Recent leads
+        const recentLeads = subscribers.slice(0, 3);
+        document.getElementById('recent-leads').innerHTML = recentLeads.length 
+          ? recentLeads.map(l => `
+              <div class="lead-item">
+                <div class="lead-email">${l.email}</div>
+                <div class="lead-meta">${l.source_page || 'Unbekannt'} • ${new Date(l.created_at).toLocaleDateString('de-DE')}</div>
+              </div>
+            `).join('')
+          : '<div class="empty-state"><div class="empty-icon">📭</div>Noch keine Leads</div>';
+          
+      } catch (e) {
+        console.error('Dashboard error:', e);
+        showToast('Fehler beim Laden');
+      }
+    }
+
+    // Settings Update
+    async function updateSetting(key, value) {
+      try {
+        // Check if setting exists
+        const existing = await supabaseRequest('settings', 'GET', null, `?key=eq.${key}&select=id`);
+        
+        if (existing && existing.length > 0) {
+          await supabaseRequest('settings', 'PATCH', { value }, `?key=eq.${key}`);
+        } else {
+          await supabaseRequest('settings', 'POST', { key, value });
+        }
+        
+        showToast('✅ Gespeichert');
+      } catch (e) {
+        console.error('Setting error:', e);
+        showToast('❌ Fehler');
+      }
+    }
+
+    // Pages
+    async function loadPages() {
+      try {
+        categories = await supabaseRequest('categories', 'GET', null, '?select=*&order=sort_order.asc');
+        
+        document.getElementById('pages-list').innerHTML = categories.length 
+          ? categories.map(c => `
+              <div class="list-item" onclick="editPage('${c.id}')">
+                <div class="list-item-icon">${c.icon || '📄'}</div>
+                <div class="list-item-content">
+                  <div class="list-item-title">${c.name}</div>
+                  <div class="list-item-meta">/${c.slug}</div>
+                </div>
+                <span class="badge ${c.is_active ? 'badge-active' : 'badge-inactive'}">${c.is_active ? 'Aktiv' : 'Inaktiv'}</span>
+                <div class="list-item-arrow">›</div>
+              </div>
+            `).join('')
+          : '<div class="empty-state"><div class="empty-icon">📄</div>Keine Seiten vorhanden</div>';
+      } catch (e) {
+        console.error('Pages error:', e);
+        document.getElementById('pages-list').innerHTML = '<div class="empty-state">Fehler beim Laden</div>';
+      }
+    }
+
+    function editPage(id) {
+      const page = categories.find(c => c.id === id);
+      if (!page) return;
+      
+      document.getElementById('edit-page-id').value = id;
+      document.getElementById('edit-page-h1').value = page.h1_title || '';
+      document.getElementById('edit-page-desc').value = page.description || '';
+      document.getElementById('edit-page-cta-text').value = page.sticky_cta_text || '';
+      document.getElementById('edit-page-cta-link').value = page.sticky_cta_link || '';
+      
+      document.getElementById('modal-page').classList.add('active');
+    }
+
+    async function savePage() {
+      const id = document.getElementById('edit-page-id').value;
+      const data = {
+        h1_title: document.getElementById('edit-page-h1').value,
+        description: document.getElementById('edit-page-desc').value,
+        sticky_cta_text: document.getElementById('edit-page-cta-text').value,
+        sticky_cta_link: document.getElementById('edit-page-cta-link').value
+      };
+      
+      try {
+        await supabaseRequest('categories', 'PATCH', data, `?id=eq.${id}`);
+        showToast('✅ Seite gespeichert');
+        closeModal('modal-page');
+        loadPages();
+      } catch (e) {
+        console.error('Save page error:', e);
+        showToast('❌ Fehler beim Speichern');
+      }
+    }
+
+    // Apps / Projects
+    async function loadApps() {
+      try {
+        if (!categories.length) {
+          categories = await supabaseRequest('categories', 'GET', null, '?select=*&order=sort_order.asc');
+        }
+        
+        // Render category filter
+        document.getElementById('category-filter').innerHTML = categories.map((c, i) => `
+          <div class="filter-pill ${i === 0 ? 'active' : ''}" data-cat-id="${c.id}">${c.icon || '📄'} ${c.name}</div>
+        `).join('');
+        
+        // Add click handlers
+        document.querySelectorAll('.filter-pill').forEach(pill => {
+          pill.addEventListener('click', () => {
+            document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            loadProjectsForCategory(pill.dataset.catId);
+          });
+        });
+        
+        // Load first category's projects
+        if (categories.length > 0) {
+          loadProjectsForCategory(categories[0].id);
+        }
+      } catch (e) {
+        console.error('Apps error:', e);
+      }
+    }
+
+    async function loadProjectsForCategory(categoryId) {
+      currentCategoryId = categoryId;
+      document.getElementById('projects-list').innerHTML = '<div class="loading"><div class="spinner"></div>Laden...</div>';
+      
+      try {
+        // Get category_projects join table entries
+        const categoryProjects = await supabaseRequest('category_projects', 'GET', null, 
+          `?category_id=eq.${categoryId}&select=project_id,sort_order&order=sort_order.asc`);
+        
+        if (!categoryProjects || categoryProjects.length === 0) {
+          document.getElementById('projects-list').innerHTML = '<div class="empty-state"><div class="empty-icon">📱</div>Keine Apps in dieser Kategorie</div>';
+          return;
+        }
+        
+        // Get full project details
+        const projectIds = categoryProjects.map(cp => cp.project_id);
+        projects = await supabaseRequest('projects', 'GET', null, 
+          `?id=in.(${projectIds.join(',')})&select=*`);
+        
+        // Sort by category_projects sort_order
+        const sortMap = {};
+        categoryProjects.forEach((cp, idx) => { sortMap[cp.project_id] = cp.sort_order; });
+        projects.sort((a, b) => (sortMap[a.id] || 0) - (sortMap[b.id] || 0));
+        
+        renderProjects();
+      } catch (e) {
+        console.error('Projects error:', e);
+        document.getElementById('projects-list').innerHTML = '<div class="empty-state">Fehler beim Laden</div>';
+      }
+    }
+
+    function renderProjects() {
+      document.getElementById('projects-list').innerHTML = projects.map((p, i) => `
+        <div class="project-card" data-id="${p.id}">
+          <div class="project-header">
+            <div class="project-rank">${i + 1}</div>
+            <div>
+              <div class="project-name">${p.name}</div>
+              ${p.badge_text ? `<div class="project-badge">🏆 ${p.badge_text}</div>` : ''}
+            </div>
+            <div style="margin-left:auto;font-weight:700;color:var(--primary)">${p.rating || '-'}/10</div>
+          </div>
+          <div class="project-actions">
+            <button class="project-btn up" onclick="moveProject('${p.id}', -1)">⬆️ Hoch</button>
+            <button class="project-btn down" onclick="moveProject('${p.id}', 1)">⬇️ Runter</button>
+            <button class="project-btn" onclick="editProject('${p.id}')">✏️</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    async function moveProject(projectId, direction) {
+      const idx = projects.findIndex(p => p.id === projectId);
+      if (idx === -1) return;
+      
+      const newIdx = idx + direction;
+      if (newIdx < 0 || newIdx >= projects.length) return;
+      
+      // Swap in local array
+      [projects[idx], projects[newIdx]] = [projects[newIdx], projects[idx]];
+      
+      // Update sort_order in category_projects
+      try {
+        for (let i = 0; i < projects.length; i++) {
+          await supabaseRequest('category_projects', 'PATCH', { sort_order: i }, 
+            `?category_id=eq.${currentCategoryId}&project_id=eq.${projects[i].id}`);
+        }
+        renderProjects();
+        showToast('✅ Reihenfolge aktualisiert');
+      } catch (e) {
+        console.error('Move error:', e);
+        showToast('❌ Fehler');
+      }
+    }
+
+    function editProject(id) {
+      const project = projects.find(p => p.id === id);
+      if (!project) return;
+      
+      document.getElementById('edit-project-id').value = id;
+      document.getElementById('edit-project-name').value = project.name || '';
+      document.getElementById('edit-project-rating').value = project.rating || '';
+      document.getElementById('edit-project-badge').value = project.badge_text || '';
+      document.getElementById('edit-project-desc').value = project.short_description || '';
+      
+      document.getElementById('modal-project').classList.add('active');
+    }
+
+    async function saveProject() {
+      const id = document.getElementById('edit-project-id').value;
+      const data = {
+        name: document.getElementById('edit-project-name').value,
+        rating: parseFloat(document.getElementById('edit-project-rating').value) || null,
+        badge_text: document.getElementById('edit-project-badge').value || null,
+        short_description: document.getElementById('edit-project-desc').value
+      };
+      
+      try {
+        await supabaseRequest('projects', 'PATCH', data, `?id=eq.${id}`);
+        showToast('✅ Projekt gespeichert');
+        closeModal('modal-project');
+        loadProjectsForCategory(currentCategoryId);
+      } catch (e) {
+        console.error('Save project error:', e);
+        showToast('❌ Fehler beim Speichern');
+      }
+    }
+
+    // Leads
+    async function loadLeads() {
+      try {
+        subscribers = await supabaseRequest('subscribers', 'GET', null, '?select=*&order=created_at.desc');
+        
+        document.getElementById('leads-list').innerHTML = subscribers.length 
+          ? subscribers.map(l => `
+              <div class="lead-item">
+                <div class="lead-email">${l.email}</div>
+                <div class="lead-meta">${l.source_page || 'Unbekannt'} • ${new Date(l.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>
+              </div>
+            `).join('')
+          : '<div class="empty-state"><div class="empty-icon">📭</div>Noch keine Leads</div>';
+      } catch (e) {
+        console.error('Leads error:', e);
+        document.getElementById('leads-list').innerHTML = '<div class="empty-state">Fehler beim Laden</div>';
+      }
+    }
+
+    function copyLeads() {
+      const text = subscribers.map(l => l.email).join('\n');
+      navigator.clipboard.writeText(text).then(() => showToast('📋 Emails kopiert!'));
+    }
+
+    function exportCSV() {
+      const csv = 'Email,Quelle,Datum\n' + subscribers.map(l => 
+        `${l.email},${l.source_page || ''},${l.created_at}`
+      ).join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = `leads_${new Date().toISOString().split('T')[0]}.csv`;
+      link.click();
+      showToast('📥 CSV heruntergeladen');
+    }
+
+    // Settings Tab
+    async function loadSettings() {
+      try {
+        const sets = await supabaseRequest('settings', 'GET', null, '?select=key,value');
+        settings = {};
+        (sets || []).forEach(s => {
+          settings[s.key] = s.value;
+        });
+        
+        document.getElementById('setting-topbar-text').value = settings.top_bar_text || '';
+        document.getElementById('setting-topbar-link').value = settings.top_bar_link || '';
+        document.getElementById('setting-onesignal-id').value = settings.onesignal_app_id || '';
+        document.getElementById('setting-footer-copyright').value = settings.footer_copyright || '';
+      } catch (e) {
+        console.error('Load settings error:', e);
+      }
+    }
+
+    async function saveTopBar() {
+      await updateSetting('top_bar_text', document.getElementById('setting-topbar-text').value);
+      await updateSetting('top_bar_link', document.getElementById('setting-topbar-link').value);
+      showToast('✅ Top-Bar gespeichert');
+    }
+
+    async function saveOneSignal() {
+      await updateSetting('onesignal_app_id', document.getElementById('setting-onesignal-id').value);
+      showToast('✅ OneSignal gespeichert');
+    }
+
+    async function saveFooterCopyright() {
+      await updateSetting('footer_copyright', document.getElementById('setting-footer-copyright').value);
+      showToast('✅ Footer gespeichert');
+    }
+
+    async function savePin() {
+      const newPin = document.getElementById('setting-new-pin').value;
+      if (newPin.length < 4) {
+        showToast('❌ PIN muss min. 4 Zeichen haben');
+        return;
+      }
+      await updateSetting('admin_pin', newPin);
+      document.getElementById('setting-new-pin').value = '';
+      showToast('✅ PIN geändert');
+    }
+
+    // Init
+    document.getElementById('pin-input').addEventListener('keypress', e => {
+      if (e.key === 'Enter') checkPin();
+    });
+    
+    if (sessionStorage.getItem('admin_auth') === 'true') {
+      showApp();
+    }
+  </script>
+</body>
+</html>
