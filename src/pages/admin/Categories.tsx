@@ -15,11 +15,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, MapPin } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 
-// Helper to generate slug from city name
+// Helper to generate slug from page name
 function generateSlug(name: string): string {
   return `singles-${name.toLowerCase()
     .replace(/ä/g, "ae")
@@ -76,7 +76,7 @@ export default function AdminCategories() {
   const isActive = watch("is_active");
   const nameValue = watch("name");
 
-  // Auto-generate slug when name changes (only for new cities)
+  // Auto-generate slug when name changes (only for new pages)
   useEffect(() => {
     if (!editingCategory && nameValue) {
       setValue("slug", generateSlug(nameValue));
@@ -97,6 +97,8 @@ export default function AdminCategories() {
       h1_title: "",
       long_content_top: "",
       long_content_bottom: "",
+      analytics_code: "",
+      banner_override: "",
       is_active: true,
       sort_order: categories.length,
     });
@@ -116,6 +118,8 @@ export default function AdminCategories() {
       h1_title: category.h1_title || "",
       long_content_top: category.long_content_top || "",
       long_content_bottom: category.long_content_bottom || "",
+      analytics_code: category.analytics_code || "",
+      banner_override: category.banner_override || "",
       is_active: category.is_active,
       sort_order: category.sort_order,
     });
@@ -129,11 +133,11 @@ export default function AdminCategories() {
       if (editingCategory) {
         await updateCategory.mutateAsync({ id: editingCategory.id, input: data });
         categoryId = editingCategory.id;
-        toast({ title: "Stadt aktualisiert" });
+        toast({ title: "Landingpage aktualisiert" });
       } else {
         const result = await createCategory.mutateAsync(data);
         categoryId = result.id;
-        toast({ title: "Stadt erstellt" });
+        toast({ title: "Landingpage erstellt" });
       }
 
       // Update project assignments
@@ -153,14 +157,14 @@ export default function AdminCategories() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm("Möchtest du diese Stadt wirklich löschen?")) return;
+    if (!confirm("Möchtest du diese Landingpage wirklich löschen?")) return;
     try {
       await deleteCategory.mutateAsync(id);
-      toast({ title: "Stadt gelöscht" });
+      toast({ title: "Landingpage gelöscht" });
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Stadt konnte nicht gelöscht werden",
+        description: "Landingpage konnte nicht gelöscht werden",
         variant: "destructive",
       });
     }
@@ -169,11 +173,11 @@ export default function AdminCategories() {
   async function handleDuplicate(category: Category) {
     try {
       await duplicateCategory.mutateAsync(category);
-      toast({ title: "Stadt dupliziert", description: "Du kannst die Kopie jetzt bearbeiten." });
+      toast({ title: "Landingpage dupliziert", description: "Du kannst die Kopie jetzt bearbeiten." });
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Stadt konnte nicht dupliziert werden",
+        description: "Landingpage konnte nicht dupliziert werden",
         variant: "destructive",
       });
     }
@@ -240,32 +244,33 @@ export default function AdminCategories() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold text-foreground flex items-center gap-2">
-            <MapPin className="w-6 h-6 text-primary" />
-            Städte-Landingpages
+            <LayoutTemplate className="w-6 h-6 text-primary" />
+            Landingpages
           </h2>
-          <p className="text-muted-foreground">Erstelle und verwalte Stadt-Landingpages für Dating-Apps.</p>
+          <p className="text-muted-foreground">Erstelle und verwalte deine Affiliate-Landingpages.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={openCreateDialog} className="gap-2">
               <Plus className="w-4 h-4" />
-              Neue Stadt
+              Neue Landingpage
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-display flex items-center gap-2">
-                <MapPin className="w-5 h-5" />
-                {editingCategory ? "Stadt bearbeiten" : "Neue Stadt anlegen"}
+                <LayoutTemplate className="w-5 h-5" />
+                {editingCategory ? "Landingpage bearbeiten" : "Neue Landingpage anlegen"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="basic">Grunddaten</TabsTrigger>
                   <TabsTrigger value="seo">SEO</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
                   <TabsTrigger value="projects">Apps</TabsTrigger>
+                  <TabsTrigger value="tracking">Tracking</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="basic" className="space-y-4 pt-4">
@@ -280,7 +285,7 @@ export default function AdminCategories() {
                       />
                     </div>
                     <div className="col-span-3">
-                      <Label htmlFor="name">Stadtname</Label>
+                      <Label htmlFor="name">Seitenname (intern)</Label>
                       <Input id="name" {...register("name")} placeholder="z.B. Salzburg, Linz, Graz" />
                       {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
                       <p className="text-xs text-muted-foreground mt-1">Der Slug wird automatisch generiert.</p>
@@ -288,7 +293,7 @@ export default function AdminCategories() {
                   </div>
 
                   <div>
-                    <Label htmlFor="slug">Slug (URL)</Label>
+                    <Label htmlFor="slug">Slug (URL-Pfad)</Label>
                     <Input id="slug" {...register("slug")} placeholder="singles-salzburg" />
                     {errors.slug && <p className="text-sm text-destructive mt-1">{errors.slug.message}</p>}
                   </div>
@@ -385,18 +390,67 @@ export default function AdminCategories() {
                     />
                     <p className="text-xs text-muted-foreground mt-1">HTML-Content unterhalb der App-Liste. Nutze FAQs, SEO-Texte etc.</p>
                   </div>
+
+                  <div>
+                    <Label htmlFor="banner_override" className="flex items-center gap-2">
+                      <Flag className="w-4 h-4" />
+                      Banner-Override (HTML)
+                    </Label>
+                    <Textarea 
+                      id="banner_override" 
+                      {...register("banner_override")} 
+                      placeholder="<div class='banner'>Spezial-Banner nur für diese Seite...</div>"
+                      rows={4}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Leer lassen = globaler Banner wird verwendet. Eingetragen = überschreibt den globalen Banner für diese Seite.
+                    </p>
+                  </div>
                 </TabsContent>
 
                 <TabsContent value="projects" className="space-y-4 pt-4">
                   <div>
-                    <Label className="text-base font-semibold">Welche Apps sollen auf dieser Seite erscheinen?</Label>
+                    <Label className="text-base font-semibold">Welche Anbieter sollen auf dieser Seite erscheinen?</Label>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Wähle die Apps aus und ordne sie per Pfeilen. Die Reihenfolge bestimmt die Anzeige.
+                      Wähle die Anbieter aus und ordne sie per Pfeilen. Die Reihenfolge bestimmt die Anzeige.
                     </p>
                     <ProjectCheckboxList
                       selectedIds={selectedProjectIds}
                       onChange={setSelectedProjectIds}
                     />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="tracking" className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="analytics_code" className="flex items-center gap-2">
+                      <Code className="w-4 h-4" />
+                      Analytics/Tracking Code
+                    </Label>
+                    <Textarea 
+                      id="analytics_code" 
+                      {...register("analytics_code")} 
+                      placeholder={`<!-- Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-XXXXXXX');
+</script>
+
+<!-- Facebook Pixel -->
+<script>
+  !function(f,b,e,v,n,t,s)...
+</script>`}
+                      rows={15}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Dieser Code wird im &lt;head&gt; der exportierten Seite eingefügt. 
+                      Perfekt für Google Analytics, Facebook Pixel, etc.
+                    </p>
                   </div>
                 </TabsContent>
               </Tabs>
@@ -409,7 +463,7 @@ export default function AdminCategories() {
                 {(createCategory.isPending || updateCategory.isPending || updateCategoryProjects.isPending) && (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 )}
-                {editingCategory ? "Speichern" : "Stadt erstellen"}
+                {editingCategory ? "Speichern" : "Landingpage erstellen"}
               </Button>
             </form>
           </DialogContent>
@@ -422,9 +476,10 @@ export default function AdminCategories() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-12">Ord.</TableHead>
-                <TableHead>Stadt</TableHead>
+                <TableHead>Seite</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead>SEO</TableHead>
+                <TableHead>Tracking</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
               </TableRow>
@@ -432,8 +487,8 @@ export default function AdminCategories() {
             <TableBody>
               {categories.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    Keine Städte vorhanden. Erstelle deine erste Stadt-Landingpage.
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    Keine Landingpages vorhanden. Erstelle deine erste Landingpage.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -474,6 +529,13 @@ export default function AdminCategories() {
                         <FileText className="w-4 h-4 text-green-500" />
                       ) : (
                         <FileText className="w-4 h-4 text-muted-foreground/30" />
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {category.analytics_code ? (
+                        <Code className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <Code className="w-4 h-4 text-muted-foreground/30" />
                       )}
                     </TableCell>
                     <TableCell>

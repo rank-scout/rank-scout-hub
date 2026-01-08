@@ -14,6 +14,8 @@ export type Category = {
   h1_title: string | null;
   long_content_top: string | null;
   long_content_bottom: string | null;
+  analytics_code: string | null;
+  banner_override: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -178,6 +180,8 @@ export function useDuplicateCategory() {
           h1_title: category.h1_title,
           long_content_top: category.long_content_top,
           long_content_bottom: category.long_content_bottom,
+          analytics_code: category.analytics_code,
+          banner_override: category.banner_override,
           is_active: false,
           sort_order: category.sort_order + 1,
         })

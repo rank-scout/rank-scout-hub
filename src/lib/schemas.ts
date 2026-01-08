@@ -22,6 +22,8 @@ export const categorySchema = z.object({
   h1_title: z.string().max(100).optional(),
   long_content_top: z.string().optional(),
   long_content_bottom: z.string().optional(),
+  analytics_code: z.string().optional(),
+  banner_override: z.string().optional(),
   is_active: z.boolean().default(true),
   sort_order: z.number().int().min(0).default(0),
 });
