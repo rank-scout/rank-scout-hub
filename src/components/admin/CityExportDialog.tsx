@@ -90,7 +90,12 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     </script>
 
     <style>
-        body { scroll-behavior: smooth; }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { 
+            scroll-behavior: smooth; 
+            overflow-x: hidden; 
+            max-width: 100vw;
+        }
         
         .hero-gradient {
             background: linear-gradient(135deg, #0a0a0a 0%, #7f1d1d 45%, #c41e3a 100%);
@@ -141,7 +146,8 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         ::-webkit-scrollbar-thumb { background: #c41e3a; border-radius: 4px; }
 
         .ad-box {
-            width: 300px;
+            width: 100%;
+            max-width: 300px;
             height: 250px;
             background-color: #f3f4f6;
             border: 1px solid #e5e7eb;
@@ -180,6 +186,60 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         .testimonial-card:hover {
             transform: translateY(-4px);
         }
+        
+        /* Mobile Fixes */
+        @media (max-width: 768px) {
+            .project-card-inner {
+                flex-direction: column !important;
+                align-items: flex-start !important;
+            }
+            .project-card-inner > div:last-child {
+                width: 100%;
+                margin-top: 1rem;
+            }
+            .project-card-inner a {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+        
+        /* Breadcrumbs */
+        .breadcrumbs {
+            font-size: 0.875rem;
+            color: #9ca3af;
+        }
+        .breadcrumbs a:hover {
+            color: #fbbf24;
+        }
+        
+        /* TOC Box */
+        .toc-box {
+            background: linear-gradient(135deg, #fafafa 0%, #f3f4f6 100%);
+            border: 1px solid #e5e7eb;
+            border-left: 4px solid #c41e3a;
+        }
+        .toc-box a:hover {
+            color: #c41e3a;
+        }
+        
+        /* Social Share */
+        .social-share-bar a {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        .social-share-bar a:hover {
+            transform: scale(1.1);
+        }
+        
+        /* Newsletter Box */
+        .newsletter-box {
+            background: linear-gradient(135deg, #0a0a0a 0%, #7f1d1d 100%);
+        }
     </style>
 </head>
 <body class="font-sans antialiased text-gray-800 bg-brand-bg">
@@ -212,6 +272,32 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             </a>
         </div>
     </header>
+
+    <!-- BREADCRUMBS -->
+    <div class="bg-gray-100 py-3">
+        <div class="max-w-6xl mx-auto px-4">
+            <nav id="breadcrumbs" class="breadcrumbs flex flex-wrap items-center gap-2">
+                <a href="https://dating.rank-scout.com" class="hover:text-brand-gold">Startseite</a>
+                <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+                <a href="https://dating.rank-scout.com/regionen/" class="hover:text-brand-gold">Regionen</a>
+                <i class="fas fa-chevron-right text-xs text-gray-400"></i>
+                <span id="breadcrumb-current" class="text-gray-900 font-medium">Singles Salzburg</span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- SOCIAL SHARE BAR (Floating) -->
+    <div id="social-share-bar" class="social-share-bar fixed left-4 top-1/2 -translate-y-1/2 hidden lg:flex flex-col gap-3 z-40">
+        <a href="#" id="share-whatsapp" class="bg-green-500 hover:bg-green-600 text-white" title="WhatsApp teilen">
+            <i class="fab fa-whatsapp text-lg"></i>
+        </a>
+        <a href="#" id="share-facebook" class="bg-blue-600 hover:bg-blue-700 text-white" title="Facebook teilen">
+            <i class="fab fa-facebook-f"></i>
+        </a>
+        <a href="#" id="share-copy" class="bg-gray-700 hover:bg-gray-800 text-white" title="Link kopieren">
+            <i class="fas fa-link"></i>
+        </a>
+    </div>
 
     <!-- HERO SECTION -->
     <section class="hero-gradient py-16 md:py-24 relative overflow-hidden">
@@ -378,6 +464,21 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         </div>
     </section>
 
+    <!-- TABLE OF CONTENTS -->
+    <section id="toc-section" class="py-8 bg-white hidden">
+        <div class="max-w-4xl mx-auto px-4">
+            <div id="toc-box" class="toc-box rounded-xl p-6">
+                <h3 class="font-heading font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
+                    <i class="fas fa-list text-brand-primary"></i>
+                    Inhalt dieses Artikels
+                </h3>
+                <nav id="toc-links" class="space-y-2">
+                    <!-- Wird dynamisch befüllt -->
+                </nav>
+            </div>
+        </div>
+    </section>
+
     <!-- LONG CONTENT TOP -->
     <section class="py-16 bg-white">
         <div class="max-w-4xl mx-auto px-4">
@@ -390,12 +491,39 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     </section>
 
     <!-- LONG CONTENT BOTTOM -->
-    <section class="py-16 bg-gray-50">
+    <section id="seo-content" class="py-16 bg-gray-50">
         <div class="max-w-4xl mx-auto px-4">
             <div id="long-content-bottom" class="prose prose-lg max-w-none">
                 <h2 class="font-heading font-bold text-2xl md:text-3xl text-gray-900 mb-4">So datet Salzburg</h2>
                 <p>Salzburg ist mehr als Mozartkugeln und Festspiele. Die Dating-Szene ist zweigeteilt: Das urbane Leben in der Stadt und das bodenständige, aktive Leben in den Gauen.</p>
                 <p>Wer Singles Salzburg sucht, sollte genau diese Dynamik nutzen: In der Stadt funktionieren spontane Treffen sehr gut, im Umland sind gemeinsame Aktivitäten oft der Schlüssel.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- NEWSLETTER SECTION -->
+    <section id="newsletter-section" class="py-16 hidden">
+        <div class="max-w-4xl mx-auto px-4">
+            <div class="newsletter-box rounded-2xl p-8 md:p-12 text-center">
+                <div class="w-16 h-16 bg-brand-gold/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-envelope text-brand-gold text-2xl"></i>
+                </div>
+                <h2 class="font-heading font-bold text-2xl md:text-3xl text-white mb-4">Singles-News direkt ins Postfach</h2>
+                <p class="text-gray-300 mb-8 max-w-lg mx-auto">Erhalte exklusive Dating-Tipps, neue App-Reviews und regionale Events – kostenlos und unverbindlich.</p>
+                <form id="newsletter-form" class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                    <input 
+                        type="email" 
+                        id="newsletter-email" 
+                        placeholder="Deine E-Mail-Adresse" 
+                        required 
+                        class="flex-1 px-6 py-3 rounded-full text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                    />
+                    <button type="submit" class="bg-brand-gold hover:bg-brand-luxury text-brand-black font-bold py-3 px-8 rounded-full transition-all whitespace-nowrap">
+                        <i class="fas fa-paper-plane mr-2"></i>Anmelden
+                    </button>
+                </form>
+                <p id="newsletter-message" class="text-sm text-green-400 mt-4 hidden">✓ Erfolgreich angemeldet!</p>
+                <p class="text-gray-500 text-xs mt-4">Kein Spam. Jederzeit abmeldbar.</p>
             </div>
         </div>
     </section>
@@ -526,24 +654,24 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                         (isFirst ? '<i class="fas fa-trophy mr-1"></i>' : '') + badgeText +
                     '</span>' +
                 '</div>' +
-                '<div class="p-6 pt-2">' +
-                    '<div class="flex flex-col md:flex-row gap-6">' +
-                        '<div class="flex-shrink-0">' +
-                            '<div class="w-20 h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center">' +
+                '<div class="p-4 md:p-6 pt-2">' +
+                    '<div class="project-card-inner flex flex-col md:flex-row gap-4 md:gap-6">' +
+                        '<div class="flex-shrink-0 flex justify-center md:justify-start">' +
+                            '<div class="w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center">' +
                                 logoHtml +
                             '</div>' +
                         '</div>' +
-                        '<div class="flex-1">' +
-                            '<h3 class="font-heading font-bold text-xl text-gray-900 mb-2">' + project.name + '</h3>' +
-                            '<div class="flex items-center gap-2 mb-4">' +
+                        '<div class="flex-1 min-w-0">' +
+                            '<h3 class="font-heading font-bold text-lg md:text-xl text-gray-900 mb-2 text-center md:text-left">' + project.name + '</h3>' +
+                            '<div class="flex items-center justify-center md:justify-start gap-2 mb-4">' +
                                 '<div class="flex text-brand-gold"><i class="fas fa-star"></i></div>' +
                                 '<span class="font-bold text-gray-900">' + rating + ' / 10</span>' +
                                 (isFirst ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Top Empfehlung</span>' : '') +
                             '</div>' +
                             '<div class="space-y-2 mb-4">' + featuresHtml + '</div>' +
                         '</div>' +
-                        '<div class="flex-shrink-0 flex items-center">' +
-                            '<a href="' + link + '" target="_blank" rel="nofollow noopener" class="inline-flex items-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover btn-shimmer">' +
+                        '<div class="flex-shrink-0 flex items-center justify-center md:justify-end w-full md:w-auto">' +
+                            '<a href="' + link + '" target="_blank" rel="nofollow noopener" class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover btn-shimmer">' +
                                 'Kostenlos Registrieren <i class="fas fa-arrow-right"></i>' +
                             '</a>' +
                         '</div>' +
@@ -628,6 +756,27 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 el('main-header').style.top = '36px';
             }
             
+            // Newsletter aktivieren
+            if (settings.newsletter_active === true) {
+                el('newsletter-section').classList.remove('hidden');
+            }
+            
+            // OneSignal Push-Benachrichtigungen
+            if (settings.onesignal_active === true && settings.onesignal_app_id && settings.onesignal_app_id !== '') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js';
+                script.defer = true;
+                script.onload = function() {
+                    window.OneSignalDeferred = window.OneSignalDeferred || [];
+                    window.OneSignalDeferred.push(function(OneSignal) {
+                        OneSignal.init({
+                            appId: settings.onesignal_app_id
+                        });
+                    });
+                };
+                document.head.appendChild(script);
+            }
+            
             // Footer Copyright
             if (settings.footer_copyright) {
                 el('footer-copyright').textContent = settings.footer_copyright.replace('2026', getCurrentYear());
@@ -669,6 +818,9 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             el('hero-cta').textContent = locationName + 'er Singles finden';
             el('hero-badge').textContent = 'Geprüft für Stadt & Land ' + locationName;
             
+            // Breadcrumbs aktualisieren
+            el('breadcrumb-current').textContent = category.h1_title || ('Singles ' + locationName);
+            
             // 6. Intro-Texte
             el('intro-title').textContent = 'Dein Dating-Guide für ' + locationName;
             el('list-title').textContent = 'Top 5 Apps für Singles in ' + locationName;
@@ -676,6 +828,22 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             // 7. Long Content
             if (category.long_content_top) el('long-content-top').innerHTML = category.long_content_top;
             if (category.long_content_bottom) el('long-content-bottom').innerHTML = category.long_content_bottom;
+            
+            // Auto-Inhaltsverzeichnis (TOC) generieren
+            const seoContent = el('seo-content');
+            if (seoContent) {
+                const h2s = seoContent.querySelectorAll('h2');
+                if (h2s.length > 1) {
+                    el('toc-section').classList.remove('hidden');
+                    const tocLinks = Array.from(h2s).map((h2, i) => {
+                        const id = 'toc-heading-' + i;
+                        h2.id = id;
+                        return '<a href="#' + id + '" class="block text-gray-600 hover:text-brand-primary py-1">' + 
+                               '<i class="fas fa-chevron-right text-xs mr-2 text-brand-primary"></i>' + h2.textContent + '</a>';
+                    }).join('');
+                    el('toc-links').innerHTML = tocLinks;
+                }
+            }
             
             // 8. Banner
             if (category.banner_override) el('banner-container').innerHTML = category.banner_override;
@@ -751,6 +919,51 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 el('json-ld-schema').textContent = generateJsonLd(category, projects);
             } else {
                 el('project-list-container').innerHTML = '<p class="text-center text-gray-500">Keine Projekte gefunden.</p>';
+            }
+            
+            // 16. Social Share Buttons initialisieren
+            const pageUrl = encodeURIComponent(window.location.href);
+            const pageTitle = encodeURIComponent(document.title);
+            el('share-whatsapp').href = 'https://wa.me/?text=' + pageTitle + '%20' + pageUrl;
+            el('share-facebook').href = 'https://www.facebook.com/sharer/sharer.php?u=' + pageUrl;
+            el('share-copy').onclick = function(e) {
+                e.preventDefault();
+                navigator.clipboard.writeText(window.location.href);
+                alert('Link kopiert!');
+            };
+            
+            // 17. Newsletter Form Handler
+            const newsletterForm = el('newsletter-form');
+            if (newsletterForm) {
+                newsletterForm.onsubmit = async function(e) {
+                    e.preventDefault();
+                    const email = el('newsletter-email').value;
+                    if (!email) return;
+                    
+                    try {
+                        const res = await fetch(SUPABASE_URL + '/rest/v1/subscribers', {
+                            method: 'POST',
+                            headers: {
+                                ...headers,
+                                'Content-Type': 'application/json',
+                                'Prefer': 'return=minimal'
+                            },
+                            body: JSON.stringify({
+                                email: email,
+                                source_page: SLUG
+                            })
+                        });
+                        
+                        if (res.ok || res.status === 201 || res.status === 409) {
+                            el('newsletter-message').classList.remove('hidden');
+                            el('newsletter-email').value = '';
+                            newsletterForm.style.opacity = '0.5';
+                            newsletterForm.style.pointerEvents = 'none';
+                        }
+                    } catch (err) {
+                        console.error('Newsletter signup error:', err);
+                    }
+                };
             }
             
             console.log('[Rank-Scout] ✓ Data loaded for:', category.name, '| Projects:', projects.length, '| Testimonials:', (testimonials || []).length);
