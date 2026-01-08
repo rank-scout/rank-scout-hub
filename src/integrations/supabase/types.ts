@@ -29,6 +29,9 @@ export type Database = {
           meta_description: string | null
           meta_title: string | null
           name: string
+          popup_headline: string | null
+          popup_link: string | null
+          popup_text: string | null
           slug: string
           sort_order: number
           sticky_cta_link: string | null
@@ -50,6 +53,9 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           name: string
+          popup_headline?: string | null
+          popup_link?: string | null
+          popup_text?: string | null
           slug: string
           sort_order?: number
           sticky_cta_link?: string | null
@@ -71,6 +77,9 @@ export type Database = {
           meta_description?: string | null
           meta_title?: string | null
           name?: string
+          popup_headline?: string | null
+          popup_link?: string | null
+          popup_text?: string | null
           slug?: string
           sort_order?: number
           sticky_cta_link?: string | null
@@ -121,6 +130,7 @@ export type Database = {
       }
       footer_links: {
         Row: {
+          column_name: string | null
           created_at: string
           id: string
           is_active: boolean
@@ -129,6 +139,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          column_name?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -137,6 +148,7 @@ export type Database = {
           url: string
         }
         Update: {
+          column_name?: string | null
           created_at?: string
           id?: string
           is_active?: boolean
@@ -181,6 +193,7 @@ export type Database = {
           affiliate_link: string | null
           badge_text: string | null
           category_id: string | null
+          cons_list: string[] | null
           country_scope: Database["public"]["Enums"]["country_scope"]
           created_at: string
           description: string | null
@@ -190,6 +203,7 @@ export type Database = {
           is_default: boolean | null
           logo_url: string | null
           name: string
+          pros_list: string[] | null
           rating: number | null
           short_description: string | null
           slug: string
@@ -202,6 +216,7 @@ export type Database = {
           affiliate_link?: string | null
           badge_text?: string | null
           category_id?: string | null
+          cons_list?: string[] | null
           country_scope?: Database["public"]["Enums"]["country_scope"]
           created_at?: string
           description?: string | null
@@ -211,6 +226,7 @@ export type Database = {
           is_default?: boolean | null
           logo_url?: string | null
           name: string
+          pros_list?: string[] | null
           rating?: number | null
           short_description?: string | null
           slug: string
@@ -223,6 +239,7 @@ export type Database = {
           affiliate_link?: string | null
           badge_text?: string | null
           category_id?: string | null
+          cons_list?: string[] | null
           country_scope?: Database["public"]["Enums"]["country_scope"]
           created_at?: string
           description?: string | null
@@ -232,6 +249,7 @@ export type Database = {
           is_default?: boolean | null
           logo_url?: string | null
           name?: string
+          pros_list?: string[] | null
           rating?: number | null
           short_description?: string | null
           slug?: string
@@ -300,6 +318,50 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      testimonials: {
+        Row: {
+          category_id: string | null
+          city_reference: string | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          rating: number | null
+          sort_order: number | null
+          text: string
+        }
+        Insert: {
+          category_id?: string | null
+          city_reference?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          rating?: number | null
+          sort_order?: number | null
+          text: string
+        }
+        Update: {
+          category_id?: string | null
+          city_reference?: string | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          rating?: number | null
+          sort_order?: number | null
+          text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "testimonials_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
