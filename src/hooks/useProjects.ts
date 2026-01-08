@@ -9,6 +9,10 @@ export type Project = {
   slug: string;
   url: string;
   short_description: string | null;
+  description: string | null;
+  logo_url: string | null;
+  affiliate_link: string | null;
+  rating: number;
   country_scope: "AT" | "DE" | "DACH" | "EU";
   tags: string[];
   is_active: boolean;
@@ -97,6 +101,10 @@ export function useCreateProject() {
         slug: input.slug,
         url: input.url,
         short_description: input.short_description || null,
+        description: input.description || null,
+        logo_url: input.logo_url || null,
+        affiliate_link: input.affiliate_link || null,
+        rating: input.rating ?? 9.8,
         country_scope: input.country_scope ?? "DACH",
         tags: input.tags ?? [],
         is_active: input.is_active ?? true,
@@ -131,6 +139,10 @@ export function useUpdateProject() {
           ...(input.slug !== undefined && { slug: input.slug }),
           ...(input.url !== undefined && { url: input.url }),
           ...(input.short_description !== undefined && { short_description: input.short_description }),
+          ...(input.description !== undefined && { description: input.description }),
+          ...(input.logo_url !== undefined && { logo_url: input.logo_url }),
+          ...(input.affiliate_link !== undefined && { affiliate_link: input.affiliate_link }),
+          ...(input.rating !== undefined && { rating: input.rating }),
           ...(input.country_scope !== undefined && { country_scope: input.country_scope }),
           ...(input.tags !== undefined && { tags: input.tags }),
           ...(input.is_active !== undefined && { is_active: input.is_active }),

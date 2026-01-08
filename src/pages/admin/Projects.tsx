@@ -41,12 +41,17 @@ export default function AdminProjects() {
       is_active: true,
       sort_order: 0,
       tags: [],
+      rating: 9.8,
+      logo_url: "",
+      affiliate_link: "",
+      description: "",
     },
   });
 
   const categoryId = watch("category_id");
   const countryScope = watch("country_scope");
   const isActive = watch("is_active");
+  const rating = watch("rating");
 
   const filteredProjects = filterCategory === "all" 
     ? projects 
@@ -60,6 +65,10 @@ export default function AdminProjects() {
       slug: "",
       url: "",
       short_description: "",
+      description: "",
+      logo_url: "",
+      affiliate_link: "",
+      rating: 9.8,
       country_scope: "DACH",
       tags: [],
       is_active: true,
@@ -76,6 +85,10 @@ export default function AdminProjects() {
       slug: project.slug,
       url: project.url,
       short_description: project.short_description || "",
+      description: project.description || "",
+      logo_url: project.logo_url || "",
+      affiliate_link: project.affiliate_link || "",
+      rating: project.rating ?? 9.8,
       country_scope: project.country_scope,
       tags: project.tags || [],
       is_active: project.is_active,
@@ -203,7 +216,7 @@ export default function AdminProjects() {
                 Neues Projekt
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-lg">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="font-display">
                   {editingProject ? "Projekt bearbeiten" : "Neues Projekt"}
@@ -229,6 +242,19 @@ export default function AdminProjects() {
                   {errors.url && <p className="text-sm text-destructive mt-1">{errors.url.message}</p>}
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="logo_url">Logo URL</Label>
+                    <Input id="logo_url" {...register("logo_url")} placeholder="https://example.com/logo.png" />
+                    {errors.logo_url && <p className="text-sm text-destructive mt-1">{errors.logo_url.message}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="affiliate_link">Affiliate Link</Label>
+                    <Input id="affiliate_link" {...register("affiliate_link")} placeholder="https://affiliate.com/go/..." />
+                    {errors.affiliate_link && <p className="text-sm text-destructive mt-1">{errors.affiliate_link.message}</p>}
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="short_description">Kurzbeschreibung</Label>
                   <Textarea 
@@ -239,7 +265,17 @@ export default function AdminProjects() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="description">Ausführliche Beschreibung</Label>
+                  <Textarea 
+                    id="description" 
+                    {...register("description")} 
+                    placeholder="Eine detaillierte Beschreibung für die Landingpage..." 
+                    rows={4} 
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="category_id">Kategorie</Label>
                     <Select 
@@ -275,6 +311,19 @@ export default function AdminProjects() {
                         <SelectItem value="EU">EU</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="rating">Rating (0-10)</Label>
+                    <Input 
+                      id="rating" 
+                      type="number" 
+                      step="0.1" 
+                      min="0" 
+                      max="10" 
+                      value={rating}
+                      onChange={(e) => setValue("rating", parseFloat(e.target.value) || 0)}
+                    />
+                    {errors.rating && <p className="text-sm text-destructive mt-1">{errors.rating.message}</p>}
                   </div>
                 </div>
 
