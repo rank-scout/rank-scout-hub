@@ -30,7 +30,10 @@ export const projectSchema = z.object({
   category_id: z.string().uuid().nullable().optional(),
   name: z.string().min(1, "Name erforderlich").max(100),
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
-  url: z.string().url("Ungültige URL"),
+  url: z.string().url("Ungültige URL").refine(
+    (url) => url.startsWith('https://') || url.startsWith('http://'),
+    "URL muss http:// oder https:// verwenden"
+  ),
   short_description: z.string().max(300).optional(),
   country_scope: countryScopeEnum.default("DACH"),
   tags: z.array(z.string()).default([]),

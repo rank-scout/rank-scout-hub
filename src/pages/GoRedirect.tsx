@@ -12,6 +12,16 @@ type Project = {
   is_active: boolean;
 };
 
+// Validate URL protocol to prevent open redirect attacks (javascript:, data:, file:, etc.)
+function isValidRedirectUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ['https:', 'http:'].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
 export default function GoRedirect() {
   const { slug } = useParams<{ slug: string }>();
   const [project, setProject] = useState<Project | null>(null);
@@ -41,6 +51,12 @@ export default function GoRedirect() {
       setProject(data);
 
       if (data.is_active && data.url) {
+        // Validate URL protocol before redirecting to prevent XSS via javascript:, data:, etc.
+        if (!isValidRedirectUrl(data.url)) {
+          setError("Ungültige Weiterleitungs-URL.");
+          setLoading(false);
+          return;
+        }
         // Redirect after a brief delay to show loading state
         setTimeout(() => {
           window.location.replace(data.url);
