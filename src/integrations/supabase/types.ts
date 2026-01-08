@@ -18,9 +18,12 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          h1_title: string | null
           icon: string | null
           id: string
           is_active: boolean
+          long_content_bottom: string | null
+          long_content_top: string | null
           meta_description: string | null
           meta_title: string | null
           name: string
@@ -32,9 +35,12 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          h1_title?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
+          long_content_bottom?: string | null
+          long_content_top?: string | null
           meta_description?: string | null
           meta_title?: string | null
           name: string
@@ -46,9 +52,12 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          h1_title?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
+          long_content_bottom?: string | null
+          long_content_top?: string | null
           meta_description?: string | null
           meta_title?: string | null
           name?: string
@@ -92,10 +101,12 @@ export type Database = {
       projects: {
         Row: {
           affiliate_link: string | null
+          badge_text: string | null
           category_id: string | null
           country_scope: Database["public"]["Enums"]["country_scope"]
           created_at: string
           description: string | null
+          features: Json | null
           id: string
           is_active: boolean
           logo_url: string | null
@@ -110,10 +121,12 @@ export type Database = {
         }
         Insert: {
           affiliate_link?: string | null
+          badge_text?: string | null
           category_id?: string | null
           country_scope?: Database["public"]["Enums"]["country_scope"]
           created_at?: string
           description?: string | null
+          features?: Json | null
           id?: string
           is_active?: boolean
           logo_url?: string | null
@@ -128,10 +141,12 @@ export type Database = {
         }
         Update: {
           affiliate_link?: string | null
+          badge_text?: string | null
           category_id?: string | null
           country_scope?: Database["public"]["Enums"]["country_scope"]
           created_at?: string
           description?: string | null
+          features?: Json | null
           id?: string
           is_active?: boolean
           logo_url?: string | null
@@ -153,6 +168,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      redirects: {
+        Row: {
+          click_count: number
+          created_at: string
+          id: string
+          is_active: boolean
+          slug: string
+          target_url: string
+          updated_at: string
+        }
+        Insert: {
+          click_count?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          slug: string
+          target_url: string
+          updated_at?: string
+        }
+        Update: {
+          click_count?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          slug?: string
+          target_url?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       settings: {
         Row: {
@@ -207,6 +252,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_redirect_click: {
+        Args: { redirect_slug: string }
+        Returns: string
       }
       verify_admin_access: { Args: never; Returns: boolean }
     }

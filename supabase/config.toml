@@ -1,1 +1,4 @@
 project_id = "zvlrpjakdsujncmfzurk"
+
+[functions.go-redirect]
+verify_jwt = false
