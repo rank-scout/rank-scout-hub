@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   LayoutDashboard, 
   FolderTree, 
-  FileBox, 
+  FileBox,
+  Link2,
   Settings, 
   LogOut, 
   Search,
@@ -21,6 +22,7 @@ const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Kategorien", icon: FolderTree, path: "/admin/categories" },
   { label: "Projekte", icon: FileBox, path: "/admin/projects" },
+  { label: "Redirects", icon: Link2, path: "/admin/redirects" },
   { label: "Einstellungen", icon: Settings, path: "/admin/settings" },
 ];
 

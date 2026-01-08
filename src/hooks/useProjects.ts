@@ -13,6 +13,8 @@ export type Project = {
   logo_url: string | null;
   affiliate_link: string | null;
   rating: number;
+  badge_text: string | null;
+  features: string[];
   country_scope: "AT" | "DE" | "DACH" | "EU";
   tags: string[];
   is_active: boolean;
@@ -105,6 +107,8 @@ export function useCreateProject() {
         logo_url: input.logo_url || null,
         affiliate_link: input.affiliate_link || null,
         rating: input.rating ?? 9.8,
+        badge_text: input.badge_text || null,
+        features: input.features ?? [],
         country_scope: input.country_scope ?? "DACH",
         tags: input.tags ?? [],
         is_active: input.is_active ?? true,
@@ -143,6 +147,8 @@ export function useUpdateProject() {
           ...(input.logo_url !== undefined && { logo_url: input.logo_url }),
           ...(input.affiliate_link !== undefined && { affiliate_link: input.affiliate_link }),
           ...(input.rating !== undefined && { rating: input.rating }),
+          ...(input.badge_text !== undefined && { badge_text: input.badge_text }),
+          ...(input.features !== undefined && { features: input.features }),
           ...(input.country_scope !== undefined && { country_scope: input.country_scope }),
           ...(input.tags !== undefined && { tags: input.tags }),
           ...(input.is_active !== undefined && { is_active: input.is_active }),

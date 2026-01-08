@@ -16,6 +16,7 @@ import AdminLayout from "./pages/admin/Layout";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminCategories from "./pages/admin/Categories";
 import AdminProjects from "./pages/admin/Projects";
+import AdminRedirects from "./pages/admin/Redirects";
 import AdminSettings from "./pages/admin/Settings";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="projects" element={<AdminProjects />} />
+              <Route path="redirects" element={<AdminRedirects />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
             

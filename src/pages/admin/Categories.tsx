@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, type Category } from "@/hooks/useCategories";
+import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useDuplicateCategory, type Category } from "@/hooks/useCategories";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { categorySchema, type CategoryInput } from "@/lib/schemas";
@@ -9,17 +9,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText } from "lucide-react";
 
 export default function AdminCategories() {
   const { data: categories = [], isLoading } = useCategories(true);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const duplicateCategory = useDuplicateCategory();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -51,6 +53,11 @@ export default function AdminCategories() {
       description: "",
       icon: "📊",
       theme: "GENERIC",
+      meta_title: "",
+      meta_description: "",
+      h1_title: "",
+      long_content_top: "",
+      long_content_bottom: "",
       is_active: true,
       sort_order: categories.length,
     });
@@ -65,6 +72,11 @@ export default function AdminCategories() {
       description: category.description || "",
       icon: category.icon || "📊",
       theme: category.theme,
+      meta_title: category.meta_title || "",
+      meta_description: category.meta_description || "",
+      h1_title: category.h1_title || "",
+      long_content_top: category.long_content_top || "",
+      long_content_bottom: category.long_content_bottom || "",
       is_active: category.is_active,
       sort_order: category.sort_order,
     });
@@ -99,6 +111,19 @@ export default function AdminCategories() {
       toast({
         title: "Fehler",
         description: "Kategorie konnte nicht gelöscht werden",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleDuplicate(category: Category) {
+    try {
+      await duplicateCategory.mutateAsync(category);
+      toast({ title: "Kategorie dupliziert", description: "Du kannst die Kopie jetzt bearbeiten." });
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Kategorie konnte nicht dupliziert werden",
         variant: "destructive",
       });
     }
@@ -160,7 +185,7 @@ export default function AdminCategories() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-display text-2xl font-bold text-foreground">Kategorien</h2>
-          <p className="text-muted-foreground">Verwalte deine Vergleichskategorien.</p>
+          <p className="text-muted-foreground">Verwalte deine Landingpages und SEO-Inhalte.</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -169,64 +194,126 @@ export default function AdminCategories() {
               Neue Kategorie
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="font-display">
                 {editingCategory ? "Kategorie bearbeiten" : "Neue Kategorie"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="grid grid-cols-4 gap-4">
-                <div className="col-span-1">
-                  <Label htmlFor="icon">Icon</Label>
-                  <Input
-                    id="icon"
-                    {...register("icon")}
-                    className="text-center text-2xl"
-                    placeholder="📊"
-                  />
-                </div>
-                <div className="col-span-3">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" {...register("name")} placeholder="Dating Apps" />
-                  {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
-                </div>
-              </div>
+              <Tabs defaultValue="basic" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="basic">Grunddaten</TabsTrigger>
+                  <TabsTrigger value="seo">SEO</TabsTrigger>
+                  <TabsTrigger value="content">Content</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="basic" className="space-y-4 pt-4">
+                  <div className="grid grid-cols-4 gap-4">
+                    <div className="col-span-1">
+                      <Label htmlFor="icon">Icon</Label>
+                      <Input
+                        id="icon"
+                        {...register("icon")}
+                        className="text-center text-2xl"
+                        placeholder="📊"
+                      />
+                    </div>
+                    <div className="col-span-3">
+                      <Label htmlFor="name">Name</Label>
+                      <Input id="name" {...register("name")} placeholder="Dating Apps" />
+                      {errors.name && <p className="text-sm text-destructive mt-1">{errors.name.message}</p>}
+                    </div>
+                  </div>
 
-              <div>
-                <Label htmlFor="slug">Slug</Label>
-                <Input id="slug" {...register("slug")} placeholder="dating-apps" />
-                {errors.slug && <p className="text-sm text-destructive mt-1">{errors.slug.message}</p>}
-              </div>
+                  <div>
+                    <Label htmlFor="slug">Slug</Label>
+                    <Input id="slug" {...register("slug")} placeholder="dating-apps" />
+                    {errors.slug && <p className="text-sm text-destructive mt-1">{errors.slug.message}</p>}
+                  </div>
 
-              <div>
-                <Label htmlFor="description">Beschreibung</Label>
-                <Textarea id="description" {...register("description")} placeholder="Die besten Dating Apps..." rows={3} />
-              </div>
+                  <div>
+                    <Label htmlFor="description">Kurzbeschreibung</Label>
+                    <Textarea id="description" {...register("description")} placeholder="Die besten Dating Apps..." rows={2} />
+                  </div>
 
-              <div>
-                <Label htmlFor="theme">Theme</Label>
-                <Select value={theme} onValueChange={(v) => setValue("theme", v as CategoryInput["theme"])}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="GENERIC">Generisch</SelectItem>
-                    <SelectItem value="DATING">Dating</SelectItem>
-                    <SelectItem value="CASINO">Casino</SelectItem>
-                    <SelectItem value="ADULT">Adult</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="theme">Theme</Label>
+                      <Select value={theme} onValueChange={(v) => setValue("theme", v as CategoryInput["theme"])}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="GENERIC">Generisch</SelectItem>
+                          <SelectItem value="DATING">Dating</SelectItem>
+                          <SelectItem value="CASINO">Casino</SelectItem>
+                          <SelectItem value="ADULT">Adult</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex items-center justify-between pt-6">
+                      <Label htmlFor="is_active">Aktiv</Label>
+                      <Switch
+                        id="is_active"
+                        checked={isActive}
+                        onCheckedChange={(checked) => setValue("is_active", checked)}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
 
-              <div className="flex items-center justify-between">
-                <Label htmlFor="is_active">Aktiv</Label>
-                <Switch
-                  id="is_active"
-                  checked={isActive}
-                  onCheckedChange={(checked) => setValue("is_active", checked)}
-                />
-              </div>
+                <TabsContent value="seo" className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="meta_title">Meta Title (max. 60 Zeichen)</Label>
+                    <Input id="meta_title" {...register("meta_title")} placeholder="Beste Dating Apps 2025 im Vergleich" maxLength={60} />
+                    {errors.meta_title && <p className="text-sm text-destructive mt-1">{errors.meta_title.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="meta_description">Meta Description (max. 160 Zeichen)</Label>
+                    <Textarea 
+                      id="meta_description" 
+                      {...register("meta_description")} 
+                      placeholder="Vergleiche die besten Dating Apps und finde die perfekte App für dich..."
+                      maxLength={160}
+                      rows={3}
+                    />
+                    {errors.meta_description && <p className="text-sm text-destructive mt-1">{errors.meta_description.message}</p>}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="h1_title">H1 Titel</Label>
+                    <Input id="h1_title" {...register("h1_title")} placeholder="Die besten Dating Apps im Vergleich" />
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="content" className="space-y-4 pt-4">
+                  <div>
+                    <Label htmlFor="long_content_top">Content oben (HTML)</Label>
+                    <Textarea 
+                      id="long_content_top" 
+                      {...register("long_content_top")} 
+                      placeholder="<p>Einleitungstext für die Landingpage...</p>"
+                      rows={8}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">HTML-formatierter Content, der oberhalb der Projektliste angezeigt wird.</p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="long_content_bottom">Content unten (HTML)</Label>
+                    <Textarea 
+                      id="long_content_bottom" 
+                      {...register("long_content_bottom")} 
+                      placeholder="<h2>FAQ</h2><p>Häufig gestellte Fragen...</p>"
+                      rows={8}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">HTML-formatierter Content, der unterhalb der Projektliste angezeigt wird.</p>
+                  </div>
+                </TabsContent>
+              </Tabs>
 
               <Button 
                 type="submit" 
@@ -251,6 +338,7 @@ export default function AdminCategories() {
                 <TableHead className="w-12">Ord.</TableHead>
                 <TableHead>Kategorie</TableHead>
                 <TableHead>Theme</TableHead>
+                <TableHead>SEO</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Aktionen</TableHead>
               </TableRow>
@@ -258,7 +346,7 @@ export default function AdminCategories() {
             <TableBody>
               {categories.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     Keine Kategorien vorhanden. Erstelle deine erste Kategorie.
                   </TableCell>
                 </TableRow>
@@ -303,17 +391,33 @@ export default function AdminCategories() {
                       </span>
                     </TableCell>
                     <TableCell>
+                      {category.meta_title ? (
+                        <FileText className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <FileText className="w-4 h-4 text-muted-foreground/30" />
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <Switch
                         checked={category.is_active}
                         onCheckedChange={() => handleToggleActive(category)}
                       />
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDuplicate(category)}
+                          title="Duplizieren"
+                        >
+                          <Copy className="w-4 h-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
                           onClick={() => openEditDialog(category)}
+                          title="Bearbeiten"
                         >
                           <Pencil className="w-4 h-4" />
                         </Button>
@@ -322,6 +426,7 @@ export default function AdminCategories() {
                           size="icon"
                           onClick={() => handleDelete(category.id)}
                           className="text-destructive hover:text-destructive"
+                          title="Löschen"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
