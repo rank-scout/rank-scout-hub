@@ -31,6 +31,8 @@ export type Database = {
           name: string
           slug: string
           sort_order: number
+          sticky_cta_link: string | null
+          sticky_cta_text: string | null
           theme: Database["public"]["Enums"]["category_theme"]
           updated_at: string
         }
@@ -50,6 +52,8 @@ export type Database = {
           name: string
           slug: string
           sort_order?: number
+          sticky_cta_link?: string | null
+          sticky_cta_text?: string | null
           theme?: Database["public"]["Enums"]["category_theme"]
           updated_at?: string
         }
@@ -69,6 +73,8 @@ export type Database = {
           name?: string
           slug?: string
           sort_order?: number
+          sticky_cta_link?: string | null
+          sticky_cta_text?: string | null
           theme?: Database["public"]["Enums"]["category_theme"]
           updated_at?: string
         }
@@ -113,6 +119,33 @@ export type Database = {
           },
         ]
       }
+      footer_links: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -154,6 +187,7 @@ export type Database = {
           features: Json | null
           id: string
           is_active: boolean
+          is_default: boolean | null
           logo_url: string | null
           name: string
           rating: number | null
@@ -174,6 +208,7 @@ export type Database = {
           features?: Json | null
           id?: string
           is_active?: boolean
+          is_default?: boolean | null
           logo_url?: string | null
           name: string
           rating?: number | null
@@ -194,6 +229,7 @@ export type Database = {
           features?: Json | null
           id?: string
           is_active?: boolean
+          is_default?: boolean | null
           logo_url?: string | null
           name?: string
           rating?: number | null

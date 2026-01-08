@@ -547,10 +547,41 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <!-- ANALYTICS CONTAINER -->
     <div id="analytics-container"></div>
 
+    <!-- STICKY MOBILE CTA -->
+    <div id="sticky-cta" class="fixed bottom-0 left-0 right-0 md:hidden bg-brand-black/95 backdrop-blur-sm border-t border-brand-gold/20 p-4 z-40 transform translate-y-full transition-transform duration-300">
+        <a id="sticky-cta-link" href="#vergleich" class="flex items-center justify-center gap-2 w-full bg-brand-gold hover:bg-brand-luxury text-brand-black font-bold py-3 px-6 rounded-full transition-all">
+            <i class="fas fa-heart"></i>
+            <span id="sticky-cta-text">Singles finden</span>
+        </a>
+    </div>
+
+    <!-- COOKIE BANNER -->
+    <div id="cookie-banner" class="fixed bottom-0 left-0 right-0 bg-brand-black text-white p-4 z-50 hidden">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <p class="text-sm text-gray-300">Diese Website verwendet Cookies. Mit der Nutzung stimmst du zu.</p>
+            <div class="flex gap-2">
+                <button onclick="acceptCookies()" class="bg-brand-gold text-brand-black px-4 py-2 rounded-full text-sm font-bold hover:bg-brand-luxury transition-colors">Akzeptieren</button>
+                <a href="/datenschutz" class="text-gray-400 hover:text-white text-sm underline">Mehr erfahren</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- JSON-LD SCHEMA -->
+    <script id="json-ld-schema" type="application/ld+json"></script>
+
+    <!-- ANALYTICS CONTAINER -->
+    <div id="analytics-container"></div>
+
     <!-- ============================================================= -->
-    <!-- INJEKTIONS-SCRIPT: Lädt Daten aus Supabase und ersetzt Texte -->
+    <!-- INJEKTIONS-SCRIPT: Clean & Smart Edition -->
     <!-- ============================================================= -->
     <script>
+    // Cookie-Funktionen (global)
+    function acceptCookies() {
+        localStorage.setItem('cookies_accepted', 'true');
+        document.getElementById('cookie-banner').classList.add('hidden');
+    }
+
     (async function() {
         // ========== KONFIGURATION ==========
         const SUPABASE_URL = '${supabaseUrl}';
@@ -560,10 +591,22 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         const pathParts = window.location.pathname.split('/').filter(p => p && p !== 'index.html');
         const SLUG = pathParts[pathParts.length - 1] || 'singles-salzburg';
         
-        console.log('Loading data for slug:', SLUG);
+        console.log('[Rank-Scout] Loading data for slug:', SLUG);
 
         // ========== HILFSFUNKTIONEN ==========
         function el(id) { return document.getElementById(id); }
+        
+        // SubID an Affiliate-Links anhängen
+        function addSubId(link) {
+            if (!link) return '#';
+            const separator = link.includes('?') ? '&' : '?';
+            return link + separator + 'subid=' + SLUG;
+        }
+        
+        // Auto-Datum (aktuelles Jahr)
+        function getCurrentYear() {
+            return new Date().getFullYear();
+        }
         
         function generateProjectCard(project, index) {
             const isFirst = index === 0;
@@ -583,7 +626,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             const logoHtml = logoUrl 
                 ? '<img src="' + logoUrl + '" alt="' + project.name + '" class="w-full h-full object-cover">'
                 : '<i class="fas fa-heart text-brand-primary text-3xl"></i>';
-            const link = project.affiliate_link || project.url || '#';
+            const link = addSubId(project.affiliate_link || project.url);
 
             return '<div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ' + borderClass + '">' +
                 '<div class="p-1">' +
@@ -616,6 +659,44 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 '</div>' +
             '</div>';
         }
+        
+        // JSON-LD Schema generieren
+        function generateJsonLd(category, projects) {
+            const year = getCurrentYear();
+            const schema = {
+                "@context": "https://schema.org",
+                "@type": "ItemList",
+                "name": category.meta_title || ("Singles " + category.name + " " + year),
+                "description": category.meta_description || category.description,
+                "url": "https://dating.rank-scout.com/" + SLUG + "/",
+                "numberOfItems": projects.length,
+                "itemListElement": projects.map((p, i) => ({
+                    "@type": "ListItem",
+                    "position": i + 1,
+                    "name": p.name,
+                    "url": addSubId(p.affiliate_link || p.url)
+                }))
+            };
+            return JSON.stringify(schema, null, 2);
+        }
+
+        // ========== STICKY CTA & COOKIE BANNER ==========
+        // Sticky CTA nach Scroll anzeigen
+        window.addEventListener('scroll', function() {
+            const sticky = el('sticky-cta');
+            if (window.scrollY > 400) {
+                sticky.style.transform = 'translateY(0)';
+            } else {
+                sticky.style.transform = 'translateY(100%)';
+            }
+        });
+        
+        // Cookie Banner anzeigen (wenn nicht akzeptiert)
+        if (!localStorage.getItem('cookies_accepted')) {
+            setTimeout(function() {
+                el('cookie-banner').classList.remove('hidden');
+            }, 1500);
+        }
 
         // ========== DATEN LADEN ==========
         try {
@@ -626,75 +707,86 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             const categories = await catRes.json();
             
             if (!categories || categories.length === 0) {
-                console.log('Category not found:', SLUG);
-                return; // Statische Inhalte bleiben erhalten
+                console.log('[Rank-Scout] Category not found:', SLUG);
+                return;
             }
             
             const category = categories[0];
+            const year = getCurrentYear();
             
-            // 2. SEO-Felder per getElementById setzen
-            if (category.meta_title) el('page-title').textContent = category.meta_title;
-            if (category.meta_description) el('meta-description').setAttribute('content', category.meta_description);
+            // 2. SEO-Felder setzen
+            if (category.meta_title) el('page-title').textContent = category.meta_title.replace('2026', year);
+            if (category.meta_description) el('meta-description').setAttribute('content', category.meta_description.replace('2026', year));
             el('canonical-link').setAttribute('href', 'https://dating.rank-scout.com/' + SLUG + '/');
             
             // 3. Hero-Texte ersetzen
             const locationName = category.name.replace(/^Singles\\s*/i, '').trim() || category.name;
-            if (category.h1_title) el('hero-subtitle').textContent = category.h1_title;
+            if (category.h1_title) el('hero-subtitle').textContent = category.h1_title.replace('2026', year);
             el('hero-title').textContent = locationName + ' & Umgebung';
             if (category.description) el('hero-description').textContent = category.description;
             el('hero-cta').textContent = locationName + 'er Singles finden';
             el('hero-badge').textContent = 'Geprüft für Stadt & Land ' + locationName;
             
-            // 4. Intro-Texte anpassen
+            // 4. Intro-Texte
             el('intro-title').textContent = 'Dein Dating-Guide für ' + locationName;
             el('list-title').textContent = 'Top 5 Apps für Singles in ' + locationName;
             
-            // 5. Long Content injizieren (falls vorhanden)
-            if (category.long_content_top) {
-                el('long-content-top').innerHTML = category.long_content_top;
-            }
-            if (category.long_content_bottom) {
-                el('long-content-bottom').innerHTML = category.long_content_bottom;
-            }
+            // 5. Long Content
+            if (category.long_content_top) el('long-content-top').innerHTML = category.long_content_top;
+            if (category.long_content_bottom) el('long-content-bottom').innerHTML = category.long_content_bottom;
             
-            // 6. Banner injizieren
-            if (category.banner_override) {
-                el('banner-container').innerHTML = category.banner_override;
-            }
+            // 6. Banner
+            if (category.banner_override) el('banner-container').innerHTML = category.banner_override;
             
-            // 7. Analytics injizieren
-            if (category.analytics_code) {
-                el('analytics-container').innerHTML = category.analytics_code;
-            }
+            // 7. Analytics
+            if (category.analytics_code) el('analytics-container').innerHTML = category.analytics_code;
             
-            // 8. Projekte laden
+            // 8. Sticky CTA
+            if (category.sticky_cta_text) el('sticky-cta-text').textContent = category.sticky_cta_text;
+            if (category.sticky_cta_link) el('sticky-cta-link').setAttribute('href', addSubId(category.sticky_cta_link));
+            
+            // 9. Projekte laden (mit Fallback auf Default-Projekte)
+            let projects = [];
+            
             const cpRes = await fetch(SUPABASE_URL + '/rest/v1/category_projects?category_id=eq.' + category.id + '&select=project_id,sort_order&order=sort_order.asc', {
                 headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
             });
             const categoryProjects = await cpRes.json();
             
             if (categoryProjects && categoryProjects.length > 0) {
+                // Seiten-spezifische Projekte laden
                 const projectIds = categoryProjects.map(cp => cp.project_id);
                 const projRes = await fetch(SUPABASE_URL + '/rest/v1/projects?id=in.(' + projectIds.join(',') + ')&is_active=eq.true&select=*', {
                     headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
                 });
-                const projects = await projRes.json();
+                projects = await projRes.json();
                 
                 // Nach sort_order sortieren
                 const orderMap = {};
                 categoryProjects.forEach(cp => orderMap[cp.project_id] = cp.sort_order);
                 projects.sort((a, b) => (orderMap[a.id] || 0) - (orderMap[b.id] || 0));
-                
-                // 9. Projekt-Liste in Container injizieren
-                const projectsHtml = projects.map((p, i) => generateProjectCard(p, i)).join('');
-                el('project-list-container').innerHTML = projectsHtml;
+            } else {
+                // FALLBACK: Default-Projekte laden
+                console.log('[Rank-Scout] No category projects found, loading defaults...');
+                const defaultRes = await fetch(SUPABASE_URL + '/rest/v1/projects?is_default=eq.true&is_active=eq.true&select=*&order=sort_order.asc&limit=5', {
+                    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+                });
+                projects = await defaultRes.json();
             }
             
-            console.log('Data loaded successfully for:', category.name);
+            // 10. Projekte in Container injizieren
+            if (projects && projects.length > 0) {
+                const projectsHtml = projects.map((p, i) => generateProjectCard(p, i)).join('');
+                el('project-list-container').innerHTML = projectsHtml;
+                
+                // 11. JSON-LD Schema
+                el('json-ld-schema').textContent = generateJsonLd(category, projects);
+            }
+            
+            console.log('[Rank-Scout] ✓ Data loaded for:', category.name, '| Projects:', projects.length);
             
         } catch (error) {
-            console.error('Error loading data:', error);
-            // Bei Fehler bleiben die statischen Inhalte erhalten
+            console.error('[Rank-Scout] Error loading data:', error);
         }
     })();
     </script>
