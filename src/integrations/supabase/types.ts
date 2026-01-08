@@ -16,6 +16,8 @@ export type Database = {
     Tables: {
       categories: {
         Row: {
+          analytics_code: string | null
+          banner_override: string | null
           created_at: string
           description: string | null
           h1_title: string | null
@@ -33,6 +35,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          analytics_code?: string | null
+          banner_override?: string | null
           created_at?: string
           description?: string | null
           h1_title?: string | null
@@ -50,6 +54,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          analytics_code?: string | null
+          banner_override?: string | null
           created_at?: string
           description?: string | null
           h1_title?: string | null

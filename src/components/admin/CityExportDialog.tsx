@@ -20,15 +20,24 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
+  // Escape the analytics code for embedding in JS template
+  const analyticsPlaceholder = category.analytics_code 
+    ? category.analytics_code
+    : '<!-- Analytics Code wird aus der Datenbank geladen -->';
+
   const exportCode = `<!DOCTYPE html>
 <html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="[META_DESCRIPTION]">
-    <title>[META_TITLE]</title>
+    <meta name="description" content="">
+    <title>Lade...</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Analytics/Tracking Code -->
+    <script id="analytics-placeholder"></script>
+    
     <style>
         :root {
             --primary: #e91e63;
@@ -42,6 +51,10 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Banner */
+        .banner { padding: 16px; background: linear-gradient(135deg, var(--primary), var(--primary-dark)); text-align: center; }
+        .banner a { color: white; font-weight: 600; text-decoration: none; }
         
         /* Hero */
         .hero { text-align: center; padding: 80px 20px; background: linear-gradient(135deg, var(--bg) 0%, #1a1a2e 100%); }
@@ -65,13 +78,18 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         .app-name { font-size: 1.25rem; font-weight: 600; margin-bottom: 4px; }
         .app-desc { color: var(--text-muted); font-size: 0.9rem; }
         .app-rating { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
-        .app-cta { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .app-cta { padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; text-decoration: none; transition: background 0.2s; }
         .app-cta:hover { background: var(--primary-dark); }
         
         /* Content Section */
         .content-section { padding: 60px 20px; }
         .content-section h2 { font-size: 1.75rem; margin-bottom: 1rem; }
         .content-section p { color: var(--text-muted); margin-bottom: 1rem; }
+        
+        /* FAQ */
+        details { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        summary { font-weight: 600; cursor: pointer; }
+        details p { color: var(--text-muted); margin-top: 12px; }
         
         /* Loading */
         .loading { text-align: center; padding: 100px 20px; color: var(--text-muted); }
@@ -84,6 +102,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     </style>
 </head>
 <body>
+    <div id="banner-container"></div>
     <div id="app">
         <div class="loading">Lade Daten...</div>
     </div>
@@ -95,6 +114,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         const SUPABASE_KEY = '${supabaseKey}';
         
         const app = document.getElementById('app');
+        const bannerContainer = document.getElementById('banner-container');
         
         try {
             // Fetch category data
@@ -104,7 +124,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             const categories = await catRes.json();
             
             if (!categories.length) {
-                app.innerHTML = '<div class="error">Stadt nicht gefunden</div>';
+                app.innerHTML = '<div class="error">Seite nicht gefunden</div>';
                 return;
             }
             
@@ -113,6 +133,32 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             // Update meta tags
             document.title = category.meta_title || category.name;
             document.querySelector('meta[name="description"]')?.setAttribute('content', category.meta_description || '');
+            
+            // Inject analytics code if present
+            if (category.analytics_code) {
+                const analyticsContainer = document.getElementById('analytics-placeholder');
+                if (analyticsContainer) {
+                    analyticsContainer.insertAdjacentHTML('afterend', category.analytics_code);
+                }
+            }
+            
+            // Handle banner (page-specific or global)
+            if (category.banner_override) {
+                bannerContainer.innerHTML = category.banner_override;
+            } else {
+                // Fetch global banner from settings
+                try {
+                    const settingsRes = await fetch(\`\${SUPABASE_URL}/rest/v1/settings?key=eq.global_banner&select=value\`, {
+                        headers: { 'apikey': SUPABASE_KEY, 'Authorization': \`Bearer \${SUPABASE_KEY}\` }
+                    });
+                    const settings = await settingsRes.json();
+                    if (settings.length && settings[0].value?.html && settings[0].value?.enabled) {
+                        bannerContainer.innerHTML = settings[0].value.html;
+                    }
+                } catch (e) {
+                    console.log('No global banner configured');
+                }
+            }
             
             // Fetch assigned projects
             const cpRes = await fetch(\`\${SUPABASE_URL}/rest/v1/category_projects?category_id=eq.\${category.id}&select=project_id,sort_order\`, {
@@ -150,7 +196,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 
                 <section class="apps-section">
                     <div class="container">
-                        <h2>Top Dating Apps in \${category.name.replace('Singles ', '')}</h2>
+                        <h2>Top Anbieter \${category.name.includes('Singles') ? 'in ' + category.name.replace('Singles ', '') : ''}</h2>
                         \${projects.map((p, i) => \`
                             <div class="app-card">
                                 <img src="\${p.logo_url || ''}" alt="\${p.name}" class="app-logo" onerror="this.style.display='none'">
@@ -192,10 +238,10 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${category.slug}.html`;
+    a.download = `index.html`;
     a.click();
     URL.revokeObjectURL(url);
-    toast({ title: "Download gestartet", description: `${category.slug}.html` });
+    toast({ title: "Download gestartet", description: `${category.slug}/index.html` });
   }
 
   return (
@@ -209,15 +255,25 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         </DialogHeader>
         
         <div className="flex-1 overflow-auto">
-          <p className="text-sm text-muted-foreground mb-4">
-            Kopiere diesen Code in eine <code className="bg-muted px-1 rounded">index.html</code> Datei 
-            und lade sie in den Ordner <code className="bg-muted px-1 rounded">/{category.slug}/</code> auf deinem FTP-Server.
-          </p>
+          <div className="bg-muted/50 p-4 rounded-lg mb-4 space-y-2">
+            <p className="text-sm font-medium">So gehts:</p>
+            <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+              <li>Erstelle einen Ordner <code className="bg-muted px-1 rounded">/{category.slug}/</code> auf deinem FTP</li>
+              <li>Kopiere den Code unten und speichere ihn als <code className="bg-muted px-1 rounded">index.html</code></li>
+              <li>Lade die Datei in den Ordner hoch – <strong>FERTIG!</strong></li>
+            </ol>
+            {category.analytics_code && (
+              <p className="text-xs text-green-500 mt-2">✓ Analytics-Code ist konfiguriert und wird automatisch geladen</p>
+            )}
+            {category.banner_override && (
+              <p className="text-xs text-green-500">✓ Seiten-spezifischer Banner ist aktiv</p>
+            )}
+          </div>
           
           <Textarea
             value={exportCode}
             readOnly
-            className="font-mono text-xs h-96 resize-none"
+            className="font-mono text-xs h-80 resize-none"
           />
         </div>
         
