@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Copy, Check, Download } from "lucide-react";
+import { Copy, Check, Download, LayoutTemplate, FileCheck } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import type { Category } from "@/hooks/useCategories";
 
@@ -18,8 +18,11 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-  // INJEKTIONS-METHODE: Statisches HTML + Script am Ende
-  const exportCode = `<!DOCTYPE html>
+  // Determine which template to show based on category.template
+  const isReviewTemplate = category?.template === "review";
+
+  // COMPARISON TEMPLATE - Standard comparison layout
+  const comparisonExportCode = `<!DOCTYPE html>
 <html lang="de">
 <head>
     <link rel="canonical" href="https://dating.rank-scout.com/singles-salzburg/" id="canonical-link" />
@@ -1041,10 +1044,621 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
 </body>
 </html>`;
 
+  // REVIEW TEMPLATE - Modern Editorial Style
+  const reviewExportCode = `<!DOCTYPE html>
+<html lang="de">
+<head>
+    <link rel="canonical" href="https://dating.rank-scout.com/${category?.slug || "review"}/" id="canonical-link" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Favicons / App Icons -->
+    <link rel="icon" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="https://dating.rank-scout.com/top3-dating-apps/images/apple-touch-icon.png">
+    
+    <!-- SEO Meta Tags -->
+    <title id="page-title">${category?.meta_title || category?.h1_title || "Erfahrungsbericht"}</title>
+    <meta id="meta-description" name="description" content="${category?.meta_description || "Ausführlicher Testbericht und Erfahrungen."}">
+    <meta name="robots" content="index, follow">
+    
+    <!-- JSON-LD Schema -->
+    <script type="application/ld+json" id="json-ld-schema">{}</script>
+    
+    <!-- Fonts -->
+    <style type="text/css">
+        @font-face {font-family:Montserrat;font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2) format('woff2');font-display:swap;}
+        @font-face {font-family:Montserrat;font-style:normal;font-weight:700;src:url(https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2) format('woff2');font-display:swap;}
+        @font-face {font-family:'Open Sans';font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVQUwaEQbjA.woff2) format('woff2');font-display:swap;}
+        @font-face {font-family:'Open Sans';font-style:normal;font-weight:600;src:url(https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVQUwaEQbjA.woff2) format('woff2');font-display:swap;}
+    </style>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- DOMPurify for HTML sanitization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" integrity="sha512-H+rglffZ6f5gF7UJgvH4Naa+fGCgjrHKMgoFOGmcPTRwR6oILo5R+gtzNrpDp7iMV3udbymBVjkeZGNz1Em4rQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            black: '#0a0a0a',
+                            dark: '#58000c',
+                            primary: '#c41e3a',
+                            light: '#ff4d6d',
+                            gold: '#fbbf24',
+                            bg: '#fafafa',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Open Sans', 'sans-serif'],
+                        heading: ['Montserrat', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { background: #fafafa; }
+        
+        /* Article Content Styling */
+        .article-content h2 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin: 2.5rem 0 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #f3f4f6;
+        }
+        .article-content h3 {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #374151;
+            margin: 2rem 0 0.75rem;
+        }
+        .article-content p {
+            font-size: 1.125rem;
+            line-height: 1.85;
+            color: #4b5563;
+            margin-bottom: 1.25rem;
+        }
+        .article-content ul, .article-content ol {
+            margin: 1.25rem 0;
+            padding-left: 1.5rem;
+        }
+        .article-content li {
+            font-size: 1.125rem;
+            line-height: 1.7;
+            color: #4b5563;
+            margin-bottom: 0.5rem;
+        }
+        .article-content a {
+            color: #c41e3a;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .article-content a:hover {
+            color: #ff4d6d;
+        }
+        .article-content blockquote {
+            border-left: 4px solid #c41e3a;
+            background: #fff;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-radius: 0 0.75rem 0.75rem 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+        .article-content blockquote p {
+            font-style: italic;
+            color: #6b7280;
+            margin: 0;
+        }
+        
+        /* Sidebar Sticky */
+        .sidebar-sticky {
+            position: sticky;
+            top: 100px;
+        }
+        
+        /* Winner Card */
+        .winner-card {
+            background: linear-gradient(135deg, #ffffff 0%, #fef3c7 100%);
+            border: 2px solid #fbbf24;
+            position: relative;
+            overflow: hidden;
+        }
+        .winner-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, transparent 50%, rgba(251, 191, 36, 0.2) 50%);
+        }
+        
+        /* Rating Badge */
+        .rating-badge {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            color: #1a1a1a;
+            font-weight: 700;
+        }
+        
+        /* CTA Button */
+        .cta-button {
+            background: linear-gradient(135deg, #c41e3a 0%, #ff4d6d 100%);
+            transition: all 0.3s ease;
+        }
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(196, 30, 58, 0.35);
+        }
+        
+        /* Author Box */
+        .author-box {
+            background: linear-gradient(135deg, #f9fafb 0%, #fff 100%);
+        }
+        
+        /* Pros/Cons Cards */
+        .pros-card {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-left: 4px solid #10b981;
+        }
+        .cons-card {
+            background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+            border-left: 4px solid #ef4444;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800">
+
+    <!-- HEADER -->
+    <header class="w-full bg-brand-black text-white py-4 px-6 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="https://dating.rank-scout.com" class="font-heading font-bold text-xl tracking-tight text-brand-gold hover:text-brand-light transition-colors">
+                DatingRankScout
+            </a>
+            <nav class="hidden md:flex items-center space-x-6 text-sm">
+                <a href="https://dating.rank-scout.com/top3-dating-apps/" class="hover:text-brand-gold transition-colors">Top Dating Apps</a>
+                <a href="https://dating.rank-scout.com/testberichte/" class="hover:text-brand-gold transition-colors">Testberichte</a>
+            </nav>
+            <a href="https://dating.rank-scout.com/top3-dating-apps/" class="text-sm bg-brand-primary hover:bg-brand-light text-white px-4 py-2 rounded-full transition-all duration-300">
+                Apps vergleichen
+            </a>
+        </div>
+    </header>
+
+    <!-- BREADCRUMBS -->
+    <div class="bg-white border-b border-gray-100">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <nav id="breadcrumbs" class="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                <a href="https://dating.rank-scout.com" class="hover:text-brand-primary transition-colors">Startseite</a>
+                <i class="fas fa-chevron-right text-xs text-gray-300"></i>
+                <a href="https://dating.rank-scout.com/testberichte/" class="hover:text-brand-primary transition-colors">Testberichte</a>
+                <i class="fas fa-chevron-right text-xs text-gray-300"></i>
+                <span id="breadcrumb-current" class="text-gray-900 font-medium">${category?.name || "Testbericht"}</span>
+            </nav>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-7xl mx-auto px-6 py-12">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            
+            <!-- Article Column -->
+            <article class="lg:col-span-2">
+                <!-- Article Header -->
+                <header class="mb-10">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-full text-sm font-medium">
+                            <i class="fas fa-file-alt"></i>
+                            Testbericht
+                        </span>
+                        <span class="text-gray-400 text-sm">
+                            <i class="far fa-calendar mr-1"></i>
+                            <span id="article-date">Januar 2026</span>
+                        </span>
+                    </div>
+                    <h1 id="article-title" class="font-heading text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-tight mb-6">
+                        ${category?.h1_title || category?.name || "Testbericht"}
+                    </h1>
+                    <p id="article-excerpt" class="text-xl text-gray-600 leading-relaxed">
+                        ${category?.meta_description || "Ausführlicher Erfahrungsbericht mit allen Vor- und Nachteilen."}
+                    </p>
+                </header>
+                
+                <!-- Quick Summary Card -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-10 border border-gray-100">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-10 h-10 bg-brand-primary/10 rounded-xl flex items-center justify-center">
+                            <i class="fas fa-clipboard-check text-brand-primary"></i>
+                        </div>
+                        <h2 class="font-heading font-bold text-lg text-gray-900">Kurzbewertung</h2>
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="text-center p-3 bg-gray-50 rounded-xl">
+                            <p class="text-2xl font-bold text-brand-primary" id="rating-overall">--</p>
+                            <p class="text-xs text-gray-500 mt-1">Gesamtbewertung</p>
+                        </div>
+                        <div class="text-center p-3 bg-gray-50 rounded-xl">
+                            <p class="text-2xl font-bold text-gray-900" id="rating-usability">--</p>
+                            <p class="text-xs text-gray-500 mt-1">Bedienung</p>
+                        </div>
+                        <div class="text-center p-3 bg-gray-50 rounded-xl">
+                            <p class="text-2xl font-bold text-gray-900" id="rating-value">--</p>
+                            <p class="text-xs text-gray-500 mt-1">Preis-Leistung</p>
+                        </div>
+                        <div class="text-center p-3 bg-gray-50 rounded-xl">
+                            <p class="text-2xl font-bold text-gray-900" id="rating-quality">--</p>
+                            <p class="text-xs text-gray-500 mt-1">Qualität</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Article Content -->
+                <div id="article-content" class="article-content">
+                    <!-- Content from description field will be injected here -->
+                    <p>Lade Inhalt...</p>
+                </div>
+                
+                <!-- Pros/Cons Section -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-12">
+                    <div class="pros-card rounded-2xl p-6">
+                        <h3 class="font-heading font-bold text-lg text-green-800 flex items-center gap-2 mb-4">
+                            <i class="fas fa-check-circle"></i>
+                            Vorteile
+                        </h3>
+                        <ul id="pros-list" class="space-y-2 text-green-900">
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-check text-green-600 mt-1 text-sm"></i>
+                                <span>Wird automatisch geladen...</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="cons-card rounded-2xl p-6">
+                        <h3 class="font-heading font-bold text-lg text-red-800 flex items-center gap-2 mb-4">
+                            <i class="fas fa-times-circle"></i>
+                            Nachteile
+                        </h3>
+                        <ul id="cons-list" class="space-y-2 text-red-900">
+                            <li class="flex items-start gap-2">
+                                <i class="fas fa-times text-red-600 mt-1 text-sm"></i>
+                                <span>Wird automatisch geladen...</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Author Box -->
+                <div class="author-box rounded-2xl p-6 border border-gray-100 mt-12">
+                    <div class="flex items-center gap-4">
+                        <div class="w-16 h-16 bg-gradient-to-br from-brand-primary to-brand-light rounded-full flex items-center justify-center text-white text-xl font-bold">
+                            RS
+                        </div>
+                        <div>
+                            <p class="font-heading font-bold text-gray-900">Rank-Scout Redaktion</p>
+                            <p class="text-sm text-gray-500">Unser Expertenteam testet und bewertet Dating-Plattformen unabhängig.</p>
+                        </div>
+                    </div>
+                </div>
+            </article>
+            
+            <!-- Sidebar Column -->
+            <aside class="lg:col-span-1">
+                <div class="sidebar-sticky space-y-6">
+                    
+                    <!-- Winner/Testsieger Card -->
+                    <div id="testsieger-card" class="winner-card rounded-2xl shadow-lg p-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="rating-badge px-3 py-1 rounded-full text-sm">
+                                <i class="fas fa-trophy mr-1"></i>
+                                Testsieger
+                            </span>
+                        </div>
+                        <div id="winner-content" class="text-center">
+                            <img id="winner-logo" src="https://via.placeholder.com/120x60?text=Logo" alt="Testsieger Logo" class="h-16 w-auto mx-auto mb-4 object-contain" />
+                            <h3 id="winner-name" class="font-heading font-bold text-xl text-gray-900 mb-2">Lade...</h3>
+                            <p id="winner-rating" class="text-3xl font-bold text-brand-primary mb-4">--/10</p>
+                            <a id="winner-link" href="#" target="_blank" rel="noopener" class="cta-button block w-full text-white text-center font-bold py-4 px-6 rounded-xl">
+                                Zum Anbieter <i class="fas fa-external-link-alt ml-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Related Articles -->
+                    <div class="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+                        <h3 class="font-heading font-bold text-lg text-gray-900 mb-4 flex items-center gap-2">
+                            <i class="fas fa-newspaper text-brand-primary"></i>
+                            Weitere Testberichte
+                        </h3>
+                        <div id="related-articles" class="space-y-4">
+                            <a href="https://dating.rank-scout.com/top3-dating-apps/" class="block p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                <p class="font-medium text-gray-900 text-sm">Top 3 Dating Apps im Vergleich</p>
+                                <p class="text-xs text-gray-500 mt-1">Die besten Anbieter 2026</p>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Newsletter CTA -->
+                    <div class="bg-gradient-to-br from-brand-black to-gray-800 rounded-2xl shadow-lg p-6 text-white">
+                        <h3 class="font-heading font-bold text-lg mb-2">
+                            <i class="fas fa-envelope mr-2 text-brand-gold"></i>
+                            Newsletter
+                        </h3>
+                        <p class="text-sm text-gray-300 mb-4">Neue Testberichte direkt in dein Postfach.</p>
+                        <form id="newsletter-form" class="space-y-3">
+                            <input 
+                                type="email" 
+                                id="newsletter-email" 
+                                placeholder="deine@email.de" 
+                                class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                                required
+                            />
+                            <button type="submit" class="w-full bg-brand-gold hover:bg-yellow-400 text-brand-black font-bold py-3 px-4 rounded-xl transition-colors">
+                                Kostenlos anmelden
+                            </button>
+                        </form>
+                        <p id="newsletter-message" class="text-sm text-green-400 mt-3 hidden">
+                            <i class="fas fa-check-circle mr-1"></i> Erfolgreich angemeldet!
+                        </p>
+                    </div>
+                    
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-brand-black text-white py-12 mt-20">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+                <div>
+                    <h4 class="font-heading font-bold text-brand-gold mb-4">Über uns</h4>
+                    <p class="text-sm text-gray-400">Unabhängige Testberichte & Vergleiche für Dating-Plattformen.</p>
+                </div>
+                <div>
+                    <h4 class="font-heading font-bold text-brand-gold mb-4">Kategorien</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Dating Apps</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Singlebörsen</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Casual Dating</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-heading font-bold text-brand-gold mb-4">Rechtliches</h4>
+                    <ul id="footer-legal" class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-white transition-colors">Impressum</a></li>
+                        <li><a href="#" class="hover:text-white transition-colors">Datenschutz</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-heading font-bold text-brand-gold mb-4">Kontakt</h4>
+                    <p class="text-sm text-gray-400">redaktion@rank-scout.com</p>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
+                <p>&copy; <span id="current-year">2026</span> DatingRankScout. Alle Rechte vorbehalten.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Analytics Container -->
+    <div id="analytics-container"></div>
+
+    <script>
+    (async function() {
+        'use strict';
+        
+        const SUPABASE_URL = '${supabaseUrl}';
+        const SUPABASE_KEY = '${supabaseKey}';
+        const CATEGORY_ID = '${category?.id || ""}';
+        
+        const headers = {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY
+        };
+        
+        const el = (id) => document.getElementById(id);
+        
+        // Sanitize HTML content
+        const sanitizeHTML = (html) => {
+            if (typeof DOMPurify !== 'undefined' && html) {
+                return DOMPurify.sanitize(html, {
+                    ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'u', 'br', 'span', 'div', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'pre', 'code', 'details', 'summary'],
+                    ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'id', 'src', 'alt', 'title', 'width', 'height', 'style'],
+                    ALLOW_DATA_ATTR: false,
+                    ADD_ATTR: ['target'],
+                    FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                    FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover']
+                });
+            }
+            return html ? html.replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '') : '';
+        };
+        
+        // Escape HTML for text content
+        const escapeHtml = (str) => {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#039;"})[m]);
+        };
+        
+        try {
+            // 1. Fetch category data
+            const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?id=eq.' + CATEGORY_ID + '&select=*', { headers });
+            const categories = await catRes.json();
+            const category = categories[0];
+            
+            if (!category) {
+                el('article-content').innerHTML = '<p class="text-red-500">Kategorie nicht gefunden.</p>';
+                return;
+            }
+            
+            // 2. Fetch projects for this category (to get testsieger)
+            const projRes = await fetch(SUPABASE_URL + '/rest/v1/category_projects?category_id=eq.' + CATEGORY_ID + '&select=*,projects(*)&order=sort_order.asc&limit=1', { headers });
+            const categoryProjects = await projRes.json();
+            const topProject = categoryProjects[0]?.projects;
+            
+            // 3. Update page content
+            const year = new Date().getFullYear();
+            el('article-date').textContent = new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+            el('current-year').textContent = year;
+            
+            // Title
+            if (category.h1_title) {
+                el('article-title').textContent = category.h1_title.replace(/2026/g, year);
+            }
+            
+            // Meta
+            if (category.meta_title) {
+                document.title = category.meta_title.replace(/2026/g, year);
+            }
+            if (category.meta_description) {
+                el('meta-description').setAttribute('content', category.meta_description.replace(/2026/g, year));
+                el('article-excerpt').textContent = category.meta_description.replace(/2026/g, year);
+            }
+            
+            // Breadcrumb
+            el('breadcrumb-current').textContent = category.name;
+            
+            // Article content from description (render as HTML)
+            if (category.description) {
+                el('article-content').innerHTML = sanitizeHTML(category.description);
+            } else if (category.long_content_top) {
+                el('article-content').innerHTML = sanitizeHTML(category.long_content_top);
+            } else {
+                el('article-content').innerHTML = '<p class="text-gray-500">Kein Inhalt verfügbar.</p>';
+            }
+            
+            // Append long_content_bottom if exists
+            if (category.long_content_bottom) {
+                el('article-content').innerHTML += sanitizeHTML(category.long_content_bottom);
+            }
+            
+            // 4. Update Testsieger Card
+            if (topProject) {
+                el('winner-name').textContent = escapeHtml(topProject.name);
+                el('winner-rating').textContent = (topProject.rating || 9.0).toFixed(1) + '/10';
+                if (topProject.logo_url) {
+                    el('winner-logo').src = topProject.logo_url;
+                    el('winner-logo').alt = escapeHtml(topProject.name) + ' Logo';
+                }
+                el('winner-link').href = topProject.affiliate_link || topProject.url || '#';
+                
+                // Update ratings
+                el('rating-overall').textContent = (topProject.rating || 9.0).toFixed(1);
+                el('rating-usability').textContent = ((topProject.rating || 9.0) - 0.2).toFixed(1);
+                el('rating-value').textContent = ((topProject.rating || 9.0) - 0.3).toFixed(1);
+                el('rating-quality').textContent = ((topProject.rating || 9.0) + 0.1 > 10 ? 10 : (topProject.rating || 9.0) + 0.1).toFixed(1);
+                
+                // Pros/Cons
+                if (topProject.pros_list && topProject.pros_list.length > 0) {
+                    el('pros-list').innerHTML = topProject.pros_list.map(pro => 
+                        '<li class="flex items-start gap-2"><i class="fas fa-check text-green-600 mt-1 text-sm"></i><span>' + escapeHtml(pro) + '</span></li>'
+                    ).join('');
+                }
+                if (topProject.cons_list && topProject.cons_list.length > 0) {
+                    el('cons-list').innerHTML = topProject.cons_list.map(con => 
+                        '<li class="flex items-start gap-2"><i class="fas fa-times text-red-600 mt-1 text-sm"></i><span>' + escapeHtml(con) + '</span></li>'
+                    ).join('');
+                }
+            } else {
+                el('testsieger-card').style.display = 'none';
+            }
+            
+            // 5. Analytics
+            const sanitizeAnalytics = (code) => {
+                if (!code) return '';
+                const trustedPatterns = [/googletagmanager\\.com/i, /google-analytics\\.com/i, /facebook\\.net/i, /gtag/i];
+                const isTrusted = trustedPatterns.some(pattern => pattern.test(code));
+                return isTrusted ? code : '';
+            };
+            if (category.analytics_code) {
+                el('analytics-container').innerHTML = sanitizeAnalytics(category.analytics_code);
+            }
+            
+            // 6. Newsletter
+            const newsletterForm = el('newsletter-form');
+            if (newsletterForm) {
+                newsletterForm.onsubmit = async function(e) {
+                    e.preventDefault();
+                    const email = el('newsletter-email').value;
+                    if (!email) return;
+                    
+                    try {
+                        const res = await fetch(SUPABASE_URL + '/rest/v1/subscribers', {
+                            method: 'POST',
+                            headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                            body: JSON.stringify({ email: email, source_page: category.slug })
+                        });
+                        
+                        if (res.ok || res.status === 201 || res.status === 409) {
+                            el('newsletter-message').classList.remove('hidden');
+                            el('newsletter-email').value = '';
+                            newsletterForm.style.opacity = '0.5';
+                            newsletterForm.style.pointerEvents = 'none';
+                        }
+                    } catch (err) {
+                        console.error('Newsletter error:', err);
+                    }
+                };
+            }
+            
+            // 7. JSON-LD Schema
+            const schema = {
+                "@context": "https://schema.org",
+                "@type": "Review",
+                "name": category.h1_title || category.name,
+                "description": category.meta_description,
+                "author": { "@type": "Organization", "name": "Rank-Scout Redaktion" },
+                "datePublished": new Date().toISOString().split('T')[0],
+                "reviewRating": topProject ? {
+                    "@type": "Rating",
+                    "ratingValue": topProject.rating || 9.0,
+                    "bestRating": "10",
+                    "worstRating": "1"
+                } : undefined,
+                "itemReviewed": topProject ? {
+                    "@type": "Product",
+                    "name": topProject.name
+                } : undefined
+            };
+            el('json-ld-schema').textContent = JSON.stringify(schema);
+            
+            console.log('[Rank-Scout Review] ✓ Loaded:', category.name);
+            
+        } catch (error) {
+            console.error('[Rank-Scout Review] Error:', error);
+            el('article-content').innerHTML = '<p class="text-red-500">Fehler beim Laden der Daten.</p>';
+        }
+    })();
+    </script>
+
+</body>
+</html>`;
+
+  // Choose which code to show based on template type
+  const exportCode = isReviewTemplate ? reviewExportCode : comparisonExportCode;
+
   const handleCopy = () => {
     navigator.clipboard.writeText(exportCode);
     setCopied(true);
-    toast({ title: "Code kopiert!", description: "Der Universal-Code wurde in die Zwischenablage kopiert." });
+    toast({ 
+      title: "Code kopiert!", 
+      description: isReviewTemplate 
+        ? "Das Review-Template wurde in die Zwischenablage kopiert."
+        : "Der Universal-Code wurde in die Zwischenablage kopiert." 
+    });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -1063,10 +1677,31 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle>Universal Master-Template (Injektions-Methode)</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {isReviewTemplate ? (
+              <>
+                <FileCheck className="w-5 h-5 text-amber-600" />
+                Review-Template (Erfahrungsbericht)
+              </>
+            ) : (
+              <>
+                <LayoutTemplate className="w-5 h-5 text-blue-600" />
+                Vergleichs-Template (Standard)
+              </>
+            )}
+          </DialogTitle>
           <DialogDescription>
-            <strong>Statisches HTML + Script am Ende.</strong> Alle Features: Top-Bar, Exit-Intent Popup, Testimonials, Custom CSS, dynamischer Footer.
-            <br />Eine Datei für alle Städte! Der Slug wird automatisch aus der URL erkannt.
+            {isReviewTemplate ? (
+              <>
+                <strong>Modernes Erfahrungsbericht-Layout.</strong> Artikel-Struktur mit H1, Content, Sidebar mit Testsieger-Widget.
+                <br />Ideal für einzelne Reviews, Testberichte und redaktionelle Inhalte.
+              </>
+            ) : (
+              <>
+                <strong>Statisches HTML + Script am Ende.</strong> Alle Features: Top-Bar, Exit-Intent Popup, Testimonials, Custom CSS, dynamischer Footer.
+                <br />Eine Datei für alle Städte! Der Slug wird automatisch aus der URL erkannt.
+              </>
+            )}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-auto">

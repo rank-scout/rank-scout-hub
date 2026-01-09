@@ -15,7 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 
@@ -67,12 +67,14 @@ export default function AdminCategories() {
     resolver: zodResolver(categorySchema),
     defaultValues: {
       theme: "DATING",
+      template: "comparison",
       is_active: true,
       sort_order: 0,
     },
   });
 
   const theme = watch("theme");
+  const template = watch("template");
   const isActive = watch("is_active");
   const nameValue = watch("name");
 
@@ -92,6 +94,7 @@ export default function AdminCategories() {
       description: "",
       icon: "📍",
       theme: "DATING",
+      template: "comparison",
       meta_title: "",
       meta_description: "",
       h1_title: "",
@@ -113,6 +116,7 @@ export default function AdminCategories() {
       description: category.description || "",
       icon: category.icon || "📍",
       theme: category.theme,
+      template: category.template || "comparison",
       meta_title: category.meta_title || "",
       meta_description: category.meta_description || "",
       h1_title: category.h1_title || "",
@@ -303,7 +307,7 @@ export default function AdminCategories() {
                     <Textarea id="description" {...register("description")} placeholder="Die besten Dating Apps in Salzburg..." rows={2} />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="theme">Theme</Label>
                       <Select value={theme} onValueChange={(v) => setValue("theme", v as CategoryInput["theme"])}>
@@ -317,6 +321,31 @@ export default function AdminCategories() {
                           <SelectItem value="ADULT">Adult</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="template">Seitentyp</Label>
+                      <Select value={template} onValueChange={(v) => setValue("template", v as CategoryInput["template"])}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="comparison">
+                            <div className="flex items-center gap-2">
+                              <LayoutTemplate className="w-4 h-4" />
+                              <span>Vergleichstabelle</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="review">
+                            <div className="flex items-center gap-2">
+                              <FileCheck className="w-4 h-4" />
+                              <span>Erfahrungsbericht</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {template === "comparison" ? "Standard-Vergleichsliste mit mehreren Apps" : "Einzelner Artikel mit Sidebar-Widget"}
+                      </p>
                     </div>
                     <div className="flex items-center justify-between pt-6">
                       <Label htmlFor="is_active">Aktiv</Label>
@@ -477,6 +506,7 @@ export default function AdminCategories() {
               <TableRow>
                 <TableHead className="w-12">Ord.</TableHead>
                 <TableHead>Seite</TableHead>
+                <TableHead>Typ</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead>SEO</TableHead>
                 <TableHead>Tracking</TableHead>
@@ -487,7 +517,7 @@ export default function AdminCategories() {
             <TableBody>
               {categories.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                     Keine Landingpages vorhanden. Erstelle deine erste Landingpage.
                   </TableCell>
                 </TableRow>
@@ -519,6 +549,21 @@ export default function AdminCategories() {
                           <p className="font-medium text-foreground">{category.name}</p>
                           <p className="text-xs text-muted-foreground">{category.theme}</p>
                         </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {category.template === "review" ? (
+                          <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
+                            <FileCheck className="w-3 h-3" />
+                            Review
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                            <LayoutTemplate className="w-3 h-3" />
+                            Vergleich
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>

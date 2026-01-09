@@ -10,6 +10,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 
 // Category schemas
 export const categoryThemeEnum = z.enum(["DATING", "ADULT", "CASINO", "GENERIC"]);
+export const categoryTemplateEnum = z.enum(["comparison", "review"]);
 
 export const categorySchema = z.object({
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
@@ -17,6 +18,7 @@ export const categorySchema = z.object({
   description: z.string().max(500).optional(),
   icon: z.string().max(10).optional(),
   theme: categoryThemeEnum,
+  template: categoryTemplateEnum.default("comparison"),
   meta_title: z.string().max(60).optional(),
   meta_description: z.string().max(160).optional(),
   h1_title: z.string().max(100).optional(),

@@ -36,6 +36,7 @@ export type Database = {
           sort_order: number
           sticky_cta_link: string | null
           sticky_cta_text: string | null
+          template: string
           theme: Database["public"]["Enums"]["category_theme"]
           updated_at: string
         }
@@ -60,6 +61,7 @@ export type Database = {
           sort_order?: number
           sticky_cta_link?: string | null
           sticky_cta_text?: string | null
+          template?: string
           theme?: Database["public"]["Enums"]["category_theme"]
           updated_at?: string
         }
@@ -84,6 +86,7 @@ export type Database = {
           sort_order?: number
           sticky_cta_link?: string | null
           sticky_cta_text?: string | null
+          template?: string
           theme?: Database["public"]["Enums"]["category_theme"]
           updated_at?: string
         }
