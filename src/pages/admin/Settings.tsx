@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles } from "lucide-react";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -18,6 +18,9 @@ export default function AdminSettings() {
   const [siteDescription, setSiteDescription] = useState("");
   const [heroTitle, setHeroTitle] = useState("");
   const [heroSubtitle, setHeroSubtitle] = useState("");
+  const [topBarText, setTopBarText] = useState("");
+  const [topBarLink, setTopBarLink] = useState("");
+  const [newPin, setNewPin] = useState("");
   const [trendingLinks, setTrendingLinks] = useState<TrendingLink[]>([]);
   const [navLinks, setNavLinks] = useState<NavLink[]>([]);
   const [footerLinks, setFooterLinks] = useState<NavLink[]>([]);
@@ -29,6 +32,8 @@ export default function AdminSettings() {
     setSiteDescription((settings.site_description as string) || "");
     setHeroTitle((settings.hero_title as string) || "");
     setHeroSubtitle((settings.hero_subtitle as string) || "");
+    setTopBarText((settings.top_bar_text as string) || "");
+    setTopBarLink((settings.top_bar_link as string) || "");
     setTrendingLinks((settings.trending_links as TrendingLink[]) || []);
     setNavLinks((settings.nav_links as NavLink[]) || []);
     setFooterLinks((settings.footer_links as NavLink[]) || []);
@@ -46,6 +51,20 @@ export default function AdminSettings() {
         variant: "destructive",
       });
     }
+  }
+
+  async function savePin() {
+    if (newPin.length < 4) {
+      toast({
+        title: "Fehler",
+        description: "PIN muss mindestens 4 Zeichen haben",
+        variant: "destructive",
+      });
+      return;
+    }
+    await saveSetting("admin_pin", newPin);
+    setNewPin("");
+    toast({ title: "Admin-PIN geändert" });
   }
 
   function addTrendingLink() {
@@ -108,8 +127,11 @@ export default function AdminSettings() {
       {/* Site Settings */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Website</CardTitle>
-          <CardDescription>Grundlegende Einstellungen für deine Website.</CardDescription>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Globe className="w-5 h-5" />
+            Website
+          </CardTitle>
+          <CardDescription>Grundlegende Einstellungen für deine Website (SEO).</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
@@ -120,6 +142,7 @@ export default function AdminSettings() {
               onChange={(e) => setSiteTitle(e.target.value)}
               placeholder="Rank-Scout - Dein Vergleichsportal"
             />
+            <p className="text-xs text-muted-foreground mt-1">Wird im Browser-Tab angezeigt</p>
           </div>
           <div>
             <Label htmlFor="siteDescription">Meta Beschreibung</Label>
@@ -130,6 +153,7 @@ export default function AdminSettings() {
               placeholder="Rank-Scout vergleicht die besten Anbieter..."
               rows={2}
             />
+            <p className="text-xs text-muted-foreground mt-1">Wird in Google-Suchergebnissen angezeigt</p>
           </div>
           <Button 
             onClick={() => {
@@ -148,7 +172,10 @@ export default function AdminSettings() {
       {/* Hero Settings */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Hero Bereich</CardTitle>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Layout className="w-5 h-5" />
+            Hero Bereich
+          </CardTitle>
           <CardDescription>Titel und Untertitel auf der Startseite.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -184,10 +211,55 @@ export default function AdminSettings() {
         </CardContent>
       </Card>
 
+      {/* Top Bar Settings */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Sparkles className="w-5 h-5" />
+            Top-Bar
+          </CardTitle>
+          <CardDescription>Ankündigungsleiste oben auf der Seite.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="topBarText">Text</Label>
+            <Input
+              id="topBarText"
+              value={topBarText}
+              onChange={(e) => setTopBarText(e.target.value)}
+              placeholder="🔥 Neues Angebot verfügbar!"
+            />
+          </div>
+          <div>
+            <Label htmlFor="topBarLink">Link (optional)</Label>
+            <Input
+              id="topBarLink"
+              value={topBarLink}
+              onChange={(e) => setTopBarLink(e.target.value)}
+              placeholder="https://..."
+            />
+          </div>
+          <Button 
+            onClick={() => {
+              saveSetting("top_bar_text", topBarText);
+              saveSetting("top_bar_link", topBarLink);
+            }}
+            disabled={updateSetting.isPending}
+            className="gap-2"
+          >
+            {updateSetting.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Speichern
+          </Button>
+        </CardContent>
+      </Card>
+
       {/* Trending Links */}
       <Card className="bg-card border-border">
         <CardHeader>
-          <CardTitle className="font-display text-lg">Trending Links</CardTitle>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Link2 className="w-5 h-5" />
+            Trending Links
+          </CardTitle>
           <CardDescription>Beliebte Suchbegriffe unter der Suchleiste.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -331,6 +403,38 @@ export default function AdminSettings() {
               Speichern
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Admin PIN */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Lock className="w-5 h-5" />
+            Admin PIN ändern
+          </CardTitle>
+          <CardDescription>PIN für das Chef-Cockpit (Mobile Admin).</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="newPin">Neuer PIN</Label>
+            <Input
+              id="newPin"
+              type="password"
+              value={newPin}
+              onChange={(e) => setNewPin(e.target.value)}
+              placeholder="Mindestens 4 Zeichen"
+            />
+          </div>
+          <Button 
+            onClick={savePin}
+            variant="outline"
+            disabled={updateSetting.isPending}
+            className="gap-2"
+          >
+            {updateSetting.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />}
+            PIN ändern
+          </Button>
         </CardContent>
       </Card>
     </div>
