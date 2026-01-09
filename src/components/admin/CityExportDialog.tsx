@@ -57,6 +57,9 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- DOMPurify for HTML sanitization -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js" integrity="sha512-H+rglffZ6f5gF7UJgvH4Naa+fGCgjrHKMgoFOGmcPTRwR6oILo5R+gtzNrpDp7iMV3udbymBVjkeZGNz1Em4rQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
@@ -846,9 +849,25 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             el('intro-title').textContent = 'Dein Dating-Guide für ' + locationName;
             el('list-title').textContent = 'Top 5 Apps für Singles in ' + locationName;
             
-            // 7. Long Content
-            if (category.long_content_top) el('long-content-top').innerHTML = category.long_content_top;
-            if (category.long_content_bottom) el('long-content-bottom').innerHTML = category.long_content_bottom;
+            // 7. Long Content - sanitized with DOMPurify
+            const sanitizeHTML = (html) => {
+                if (typeof DOMPurify !== 'undefined') {
+                    return DOMPurify.sanitize(html, {
+                        ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'u', 'br', 'span', 'div', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'pre', 'code'],
+                        ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'id', 'src', 'alt', 'title', 'width', 'height', 'style'],
+                        ALLOW_DATA_ATTR: false,
+                        ADD_ATTR: ['target'],
+                        FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form', 'input', 'button'],
+                        FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover']
+                    });
+                }
+                // Fallback: strip all script tags if DOMPurify not loaded
+                return html.replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '')
+                          .replace(/on\\w+\\s*=\\s*["'][^"']*["']/gi, '');
+            };
+            
+            if (category.long_content_top) el('long-content-top').innerHTML = sanitizeHTML(category.long_content_top);
+            if (category.long_content_bottom) el('long-content-bottom').innerHTML = sanitizeHTML(category.long_content_bottom);
             
             // Auto-Inhaltsverzeichnis (TOC) generieren
             const seoContent = el('seo-content');
@@ -866,11 +885,34 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 }
             }
             
-            // 8. Banner
-            if (category.banner_override) el('banner-container').innerHTML = category.banner_override;
+            // 8. Banner - sanitized with DOMPurify
+            if (category.banner_override) el('banner-container').innerHTML = sanitizeHTML(category.banner_override);
             
-            // 9. Analytics
-            if (category.analytics_code) el('analytics-container').innerHTML = category.analytics_code;
+            // 9. Analytics - only allow specific trusted patterns for analytics scripts
+            const sanitizeAnalytics = (code) => {
+                if (!code) return '';
+                // Allow only Google Analytics, Facebook Pixel, and similar trusted patterns
+                const trustedPatterns = [
+                    /googletagmanager\\.com/i,
+                    /google-analytics\\.com/i,
+                    /facebook\\.net/i,
+                    /connect\\.facebook\\.net/i,
+                    /analytics\\.google\\.com/i,
+                    /gtag/i
+                ];
+                // Check if it matches known analytics patterns
+                const isTrusted = trustedPatterns.some(pattern => pattern.test(code));
+                if (isTrusted && typeof DOMPurify !== 'undefined') {
+                    // For analytics, we need to allow scripts but sanitize other dangerous content
+                    return DOMPurify.sanitize(code, {
+                        ADD_TAGS: ['script', 'noscript'],
+                        ADD_ATTR: ['async', 'defer', 'src'],
+                        FORCE_BODY: true
+                    });
+                }
+                return isTrusted ? code : '';
+            };
+            if (category.analytics_code) el('analytics-container').innerHTML = sanitizeAnalytics(category.analytics_code);
             
             // 10. Sticky CTA
             if (category.sticky_cta_text) el('sticky-cta-text').textContent = category.sticky_cta_text;
