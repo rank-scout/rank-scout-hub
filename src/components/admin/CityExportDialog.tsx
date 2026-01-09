@@ -609,6 +609,26 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             return new Date().getFullYear();
         }
         
+        // HTML-Escape-Funktion zum Schutz vor XSS
+        function escapeHtml(str) {
+            if (!str) return '';
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+        
+        // URL-Validierung
+        function sanitizeUrl(url) {
+            if (!url) return '#';
+            try {
+                const parsed = new URL(url);
+                if (!['http:', 'https:'].includes(parsed.protocol)) return '#';
+                return url;
+            } catch {
+                return '#';
+            }
+        }
+        
         // ========== GLOBALE FUNKTIONEN ==========
         window.acceptCookies = function() {
             localStorage.setItem('cookies_accepted', 'true');
@@ -630,7 +650,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
         // ========== GENERATORS ==========
         function generateProjectCard(project, index) {
             const isFirst = index === 0;
-            const badgeText = isFirst ? (project.badge_text || 'Testsieger') : 'Platz ' + (index + 1);
+            const badgeText = isFirst ? escapeHtml(project.badge_text || 'Testsieger') : 'Platz ' + (index + 1);
             const badgeClass = isFirst 
                 ? 'bg-gradient-to-r from-brand-gold to-yellow-500 text-brand-black' 
                 : 'bg-gray-200 text-gray-700';
@@ -638,15 +658,16 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             
             const features = Array.isArray(project.features) ? project.features : [];
             const featuresHtml = features.map(f => 
-                '<p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>' + f + '</p>'
+                '<p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>' + escapeHtml(f) + '</p>'
             ).join('');
 
             const rating = project.rating ? project.rating.toFixed(1) : '9.5';
-            const logoUrl = project.logo_url || '';
-            const logoHtml = logoUrl 
-                ? '<img src="' + logoUrl + '" alt="' + project.name + '" class="w-full h-full object-cover">'
+            const logoUrl = sanitizeUrl(project.logo_url);
+            const projectName = escapeHtml(project.name);
+            const logoHtml = logoUrl && logoUrl !== '#'
+                ? '<img src="' + logoUrl + '" alt="' + projectName + '" class="w-full h-full object-cover">'
                 : '<i class="fas fa-heart text-brand-primary text-3xl"></i>';
-            const link = addSubId(project.affiliate_link || project.url);
+            const link = sanitizeUrl(addSubId(project.affiliate_link || project.url));
 
             return '<div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden ' + borderClass + '">' +
                 '<div class="p-1">' +
@@ -662,7 +683,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                             '</div>' +
                         '</div>' +
                         '<div class="flex-1 min-w-0">' +
-                            '<h3 class="font-heading font-bold text-lg md:text-xl text-gray-900 mb-2 text-center md:text-left">' + project.name + '</h3>' +
+                            '<h3 class="font-heading font-bold text-lg md:text-xl text-gray-900 mb-2 text-center md:text-left">' + projectName + '</h3>' +
                             '<div class="flex items-center justify-center md:justify-start gap-2 mb-4">' +
                                 '<div class="flex text-brand-gold"><i class="fas fa-star"></i></div>' +
                                 '<span class="font-bold text-gray-900">' + rating + ' / 10</span>' +
@@ -684,14 +705,14 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             const stars = '<i class="fas fa-star"></i>'.repeat(Math.round(testimonial.rating || 5));
             return '<div class="testimonial-card bg-gradient-to-br from-gray-50 to-white p-6 rounded-xl border border-gray-100 shadow-sm">' +
                 '<div class="flex text-brand-gold text-sm mb-3">' + stars + '</div>' +
-                '<p class="text-gray-700 mb-4 italic">"' + (testimonial.text || '') + '"</p>' +
+                '<p class="text-gray-700 mb-4 italic">"' + escapeHtml(testimonial.text || '') + '"</p>' +
                 '<div class="flex items-center gap-3">' +
                     '<div class="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center">' +
                         '<i class="fas fa-user text-brand-primary"></i>' +
                     '</div>' +
                     '<div>' +
-                        '<p class="font-semibold text-gray-900">' + (testimonial.name || 'Anonym') + '</p>' +
-                        '<p class="text-xs text-gray-500">' + (testimonial.city_reference || '') + '</p>' +
+                        '<p class="font-semibold text-gray-900">' + escapeHtml(testimonial.name || 'Anonym') + '</p>' +
+                        '<p class="text-xs text-gray-500">' + escapeHtml(testimonial.city_reference || '') + '</p>' +
                     '</div>' +
                 '</div>' +
             '</div>';
@@ -787,7 +808,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             const footerLinks = await footerRes.json();
             if (footerLinks && footerLinks.length > 0) {
                 const linksHtml = footerLinks.map(l => 
-                    '<a href="' + l.url + '" class="hover:text-white transition-colors">' + l.label + '</a>'
+                    '<a href="' + sanitizeUrl(l.url) + '" class="hover:text-white transition-colors">' + escapeHtml(l.label) + '</a>'
                 ).join('');
                 el('footer-links').innerHTML = linksHtml;
             }
