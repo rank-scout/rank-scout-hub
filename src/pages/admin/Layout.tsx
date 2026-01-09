@@ -7,6 +7,7 @@ import {
   FolderTree, 
   FileBox,
   Link2,
+  Mail,
   Settings, 
   LogOut, 
   Search,
@@ -23,6 +24,7 @@ const navItems = [
   { label: "Kategorien", icon: FolderTree, path: "/admin/categories" },
   { label: "Projekte", icon: FileBox, path: "/admin/projects" },
   { label: "Redirects", icon: Link2, path: "/admin/redirects" },
+  { label: "Leads", icon: Mail, path: "/admin/leads" },
   { label: "Einstellungen", icon: Settings, path: "/admin/settings" },
 ];
 

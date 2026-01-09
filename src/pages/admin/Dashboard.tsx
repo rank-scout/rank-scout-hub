@@ -1,47 +1,119 @@
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useCategories } from "@/hooks/useCategories";
 import { useProjects } from "@/hooks/useProjects";
+import { useSettings, useUpdateSetting } from "@/hooks/useSettings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FolderTree, FileBox, TrendingUp, Users } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { FolderTree, FileBox, TrendingUp, Users, Mail, Link2, MousePointer } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
+import type { Json } from "@/integrations/supabase/types";
+
+// Fetch subscribers
+async function fetchSubscribers() {
+  const { data, error } = await supabase
+    .from("subscribers")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
+
+// Fetch redirects
+async function fetchRedirects() {
+  const { data, error } = await supabase
+    .from("redirects")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data || [];
+}
 
 export default function AdminDashboard() {
   const { data: categories = [] } = useCategories(true);
   const { data: projects = [] } = useProjects(true);
+  const { data: settings } = useSettings();
+  const updateSetting = useUpdateSetting();
+
+  const { data: subscribers = [] } = useQuery({
+    queryKey: ["subscribers"],
+    queryFn: fetchSubscribers,
+  });
+
+  const { data: redirects = [] } = useQuery({
+    queryKey: ["redirects"],
+    queryFn: fetchRedirects,
+  });
 
   const activeCategories = categories.filter((c) => c.is_active).length;
   const activeProjects = projects.filter((p) => p.is_active).length;
+  const totalClicks = redirects.reduce((sum, r) => sum + (r.click_count || 0), 0);
 
   const stats = [
+    {
+      title: "Leads",
+      value: subscribers.length,
+      subtitle: "Newsletter Abonnenten",
+      icon: Mail,
+      color: "text-primary",
+      bg: "bg-primary/10",
+    },
     {
       title: "Kategorien",
       value: categories.length,
       subtitle: `${activeCategories} aktiv`,
       icon: FolderTree,
-      color: "text-primary",
-      bg: "bg-primary/10",
+      color: "text-secondary",
+      bg: "bg-secondary/10",
     },
     {
       title: "Projekte",
       value: projects.length,
       subtitle: `${activeProjects} aktiv`,
       icon: FileBox,
-      color: "text-secondary",
-      bg: "bg-secondary/10",
-    },
-    {
-      title: "Dating",
-      value: categories.filter((c) => c.theme === "DATING").length,
-      subtitle: "Kategorien",
-      icon: Users,
       color: "text-dating",
       bg: "bg-dating/10",
     },
     {
-      title: "Casino",
-      value: categories.filter((c) => c.theme === "CASINO").length,
-      subtitle: "Kategorien",
-      icon: TrendingUp,
+      title: "Redirect Klicks",
+      value: totalClicks,
+      subtitle: `${redirects.length} Links`,
+      icon: MousePointer,
       color: "text-casino",
       bg: "bg-casino/10",
+    },
+  ];
+
+  // Toggle handlers
+  async function handleToggle(key: string, value: boolean) {
+    try {
+      await updateSetting.mutateAsync({ key, value: value as unknown as Json });
+      toast({ title: "Einstellung gespeichert" });
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Einstellung konnte nicht gespeichert werden",
+        variant: "destructive",
+      });
+    }
+  }
+
+  const toggles = [
+    {
+      key: "newsletter_active",
+      label: "Newsletter aktiv",
+      description: "Zeige Newsletter-Box auf allen Seiten",
+    },
+    {
+      key: "top_bar_active",
+      label: "Top-Bar aktiv",
+      description: "Ankündigung oben auf der Seite",
+    },
+    {
+      key: "popup_active",
+      label: "Popup aktiv",
+      description: "Exit-Intent Popup anzeigen",
     },
   ];
 
@@ -76,11 +148,89 @@ export default function AdminDashboard() {
         ))}
       </div>
 
+      {/* Quick Toggles */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="text-lg font-display">⚡ Quick Toggles</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {toggles.map((toggle) => (
+            <div key={toggle.key} className="flex items-center justify-between py-2 border-b border-border last:border-0">
+              <div className="space-y-0.5">
+                <Label htmlFor={toggle.key} className="text-base font-medium">
+                  {toggle.label}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {toggle.description}
+                </p>
+              </div>
+              <Switch
+                id={toggle.key}
+                checked={settings?.[toggle.key] === true}
+                onCheckedChange={(checked) => handleToggle(toggle.key, checked)}
+              />
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Leads */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-lg font-display">Letzte Kategorien</CardTitle>
+            <CardTitle className="text-lg font-display">📧 Letzte Leads</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {subscribers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Keine Leads vorhanden.</p>
+            ) : (
+              <div className="space-y-3">
+                {subscribers.slice(0, 5).map((sub) => (
+                  <div key={sub.id} className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">{sub.email}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {sub.source_page || "Direkt"} • {new Date(sub.created_at).toLocaleDateString("de-DE")}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Redirects */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-lg font-display">🔗 Top Redirects</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {redirects.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Keine Redirects vorhanden.</p>
+            ) : (
+              <div className="space-y-3">
+                {[...redirects].sort((a, b) => (b.click_count || 0) - (a.click_count || 0)).slice(0, 5).map((redirect) => (
+                  <div key={redirect.id} className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground font-mono">/{redirect.slug}</p>
+                      <p className="text-xs text-muted-foreground truncate">{redirect.target_url}</p>
+                    </div>
+                    <span className="text-sm font-bold text-primary ml-2">
+                      {redirect.click_count || 0} Klicks
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Categories */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-lg font-display">📄 Letzte Kategorien</CardTitle>
           </CardHeader>
           <CardContent>
             {categories.length === 0 ? (
@@ -110,9 +260,10 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
+        {/* Recent Projects */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-lg font-display">Letzte Projekte</CardTitle>
+            <CardTitle className="text-lg font-display">📱 Letzte Projekte</CardTitle>
           </CardHeader>
           <CardContent>
             {projects.length === 0 ? (
