@@ -31,113 +31,97 @@ serve(async (req) => {
     const bottomWords = Math.floor(wordCount * 0.7);
     const faqCount = wordCount >= 3000 ? 5 : wordCount >= 2000 ? 4 : 3;
 
-    const systemPrompt = `Du bist ein erfahrener Web-Designer und SEO-Texter der VISUELL ANSPRECHENDE HTML-Inhalte erstellt.
-Du erstellst NIEMALS plain text oder Email-ähnlichen Content.
-Dein Output sieht IMMER aus wie eine professionelle, moderne Website.
-Nutze CSS-Styling für alle Elemente.
-Schreibe auf Deutsch in der Du-Form.`;
+    const systemPrompt = `Du bist ein erfahrener Frontend-Entwickler und SEO-Texter.
+Du erstellst HTML-Content der sich nahtlos in eine moderne Tailwind CSS Website einfügt.
 
-    const userPrompt = `Erstelle VISUELL HOCHWERTIGEN HTML-Content zum Thema "${keyword} in ${city}".
+KRITISCHE REGELN:
+1. Antworte NUR mit einem JSON-Objekt: { "contentTop": "...", "contentBottom": "..." }
+2. Kein Markdown, kein Text davor oder danach - NUR das JSON
+3. NIEMALS inline styles für Fonts verwenden (kein font-family: Arial oder ähnliches)
+4. Nutze IMMER Tailwind-Klassen: font-sans für Fließtext, font-display für Überschriften
+5. Die Schriftart wird vom Theme der Website übernommen (Google Fonts: Plus Jakarta Sans)
+6. Schreibe auf Deutsch in der Du-Form`;
 
-⚠️ KRITISCHE DESIGN-REGELN - BEFOLGE DIESE EXAKT:
+    const userPrompt = `Erstelle SEO-optimierten HTML-Content zum Thema "${keyword}" für "${city}".
 
-1. GOOGLE FONTS: Starte JEDEN Block mit diesem Font-Import:
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+WORTANZAHL: Ca. ${wordCount} Wörter gesamt (${topWords} für contentTop, ${bottomWords} für contentBottom)
 
-2. MODERNES DESIGN: Nutze diese Styles für ALLE Elemente:
-- font-family: 'Plus Jakarta Sans', 'Inter', sans-serif
-- Abgerundete Ecken (border-radius: 16px oder 24px)
-- Subtile Schatten (box-shadow: 0 4px 20px rgba(0,0,0,0.08))
-- Gradient-Hintergründe für Cards
-- Viel Whitespace (padding: 24px oder mehr)
-- Moderne Farben: #1a1a2e (dunkel), #f8f9fa (hell), #d4af37 (gold/accent)
+═══════════════════════════════════════════════════════
+TEIL 1: contentTop (USP-Cards, ~${topWords} Wörter)
+═══════════════════════════════════════════════════════
 
-3. NIEMALS: Plain Text, Arial, Times New Roman, Email-Style, oder ungestylte Elemente!
+Erstelle 3 USP-Cards mit diesem exakten HTML-Schema:
 
----
-
-**BLOCK 1 - USP-Section (${topWords} Wörter):**
-
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-
-<style>
-.usp-container { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; padding: 40px 20px; }
-.usp-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; max-width: 1200px; margin: 0 auto; }
-.usp-card { background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%); border-radius: 20px; padding: 32px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.05); transition: transform 0.3s ease, box-shadow 0.3s ease; }
-.usp-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
-.usp-icon { font-size: 48px; margin-bottom: 20px; }
-.usp-card h3 { font-size: 1.25rem; font-weight: 700; color: #1a1a2e; margin-bottom: 12px; letter-spacing: -0.02em; }
-.usp-card p { font-size: 1rem; color: #6b7280; line-height: 1.7; font-weight: 400; }
-</style>
-
-<div class="usp-container">
-  <div class="usp-grid">
-    <div class="usp-card">
-      <div class="usp-icon">[Emoji passend zu ${keyword}]</div>
-      <h3>[Überschrift 1 für ${keyword}]</h3>
-      <p>[Beschreibung 1 - professionell, vertrauensbildend, ca. 25-35 Wörter]</p>
-    </div>
-    <div class="usp-card">
-      <div class="usp-icon">[Emoji 2]</div>
-      <h3>[Überschrift 2 für ${keyword}]</h3>
-      <p>[Beschreibung 2 - professionell, ca. 25-35 Wörter]</p>
-    </div>
-    <div class="usp-card">
-      <div class="usp-icon">[Emoji 3]</div>
-      <h3>[Überschrift 3 für ${keyword}]</h3>
-      <p>[Beschreibung 3 - professionell, ca. 25-35 Wörter]</p>
-    </div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+  <div class="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8 shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+    <div class="text-4xl mb-4">[PASSENDES EMOJI]</div>
+    <h3 class="text-xl font-bold font-display text-gray-900 dark:text-white mb-3">[ÜBERSCHRIFT]</h3>
+    <p class="text-gray-600 dark:text-gray-300 font-sans leading-relaxed">[BESCHREIBUNG 25-35 Wörter]</p>
   </div>
+  <!-- 2 weitere Cards nach gleichem Schema -->
 </div>
 
-Passe die USPs thematisch an "${keyword}" an!
+═══════════════════════════════════════════════════════
+TEIL 2: contentBottom (SEO-Text + FAQ, ~${bottomWords} Wörter)
+═══════════════════════════════════════════════════════
 
----SEPARATOR---
+HTML-KLASSEN-REFERENZ (nutze exakt diese):
 
-**BLOCK 2 - SEO-Content & FAQ (${bottomWords} Wörter):**
+ÜBERSCHRIFTEN (H2):
+<h2 class="text-2xl md:text-3xl font-bold font-display text-gray-900 dark:text-white mt-12 mb-6">[Überschrift]</h2>
 
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+FLIESSTEXT (P):
+<p class="text-base md:text-lg text-gray-600 dark:text-gray-300 font-sans leading-relaxed mb-6">[Text]</p>
 
-<style>
-.seo-container { font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; max-width: 900px; margin: 0 auto; padding: 60px 24px; }
-.seo-section { background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%); border-radius: 24px; padding: 48px; margin-bottom: 40px; box-shadow: 0 2px 16px rgba(0,0,0,0.04); }
-.seo-section h2 { font-size: 1.75rem; font-weight: 700; color: #1a1a2e; margin-bottom: 24px; letter-spacing: -0.03em; }
-.seo-section p { font-size: 1.0625rem; color: #4b5563; line-height: 1.85; margin-bottom: 20px; }
-.faq-section { background: #ffffff; border-radius: 24px; padding: 48px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
-.faq-section h2 { font-size: 1.75rem; font-weight: 700; color: #1a1a2e; margin-bottom: 32px; letter-spacing: -0.03em; }
-.faq-item { background: #f8f9fa; border-radius: 16px; margin-bottom: 16px; overflow: hidden; border: 1px solid rgba(0,0,0,0.04); }
-.faq-item summary { padding: 24px; font-size: 1.0625rem; font-weight: 600; color: #1a1a2e; cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; }
-.faq-item summary::-webkit-details-marker { display: none; }
-.faq-item summary::after { content: '+'; font-size: 1.5rem; color: #d4af37; font-weight: 300; }
-.faq-item[open] summary::after { content: '−'; }
-.faq-item p { padding: 0 24px 24px; font-size: 1rem; color: #6b7280; line-height: 1.8; margin: 0; }
-</style>
+LISTEN:
+<ul class="list-none space-y-3 mb-8 ml-1">
+  <li class="flex items-start text-gray-600 dark:text-gray-300 font-sans">
+    <span class="mr-3 text-primary flex-shrink-0">✓</span>
+    <span>[Listenpunkt]</span>
+  </li>
+</ul>
 
-<div class="seo-container">
-  <div class="seo-section">
-    <h2>${keyword} in ${city}</h2>
-    <p>[Absatz 1: Einführung in ${keyword} in ${city}, ca. 80-100 Wörter. Erkläre was ${keyword} bedeutet und warum es in ${city} relevant ist.]</p>
-    <p>[Absatz 2: Die ${keyword}-Szene in ${city}, lokale Besonderheiten, ca. 80-100 Wörter.]</p>
-    <p>[Absatz 3: Vorteile von Online-Plattformen für ${keyword} in ${city}, ca. 80-100 Wörter.]</p>
-    <p>[Absatz 4: Tipps und Empfehlungen für ${keyword} in ${city}, ca. 80-100 Wörter.]</p>
-  </div>
-  
-  <div class="faq-section">
-    <h2>Häufige Fragen zu ${keyword} in ${city}</h2>
-    ${Array(faqCount).fill(null).map((_, i) => `
-    <details class="faq-item">
-      <summary>[FAQ Frage ${i + 1} zu ${keyword} in ${city}?]</summary>
-      <p>[Ausführliche, hilfreiche Antwort, ca. 50-70 Wörter]</p>
-    </details>`).join('\n')}
-  </div>
+FAQ-AKKORDEON (PFLICHT - nutze exakt dieses HTML):
+<div class="space-y-4 mt-8">
+  <details class="group bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm overflow-hidden transition-all hover:shadow-md">
+    <summary class="flex items-center justify-between p-5 cursor-pointer list-none font-semibold text-gray-900 dark:text-white font-display">
+      <span>[FRAGE?]</span>
+      <span class="transition-transform duration-300 group-open:rotate-180 text-primary">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-5 h-5"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+      </span>
+    </summary>
+    <div class="px-5 pb-5 pt-0 text-gray-600 dark:text-gray-300 font-sans leading-relaxed">
+      [ANTWORT]
+    </div>
+  </details>
 </div>
 
-⚠️ WICHTIG:
-- Antworte NUR mit den zwei HTML-Blöcken, getrennt durch "---SEPARATOR---"
-- KEIN Markdown, keine Erklärungen, nur HTML
-- Content muss 100% zu "${keyword}" passen
-- Gesamtlänge: ca. ${wordCount} Wörter
-- Das Design MUSS modern und professionell aussehen wie eine echte Website!`;
+═══════════════════════════════════════════════════════
+STRUKTUR FÜR contentBottom:
+═══════════════════════════════════════════════════════
+
+1. SEO-Haupttext (4 Absätze mit H2-Überschriften):
+   - H2: "${keyword} in ${city}" + 2 Absätze (~150 Wörter)
+   - H2: "Vorteile von ${keyword}" + 1-2 Absätze + Bulletpoints (~150 Wörter)
+   
+2. FAQ-Sektion:
+   - H2: "Häufige Fragen zu ${keyword}"
+   - ${faqCount} FAQ-Items (je ~60 Wörter pro Antwort)
+
+═══════════════════════════════════════════════════════
+VERBOTEN:
+═══════════════════════════════════════════════════════
+- Inline font-family Styles
+- Arial, Times New Roman, oder andere System-Fonts
+- <style> Tags
+- CSS-Klassen die nicht oben definiert sind
+- Markdown-Formatierung
+
+Antworte NUR mit dem JSON-Objekt:
+{
+  "contentTop": "<div class=\\"grid...\\">...</div>",
+  "contentBottom": "<h2 class=\\"text-2xl...\\">...</h2>..."
+}`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -173,14 +157,32 @@ Passe die USPs thematisch an "${keyword}" an!
     }
 
     const data = await response.json();
-    const generatedContent = data.choices?.[0]?.message?.content || "";
+    let generatedContent = data.choices?.[0]?.message?.content || "";
     
-    console.log("Generated content length:", generatedContent.length);
+    console.log("Raw AI response length:", generatedContent.length);
 
-    const parts = generatedContent.split("---SEPARATOR---");
-    
-    const contentTop = parts[0]?.trim() || "";
-    const contentBottom = parts[1]?.trim() || generatedContent;
+    // Try to parse as JSON first
+    let contentTop = "";
+    let contentBottom = "";
+
+    try {
+      // Clean up potential markdown code blocks
+      generatedContent = generatedContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      
+      const parsed = JSON.parse(generatedContent);
+      contentTop = parsed.contentTop || "";
+      contentBottom = parsed.contentBottom || "";
+      console.log("Successfully parsed JSON response");
+    } catch (parseError) {
+      console.log("JSON parse failed, falling back to separator method:", parseError);
+      // Fallback to separator method
+      const parts = generatedContent.split("---SEPARATOR---");
+      contentTop = parts[0]?.trim() || "";
+      contentBottom = parts[1]?.trim() || generatedContent;
+    }
+
+    console.log("Content Top length:", contentTop.length);
+    console.log("Content Bottom length:", contentBottom.length);
 
     return new Response(
       JSON.stringify({
