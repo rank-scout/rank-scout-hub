@@ -816,67 +816,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 document.head.appendChild(script);
             }
             
-            // Footer-Einstellungen: Kategorie-spezifisch → Global → Defaults
-            const getCurrentYear = () => new Date().getFullYear();
-            const year = getCurrentYear();
-            
-            // Site Name für Footer
-            const footerSiteName = category.footer_site_name || category.site_name || settings.footer_site_name || 'Rank-Scout';
-            el('footer-site-name').textContent = footerSiteName;
-            
-            // Copyright Text
-            const defaultCopyright = '© ' + year + ' ' + footerSiteName + '. Alle Rechte vorbehalten.';
-            const footerCopyright = category.footer_copyright_text 
-                ? category.footer_copyright_text.replace(/2026/g, year)
-                : (settings.footer_copyright 
-                    ? settings.footer_copyright.replace(/2026/g, year)
-                    : defaultCopyright);
-            el('footer-copyright').textContent = footerCopyright;
-            
-            // Designer Name und URL
-            const designerName = category.footer_designer_name || settings.footer_designer_name || 'Rank-Scout';
-            const designerUrl = category.footer_designer_url || settings.footer_designer_url || 'https://rank-scout.com';
-            el('footer-designer-name').textContent = designerName;
-            el('footer-designer-link').href = designerUrl;
-            
-            // 2. Footer Links laden (Legal Links)
-            const footerRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?is_active=eq.true&order=sort_order.asc&select=*', { headers });
-            const footerLinks = await footerRes.json();
-            if (footerLinks && footerLinks.length > 0) {
-                const linksHtml = footerLinks.map(l => 
-                    '<a href="' + sanitizeUrl(l.url) + '" class="text-amber-500 font-semibold text-sm uppercase tracking-wide hover:text-amber-400 transition-colors">' + escapeHtml(l.label) + '</a>'
-                ).join('');
-                el('footer-links').innerHTML = linksHtml;
-            }
-            
-            // 3. Popular Footer Links laden (Kategorie-spezifisch mit Fallback auf Global)
-            let popularLinks = [];
-            
-            // Erst kategorie-spezifische Links versuchen
-            const catPopularRes = await fetch(SUPABASE_URL + '/rest/v1/popular_footer_links?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&select=*', { headers });
-            const catPopularLinks = await catPopularRes.json();
-            
-            if (catPopularLinks && catPopularLinks.length > 0) {
-                popularLinks = catPopularLinks;
-            } else {
-                // Fallback auf globale Links (category_id ist null)
-                const globalPopularRes = await fetch(SUPABASE_URL + '/rest/v1/popular_footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers });
-                const globalPopularLinks = await globalPopularRes.json();
-                if (globalPopularLinks && globalPopularLinks.length > 0) {
-                    popularLinks = globalPopularLinks;
-                }
-            }
-            
-            // Popular Links anzeigen wenn vorhanden
-            if (popularLinks.length > 0) {
-                el('popular-links-section').classList.remove('hidden');
-                const popularHtml = popularLinks.map(l => 
-                    '<a href="' + sanitizeUrl(l.url) + '" class="text-gray-400 text-sm hover:text-white transition-colors">' + escapeHtml(l.label) + '</a>'
-                ).join('');
-                el('popular-links').innerHTML = popularHtml;
-            }
-            
-            // 3. Kategorie laden
+            // 2. Kategorie laden (WICHTIG: VOR Footer-Logik, damit category verfügbar ist)
             const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?slug=eq.' + SLUG + '&is_active=eq.true&select=*', { headers });
             const categories = await catRes.json();
             
@@ -1168,7 +1108,84 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 };
             }
             
-            console.log('[Rank-Scout] ✓ Data loaded for:', category.name, '| Projects:', projects.length, '| Testimonials:', (testimonials || []).length);
+            // 18. Footer dynamisch laden (NACH Category-Fetch)
+            const footerYear = getCurrentYear();
+            
+            // Site Name für Footer (Kategorie → Global Settings → Default)
+            const footerSiteName = category.footer_site_name || category.site_name || settings.footer_site_name || 'Rank-Scout';
+            el('footer-site-name').textContent = footerSiteName;
+            
+            // Copyright Text
+            const defaultCopyright = '© ' + footerYear + ' ' + footerSiteName + '. Alle Rechte vorbehalten.';
+            const footerCopyright = category.footer_copyright_text 
+                ? category.footer_copyright_text.replace(/2026/g, footerYear)
+                : (settings.footer_copyright 
+                    ? settings.footer_copyright.replace(/2026/g, footerYear)
+                    : defaultCopyright);
+            el('footer-copyright').textContent = footerCopyright;
+            
+            // Designer Name und URL
+            const designerName = category.footer_designer_name || settings.footer_designer_name || 'Rank-Scout';
+            const designerUrl = category.footer_designer_url || settings.footer_designer_url || 'https://rank-scout.com';
+            el('footer-designer-name').textContent = designerName;
+            el('footer-designer-link').href = designerUrl;
+            
+            // Legal Footer Links laden (Kategorie → Global DB → Legacy Settings)
+            let legalLinks = [];
+            
+            // Schritt 1: Kategorie-spezifische Legal Links
+            const catLegalRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+            const catLegalLinks = await catLegalRes.json();
+            
+            if (catLegalLinks && catLegalLinks.length > 0) {
+                legalLinks = catLegalLinks;
+            } else {
+                // Schritt 2: Globale Legal Links (category_id ist null)
+                const globalLegalRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+                const globalLegalLinks = await globalLegalRes.json();
+                
+                if (globalLegalLinks && globalLegalLinks.length > 0) {
+                    legalLinks = globalLegalLinks;
+                } else if (settings.footer_links && Array.isArray(settings.footer_links) && settings.footer_links.length > 0) {
+                    // Schritt 3: Legacy Fallback aus Settings
+                    legalLinks = settings.footer_links;
+                }
+            }
+            
+            // Legal Links anzeigen
+            if (legalLinks.length > 0) {
+                const legalHtml = legalLinks.map(l => 
+                    '<a href="' + sanitizeUrl(l.url) + '" class="text-amber-500 font-semibold text-sm uppercase tracking-wide hover:text-amber-400 transition-colors">' + escapeHtml(l.label) + '</a>'
+                ).join('');
+                el('footer-links').innerHTML = legalHtml;
+            }
+            
+            // Popular Footer Links laden (Kategorie → Global)
+            let popularLinks = [];
+            
+            const catPopularRes = await fetch(SUPABASE_URL + '/rest/v1/popular_footer_links?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+            const catPopularLinks = await catPopularRes.json();
+            
+            if (catPopularLinks && catPopularLinks.length > 0) {
+                popularLinks = catPopularLinks;
+            } else {
+                const globalPopularRes = await fetch(SUPABASE_URL + '/rest/v1/popular_footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+                const globalPopularLinks = await globalPopularRes.json();
+                if (globalPopularLinks && globalPopularLinks.length > 0) {
+                    popularLinks = globalPopularLinks;
+                }
+            }
+            
+            // Popular Links anzeigen
+            if (popularLinks.length > 0) {
+                el('popular-links-section').classList.remove('hidden');
+                const popularHtml = popularLinks.map(l => 
+                    '<a href="' + sanitizeUrl(l.url) + '" class="text-gray-400 text-sm hover:text-white transition-colors">' + escapeHtml(l.label) + '</a>'
+                ).join('');
+                el('popular-links').innerHTML = popularHtml;
+            }
+            
+            console.log('[Rank-Scout] ✓ Data loaded for:', category.name, '| Projects:', projects.length, '| Testimonials:', (testimonials || []).length, '| Legal Links:', legalLinks.length, '| Popular Links:', popularLinks.length);
             
         } catch (error) {
             console.error('[Rank-Scout] Error loading data:', error);
@@ -1822,14 +1839,34 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             el('footer-designer-name').textContent = designerName;
             el('footer-designer-link').href = designerUrl;
             
-            // Footer Legal Links laden
-            const footerRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?is_active=eq.true&order=sort_order.asc&select=*', { headers });
-            const footerLinks = await footerRes.json();
-            if (footerLinks && footerLinks.length > 0) {
-                const linksHtml = footerLinks.map(l => 
+            // Legal Footer Links laden (Kategorie → Global DB → Legacy Settings)
+            let legalLinks = [];
+            
+            // Schritt 1: Kategorie-spezifische Legal Links
+            const catLegalRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+            const catLegalLinks = await catLegalRes.json();
+            
+            if (catLegalLinks && catLegalLinks.length > 0) {
+                legalLinks = catLegalLinks;
+            } else {
+                // Schritt 2: Globale Legal Links (category_id ist null)
+                const globalLegalRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+                const globalLegalLinks = await globalLegalRes.json();
+                
+                if (globalLegalLinks && globalLegalLinks.length > 0) {
+                    legalLinks = globalLegalLinks;
+                } else if (settings.footer_links && Array.isArray(settings.footer_links) && settings.footer_links.length > 0) {
+                    // Schritt 3: Legacy Fallback aus Settings
+                    legalLinks = settings.footer_links;
+                }
+            }
+            
+            // Legal Links anzeigen
+            if (legalLinks.length > 0) {
+                const legalHtml = legalLinks.map(l => 
                     '<a href="' + sanitizeUrl(l.url) + '" class="text-amber-500 font-semibold text-sm uppercase tracking-wide hover:text-amber-400 transition-colors">' + escapeHtml(l.label) + '</a>'
                 ).join('');
-                el('footer-links').innerHTML = linksHtml;
+                el('footer-links').innerHTML = legalHtml;
             }
             
             // Popular Footer Links (Kategorie-spezifisch mit Fallback auf Global)
@@ -1854,6 +1891,8 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 ).join('');
                 el('popular-links').innerHTML = popularHtml;
             }
+            
+            console.log('[Rank-Scout Review] ✓ Footer loaded | Legal:', legalLinks.length, '| Popular:', popularLinks.length);
             
             // 8. JSON-LD Schema
             const schema = {

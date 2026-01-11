@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { 
   useFooterSiteName, 
   useFooterDesignerName, 
-  useFooterDesignerUrl 
+  useFooterDesignerUrl,
+  useFooterLinks 
 } from "@/hooks/useSettings";
 import { usePopularFooterLinks } from "@/hooks/usePopularFooterLinks";
 import { useLegalFooterLinks } from "@/hooks/useLegalFooterLinks";
@@ -24,8 +25,20 @@ interface CityLandingFooterProps {
 export function CityLandingFooter({ category }: CityLandingFooterProps) {
   // Pass category id if available, otherwise load global links (category_id is null)
   const { data: popularLinks = [] } = usePopularFooterLinks(category?.id || null);
-  // Load category-specific legal links, fallback to global if none exist
-  const { data: legalLinks = [] } = useLegalFooterLinks(category?.id || null);
+  // Load category-specific legal links, fallback to global if none exist in DB
+  const { data: legalLinksFromDb = [] } = useLegalFooterLinks(category?.id || null);
+  // Legacy fallback: get footer_links from settings JSON
+  const legacyFooterLinks = useFooterLinks();
+
+  // Effective legal links: DB first, then legacy settings fallback
+  const legalLinks = legalLinksFromDb.length > 0 
+    ? legalLinksFromDb 
+    : (legacyFooterLinks || []).map((link, index) => ({
+        id: `legacy-${index}`,
+        label: link.label,
+        url: link.url,
+        sort_order: index
+      }));
 
   // Load global footer settings from settings table
   const globalSiteName = useFooterSiteName();
