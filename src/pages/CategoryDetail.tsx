@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { useCategories } from "@/hooks/useCategories";
+import { useCategoryBySlug } from "@/hooks/useCategories";
 import { useProjects } from "@/hooks/useProjects";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -11,12 +11,10 @@ import { Search, ChevronRight, ExternalLink, Loader2, ArrowLeft } from "lucide-r
 
 export default function CategoryDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
+  const { data: category, isLoading: categoryLoading } = useCategoryBySlug(slug || "");
   const { data: allProjects = [], isLoading: projectsLoading } = useProjects();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-
-  const category = categories.find((c) => c.slug === slug);
   
   const projects = useMemo(() => {
     return allProjects.filter((p) => p.category_id === category?.id && p.is_active);
@@ -75,7 +73,7 @@ export default function CategoryDetail() {
     );
   };
 
-  const isLoading = categoriesLoading || projectsLoading;
+  const isLoading = categoryLoading || projectsLoading;
 
   if (isLoading) {
     return (
