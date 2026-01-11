@@ -22,13 +22,13 @@ import CityExportDialog from "@/components/admin/CityExportDialog";
 
 // Helper to generate slug from page name
 function generateSlug(name: string): string {
-  return `singles-${name.toLowerCase()
+  return name.toLowerCase()
     .replace(/ä/g, "ae")
     .replace(/ö/g, "oe")
     .replace(/ü/g, "ue")
     .replace(/ß/g, "ss")
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")}`;
+    .replace(/^-|-$/g, "");
 }
 
 export default function AdminCategories() {

@@ -21,7 +21,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-  { label: "Kategorien", icon: FolderTree, path: "/admin/categories" },
+  { label: "Landingpages", icon: FolderTree, path: "/admin/categories" },
   { label: "Projekte", icon: FileBox, path: "/admin/projects" },
   { label: "Redirects", icon: Link2, path: "/admin/redirects" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },
