@@ -10,6 +10,7 @@ export type Category = {
   icon: string | null;
   theme: "DATING" | "ADULT" | "CASINO" | "GENERIC";
   template: "comparison" | "review";
+  color_theme: "dark" | "light" | "neon";
   site_name: string | null;
   hero_headline: string | null;
   hero_pretitle: string | null;
@@ -102,6 +103,7 @@ export function useCreateCategory() {
           icon: input.icon || "📊",
           theme: input.theme,
           template: input.template || "comparison",
+          color_theme: input.color_theme || "dark",
           site_name: input.site_name || null,
           hero_headline: input.hero_headline || null,
           hero_pretitle: input.hero_pretitle || null,
@@ -146,6 +148,7 @@ export function useUpdateCategory() {
           ...(input.icon !== undefined && { icon: input.icon }),
           ...(input.theme !== undefined && { theme: input.theme }),
           ...(input.template !== undefined && { template: input.template }),
+          ...(input.color_theme !== undefined && { color_theme: input.color_theme }),
           ...(input.site_name !== undefined && { site_name: input.site_name }),
           ...(input.hero_headline !== undefined && { hero_headline: input.hero_headline }),
           ...(input.hero_pretitle !== undefined && { hero_pretitle: input.hero_pretitle }),
@@ -209,6 +212,7 @@ export function useDuplicateCategory() {
           icon: category.icon,
           theme: category.theme,
           template: category.template,
+          color_theme: category.color_theme || "dark",
           site_name: category.site_name,
           hero_headline: category.hero_headline,
           hero_pretitle: category.hero_pretitle,
