@@ -853,8 +853,15 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             el('list-title').textContent = 'Top 5 Apps für Singles in ' + locationName;
             
             // 7. Long Content - sanitized with DOMPurify
+            // SECURITY: Critical - DOMPurify MUST be loaded for safe HTML rendering
+            const isDOMPurifyAvailable = () => {
+                return typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function';
+            };
+            
             const sanitizeHTML = (html) => {
-                if (typeof DOMPurify !== 'undefined') {
+                if (!html) return '';
+                
+                if (isDOMPurifyAvailable()) {
                     return DOMPurify.sanitize(html, {
                         ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'u', 'br', 'span', 'div', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'pre', 'code'],
                         ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'id', 'src', 'alt', 'title', 'width', 'height', 'style'],
@@ -864,9 +871,19 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                         FORBID_ATTR: ['onerror', 'onclick', 'onload', 'onmouseover']
                     });
                 }
-                // Fallback: strip all script tags if DOMPurify not loaded
-                return html.replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '')
-                          .replace(/on\\w+\\s*=\\s*["'][^"']*["']/gi, '');
+                // SECURITY FALLBACK: If DOMPurify fails to load, use aggressive stripping
+                // and display warning in console
+                console.warn('[Security] DOMPurify not available - using fallback sanitization');
+                return html
+                    .replace(/<script\\b[^<]*(?:(?!<\\/script>)<[^<]*)*<\\/script>/gi, '')
+                    .replace(/<iframe\\b[^<]*(?:(?!<\\/iframe>)<[^<]*)*<\\/iframe>/gi, '')
+                    .replace(/<object\\b[^<]*(?:(?!<\\/object>)<[^<]*)*<\\/object>/gi, '')
+                    .replace(/<embed\\b[^>]*>/gi, '')
+                    .replace(/<form\\b[^<]*(?:(?!<\\/form>)<[^<]*)*<\\/form>/gi, '')
+                    .replace(/on\\w+\\s*=\\s*["'][^"']*["']/gi, '')
+                    .replace(/on\\w+\\s*=\\s*[^\\s>]+/gi, '')
+                    .replace(/javascript:/gi, '')
+                    .replace(/data:/gi, 'data-blocked:');
             };
             
             if (category.long_content_top) el('long-content-top').innerHTML = sanitizeHTML(category.long_content_top);
@@ -892,28 +909,45 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             if (category.banner_override) el('banner-container').innerHTML = sanitizeHTML(category.banner_override);
             
             // 9. Analytics - only allow specific trusted patterns for analytics scripts
+            // SECURITY: Strict allowlist approach for analytics scripts
             const sanitizeAnalytics = (code) => {
-                if (!code) return '';
-                // Allow only Google Analytics, Facebook Pixel, and similar trusted patterns
+                if (!code || typeof code !== 'string') return '';
+                
+                // Normalize and check for trusted analytics providers only
                 const trustedPatterns = [
-                    /googletagmanager\\.com/i,
-                    /google-analytics\\.com/i,
-                    /facebook\\.net/i,
-                    /connect\\.facebook\\.net/i,
-                    /analytics\\.google\\.com/i,
-                    /gtag/i
+                    /^https:\\/\\/(www\\.)?googletagmanager\\.com\\//i,
+                    /^https:\\/\\/(www\\.)?google-analytics\\.com\\//i,
+                    /^https:\\/\\/connect\\.facebook\\.net\\//i,
+                    /^https:\\/\\/analytics\\.google\\.com\\//i,
+                    /^https:\\/\\/plausibly\\.net\\//i,
+                    /^https:\\/\\/cdn\\.onesignal\\.com\\//i
                 ];
-                // Check if it matches known analytics patterns
-                const isTrusted = trustedPatterns.some(pattern => pattern.test(code));
-                if (isTrusted && typeof DOMPurify !== 'undefined') {
-                    // For analytics, we need to allow scripts but sanitize other dangerous content
+                
+                // Extract all URLs from the code and validate each one
+                const urlMatches = code.match(/https?:\\/\\/[^\\s"'<>]+/gi) || [];
+                const allUrlsTrusted = urlMatches.every(url => 
+                    trustedPatterns.some(pattern => pattern.test(url))
+                );
+                
+                // If no URLs found or URLs don't match trusted patterns, reject
+                if (urlMatches.length === 0 || !allUrlsTrusted) {
+                    console.warn('[Security] Analytics code rejected - untrusted URL detected');
+                    return '';
+                }
+                
+                // Use DOMPurify if available, otherwise use strict fallback
+                if (isDOMPurifyAvailable()) {
                     return DOMPurify.sanitize(code, {
                         ADD_TAGS: ['script', 'noscript'],
-                        ADD_ATTR: ['async', 'defer', 'src'],
-                        FORCE_BODY: true
+                        ADD_ATTR: ['async', 'defer', 'src', 'data-domain'],
+                        FORCE_BODY: true,
+                        FORBID_ATTR: ['onerror', 'onclick', 'onload']
                     });
                 }
-                return isTrusted ? code : '';
+                
+                // Fallback: only allow if it matches gtag pattern exactly
+                console.warn('[Security] DOMPurify not available for analytics sanitization');
+                return '';
             };
             if (category.analytics_code) el('analytics-container').innerHTML = sanitizeAnalytics(category.analytics_code);
             
