@@ -511,11 +511,47 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     </section>
 
     <!-- FOOTER -->
-    <footer class="bg-brand-black text-gray-400 py-12">
-        <div class="max-w-6xl mx-auto px-4 text-center">
-            <p id="footer-copyright" class="text-sm">&copy; 2026 dating.rank-scout.com - Alle Rechte vorbehalten.</p>
-            <div id="footer-links" class="mt-4 flex justify-center gap-6 text-xs flex-wrap">
-                <!-- Wird dynamisch befüllt -->
+    <footer class="bg-[#0a0a0a] border-t border-white/5">
+        <div class="max-w-6xl mx-auto px-4 py-12">
+            <!-- Logo - Centered -->
+            <div class="text-center mb-10">
+                <a href="/" class="inline-block">
+                    <span id="footer-site-name" class="font-heading font-bold text-2xl md:text-3xl tracking-tight text-white">
+                        Rank-Scout
+                    </span>
+                </a>
+            </div>
+
+            <!-- Popular Links Section -->
+            <div id="popular-links-section" class="text-center mb-10 hidden">
+                <h4 class="text-amber-500 font-semibold text-xs uppercase tracking-[0.2em] mb-6">
+                    Beliebte Suche & Regionen
+                </h4>
+                <div id="popular-links" class="flex flex-wrap justify-center gap-x-6 gap-y-2 max-w-3xl mx-auto">
+                    <!-- Wird dynamisch befüllt -->
+                </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="border-t border-white/10 max-w-2xl mx-auto mb-8"></div>
+
+            <!-- Legal Links -->
+            <div class="text-center mb-6">
+                <div id="footer-links" class="flex flex-wrap justify-center gap-6">
+                    <!-- Wird dynamisch befüllt -->
+                </div>
+            </div>
+
+            <!-- Copyright -->
+            <div class="text-center">
+                <p class="text-gray-500 text-xs">
+                    <span id="footer-copyright">&copy; 2026 Rank-Scout. Alle Rechte vorbehalten.</span>
+                    <span class="mx-2">·</span>
+                    <span class="text-gray-600">Designed by</span>
+                    <a id="footer-designer-link" href="https://rank-scout.com" target="_blank" rel="noopener noreferrer" class="text-amber-500 hover:underline">
+                        <span id="footer-designer-name">Rank-Scout</span>
+                    </a>
+                </p>
             </div>
         </div>
     </footer>
@@ -780,19 +816,64 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 document.head.appendChild(script);
             }
             
-            // Footer Copyright
-            if (settings.footer_copyright) {
-                el('footer-copyright').textContent = settings.footer_copyright.replace('2026', getCurrentYear());
-            }
+            // Footer-Einstellungen: Kategorie-spezifisch → Global → Defaults
+            const getCurrentYear = () => new Date().getFullYear();
+            const year = getCurrentYear();
             
-            // 2. Footer Links laden
+            // Site Name für Footer
+            const footerSiteName = category.footer_site_name || category.site_name || settings.footer_site_name || 'Rank-Scout';
+            el('footer-site-name').textContent = footerSiteName;
+            
+            // Copyright Text
+            const defaultCopyright = '© ' + year + ' ' + footerSiteName + '. Alle Rechte vorbehalten.';
+            const footerCopyright = category.footer_copyright_text 
+                ? category.footer_copyright_text.replace(/2026/g, year)
+                : (settings.footer_copyright 
+                    ? settings.footer_copyright.replace(/2026/g, year)
+                    : defaultCopyright);
+            el('footer-copyright').textContent = footerCopyright;
+            
+            // Designer Name und URL
+            const designerName = category.footer_designer_name || settings.footer_designer_name || 'Rank-Scout';
+            const designerUrl = category.footer_designer_url || settings.footer_designer_url || 'https://rank-scout.com';
+            el('footer-designer-name').textContent = designerName;
+            el('footer-designer-link').href = designerUrl;
+            
+            // 2. Footer Links laden (Legal Links)
             const footerRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?is_active=eq.true&order=sort_order.asc&select=*', { headers });
             const footerLinks = await footerRes.json();
             if (footerLinks && footerLinks.length > 0) {
                 const linksHtml = footerLinks.map(l => 
-                    '<a href="' + sanitizeUrl(l.url) + '" class="hover:text-white transition-colors">' + escapeHtml(l.label) + '</a>'
+                    '<a href="' + sanitizeUrl(l.url) + '" class="text-amber-500 font-semibold text-sm uppercase tracking-wide hover:text-amber-400 transition-colors">' + escapeHtml(l.label) + '</a>'
                 ).join('');
                 el('footer-links').innerHTML = linksHtml;
+            }
+            
+            // 3. Popular Footer Links laden (Kategorie-spezifisch mit Fallback auf Global)
+            let popularLinks = [];
+            
+            // Erst kategorie-spezifische Links versuchen
+            const catPopularRes = await fetch(SUPABASE_URL + '/rest/v1/popular_footer_links?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+            const catPopularLinks = await catPopularRes.json();
+            
+            if (catPopularLinks && catPopularLinks.length > 0) {
+                popularLinks = catPopularLinks;
+            } else {
+                // Fallback auf globale Links (category_id ist null)
+                const globalPopularRes = await fetch(SUPABASE_URL + '/rest/v1/popular_footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+                const globalPopularLinks = await globalPopularRes.json();
+                if (globalPopularLinks && globalPopularLinks.length > 0) {
+                    popularLinks = globalPopularLinks;
+                }
+            }
+            
+            // Popular Links anzeigen wenn vorhanden
+            if (popularLinks.length > 0) {
+                el('popular-links-section').classList.remove('hidden');
+                const popularHtml = popularLinks.map(l => 
+                    '<a href="' + sanitizeUrl(l.url) + '" class="text-gray-400 text-sm hover:text-white transition-colors">' + escapeHtml(l.label) + '</a>'
+                ).join('');
+                el('popular-links').innerHTML = popularHtml;
             }
             
             // 3. Kategorie laden
@@ -1478,35 +1559,47 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     </main>
 
     <!-- FOOTER -->
-    <footer class="bg-brand-black text-white py-12 mt-20">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-                <div>
-                    <h4 class="font-heading font-bold text-brand-gold mb-4">Über uns</h4>
-                    <p class="text-sm text-gray-400">Unabhängige Testberichte & Vergleiche für Dating-Plattformen.</p>
-                </div>
-                <div>
-                    <h4 class="font-heading font-bold text-brand-gold mb-4">Kategorien</h4>
-                    <ul class="space-y-2 text-sm text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Dating Apps</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Singlebörsen</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Casual Dating</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-heading font-bold text-brand-gold mb-4">Rechtliches</h4>
-                    <ul id="footer-legal" class="space-y-2 text-sm text-gray-400">
-                        <li><a href="#" class="hover:text-white transition-colors">Impressum</a></li>
-                        <li><a href="#" class="hover:text-white transition-colors">Datenschutz</a></li>
-                    </ul>
-                </div>
-                <div>
-                    <h4 class="font-heading font-bold text-brand-gold mb-4">Kontakt</h4>
-                    <p class="text-sm text-gray-400">redaktion@rank-scout.com</p>
+    <footer class="bg-[#0a0a0a] border-t border-white/5 mt-20">
+        <div class="max-w-6xl mx-auto px-4 py-12">
+            <!-- Logo - Centered -->
+            <div class="text-center mb-10">
+                <a href="/" class="inline-block">
+                    <span id="footer-site-name" class="font-heading font-bold text-2xl md:text-3xl tracking-tight text-white">
+                        Rank-Scout
+                    </span>
+                </a>
+            </div>
+
+            <!-- Popular Links Section -->
+            <div id="popular-links-section" class="text-center mb-10 hidden">
+                <h4 class="text-amber-500 font-semibold text-xs uppercase tracking-[0.2em] mb-6">
+                    Beliebte Suche & Regionen
+                </h4>
+                <div id="popular-links" class="flex flex-wrap justify-center gap-x-6 gap-y-2 max-w-3xl mx-auto">
+                    <!-- Wird dynamisch befüllt -->
                 </div>
             </div>
-            <div class="border-t border-gray-800 pt-8 text-center text-sm text-gray-500">
-                <p>&copy; <span id="current-year">2026</span> DatingRankScout. Alle Rechte vorbehalten.</p>
+
+            <!-- Divider -->
+            <div class="border-t border-white/10 max-w-2xl mx-auto mb-8"></div>
+
+            <!-- Legal Links -->
+            <div class="text-center mb-6">
+                <div id="footer-links" class="flex flex-wrap justify-center gap-6">
+                    <!-- Wird dynamisch befüllt -->
+                </div>
+            </div>
+
+            <!-- Copyright -->
+            <div class="text-center">
+                <p class="text-gray-500 text-xs">
+                    <span id="footer-copyright">&copy; <span id="current-year">2026</span> Rank-Scout. Alle Rechte vorbehalten.</span>
+                    <span class="mx-2">·</span>
+                    <span class="text-gray-600">Designed by</span>
+                    <a id="footer-designer-link" href="https://rank-scout.com" target="_blank" rel="noopener noreferrer" class="text-amber-500 hover:underline">
+                        <span id="footer-designer-name">Rank-Scout</span>
+                    </a>
+                </p>
             </div>
         </div>
     </footer>
@@ -1691,7 +1784,78 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 };
             }
             
-            // 7. JSON-LD Schema
+            // 7. Footer dynamisch laden (wie auf Hauptseite)
+            // Settings laden
+            const settingsRes = await fetch(SUPABASE_URL + '/rest/v1/settings?select=*', { headers });
+            const settingsArr = await settingsRes.json();
+            const settings = {};
+            (settingsArr || []).forEach(s => settings[s.key] = s.value);
+            
+            // URL-Validierung
+            const sanitizeUrl = (url) => {
+                if (!url) return '#';
+                try {
+                    const parsed = new URL(url);
+                    if (!['http:', 'https:'].includes(parsed.protocol)) return '#';
+                    return url;
+                } catch {
+                    return '#';
+                }
+            };
+            
+            // Site Name für Footer (Kategorie → Global → Default)
+            const footerSiteName = category.footer_site_name || category.site_name || settings.footer_site_name || 'Rank-Scout';
+            el('footer-site-name').textContent = footerSiteName;
+            
+            // Copyright Text
+            const defaultCopyright = '© ' + year + ' ' + footerSiteName + '. Alle Rechte vorbehalten.';
+            const footerCopyright = category.footer_copyright_text 
+                ? category.footer_copyright_text.replace(/2026/g, year)
+                : (settings.footer_copyright 
+                    ? settings.footer_copyright.replace(/2026/g, year)
+                    : defaultCopyright);
+            el('footer-copyright').innerHTML = footerCopyright;
+            
+            // Designer Name und URL
+            const designerName = category.footer_designer_name || settings.footer_designer_name || 'Rank-Scout';
+            const designerUrl = category.footer_designer_url || settings.footer_designer_url || 'https://rank-scout.com';
+            el('footer-designer-name').textContent = designerName;
+            el('footer-designer-link').href = designerUrl;
+            
+            // Footer Legal Links laden
+            const footerRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?is_active=eq.true&order=sort_order.asc&select=*', { headers });
+            const footerLinks = await footerRes.json();
+            if (footerLinks && footerLinks.length > 0) {
+                const linksHtml = footerLinks.map(l => 
+                    '<a href="' + sanitizeUrl(l.url) + '" class="text-amber-500 font-semibold text-sm uppercase tracking-wide hover:text-amber-400 transition-colors">' + escapeHtml(l.label) + '</a>'
+                ).join('');
+                el('footer-links').innerHTML = linksHtml;
+            }
+            
+            // Popular Footer Links (Kategorie-spezifisch mit Fallback auf Global)
+            let popularLinks = [];
+            const catPopularRes = await fetch(SUPABASE_URL + '/rest/v1/popular_footer_links?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+            const catPopularLinks = await catPopularRes.json();
+            
+            if (catPopularLinks && catPopularLinks.length > 0) {
+                popularLinks = catPopularLinks;
+            } else {
+                const globalPopularRes = await fetch(SUPABASE_URL + '/rest/v1/popular_footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+                const globalPopularLinks = await globalPopularRes.json();
+                if (globalPopularLinks && globalPopularLinks.length > 0) {
+                    popularLinks = globalPopularLinks;
+                }
+            }
+            
+            if (popularLinks.length > 0) {
+                el('popular-links-section').classList.remove('hidden');
+                const popularHtml = popularLinks.map(l => 
+                    '<a href="' + sanitizeUrl(l.url) + '" class="text-gray-400 text-sm hover:text-white transition-colors">' + escapeHtml(l.label) + '</a>'
+                ).join('');
+                el('popular-links').innerHTML = popularHtml;
+            }
+            
+            // 8. JSON-LD Schema
             const schema = {
                 "@context": "https://schema.org",
                 "@type": "Review",
