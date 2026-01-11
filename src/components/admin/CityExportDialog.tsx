@@ -86,9 +86,6 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                     fontFamily: {
                         sans: ['Open Sans', 'sans-serif'],
                         heading: ['Montserrat', 'sans-serif'],
-                    },
-                    animation: {
-                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
                     }
                 }
             }
@@ -122,29 +119,6 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             border-color: #aa771c;
             box-shadow: 0 0 20px rgba(212, 175, 55, 0.6);
             transform: translateY(-2px) scale(1.02);
-            animation: goldShimmer 2s infinite linear;
-        }
-
-        @keyframes goldShimmer {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        .btn-shimmer::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 50%;
-            height: 100%;
-            background: linear-gradient(to right, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 3s infinite;
-            z-index: -1;
-        }
-        
-        @keyframes shimmer {
-            100% { left: 150%; }
         }
 
         ::-webkit-scrollbar { width: 8px; }
@@ -308,8 +282,8 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <!-- HERO SECTION -->
     <section class="hero-gradient py-16 md:py-24 relative overflow-hidden">
         <div class="absolute inset-0 opacity-10">
-            <div class="absolute top-10 left-10 w-32 h-32 bg-brand-gold rounded-full filter blur-3xl animate-pulse-slow"></div>
-            <div class="absolute bottom-10 right-10 w-40 h-40 bg-brand-light rounded-full filter blur-3xl animate-pulse-slow delay-1000"></div>
+            <div class="absolute top-10 left-10 w-32 h-32 bg-brand-gold rounded-full filter blur-3xl"></div>
+            <div class="absolute bottom-10 right-10 w-40 h-40 bg-brand-light rounded-full filter blur-3xl"></div>
         </div>
         <div class="max-w-4xl mx-auto px-4 text-center relative z-10">
             <p class="text-brand-gold text-sm md:text-base tracking-widest uppercase mb-4 font-heading">
@@ -321,7 +295,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             <p id="hero-description" class="text-gray-300 text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
                 Ob Stadt Salzburg, Flachgau oder Hallein – du musst nicht alleine durch die Getreidegasse spazieren. Wir haben geprüft, welche Dating-Apps im Salzburger Land wirklich funktionieren und wo du echte Treffer landest.
             </p>
-            <a href="#vergleich" class="inline-flex items-center gap-2 bg-brand-gold hover:bg-brand-luxury text-brand-black font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 btn-shimmer">
+            <a href="#vergleich" class="inline-flex items-center gap-2 bg-brand-gold hover:bg-brand-luxury text-brand-black font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
                 <i class="fas fa-search"></i>
                 <span id="hero-cta">Salzburger Singles finden</span>
             </a>

@@ -28,60 +28,63 @@ serve(async (req) => {
 
     console.log(`Generating content for city: ${city}, keyword: ${keyword}`);
 
-    const systemPrompt = `Du bist ein SEO-Experte für Affiliate-Landingpages im deutschsprachigen Raum. 
-Du schreibst überzeugende, lokalisierte Inhalte für Dating-Apps und Singles-Seiten.
-Deine Texte sind modern, vertrauenswürdig und optimiert für Conversions.
+    const systemPrompt = `Du bist ein SEO-Texter. Erstelle Inhalt für eine Dating-Vergleichsseite in ${city}.
+Antworte NUR mit zwei HTML-Blöcken, getrennt durch "---SEPARATOR---".
+Nutze EXAKT die vorgegebene HTML-Struktur mit den Tailwind-Klassen.
 Schreibe IMMER auf Deutsch und benutze die Du-Form.`;
 
     const userPrompt = `Erstelle Content für eine Landingpage zum Thema "${keyword} in ${city}".
 
-Liefere mir ZWEI getrennte HTML-Blöcke:
+**BLOCK 1 - USP-Grid (contentTop):**
+Nutze EXAKT diese Struktur mit 3 Cards:
 
-**BLOCK 1 - USP-Sektion (Content oben):**
-Ein Grid mit 3 USP-Cards im folgenden Format:
-<div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
-  <div class="bg-card border border-border rounded-2xl p-6 text-center">
-    <div class="text-4xl mb-4">[EMOJI]</div>
-    <h3 class="text-lg font-semibold text-foreground mb-2">[HEADLINE]</h3>
-    <p class="text-muted-foreground text-sm">[KURZER TEXT]</p>
-  </div>
-  <!-- 2 weitere Cards -->
-</div>
-
-Themen für die 3 Cards:
-1. Lokale Singles / Verifizierte Profile
-2. Kostenlos testen / Keine Verpflichtung  
-3. Sicherheit / Datenschutz
-
-**BLOCK 2 - SEO-Deep-Dive (Content unten):**
-Strukturiere es so:
-1. Eine H2-Überschrift: "${keyword} in ${city} – Darauf solltest du achten"
-2. 2-3 Absätze SEO-Text (ca. 150-200 Wörter) über ${keyword} in ${city}
-3. 3 FAQ-Einträge im details/summary Format:
-
-<div class="bg-muted/30 rounded-2xl p-8 my-12">
-  <h2 class="text-2xl font-display font-bold text-foreground mb-6">${keyword} in ${city} – Darauf solltest du achten</h2>
-  <div class="prose prose-invert max-w-none text-muted-foreground space-y-4">
-    <p>[SEO-TEXT ABSATZ 1]</p>
-    <p>[SEO-TEXT ABSATZ 2]</p>
+<div class="usp-section">
+  <div class="usp-grid">
+    <div class="usp-card">
+      <div class="usp-icon">❤️</div>
+      <h3>Lokale ${city} Singles</h3>
+      <p>Finde echte Profile aus ${city} und Umgebung – keine Fake-Accounts.</p>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">✨</div>
+      <h3>Kostenlos testen</h3>
+      <p>Starte ohne Risiko und entscheide später, ob du upgraden willst.</p>
+    </div>
+    <div class="usp-card">
+      <div class="usp-icon">🔒</div>
+      <h3>100% Diskret</h3>
+      <p>Deine Daten sind geschützt – volle Anonymität garantiert.</p>
+    </div>
   </div>
 </div>
 
-<div class="space-y-4 my-12">
-  <h2 class="text-2xl font-display font-bold text-foreground mb-6">Häufig gestellte Fragen</h2>
-  <details class="bg-card border border-border rounded-xl p-4 group">
-    <summary class="font-semibold text-foreground cursor-pointer list-none flex items-center justify-between">
-      <span>[FAQ FRAGE 1]</span>
-      <span class="text-primary">+</span>
-    </summary>
-    <p class="mt-3 text-muted-foreground text-sm">[FAQ ANTWORT 1]</p>
-  </details>
-  <!-- 2 weitere FAQ-Einträge -->
-</div>
+Ersetze die Texte mit passenden, kreativen Inhalten für ${city}.
+
+---SEPARATOR---
+
+**BLOCK 2 - SEO & FAQ (contentBottom):**
+Nutze EXAKT diese Struktur:
+
+<h2>${keyword} in ${city}</h2>
+<p>[2-3 Absätze SEO-Text über Dating in ${city}, ca. 150-200 Wörter. Erwähne lokale Besonderheiten, beliebte Treffpunkte, und warum Online-Dating in ${city} beliebt ist.]</p>
+
+<h2>Häufige Fragen</h2>
+<details class="faq-item">
+  <summary>Welche Dating-App ist in ${city} am besten?</summary>
+  <p>[Antwort mit Bezug zu ${city}]</p>
+</details>
+<details class="faq-item">
+  <summary>Gibt es viele Singles in ${city}?</summary>
+  <p>[Antwort mit lokalen Fakten]</p>
+</details>
+<details class="faq-item">
+  <summary>Ist Online-Dating in ${city} sicher?</summary>
+  <p>[Antwort über Sicherheit und Datenschutz]</p>
+</details>
 
 WICHTIG: 
 - Antworte NUR mit den zwei HTML-Blöcken, getrennt durch "---SEPARATOR---"
-- Keine zusätzlichen Erklärungen
+- Keine zusätzlichen Erklärungen oder Markdown
 - Nutze realistische, lokale Bezüge zu ${city}
 - Die Texte sollen Vertrauen aufbauen und zum Klicken motivieren`;
 
