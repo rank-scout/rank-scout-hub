@@ -84,7 +84,7 @@ export default function CategoryDetail() {
         <main className="pt-16 flex items-center justify-center min-h-[60vh]">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </main>
-        <Footer />
+        <Footer category={category} />
       </div>
     );
   }
@@ -271,7 +271,7 @@ export default function CategoryDetail() {
           </div>
         </section>
       </main>
-      <Footer />
+      <Footer category={category} />
     </div>
   );
 }
