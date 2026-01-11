@@ -13,9 +13,8 @@ import { Search, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function AdminLogin() {
-  const { signIn, signUp, user, isLoading: authLoading } = useAuth();
+  const { signIn, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [isSignUp, setIsSignUp] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -34,9 +33,7 @@ export default function AdminLogin() {
   async function onSubmit(data: LoginInput) {
     setIsSubmitting(true);
     try {
-      const { error } = isSignUp 
-        ? await signUp(data.email, data.password)
-        : await signIn(data.email, data.password);
+      const { error } = await signIn(data.email, data.password);
 
       if (error) {
         toast({
@@ -46,8 +43,8 @@ export default function AdminLogin() {
         });
       } else {
         toast({
-          title: isSignUp ? "Konto erstellt" : "Angemeldet",
-          description: isSignUp ? "Dein Admin-Konto wurde erstellt." : "Willkommen zurück!",
+          title: "Angemeldet",
+          description: "Willkommen zurück!",
         });
         navigate("/admin");
       }
@@ -80,13 +77,10 @@ export default function AdminLogin() {
             </div>
           </Link>
           <CardTitle className="font-display text-2xl">
-            {isSignUp ? "Admin Konto erstellen" : "Admin Login"}
+            Admin Login
           </CardTitle>
           <CardDescription>
-            {isSignUp 
-              ? "Erstelle dein Admin-Konto für Rank-Scout" 
-              : "Melde dich an, um das Portal zu verwalten"
-            }
+            Melde dich an, um das Portal zu verwalten
           </CardDescription>
         </CardHeader>
 
@@ -130,26 +124,11 @@ export default function AdminLogin() {
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   Bitte warten...
                 </>
-              ) : isSignUp ? (
-                "Konto erstellen"
               ) : (
                 "Anmelden"
               )}
             </Button>
           </form>
-
-          <div className="mt-6 text-center">
-            <button
-              type="button"
-              onClick={() => setIsSignUp(!isSignUp)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {isSignUp
-                ? "Bereits registriert? Jetzt anmelden"
-                : "Noch kein Konto? Jetzt registrieren"
-              }
-            </button>
-          </div>
 
           <div className="mt-4 text-center">
             <Link to="/" className="text-sm text-primary hover:underline">
