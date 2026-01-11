@@ -60,7 +60,7 @@ export default function AdminDashboard() {
       bg: "bg-primary/10",
     },
     {
-      title: "Kategorien",
+      title: "Landingpages",
       value: categories.length,
       subtitle: `${activeCategories} aktiv`,
       icon: FolderTree,
@@ -227,14 +227,14 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Recent Categories */}
+        {/* Recent Landingpages */}
         <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle className="text-lg font-display">📄 Letzte Kategorien</CardTitle>
+            <CardTitle className="text-lg font-display">📄 Letzte Landingpages</CardTitle>
           </CardHeader>
           <CardContent>
             {categories.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Keine Kategorien vorhanden.</p>
+              <p className="text-sm text-muted-foreground">Keine Landingpages vorhanden.</p>
             ) : (
               <div className="space-y-3">
                 {categories.slice(0, 5).map((category) => (
