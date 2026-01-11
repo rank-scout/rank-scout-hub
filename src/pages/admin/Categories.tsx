@@ -99,6 +99,9 @@ export default function AdminCategories() {
       template: "comparison",
       site_name: "",
       hero_headline: "",
+      hero_pretitle: "Finde Singles in",
+      hero_cta_text: "",
+      hero_badge_text: "",
       meta_title: "",
       meta_description: "",
       h1_title: "",
@@ -123,6 +126,9 @@ export default function AdminCategories() {
       template: category.template || "comparison",
       site_name: category.site_name || "",
       hero_headline: category.hero_headline || "",
+      hero_pretitle: category.hero_pretitle || "Finde Singles in",
+      hero_cta_text: category.hero_cta_text || "",
+      hero_badge_text: category.hero_badge_text || "",
       meta_title: category.meta_title || "",
       meta_description: category.meta_description || "",
       h1_title: category.h1_title || "",
@@ -365,81 +371,131 @@ export default function AdminCategories() {
                 </TabsContent>
 
                 <TabsContent value="seo" className="space-y-4 pt-4">
-                  {/* AI Generator for SEO */}
+                  {/* AI Generator with Keyword Input */}
                   <div className="bg-gradient-to-r from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-foreground flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-secondary" />
-                          KI-SEO Generator
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {nameValue 
-                            ? `Generiere Meta-Titel & Description für "${nameValue}"` 
-                            : "Gib zuerst im Tab 'Grunddaten' einen Seitennamen ein"}
-                        </p>
+                    <div className="flex flex-col gap-4">
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="w-5 h-5 text-secondary" />
+                        <h4 className="font-semibold text-foreground">KI-Generator für alle Felder</h4>
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground shrink-0"
-                        disabled={isGenerating}
-                        onClick={async () => {
-                          if (!nameValue) {
-                            toast({ 
-                              title: "Kein Seitenname", 
-                              description: "Bitte gib zuerst im Tab 'Grunddaten' einen Seitennamen ein", 
-                              variant: "destructive" 
-                            });
-                            return;
-                          }
-                          // Generate SEO content
-                          setValue("meta_title", `Singles ${nameValue} 2025 » Top Dating Apps im Vergleich`);
-                          setValue("meta_description", `Finde Singles in ${nameValue} mit den besten Dating Apps. ✓ Kostenlos testen ✓ Echte Matches ✓ Seriöse Plattformen im Vergleich.`);
-                          setValue("h1_title", `Singles in ${nameValue} – Die besten Dating Apps`);
-                          toast({ title: "SEO-Daten generiert!", description: `Meta-Titel und Description für ${nameValue} wurden erstellt.` });
-                        }}
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        SEO generieren
-                      </Button>
+                      <p className="text-sm text-muted-foreground">
+                        Gib dein Keyword ein und alle SEO- und Hero-Felder werden automatisch optimiert generiert.
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Input
+                          id="keyword-input"
+                          placeholder="Keyword eingeben (z.B. LGBTQ Dating, Salzburg, 50+ Singles...)"
+                          className="flex-1"
+                          defaultValue={nameValue || ""}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground shrink-0"
+                          disabled={isGenerating}
+                          onClick={async () => {
+                            const keywordInput = document.getElementById('keyword-input') as HTMLInputElement;
+                            const keyword = keywordInput?.value || nameValue;
+                            if (!keyword) {
+                              toast({ 
+                                title: "Kein Keyword", 
+                                description: "Bitte gib ein Keyword ein", 
+                                variant: "destructive" 
+                              });
+                              return;
+                            }
+                            const year = new Date().getFullYear();
+                            // Generate ALL fields based on keyword
+                            setValue("site_name", keyword.replace(/\s+/g, '') + "AT");
+                            setValue("hero_pretitle", "Finde Singles in");
+                            setValue("hero_headline", `Lerne ${keyword} Singles kennen`);
+                            setValue("hero_cta_text", `${keyword} Singles finden`);
+                            setValue("hero_badge_text", `Geprüft für Stadt & Land ${keyword}`);
+                            setValue("meta_title", `Singles ${keyword} ${year} » Top Dating Apps im Vergleich`);
+                            setValue("meta_description", `Finde Singles in ${keyword} mit den besten Dating Apps. ✓ Kostenlos testen ✓ Echte Matches ✓ Seriöse Plattformen im Vergleich.`);
+                            setValue("h1_title", `Singles in ${keyword} – Die besten Dating Apps`);
+                            setValue("description", `Ob ${keyword} oder Umgebung – du musst nicht alleine sein. Wir haben geprüft, welche Dating-Apps in ${keyword} wirklich funktionieren.`);
+                            toast({ title: "Alle Felder generiert!", description: `Optimierte Inhalte für "${keyword}" wurden erstellt.` });
+                          }}
+                        >
+                          <Sparkles className="w-4 h-4" />
+                          Alles generieren
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Header & Hero Settings */}
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      Header & Hero Bereich
+                    </h4>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="site_name">Seitenname im Header</Label>
+                        <Input id="site_name" {...register("site_name")} placeholder="z.B. LGBTQ Dating" />
+                        <p className="text-xs text-muted-foreground mt-1">Wird oben links im Header angezeigt</p>
+                      </div>
+                      <div>
+                        <Label htmlFor="hero_pretitle">Hero Pretitle (klein, über Headline)</Label>
+                        <Input id="hero_pretitle" {...register("hero_pretitle")} placeholder="z.B. Finde Singles in" />
+                        <p className="text-xs text-muted-foreground mt-1">Der goldene Text über der Hauptüberschrift</p>
+                      </div>
+                    </div>
+
                     <div>
-                      <Label htmlFor="site_name">Seitenname im Header</Label>
-                      <Input id="site_name" {...register("site_name")} placeholder="z.B. SinglesSalzburgAT" />
-                      <p className="text-xs text-muted-foreground mt-1">Wird oben links im Header angezeigt</p>
+                      <Label htmlFor="hero_headline">Hero Headline (groß, goldene Schrift)</Label>
+                      <Input id="hero_headline" {...register("hero_headline")} placeholder="z.B. Lerne Lgbtq Singles kennen" />
+                      <p className="text-xs text-muted-foreground mt-1">Die große Hauptüberschrift im Hero-Bereich</p>
                     </div>
+
                     <div>
-                      <Label htmlFor="hero_headline">Hero Headline</Label>
-                      <Input id="hero_headline" {...register("hero_headline")} placeholder="z.B. Finde Singles in Salzburg & Umgebung" />
-                      <p className="text-xs text-muted-foreground mt-1">Hauptüberschrift im Hero-Bereich</p>
+                      <Label htmlFor="description">Hero Beschreibung</Label>
+                      <Textarea id="description" {...register("description")} placeholder="Die ausführliche Beschreibung unter der Headline..." rows={3} />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="hero_cta_text">CTA-Button Text</Label>
+                        <Input id="hero_cta_text" {...register("hero_cta_text")} placeholder="z.B. LGBTQ Singles finden" />
+                        <p className="text-xs text-muted-foreground mt-1">Text auf dem goldenen Button</p>
+                      </div>
+                      <div>
+                        <Label htmlFor="hero_badge_text">Badge Text (unter Button)</Label>
+                        <Input id="hero_badge_text" {...register("hero_badge_text")} placeholder="z.B. Geprüft für Stadt & Land LGBTQ" />
+                        <p className="text-xs text-muted-foreground mt-1">Der grüne Haken-Text unter dem Button</p>
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <Label htmlFor="h1_title">H1 Titel (falls anders als Hero)</Label>
-                    <Input id="h1_title" {...register("h1_title")} placeholder="Singles in Salzburg - Die besten Dating Apps" />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="meta_title">Meta Title (max. 60 Zeichen)</Label>
-                    <Input id="meta_title" {...register("meta_title")} placeholder="Singles Salzburg 2025 » Top Dating Apps im Vergleich" maxLength={60} />
-                    {errors.meta_title && <p className="text-sm text-destructive mt-1">{errors.meta_title.message}</p>}
-                  </div>
+                  {/* SEO Meta Tags */}
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <h4 className="font-semibold text-foreground">SEO Meta Tags</h4>
+                    
+                    <div>
+                      <Label htmlFor="h1_title">H1 Titel / Breadcrumb</Label>
+                      <Input id="h1_title" {...register("h1_title")} placeholder="Singles in LGBTQ Dating - Die besten Dating Apps" />
+                      <p className="text-xs text-muted-foreground mt-1">Wird auch in Breadcrumbs und als Untertitel verwendet</p>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="meta_title">Meta Title (max. 60 Zeichen)</Label>
+                      <Input id="meta_title" {...register("meta_title")} placeholder="Singles LGBTQ 2025 » Top Dating Apps im Vergleich" maxLength={60} />
+                      {errors.meta_title && <p className="text-sm text-destructive mt-1">{errors.meta_title.message}</p>}
+                    </div>
 
-                  <div>
-                    <Label htmlFor="meta_description">Meta Description (max. 160 Zeichen)</Label>
-                    <Textarea 
-                      id="meta_description" 
-                      {...register("meta_description")} 
-                      placeholder="Finde Singles in Salzburg mit den besten Dating Apps. ✓ Kostenlos testen ✓ Echte Matches ✓ Seriöse Plattformen"
-                      maxLength={160}
-                      rows={3}
-                    />
-                    {errors.meta_description && <p className="text-sm text-destructive mt-1">{errors.meta_description.message}</p>}
+                    <div>
+                      <Label htmlFor="meta_description">Meta Description (max. 160 Zeichen)</Label>
+                      <Textarea 
+                        id="meta_description" 
+                        {...register("meta_description")} 
+                        placeholder="Finde Singles in LGBTQ mit den besten Dating Apps. ✓ Kostenlos testen ✓ Echte Matches ✓ Seriöse Plattformen"
+                        maxLength={160}
+                        rows={3}
+                      />
+                      {errors.meta_description && <p className="text-sm text-destructive mt-1">{errors.meta_description.message}</p>}
+                    </div>
                   </div>
                 </TabsContent>
 
