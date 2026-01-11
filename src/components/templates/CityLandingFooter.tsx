@@ -1,5 +1,10 @@
 import { Link } from "react-router-dom";
-import { useFooterLinks } from "@/hooks/useSettings";
+import { 
+  useFooterLinks, 
+  useFooterSiteName, 
+  useFooterDesignerName, 
+  useFooterDesignerUrl 
+} from "@/hooks/useSettings";
 import { usePopularFooterLinks } from "@/hooks/usePopularFooterLinks";
 
 // Accept a partial category with only the footer-relevant fields
@@ -21,12 +26,16 @@ export function CityLandingFooter({ category }: CityLandingFooterProps) {
   // Pass category id if available, otherwise load global links (category_id is null)
   const { data: popularLinks = [] } = usePopularFooterLinks(category?.id || null);
 
-  // Get footer settings from category or use defaults
-  const siteName = category?.footer_site_name || category?.site_name || "DatingAppVergleichAT";
+  // Load global footer settings from settings table
+  const globalSiteName = useFooterSiteName();
+  const globalDesignerName = useFooterDesignerName();
+  const globalDesignerUrl = useFooterDesignerUrl();
+
+  // Get footer settings: category-specific -> global settings -> hardcoded defaults
+  const siteName = category?.footer_site_name || category?.site_name || globalSiteName;
   const copyrightText = category?.footer_copyright_text || `© ${new Date().getFullYear()} ${siteName}. Alle Rechte vorbehalten.`;
-  const designerName = category?.footer_designer_name || "Digital-Perfect";
-  // IMPORTANT: Default designer URL is now digital-perfect.com
-  const designerUrl = category?.footer_designer_url || "https://digital-perfect.com";
+  const designerName = category?.footer_designer_name || globalDesignerName;
+  const designerUrl = category?.footer_designer_url || globalDesignerUrl;
 
   // Parse siteName to highlight parts (e.g., "DatingAppVergleichAT")
   const renderSiteName = () => {
