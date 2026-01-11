@@ -20,6 +20,10 @@ export type Database = {
           banner_override: string | null
           created_at: string
           description: string | null
+          footer_copyright_text: string | null
+          footer_designer_name: string | null
+          footer_designer_url: string | null
+          footer_site_name: string | null
           h1_title: string | null
           hero_badge_text: string | null
           hero_cta_text: string | null
@@ -50,6 +54,10 @@ export type Database = {
           banner_override?: string | null
           created_at?: string
           description?: string | null
+          footer_copyright_text?: string | null
+          footer_designer_name?: string | null
+          footer_designer_url?: string | null
+          footer_site_name?: string | null
           h1_title?: string | null
           hero_badge_text?: string | null
           hero_cta_text?: string | null
@@ -80,6 +88,10 @@ export type Database = {
           banner_override?: string | null
           created_at?: string
           description?: string | null
+          footer_copyright_text?: string | null
+          footer_designer_name?: string | null
+          footer_designer_url?: string | null
+          footer_site_name?: string | null
           h1_title?: string | null
           hero_badge_text?: string | null
           hero_cta_text?: string | null
@@ -175,6 +187,44 @@ export type Database = {
           url?: string
         }
         Relationships: []
+      }
+      popular_footer_links: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "popular_footer_links_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

@@ -109,6 +109,10 @@ export default function AdminCategories() {
       long_content_bottom: "",
       analytics_code: "",
       banner_override: "",
+      footer_site_name: "",
+      footer_copyright_text: "",
+      footer_designer_name: "Digital-Perfect",
+      footer_designer_url: "https://digital-perfect.at",
       is_active: true,
       sort_order: categories.length,
     });
@@ -136,6 +140,10 @@ export default function AdminCategories() {
       long_content_bottom: category.long_content_bottom || "",
       analytics_code: category.analytics_code || "",
       banner_override: category.banner_override || "",
+      footer_site_name: (category as any).footer_site_name || "",
+      footer_copyright_text: (category as any).footer_copyright_text || "",
+      footer_designer_name: (category as any).footer_designer_name || "Digital-Perfect",
+      footer_designer_url: (category as any).footer_designer_url || "https://digital-perfect.at",
       is_active: category.is_active,
       sort_order: category.sort_order,
     });
@@ -281,10 +289,11 @@ export default function AdminCategories() {
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-5">
+                <TabsList className="grid w-full grid-cols-6">
                   <TabsTrigger value="basic">Grunddaten</TabsTrigger>
                   <TabsTrigger value="seo">SEO</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
+                  <TabsTrigger value="footer">Footer</TabsTrigger>
                   <TabsTrigger value="projects">Apps</TabsTrigger>
                   <TabsTrigger value="tracking">Tracking</TabsTrigger>
                 </TabsList>
@@ -655,6 +664,46 @@ export default function AdminCategories() {
                     <p className="text-xs text-muted-foreground mt-1">
                       Leer lassen = globaler Banner wird verwendet. Eingetragen = überschreibt den globalen Banner für diese Seite.
                     </p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="footer" className="space-y-4 pt-4">
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <h4 className="font-semibold text-foreground">Footer-Einstellungen für diese Seite</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Überschreibe die globalen Footer-Einstellungen für diese Landingpage.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="footer_site_name">Footer Logo-Text</Label>
+                        <Input id="footer_site_name" {...register("footer_site_name")} placeholder="z.B. DatingAppVergleichAT" />
+                        <p className="text-xs text-muted-foreground mt-1">Leer = Site Name aus Grunddaten wird verwendet</p>
+                      </div>
+                      <div>
+                        <Label htmlFor="footer_copyright_text">Copyright-Text</Label>
+                        <Input id="footer_copyright_text" {...register("footer_copyright_text")} placeholder="© 2026 DatingVergleichAT. Alle Rechte vorbehalten." />
+                        <p className="text-xs text-muted-foreground mt-1">Leer = automatisch generiert</p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="footer_designer_name">Designer Name</Label>
+                        <Input id="footer_designer_name" {...register("footer_designer_name")} placeholder="Digital-Perfect" />
+                      </div>
+                      <div>
+                        <Label htmlFor="footer_designer_url">Designer URL</Label>
+                        <Input id="footer_designer_url" {...register("footer_designer_url")} placeholder="https://digital-perfect.at" />
+                      </div>
+                    </div>
+
+                    <div className="bg-muted/50 rounded-lg p-4 mt-4">
+                      <p className="text-sm text-muted-foreground">
+                        💡 <strong>Tipp:</strong> Die "Beliebte Suche & Regionen" Links kannst du im Menüpunkt "Footer-Links" verwalten.
+                        Dort kannst du globale Links für alle Seiten oder spezifische Links nur für diese Kategorie anlegen.
+                      </p>
+                    </div>
                   </div>
                 </TabsContent>
 

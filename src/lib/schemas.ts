@@ -33,9 +33,26 @@ export const categorySchema = z.object({
   banner_override: z.string().optional(),
   is_active: z.boolean().default(true),
   sort_order: z.number().int().min(0).default(0),
+  // Footer settings for City Landing Pages
+  footer_site_name: z.string().max(100).optional(),
+  footer_copyright_text: z.string().max(200).optional(),
+  footer_designer_name: z.string().max(100).optional(),
+  footer_designer_url: z.string().url().optional().or(z.literal("")),
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;
+
+// Popular Footer Links schema
+export const popularFooterLinkSchema = z.object({
+  id: z.string().uuid().optional(),
+  category_id: z.string().uuid().nullable().optional(),
+  label: z.string().min(1, "Label erforderlich").max(100),
+  url: z.string().min(1, "URL erforderlich").max(500),
+  sort_order: z.number().int().min(0).default(0),
+  is_active: z.boolean().default(true),
+});
+
+export type PopularFooterLinkInput = z.infer<typeof popularFooterLinkSchema>;
 
 // Project schemas
 export const countryScopeEnum = z.enum(["AT", "DE", "DACH", "EU"]);

@@ -308,7 +308,7 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </div>
         </section>
       </main>
-      <CityLandingFooter siteName={siteName} />
+      <CityLandingFooter category={category} />
     </div>
   );
 }
