@@ -160,6 +160,7 @@ export type Database = {
       }
       footer_links: {
         Row: {
+          category_id: string | null
           column_name: string | null
           created_at: string
           id: string
@@ -169,6 +170,7 @@ export type Database = {
           url: string
         }
         Insert: {
+          category_id?: string | null
           column_name?: string | null
           created_at?: string
           id?: string
@@ -178,6 +180,7 @@ export type Database = {
           url: string
         }
         Update: {
+          category_id?: string | null
           column_name?: string | null
           created_at?: string
           id?: string
@@ -186,7 +189,15 @@ export type Database = {
           sort_order?: number
           url?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "footer_links_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       popular_footer_links: {
         Row: {
