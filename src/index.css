@@ -263,3 +263,13 @@
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
+
+/* C4F API Invalid Feedback Styling */
+.invalid-feedback {
+  @apply text-destructive text-sm font-semibold mt-1;
+  display: none;
+}
+
+.invalid-feedback:not(:empty) {
+  display: block;
+}

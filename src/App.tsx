@@ -12,6 +12,7 @@ import Categories from "./pages/Categories";
 import CategoryDetail from "./pages/CategoryDetail";
 import GoRedirect from "./pages/GoRedirect";
 import NotFound from "./pages/NotFound";
+import Welcome from "./pages/Welcome";
 import C4FRegistration from "./components/external/C4FRegistration";
 import AdminLogin from "./pages/admin/Login";
 import AdminLayout from "./pages/admin/Layout";
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/kategorien" element={<Categories />} />
               <Route path="/kategorien/:slug" element={<CategoryDetail />} />
               <Route path="/go/:slug" element={<GoRedirect />} />
+              <Route path="/welcome" element={<Welcome />} />
               <Route path="/test-register" element={
                 <div className="min-h-screen bg-background flex items-center justify-center p-4">
                   <C4FRegistration partnerCode="PLACEHOLDER_CODE" />
