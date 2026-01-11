@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SEOProvider } from "@/components/SEOProvider";
+import { ThemeProvider } from "@/hooks/useTheme";
 
 // Pages
 import Index from "./pages/Index";
@@ -29,38 +30,40 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <SEOProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/kategorien" element={<Categories />} />
-              <Route path="/kategorien/:slug" element={<CategoryDetail />} />
-              <Route path="/go/:slug" element={<GoRedirect />} />
-              <Route path="/welcome" element={<Welcome />} />
-              <Route path="/test-register" element={<C4FRegistration />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<AdminDashboard />} />
-                <Route path="categories" element={<AdminCategories />} />
-                <Route path="projects" element={<AdminProjects />} />
-                <Route path="redirects" element={<AdminRedirects />} />
-                <Route path="footer-links" element={<AdminFooterLinks />} />
-                <Route path="leads" element={<AdminLeads />} />
-                <Route path="settings" element={<AdminSettings />} />
-              </Route>
-              
-              {/* Catch-all */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </SEOProvider>
+      <ThemeProvider defaultTheme="dark">
+        <SEOProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/kategorien" element={<Categories />} />
+                <Route path="/kategorien/:slug" element={<CategoryDetail />} />
+                <Route path="/go/:slug" element={<GoRedirect />} />
+                <Route path="/welcome" element={<Welcome />} />
+                <Route path="/test-register" element={<C4FRegistration />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="categories" element={<AdminCategories />} />
+                  <Route path="projects" element={<AdminProjects />} />
+                  <Route path="redirects" element={<AdminRedirects />} />
+                  <Route path="footer-links" element={<AdminFooterLinks />} />
+                  <Route path="leads" element={<AdminLeads />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                </Route>
+                
+                {/* Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </SEOProvider>
+      </ThemeProvider>
     </AuthProvider>
   </QueryClientProvider>
 );

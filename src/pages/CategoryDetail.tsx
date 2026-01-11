@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useCategoryBySlug } from "@/hooks/useCategories";
 import { useProjects } from "@/hooks/useProjects";
+import { useTheme, useCategoryTheme } from "@/hooks/useTheme";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +14,21 @@ export default function CategoryDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useCategoryBySlug(slug || "");
   const { data: allProjects = [], isLoading: projectsLoading } = useProjects();
+  const { setTheme } = useTheme();
+  const categoryColorTheme = useCategoryTheme((category as any)?.color_theme);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Apply category theme when it loads
+  useEffect(() => {
+    if (category) {
+      setTheme(categoryColorTheme);
+    }
+    // Reset to dark theme when leaving the page
+    return () => {
+      setTheme("dark");
+    };
+  }, [category, categoryColorTheme, setTheme]);
   
   const projects = useMemo(() => {
     return allProjects.filter((p) => p.category_id === category?.id && p.is_active);

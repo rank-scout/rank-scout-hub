@@ -3,12 +3,14 @@
 @tailwind utilities;
 
 /* Rank-Scout Design System
-   Deep navy + vibrant accents, Inter body + Outfit display fonts
+   3 Theme Modes: Dark (default), Light, Neon
    All colors in HSL format */
 
 @layer base {
-  :root {
-    /* Core brand colors */
+  /* ========== DARK THEME (Default) ========== */
+  :root,
+  .theme-dark {
+    /* Core brand colors - Deep navy */
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
@@ -77,8 +79,9 @@
     --sidebar-ring: 217 91% 60%;
   }
 
-  /* Light mode for admin panels */
-  .light {
+  /* ========== LIGHT THEME ========== */
+  .theme-light {
+    /* Clean, professional light mode */
     --background: 0 0% 98%;
     --foreground: 222 47% 11%;
 
@@ -89,32 +92,127 @@
     --popover-foreground: 222 47% 11%;
 
     --primary: 217 91% 50%;
-    --primary-foreground: 210 40% 98%;
+    --primary-foreground: 0 0% 100%;
 
     --secondary: 270 50% 55%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary-foreground: 0 0% 100%;
 
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 217 91% 95%;
+    --accent-foreground: 217 91% 40%;
 
     --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive-foreground: 0 0% 100%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
     --ring: 217 91% 50%;
 
+    /* Theme-specific accent colors - slightly adjusted for light bg */
+    --dating: 340 82% 52%;
+    --dating-foreground: 0 0% 100%;
+    
+    --casino: 45 93% 45%;
+    --casino-foreground: 222 47% 11%;
+    
+    --adult: 0 84% 50%;
+    --adult-foreground: 0 0% 100%;
+
+    /* Gradients for light mode */
+    --gradient-hero: linear-gradient(135deg, hsl(217 91% 97%) 0%, hsl(217 91% 95%) 50%, hsl(270 50% 96%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 50%) 0%, hsl(270 50% 55%) 100%);
+    --gradient-dating: linear-gradient(135deg, hsl(340 82% 52%) 0%, hsl(340 82% 62%) 100%);
+    --gradient-casino: linear-gradient(135deg, hsl(45 93% 45%) 0%, hsl(35 100% 50%) 100%);
+    --gradient-adult: linear-gradient(135deg, hsl(0 72% 50%) 0%, hsl(340 82% 55%) 100%);
+
+    /* Shadows for light mode */
+    --shadow-sm: 0 2px 8px -2px hsl(222 47% 50% / 0.1);
+    --shadow-md: 0 4px 16px -4px hsl(222 47% 50% / 0.15);
+    --shadow-lg: 0 8px 32px -8px hsl(222 47% 50% / 0.2);
+    --shadow-glow: 0 0 40px -10px hsl(217 91% 60% / 0.2);
+    --shadow-glow-primary: 0 0 60px -15px hsl(217 91% 60% / 0.3);
+
+    /* Sidebar for light mode */
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 217 91% 50%;
-    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 210 40% 96%;
     --sidebar-accent-foreground: 222 47% 11%;
     --sidebar-border: 214 32% 91%;
     --sidebar-ring: 217 91% 50%;
+  }
+
+  /* ========== NEON THEME ========== */
+  .theme-neon {
+    /* Cyberpunk-inspired neon glow */
+    --background: 260 30% 6%;
+    --foreground: 180 100% 95%;
+
+    --card: 260 30% 10%;
+    --card-foreground: 180 100% 95%;
+
+    --popover: 260 30% 10%;
+    --popover-foreground: 180 100% 95%;
+
+    /* Primary: Cyan neon */
+    --primary: 180 100% 50%;
+    --primary-foreground: 260 30% 6%;
+
+    /* Secondary: Magenta neon */
+    --secondary: 300 100% 60%;
+    --secondary-foreground: 260 30% 6%;
+
+    --muted: 260 20% 15%;
+    --muted-foreground: 180 30% 60%;
+
+    --accent: 300 100% 55%;
+    --accent-foreground: 260 30% 6%;
+
+    --destructive: 0 100% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 260 30% 20%;
+    --input: 260 30% 12%;
+    --ring: 180 100% 50%;
+
+    /* Neon accent colors */
+    --dating: 330 100% 65%;
+    --dating-foreground: 260 30% 6%;
+    
+    --casino: 60 100% 50%;
+    --casino-foreground: 260 30% 6%;
+    
+    --adult: 0 100% 55%;
+    --adult-foreground: 260 30% 6%;
+
+    /* Neon gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(260 30% 4%) 0%, hsl(260 30% 8%) 50%, hsl(300 40% 12%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(260 30% 12%) 0%, hsl(260 30% 8%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(180 100% 50%) 0%, hsl(300 100% 60%) 100%);
+    --gradient-dating: linear-gradient(135deg, hsl(330 100% 55%) 0%, hsl(330 100% 65%) 100%);
+    --gradient-casino: linear-gradient(135deg, hsl(60 100% 45%) 0%, hsl(45 100% 55%) 100%);
+    --gradient-adult: linear-gradient(135deg, hsl(0 100% 50%) 0%, hsl(330 100% 55%) 100%);
+
+    /* Neon glow shadows */
+    --shadow-sm: 0 2px 8px -2px hsl(180 100% 50% / 0.3);
+    --shadow-md: 0 4px 16px -4px hsl(180 100% 50% / 0.4);
+    --shadow-lg: 0 8px 32px -8px hsl(180 100% 50% / 0.5);
+    --shadow-glow: 0 0 40px -10px hsl(180 100% 50% / 0.6);
+    --shadow-glow-primary: 0 0 60px -15px hsl(180 100% 50% / 0.7);
+
+    /* Neon sidebar */
+    --sidebar-background: 260 30% 4%;
+    --sidebar-foreground: 180 100% 90%;
+    --sidebar-primary: 180 100% 50%;
+    --sidebar-primary-foreground: 260 30% 6%;
+    --sidebar-accent: 260 30% 12%;
+    --sidebar-accent-foreground: 180 100% 95%;
+    --sidebar-border: 260 30% 18%;
+    --sidebar-ring: 180 100% 50%;
   }
 }
 
