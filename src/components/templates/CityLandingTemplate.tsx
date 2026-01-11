@@ -68,7 +68,7 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
   };
 
   // Get custom site name for header
-  const siteName = (category as any).site_name;
+  const siteName = category.site_name;
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,7 +105,7 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
               
               {/* Hero Headline - customizable */}
               <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl text-foreground mb-6 leading-tight">
-                {(category as any).hero_headline || `Finde Singles in ${category.name} & Umgebung`}
+                {category.hero_headline || `Finde Singles in ${category.name} & Umgebung`}
               </h1>
               
               {category.description && (

@@ -10,6 +10,8 @@ export type Category = {
   icon: string | null;
   theme: "DATING" | "ADULT" | "CASINO" | "GENERIC";
   template: "comparison" | "review";
+  site_name: string | null;
+  hero_headline: string | null;
   meta_title: string | null;
   meta_description: string | null;
   h1_title: string | null;
@@ -92,6 +94,8 @@ export function useCreateCategory() {
           icon: input.icon || "📊",
           theme: input.theme,
           template: input.template || "comparison",
+          site_name: input.site_name || null,
+          hero_headline: input.hero_headline || null,
           meta_title: input.meta_title || null,
           meta_description: input.meta_description || null,
           h1_title: input.h1_title || null,
@@ -126,6 +130,8 @@ export function useUpdateCategory() {
           ...(input.icon !== undefined && { icon: input.icon }),
           ...(input.theme !== undefined && { theme: input.theme }),
           ...(input.template !== undefined && { template: input.template }),
+          ...(input.site_name !== undefined && { site_name: input.site_name }),
+          ...(input.hero_headline !== undefined && { hero_headline: input.hero_headline }),
           ...(input.meta_title !== undefined && { meta_title: input.meta_title }),
           ...(input.meta_description !== undefined && { meta_description: input.meta_description }),
           ...(input.h1_title !== undefined && { h1_title: input.h1_title }),
@@ -179,6 +185,8 @@ export function useDuplicateCategory() {
           icon: category.icon,
           theme: category.theme,
           template: category.template,
+          site_name: category.site_name,
+          hero_headline: category.hero_headline,
           meta_title: category.meta_title,
           meta_description: category.meta_description,
           h1_title: category.h1_title,
