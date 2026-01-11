@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useDuplicateCategory, type Category } from "@/hooks/useCategories";
 import { useCategoryProjects, useUpdateCategoryProjects } from "@/hooks/useCategoryProjects";
+import { useGenerateCityContent } from "@/hooks/useGenerateCityContent";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { categorySchema, type CategoryInput } from "@/lib/schemas";
@@ -15,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 
@@ -37,6 +38,7 @@ export default function AdminCategories() {
   const deleteCategory = useDeleteCategory();
   const duplicateCategory = useDuplicateCategory();
   const updateCategoryProjects = useUpdateCategoryProjects();
+  const { generateContent, isGenerating } = useGenerateCityContent();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -384,22 +386,67 @@ export default function AdminCategories() {
                 </TabsContent>
 
                 <TabsContent value="content" className="space-y-4 pt-4">
+                  {/* AI Generator Button */}
+                  <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <h4 className="font-semibold text-foreground flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-primary" />
+                          KI-Content Generator
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Generiere USP-Cards und SEO-Texte automatisch basierend auf dem Seitennamen.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                        disabled={isGenerating || !nameValue}
+                        onClick={async () => {
+                          if (!nameValue) {
+                            toast({ title: "Bitte gib zuerst einen Seitennamen ein", variant: "destructive" });
+                            return;
+                          }
+                          const result = await generateContent(nameValue, "Dating");
+                          if (result) {
+                            setValue("long_content_top", result.contentTop);
+                            setValue("long_content_bottom", result.contentBottom);
+                            toast({ title: "Content generiert!", description: `USPs und SEO-Text für ${nameValue} wurden erstellt.` });
+                          } else {
+                            toast({ title: "Fehler bei der Generierung", variant: "destructive" });
+                          }
+                        }}
+                      >
+                        {isGenerating ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Generiere...
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="w-4 h-4" />
+                            KI-Inhalt generieren
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
                   <div>
                     <Label htmlFor="long_content_top">Content oben (HTML) - USP-Cards, Einleitung</Label>
                     <Textarea 
                       id="long_content_top" 
                       {...register("long_content_top")} 
-                      placeholder={`<div class="usp-section">
-  <div class="usp-grid">
-    <div class="usp-card">
-      <div class="usp-icon">💕</div>
-      <h3>Echte Singles</h3>
-      <p>Verifizierte Profile aus deiner Stadt</p>
-    </div>
+                      placeholder={`<div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
+  <div class="bg-card border border-border rounded-2xl p-6 text-center">
+    <div class="text-4xl mb-4">💕</div>
+    <h3 class="text-lg font-semibold text-foreground mb-2">Echte Singles</h3>
+    <p class="text-muted-foreground text-sm">Verifizierte Profile aus deiner Stadt</p>
   </div>
 </div>`}
-                      rows={12}
-                      className="font-mono text-sm"
+                      rows={16}
+                      className="font-mono text-sm min-h-[200px]"
                     />
                     <p className="text-xs text-muted-foreground mt-1">HTML-Content oberhalb der App-Liste. Nutze USP-Cards, Einleitungstexte etc.</p>
                   </div>
@@ -409,13 +456,19 @@ export default function AdminCategories() {
                     <Textarea 
                       id="long_content_bottom" 
                       {...register("long_content_bottom")} 
-                      placeholder={`<h2>Häufig gestellte Fragen</h2>
-<details>
-  <summary>Welche Dating App ist in Salzburg am beliebtesten?</summary>
-  <p>In Salzburg sind besonders Tinder und Bumble beliebt...</p>
-</details>`}
-                      rows={12}
-                      className="font-mono text-sm"
+                      placeholder={`<div class="bg-muted/30 rounded-2xl p-8 my-12">
+  <h2 class="text-2xl font-display font-bold text-foreground mb-6">Dating in [Stadt]</h2>
+  <p class="text-muted-foreground">SEO-Text hier...</p>
+</div>
+
+<div class="space-y-4 my-12">
+  <details class="bg-card border border-border rounded-xl p-4">
+    <summary class="font-semibold cursor-pointer">FAQ Frage hier?</summary>
+    <p class="mt-3 text-muted-foreground text-sm">Antwort hier...</p>
+  </details>
+</div>`}
+                      rows={16}
+                      className="font-mono text-sm min-h-[200px]"
                     />
                     <p className="text-xs text-muted-foreground mt-1">HTML-Content unterhalb der App-Liste. Nutze FAQs, SEO-Texte etc.</p>
                   </div>

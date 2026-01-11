@@ -2,3 +2,9 @@ project_id = "zvlrpjakdsujncmfzurk"
 
 [functions.go-redirect]
 verify_jwt = false
+
+[functions.newsletter-subscribe]
+verify_jwt = false
+
+[functions.generate-city-content]
+verify_jwt = false
