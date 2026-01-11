@@ -1,11 +1,11 @@
 import { Link } from "react-router-dom";
 import { 
-  useFooterLinks, 
   useFooterSiteName, 
   useFooterDesignerName, 
   useFooterDesignerUrl 
 } from "@/hooks/useSettings";
 import { usePopularFooterLinks } from "@/hooks/usePopularFooterLinks";
+import { useLegalFooterLinks } from "@/hooks/useLegalFooterLinks";
 
 // Accept a partial category with only the footer-relevant fields
 interface FooterCategoryData {
@@ -22,9 +22,10 @@ interface CityLandingFooterProps {
 }
 
 export function CityLandingFooter({ category }: CityLandingFooterProps) {
-  const footerLinks = useFooterLinks();
   // Pass category id if available, otherwise load global links (category_id is null)
   const { data: popularLinks = [] } = usePopularFooterLinks(category?.id || null);
+  // Load category-specific legal links, fallback to global if none exist
+  const { data: legalLinks = [] } = useLegalFooterLinks(category?.id || null);
 
   // Load global footer settings from settings table
   const globalSiteName = useFooterSiteName();
@@ -94,9 +95,9 @@ export function CityLandingFooter({ category }: CityLandingFooterProps) {
         {/* Legal Links */}
         <div className="text-center mb-6">
           <div className="flex flex-wrap justify-center gap-6">
-            {footerLinks.map((link, index) => (
+            {legalLinks.map((link) => (
               <Link
-                key={index}
+                key={link.id}
                 to={link.url}
                 className="text-amber-500 font-semibold text-sm uppercase tracking-wide hover:text-amber-400 transition-colors"
               >
