@@ -247,48 +247,52 @@ const C4FRegistration = ({
           <div className="space-y-4">
             {/* Benutzername */}
             <div>
-              <label htmlFor="nick" className={labelClassName}>Benutzername</label>
+              <label htmlFor="nick" className={labelClassName}>Benutzername *</label>
               <input
                 type="text"
                 id="nick"
                 name="nick"
+                required
                 disabled={isLoading}
                 className={inputClassName}
               />
-              <div className="invalid-feedback text-red-500 text-xs mt-1"></div>
+              <div className="invalid-feedback"></div>
             </div>
 
             {/* Kennwort */}
             <div>
-              <label htmlFor="pass" className={labelClassName}>Kennwort</label>
+              <label htmlFor="pass" className={labelClassName}>Kennwort *</label>
               <input
                 type="password"
                 id="pass"
                 name="pass"
+                required
                 disabled={isLoading}
                 className={inputClassName}
               />
-              <div className="invalid-feedback text-red-500 text-xs mt-1"></div>
+              <div className="invalid-feedback"></div>
             </div>
 
             {/* E-Mailadresse */}
             <div>
-              <label htmlFor="email" className={labelClassName}>E-Mailadresse</label>
+              <label htmlFor="email" className={labelClassName}>E-Mailadresse *</label>
               <input
                 type="email"
                 id="email"
                 name="email"
+                required
                 disabled={isLoading}
                 className={inputClassName}
               />
-              <div className="invalid-feedback text-red-500 text-xs mt-1"></div>
+              <div className="invalid-feedback"></div>
             </div>
 
             {/* Geburtstag */}
             <div>
-              <label className={labelClassName}>Geburtstag</label>
+              <label className={labelClassName}>Geburtstag *</label>
               <div className="grid grid-cols-3 gap-2">
-                <select id="day" name="day" disabled={isLoading} className={selectClassName}>
+                <select id="day" name="day" required disabled={isLoading} className={selectClassName}>
+                  <option value="">Tag</option>
                   {days.map((day) => (
                     <option key={day} value={day}>
                       {day}
@@ -296,7 +300,8 @@ const C4FRegistration = ({
                   ))}
                 </select>
 
-                <select id="month" name="month" disabled={isLoading} className={selectClassName}>
+                <select id="month" name="month" required disabled={isLoading} className={selectClassName}>
+                  <option value="">Monat</option>
                   {months.map((m) => (
                     <option key={m.value} value={m.value}>
                       {m.label}
@@ -304,7 +309,8 @@ const C4FRegistration = ({
                   ))}
                 </select>
 
-                <select id="year" name="year" disabled={isLoading} className={selectClassName}>
+                <select id="year" name="year" required disabled={isLoading} className={selectClassName}>
+                  <option value="">Jahr</option>
                   {years.map((year) => (
                     <option key={year} value={year}>
                       {year}
@@ -312,7 +318,7 @@ const C4FRegistration = ({
                   ))}
                 </select>
               </div>
-              <div className="invalid-feedback text-red-500 text-xs mt-1"></div>
+              <div className="invalid-feedback"></div>
             </div>
 
             {/* Hidden Country */}
@@ -320,15 +326,16 @@ const C4FRegistration = ({
 
             {/* Stadt */}
             <div>
-              <label htmlFor="city" className={labelClassName}>Stadt</label>
+              <label htmlFor="city" className={labelClassName}>Stadt *</label>
               <input
                 type="text"
                 id="city"
                 name="city"
+                required
                 disabled={isLoading}
                 className={inputClassName}
               />
-              <div className="invalid-feedback text-red-500 text-xs mt-1"></div>
+              <div className="invalid-feedback"></div>
             </div>
 
             {/* Gender Selection with Icon Buttons */}
@@ -373,18 +380,18 @@ const C4FRegistration = ({
             </div>
 
             {/* Hidden selects for API - synced with state */}
-            <select id="gender" name="gender" value={gender} onChange={(e) => setGender(e.target.value)} className="hidden">
+            <select id="gender" name="gender" required value={gender} onChange={(e) => setGender(e.target.value)} className="hidden" aria-hidden="true">
               <option value=""></option>
               <option value="m">Mann</option>
               <option value="w">Frau</option>
             </select>
-            <select id="gender_search" name="gender_search" value={genderSearch} onChange={(e) => setGenderSearch(e.target.value)} className="hidden">
+            <select id="gender_search" name="gender_search" required value={genderSearch} onChange={(e) => setGenderSearch(e.target.value)} className="hidden" aria-hidden="true">
               <option value=""></option>
               <option value="m">Mann</option>
               <option value="w">Frau</option>
             </select>
 
-            <div className="invalid-feedback text-red-500 text-xs mt-1"></div>
+            <div className="invalid-feedback"></div>
 
             {/* AGB Checkbox */}
             <div className="flex items-start gap-2 pt-2">
@@ -392,6 +399,7 @@ const C4FRegistration = ({
                 type="checkbox"
                 id="conditions"
                 name="conditions"
+                required
                 disabled={isLoading}
                 className="h-4 w-4 mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
@@ -403,10 +411,11 @@ const C4FRegistration = ({
                 /{" "}
                 <a href="/datenschutz" className="text-blue-600 hover:underline">
                   Datenschutz
-                </a>
+                </a>{" "}
+                *
               </label>
             </div>
-            <div className="invalid-feedback text-red-500 text-xs mt-1"></div>
+            <div className="invalid-feedback"></div>
 
             {/* Register Button */}
             <Button
