@@ -67,12 +67,15 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
     return { __html: DOMPurify.sanitize(html) };
   };
 
+  // Get custom site name for header
+  const siteName = (category as any).site_name;
+
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header siteName={siteName} />
       <main className="pt-16">
         {/* Hero Section */}
-        <section className="relative bg-gradient-to-b from-card to-background py-16 md:py-24 overflow-hidden">
+        <section className="relative bg-gradient-to-br from-[#3d1515] via-[#5c1a1a] to-[#2d1010] py-16 md:py-24 overflow-hidden">
           {/* Background Pattern */}
           <div className="absolute inset-0 opacity-5">
             <div className="absolute inset-0" style={{
@@ -86,33 +89,40 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
             <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
               <Link to="/" className="hover:text-foreground transition-colors">Startseite</Link>
               <ChevronRight className="w-4 h-4" />
-              <Link to="/kategorien" className="hover:text-foreground transition-colors">Kategorien</Link>
+              <Link to="/kategorien" className="hover:text-foreground transition-colors">Regionen</Link>
               <ChevronRight className="w-4 h-4" />
               <span className="text-foreground">{category.name}</span>
             </nav>
 
-            <div className="max-w-4xl">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="text-5xl">{category.icon || "📍"}</span>
-                <Badge variant="secondary" className={`${theme.bg} ${theme.text} ${theme.border} border`}>
-                  {projects.length} Anbieter
-                </Badge>
+            <div className="max-w-4xl mx-auto text-center">
+              {/* Badge above headline */}
+              <div className="flex items-center justify-center gap-2 mb-4">
+                <span className={`text-2xl ${theme.text}`}>❤️</span>
+                <span className={`font-display font-semibold uppercase tracking-wider ${theme.text}`}>
+                  {category.name} SINGLES
+                </span>
               </div>
               
+              {/* Hero Headline - customizable */}
               <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl text-foreground mb-6 leading-tight">
-                {category.h1_title || category.name}
+                {(category as any).hero_headline || `Finde Singles in ${category.name} & Umgebung`}
               </h1>
               
               {category.description && (
-                <p className="text-xl text-muted-foreground max-w-2xl mb-8">
+                <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
                   {category.description}
                 </p>
               )}
 
-              <Button size="lg" className={`${theme.button} text-white gap-2`}>
-                <Sparkles className="w-5 h-5" />
-                Jetzt kostenlos starten
+              <Button size="lg" className="bg-amber-500 hover:bg-amber-400 text-black font-semibold gap-2 px-8 py-6 text-lg">
+                🔍 {category.name} Singles finden
               </Button>
+
+              {/* Trust text below button */}
+              <p className="mt-4 text-sm text-muted-foreground flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-green-500" />
+                Geprüft für Stadt & Land {category.name}
+              </p>
             </div>
           </div>
         </section>

@@ -19,6 +19,8 @@ export const categorySchema = z.object({
   icon: z.string().max(10).optional(),
   theme: categoryThemeEnum,
   template: categoryTemplateEnum.default("comparison"),
+  site_name: z.string().max(50).optional(),
+  hero_headline: z.string().max(150).optional(),
   meta_title: z.string().max(60).optional(),
   meta_description: z.string().max(160).optional(),
   h1_title: z.string().max(100).optional(),

@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           description: string | null
           h1_title: string | null
+          hero_headline: string | null
           icon: string | null
           id: string
           is_active: boolean
@@ -32,6 +33,7 @@ export type Database = {
           popup_headline: string | null
           popup_link: string | null
           popup_text: string | null
+          site_name: string | null
           slug: string
           sort_order: number
           sticky_cta_link: string | null
@@ -46,6 +48,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           h1_title?: string | null
+          hero_headline?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
@@ -57,6 +60,7 @@ export type Database = {
           popup_headline?: string | null
           popup_link?: string | null
           popup_text?: string | null
+          site_name?: string | null
           slug: string
           sort_order?: number
           sticky_cta_link?: string | null
@@ -71,6 +75,7 @@ export type Database = {
           created_at?: string
           description?: string | null
           h1_title?: string | null
+          hero_headline?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
@@ -82,6 +87,7 @@ export type Database = {
           popup_headline?: string | null
           popup_link?: string | null
           popup_text?: string | null
+          site_name?: string | null
           slug?: string
           sort_order?: number
           sticky_cta_link?: string | null

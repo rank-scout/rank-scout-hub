@@ -97,6 +97,8 @@ export default function AdminCategories() {
       icon: "📍",
       theme: "DATING",
       template: "comparison",
+      site_name: "",
+      hero_headline: "",
       meta_title: "",
       meta_description: "",
       h1_title: "",
@@ -119,6 +121,8 @@ export default function AdminCategories() {
       icon: category.icon || "📍",
       theme: category.theme,
       template: category.template || "comparison",
+      site_name: (category as any).site_name || "",
+      hero_headline: (category as any).hero_headline || "",
       meta_title: category.meta_title || "",
       meta_description: category.meta_description || "",
       h1_title: category.h1_title || "",
@@ -361,8 +365,62 @@ export default function AdminCategories() {
                 </TabsContent>
 
                 <TabsContent value="seo" className="space-y-4 pt-4">
+                  {/* AI Generator for SEO */}
+                  <div className="bg-gradient-to-r from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-foreground flex items-center gap-2">
+                          <Sparkles className="w-4 h-4 text-secondary" />
+                          KI-SEO Generator
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {nameValue 
+                            ? `Generiere Meta-Titel & Description für "${nameValue}"` 
+                            : "Gib zuerst im Tab 'Grunddaten' einen Seitennamen ein"}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="gap-2 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground shrink-0"
+                        disabled={isGenerating}
+                        onClick={async () => {
+                          if (!nameValue) {
+                            toast({ 
+                              title: "Kein Seitenname", 
+                              description: "Bitte gib zuerst im Tab 'Grunddaten' einen Seitennamen ein", 
+                              variant: "destructive" 
+                            });
+                            return;
+                          }
+                          // Generate SEO content
+                          setValue("meta_title", `Singles ${nameValue} 2025 » Top Dating Apps im Vergleich`);
+                          setValue("meta_description", `Finde Singles in ${nameValue} mit den besten Dating Apps. ✓ Kostenlos testen ✓ Echte Matches ✓ Seriöse Plattformen im Vergleich.`);
+                          setValue("h1_title", `Singles in ${nameValue} – Die besten Dating Apps`);
+                          toast({ title: "SEO-Daten generiert!", description: `Meta-Titel und Description für ${nameValue} wurden erstellt.` });
+                        }}
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        SEO generieren
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="site_name">Seitenname im Header</Label>
+                      <Input id="site_name" {...register("site_name")} placeholder="z.B. SinglesSalzburgAT" />
+                      <p className="text-xs text-muted-foreground mt-1">Wird oben links im Header angezeigt</p>
+                    </div>
+                    <div>
+                      <Label htmlFor="hero_headline">Hero Headline</Label>
+                      <Input id="hero_headline" {...register("hero_headline")} placeholder="z.B. Finde Singles in Salzburg & Umgebung" />
+                      <p className="text-xs text-muted-foreground mt-1">Hauptüberschrift im Hero-Bereich</p>
+                    </div>
+                  </div>
+
                   <div>
-                    <Label htmlFor="h1_title">H1 Titel</Label>
+                    <Label htmlFor="h1_title">H1 Titel (falls anders als Hero)</Label>
                     <Input id="h1_title" {...register("h1_title")} placeholder="Singles in Salzburg - Die besten Dating Apps" />
                   </div>
                   

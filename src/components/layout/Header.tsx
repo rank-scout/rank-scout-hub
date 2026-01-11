@@ -3,7 +3,11 @@ import { useNavLinks } from "@/hooks/useSettings";
 import { Search, Menu, X } from "lucide-react";
 import { useState } from "react";
 
-export function Header() {
+interface HeaderProps {
+  siteName?: string;
+}
+
+export function Header({ siteName }: HeaderProps = {}) {
   const navLinks = useNavLinks();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -13,11 +17,13 @@ export function Header() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-gradient rounded-lg flex items-center justify-center">
-              <Search className="w-4 h-4 text-primary-foreground" />
-            </div>
+            {!siteName && (
+              <div className="w-8 h-8 bg-primary-gradient rounded-lg flex items-center justify-center">
+                <Search className="w-4 h-4 text-primary-foreground" />
+              </div>
+            )}
             <span className="font-display font-bold text-xl text-foreground">
-              Rank-Scout
+              {siteName || "Rank-Scout"}
             </span>
           </Link>
 
