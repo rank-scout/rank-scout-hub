@@ -1,11 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
 interface C4FRegistrationProps {
-  partnerCode?: string;
   backgroundImage?: string;
 }
 
@@ -18,7 +17,7 @@ interface C4FInstance {
 
 declare global {
   interface Window {
-    C4fRegister: new (config: { code: string }) => C4FInstance;
+    C4fRegister: new (code: string | null, subid: string | null, extra: unknown) => C4FInstance;
     cfr: C4FInstance | null;
     jQuery: unknown;
     $: unknown;
@@ -28,14 +27,29 @@ declare global {
 // BUGFIX: Safe error message extraction - prevents React Error #31
 const safeToastError = (error: unknown): string => {
   if (typeof error === "string") {
+    // Handle 505 error specifically
+    if (error.includes("505") || error.toLowerCase().includes("not valid")) {
+      return "Kein Produkt gewählt. Bitte Link prüfen.";
+    }
     return error;
   }
   if (error && typeof error === "object") {
     if ("message" in error && typeof (error as { message: unknown }).message === "string") {
-      return (error as { message: string }).message;
+      const msg = (error as { message: string }).message;
+      if (msg.includes("505") || msg.toLowerCase().includes("not valid")) {
+        return "Kein Produkt gewählt. Bitte Link prüfen.";
+      }
+      return msg;
+    }
+    if ("code" in error && (error as { code: unknown }).code === 505) {
+      return "Kein Produkt gewählt. Bitte Link prüfen.";
     }
     try {
-      return JSON.stringify(error);
+      const str = JSON.stringify(error);
+      if (str.includes("505")) {
+        return "Kein Produkt gewählt. Bitte Link prüfen.";
+      }
+      return str;
     } catch {
       return "Ein unbekannter Fehler ist aufgetreten.";
     }
@@ -44,15 +58,19 @@ const safeToastError = (error: unknown): string => {
 };
 
 const C4FRegistration = ({ 
-  partnerCode = "PLACEHOLDER_CODE",
   backgroundImage = "https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?w=1920&q=80"
 }: C4FRegistrationProps) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
   const [gender, setGender] = useState<string>("");
   const [genderSearch, setGenderSearch] = useState<string>("");
   const cfrRef = useRef<C4FInstance | null>(null);
+  
+  // Dynamic URL parameters for multi-product support
+  const code = searchParams.get('code');
+  const subid = searchParams.get('subid');
 
   // Generate data for selects
   const currentYear = new Date().getFullYear();
@@ -99,7 +117,8 @@ const C4FRegistration = ({
         await new Promise((r) => setTimeout(r, 200));
 
         if (window.C4fRegister) {
-          const cfr = new window.C4fRegister({ code: partnerCode });
+          // Use dynamic code from URL parameters
+          const cfr = new window.C4fRegister(code, subid, null);
 
           cfr.showError = (msg: unknown) => {
             const safeMsg = safeToastError(msg);
@@ -141,7 +160,7 @@ const C4FRegistration = ({
     return () => {
       cfrRef.current = null;
     };
-  }, [partnerCode, navigate]);
+  }, [code, subid, navigate]);
 
   const handleRegister = async () => {
     setIsLoading(true);

@@ -40,11 +40,7 @@ const App = () => (
               <Route path="/kategorien/:slug" element={<CategoryDetail />} />
               <Route path="/go/:slug" element={<GoRedirect />} />
               <Route path="/welcome" element={<Welcome />} />
-              <Route path="/test-register" element={
-                <div className="min-h-screen bg-background flex items-center justify-center p-4">
-                  <C4FRegistration partnerCode="PLACEHOLDER_CODE" />
-                </div>
-              } />
+              <Route path="/test-register" element={<C4FRegistration />} />
               
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
