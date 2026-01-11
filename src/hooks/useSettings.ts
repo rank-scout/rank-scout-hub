@@ -103,3 +103,20 @@ export function useNavLinks() {
 export function useFooterLinks() {
   return useSetting<NavLink[]>("footer_links", []);
 }
+
+// Global footer settings hooks (used when no category is provided)
+export function useFooterSiteName() {
+  return useSetting<string>("footer_site_name", "Rank-Scout");
+}
+
+export function useFooterCopyright() {
+  return useSetting<string>("footer_copyright", `© ${new Date().getFullYear()} Rank-Scout. Alle Rechte vorbehalten.`);
+}
+
+export function useFooterDesignerName() {
+  return useSetting<string>("footer_designer_name", "Digital-Perfect");
+}
+
+export function useFooterDesignerUrl() {
+  return useSetting<string>("footer_designer_url", "https://digital-perfect.com");
+}

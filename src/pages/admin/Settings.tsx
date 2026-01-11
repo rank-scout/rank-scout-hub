@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles, Building } from "lucide-react";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -24,6 +24,9 @@ export default function AdminSettings() {
   const [trendingLinks, setTrendingLinks] = useState<TrendingLink[]>([]);
   const [navLinks, setNavLinks] = useState<NavLink[]>([]);
   const [footerLinks, setFooterLinks] = useState<NavLink[]>([]);
+  const [footerSiteName, setFooterSiteName] = useState("");
+  const [footerDesignerName, setFooterDesignerName] = useState("");
+  const [footerDesignerUrl, setFooterDesignerUrl] = useState("");
   const [initialized, setInitialized] = useState(false);
 
   // Initialize form values from settings
@@ -37,6 +40,9 @@ export default function AdminSettings() {
     setTrendingLinks((settings.trending_links as TrendingLink[]) || []);
     setNavLinks((settings.nav_links as NavLink[]) || []);
     setFooterLinks((settings.footer_links as NavLink[]) || []);
+    setFooterSiteName((settings.footer_site_name as string) || "Rank-Scout");
+    setFooterDesignerName((settings.footer_designer_name as string) || "Digital-Perfect");
+    setFooterDesignerUrl((settings.footer_designer_url as string) || "https://digital-perfect.com");
     setInitialized(true);
   }
 
@@ -403,6 +409,59 @@ export default function AdminSettings() {
               Speichern
             </Button>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Global Footer Settings */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Building className="w-5 h-5" />
+            Footer Branding
+          </CardTitle>
+          <CardDescription>Globale Footer-Einstellungen für alle Seiten (wird verwendet, wenn keine Kategorie-spezifischen Werte gesetzt sind).</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="footerSiteName">Site-Name (Logo)</Label>
+            <Input
+              id="footerSiteName"
+              value={footerSiteName}
+              onChange={(e) => setFooterSiteName(e.target.value)}
+              placeholder="Rank-Scout"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Wird im Footer als Logo angezeigt</p>
+          </div>
+          <div>
+            <Label htmlFor="footerDesignerName">Designer Name</Label>
+            <Input
+              id="footerDesignerName"
+              value={footerDesignerName}
+              onChange={(e) => setFooterDesignerName(e.target.value)}
+              placeholder="Digital-Perfect"
+            />
+          </div>
+          <div>
+            <Label htmlFor="footerDesignerUrl">Designer URL</Label>
+            <Input
+              id="footerDesignerUrl"
+              value={footerDesignerUrl}
+              onChange={(e) => setFooterDesignerUrl(e.target.value)}
+              placeholder="https://digital-perfect.com"
+            />
+          </div>
+          <Button 
+            onClick={() => {
+              saveSetting("footer_site_name", footerSiteName);
+              saveSetting("footer_designer_name", footerDesignerName);
+              saveSetting("footer_designer_url", footerDesignerUrl);
+            }}
+            disabled={updateSetting.isPending}
+            className="gap-2"
+          >
+            {updateSetting.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Speichern
+          </Button>
         </CardContent>
       </Card>
 
