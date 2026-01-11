@@ -517,6 +517,8 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 <h2 class="font-heading font-bold text-2xl md:text-3xl text-white mb-4">Singles-News direkt ins Postfach</h2>
                 <p class="text-gray-300 mb-8 max-w-lg mx-auto">Erhalte exklusive Dating-Tipps, neue App-Reviews und regionale Events – kostenlos und unverbindlich.</p>
                 <form id="newsletter-form" class="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
+                    <!-- Honeypot field for bot detection - hidden with CSS -->
+                    <input type="text" name="website" id="newsletter-honeypot" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" tabindex="-1" autocomplete="off" />
                     <input 
                         type="email" 
                         id="newsletter-email" 
@@ -1032,33 +1034,45 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 alert('Link kopiert!');
             };
             
-            // 17. Newsletter Form Handler
+            // 17. Newsletter Form Handler - Uses rate-limited Edge Function
             const newsletterForm = el('newsletter-form');
             if (newsletterForm) {
                 newsletterForm.onsubmit = async function(e) {
                     e.preventDefault();
                     const email = el('newsletter-email').value;
+                    const honeypot = el('newsletter-honeypot')?.value || '';
                     if (!email) return;
                     
+                    // Client-side throttling - max 1 submission per 60 seconds
+                    const lastSubmit = localStorage.getItem('newsletter_last_submit');
+                    if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
+                        console.log('Newsletter submission throttled');
+                        return;
+                    }
+                    
                     try {
-                        const res = await fetch(SUPABASE_URL + '/rest/v1/subscribers', {
+                        // Use Edge Function with rate limiting instead of direct REST API
+                        const res = await fetch(SUPABASE_URL + '/functions/v1/newsletter-subscribe', {
                             method: 'POST',
                             headers: {
-                                ...headers,
                                 'Content-Type': 'application/json',
-                                'Prefer': 'return=minimal'
+                                'apikey': SUPABASE_KEY
                             },
                             body: JSON.stringify({
                                 email: email,
-                                source_page: SLUG
+                                source_page: SLUG,
+                                honeypot: honeypot
                             })
                         });
                         
-                        if (res.ok || res.status === 201 || res.status === 409) {
+                        if (res.ok) {
+                            localStorage.setItem('newsletter_last_submit', Date.now().toString());
                             el('newsletter-message').classList.remove('hidden');
                             el('newsletter-email').value = '';
                             newsletterForm.style.opacity = '0.5';
                             newsletterForm.style.pointerEvents = 'none';
+                        } else if (res.status === 429) {
+                            console.log('Rate limited - too many subscription attempts');
                         }
                     } catch (err) {
                         console.error('Newsletter signup error:', err);
@@ -1433,6 +1447,8 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                         </h3>
                         <p class="text-sm text-gray-300 mb-4">Neue Testberichte direkt in dein Postfach.</p>
                         <form id="newsletter-form" class="space-y-3">
+                            <!-- Honeypot field for bot detection - hidden with CSS -->
+                            <input type="text" name="website" id="newsletter-honeypot" style="position:absolute;left:-9999px;opacity:0;pointer-events:none;" tabindex="-1" autocomplete="off" />
                             <input 
                                 type="email" 
                                 id="newsletter-email" 
@@ -1621,26 +1637,41 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 el('analytics-container').innerHTML = sanitizeAnalytics(category.analytics_code);
             }
             
-            // 6. Newsletter
+            // 6. Newsletter - Uses rate-limited Edge Function
             const newsletterForm = el('newsletter-form');
             if (newsletterForm) {
                 newsletterForm.onsubmit = async function(e) {
                     e.preventDefault();
                     const email = el('newsletter-email').value;
+                    const honeypot = el('newsletter-honeypot')?.value || '';
                     if (!email) return;
                     
+                    // Client-side throttling - max 1 submission per 60 seconds
+                    const lastSubmit = localStorage.getItem('newsletter_last_submit');
+                    if (lastSubmit && Date.now() - parseInt(lastSubmit) < 60000) {
+                        console.log('Newsletter submission throttled');
+                        return;
+                    }
+                    
                     try {
-                        const res = await fetch(SUPABASE_URL + '/rest/v1/subscribers', {
+                        // Use Edge Function with rate limiting instead of direct REST API
+                        const res = await fetch(SUPABASE_URL + '/functions/v1/newsletter-subscribe', {
                             method: 'POST',
-                            headers: { ...headers, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
-                            body: JSON.stringify({ email: email, source_page: category.slug })
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'apikey': SUPABASE_KEY
+                            },
+                            body: JSON.stringify({ email: email, source_page: category.slug, honeypot: honeypot })
                         });
                         
-                        if (res.ok || res.status === 201 || res.status === 409) {
+                        if (res.ok) {
+                            localStorage.setItem('newsletter_last_submit', Date.now().toString());
                             el('newsletter-message').classList.remove('hidden');
                             el('newsletter-email').value = '';
                             newsletterForm.style.opacity = '0.5';
                             newsletterForm.style.pointerEvents = 'none';
+                        } else if (res.status === 429) {
+                            console.log('Rate limited - too many subscription attempts');
                         }
                     } catch (err) {
                         console.error('Newsletter error:', err);
