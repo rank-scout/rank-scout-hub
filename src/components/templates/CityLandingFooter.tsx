@@ -1,23 +1,32 @@
 import { Link } from "react-router-dom";
 import { useFooterLinks } from "@/hooks/useSettings";
 import { usePopularFooterLinks } from "@/hooks/usePopularFooterLinks";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Category = Tables<"categories">;
+// Accept a partial category with only the footer-relevant fields
+interface FooterCategoryData {
+  id?: string;
+  site_name?: string | null;
+  footer_site_name?: string | null;
+  footer_copyright_text?: string | null;
+  footer_designer_name?: string | null;
+  footer_designer_url?: string | null;
+}
 
 interface CityLandingFooterProps {
-  category?: Category | null;
+  category?: FooterCategoryData | null;
 }
 
 export function CityLandingFooter({ category }: CityLandingFooterProps) {
   const footerLinks = useFooterLinks();
-  const { data: popularLinks = [] } = usePopularFooterLinks(category?.id);
+  // Pass category id if available, otherwise load global links (category_id is null)
+  const { data: popularLinks = [] } = usePopularFooterLinks(category?.id || null);
 
   // Get footer settings from category or use defaults
   const siteName = category?.footer_site_name || category?.site_name || "DatingAppVergleichAT";
   const copyrightText = category?.footer_copyright_text || `© ${new Date().getFullYear()} ${siteName}. Alle Rechte vorbehalten.`;
   const designerName = category?.footer_designer_name || "Digital-Perfect";
-  const designerUrl = category?.footer_designer_url || "https://digital-perfect.at";
+  // IMPORTANT: Default designer URL is now digital-perfect.com
+  const designerUrl = category?.footer_designer_url || "https://digital-perfect.com";
 
   // Parse siteName to highlight parts (e.g., "DatingAppVergleichAT")
   const renderSiteName = () => {
@@ -50,7 +59,7 @@ export function CityLandingFooter({ category }: CityLandingFooterProps) {
           </Link>
         </div>
 
-        {/* Popular Links Section */}
+        {/* Popular Links Section - Always show if links exist */}
         {popularLinks.length > 0 && (
           <div className="text-center mb-10">
             <h4 className="text-amber-500 font-semibold text-xs uppercase tracking-[0.2em] mb-6">
