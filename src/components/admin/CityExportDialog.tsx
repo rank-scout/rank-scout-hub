@@ -237,7 +237,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <!-- HEADER -->
     <header id="main-header" class="w-full bg-brand-black text-white py-3 px-4 shadow-md sticky top-0 z-50">
         <div class="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-2">
-            <a href="https://dating.rank-scout.com" class="font-heading font-bold text-xl tracking-tight text-brand-gold hover:text-brand-light transition-colors">
+            <a id="header-site-name" href="https://dating.rank-scout.com" class="font-heading font-bold text-xl tracking-tight text-brand-gold hover:text-brand-light transition-colors">
                 SinglesSalzburgAT
             </a>
             <nav class="hidden md:flex items-center space-x-2 text-sm">
@@ -816,10 +816,26 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             // 5. Hero-Texte ersetzen
             const locationName = category.name.replace(/^Singles\\s*/i, '').trim() || category.name;
             if (category.h1_title) el('hero-subtitle').textContent = category.h1_title.replace(/2026/g, year);
-            el('hero-title').textContent = locationName + ' & Umgebung';
+            
+            // Nutze hero_headline wenn vorhanden, sonst Fallback
+            if (category.hero_headline) {
+                // Entferne "Finde Singles in " am Anfang falls vorhanden, wir brauchen nur den dynamischen Teil
+                const headlineText = category.hero_headline.replace(/^Finde Singles in\\s*/i, '').trim();
+                el('hero-title').textContent = headlineText;
+            } else {
+                el('hero-title').textContent = locationName + ' & Umgebung';
+            }
+            
             if (category.description) el('hero-description').textContent = category.description;
             el('hero-cta').textContent = locationName + 'er Singles finden';
             el('hero-badge').textContent = 'Geprüft für Stadt & Land ' + locationName;
+            
+            // Site Name im Header (falls custom)
+            if (category.site_name) {
+                el('header-site-name').textContent = category.site_name;
+            } else {
+                el('header-site-name').textContent = 'Singles' + locationName + 'AT';
+            }
             
             // Breadcrumbs aktualisieren
             el('breadcrumb-current').textContent = category.h1_title || ('Singles ' + locationName);
@@ -1249,8 +1265,8 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
     <!-- HEADER -->
     <header class="w-full bg-brand-black text-white py-4 px-6 shadow-lg sticky top-0 z-50">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
-            <a href="https://dating.rank-scout.com" class="font-heading font-bold text-xl tracking-tight text-brand-gold hover:text-brand-light transition-colors">
-                DatingRankScout
+            <a id="header-site-name" href="https://dating.rank-scout.com" class="font-heading font-bold text-xl tracking-tight text-brand-gold hover:text-brand-light transition-colors">
+                ${category?.site_name || "DatingRankScout"}
             </a>
             <nav class="hidden md:flex items-center space-x-6 text-sm">
                 <a href="https://dating.rank-scout.com/top3-dating-apps/" class="hover:text-brand-gold transition-colors">Top Dating Apps</a>
@@ -1554,6 +1570,11 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             
             // Breadcrumb
             el('breadcrumb-current').textContent = category.name;
+            
+            // Update site name in header if custom
+            if (category.site_name) {
+                el('header-site-name').textContent = category.site_name;
+            }
             
             // Article content from description (render as HTML)
             if (category.description) {
