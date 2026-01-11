@@ -20,6 +20,7 @@ import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Down
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
+import { CategoryLegalLinksEditor } from "@/components/admin/CategoryLegalLinksEditor";
 
 // Helper to generate slug from page name
 function generateSlug(name: string): string {
@@ -700,9 +701,14 @@ export default function AdminCategories() {
                     </div>
                   </div>
 
-                  {/* Footer Links Editor - only show when editing existing category */}
+                  {/* Popular Footer Links Editor */}
                   <div className="border rounded-lg p-4">
                     <CategoryFooterLinksEditor categoryId={editingCategory?.id || null} />
+                  </div>
+
+                  {/* Legal Links Editor */}
+                  <div className="border rounded-lg p-4">
+                    <CategoryLegalLinksEditor categoryId={editingCategory?.id || null} />
                   </div>
                 </TabsContent>
 
