@@ -19,6 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
+import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
 
 // Helper to generate slug from page name
 function generateSlug(name: string): string {
@@ -697,13 +698,11 @@ export default function AdminCategories() {
                         <Input id="footer_designer_url" {...register("footer_designer_url")} placeholder="https://digital-perfect.at" />
                       </div>
                     </div>
+                  </div>
 
-                    <div className="bg-muted/50 rounded-lg p-4 mt-4">
-                      <p className="text-sm text-muted-foreground">
-                        💡 <strong>Tipp:</strong> Die "Beliebte Suche & Regionen" Links kannst du im Menüpunkt "Footer-Links" verwalten.
-                        Dort kannst du globale Links für alle Seiten oder spezifische Links nur für diese Kategorie anlegen.
-                      </p>
-                    </div>
+                  {/* Footer Links Editor - only show when editing existing category */}
+                  <div className="border rounded-lg p-4">
+                    <CategoryFooterLinksEditor categoryId={editingCategory?.id || null} />
                   </div>
                 </TabsContent>
 
