@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
@@ -79,6 +79,7 @@ export default function AdminCategories() {
 
   const theme = watch("theme");
   const template = watch("template");
+  const colorTheme = watch("color_theme");
   const isActive = watch("is_active");
   const nameValue = watch("name");
 
@@ -99,6 +100,7 @@ export default function AdminCategories() {
       icon: "📍",
       theme: "DATING",
       template: "comparison",
+      color_theme: "dark",
       site_name: "",
       hero_headline: "",
       hero_pretitle: "Finde Singles in",
@@ -130,6 +132,7 @@ export default function AdminCategories() {
       icon: category.icon || "📍",
       theme: category.theme,
       template: category.template || "comparison",
+      color_theme: (category as any).color_theme || "dark",
       site_name: category.site_name || "",
       hero_headline: category.hero_headline || "",
       hero_pretitle: category.hero_pretitle || "Finde Singles in",
@@ -330,18 +333,18 @@ export default function AdminCategories() {
                     <Textarea id="description" {...register("description")} placeholder="Die besten Dating Apps in Salzburg..." rows={2} />
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="theme">Theme</Label>
+                      <Label htmlFor="theme">Branchen-Theme</Label>
                       <Select value={theme} onValueChange={(v) => setValue("theme", v as CategoryInput["theme"])}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="DATING">Dating</SelectItem>
-                          <SelectItem value="GENERIC">Generisch</SelectItem>
-                          <SelectItem value="CASINO">Casino</SelectItem>
-                          <SelectItem value="ADULT">Adult</SelectItem>
+                          <SelectItem value="DATING">💕 Dating</SelectItem>
+                          <SelectItem value="GENERIC">📊 Generisch</SelectItem>
+                          <SelectItem value="CASINO">🎰 Casino</SelectItem>
+                          <SelectItem value="ADULT">🔞 Adult</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -366,8 +369,44 @@ export default function AdminCategories() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="color_theme" className="flex items-center gap-2">
+                        <Palette className="w-4 h-4" />
+                        Farbmodus
+                      </Label>
+                      <Select value={colorTheme} onValueChange={(v) => setValue("color_theme", v as "dark" | "light" | "neon")}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="dark">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded-full bg-slate-900 border border-slate-700" />
+                              <span>Dark Mode</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="light">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded-full bg-white border border-gray-300" />
+                              <span>Light Mode</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="neon">
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 rounded-full bg-gradient-to-r from-cyan-400 to-fuchsia-500" />
+                              <span>Neon Mode</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {template === "comparison" ? "Standard-Vergleichsliste mit mehreren Apps" : "Einzelner Artikel mit Sidebar-Widget"}
+                        {colorTheme === "dark" && "Klassisches dunkles Design"}
+                        {colorTheme === "light" && "Helles, modernes Design"}
+                        {colorTheme === "neon" && "Cyberpunk-Stil mit Neon-Farben"}
                       </p>
                     </div>
                     <div className="flex items-center justify-between pt-6">

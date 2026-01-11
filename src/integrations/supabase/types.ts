@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           analytics_code: string | null
           banner_override: string | null
+          color_theme: string
           created_at: string
           description: string | null
           footer_copyright_text: string | null
@@ -52,6 +53,7 @@ export type Database = {
         Insert: {
           analytics_code?: string | null
           banner_override?: string | null
+          color_theme?: string
           created_at?: string
           description?: string | null
           footer_copyright_text?: string | null
@@ -86,6 +88,7 @@ export type Database = {
         Update: {
           analytics_code?: string | null
           banner_override?: string | null
+          color_theme?: string
           created_at?: string
           description?: string | null
           footer_copyright_text?: string | null

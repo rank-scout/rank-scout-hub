@@ -11,6 +11,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 // Category schemas
 export const categoryThemeEnum = z.enum(["DATING", "ADULT", "CASINO", "GENERIC"]);
 export const categoryTemplateEnum = z.enum(["comparison", "review"]);
+export const colorThemeEnum = z.enum(["dark", "light", "neon"]);
 
 export const categorySchema = z.object({
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
@@ -33,6 +34,8 @@ export const categorySchema = z.object({
   banner_override: z.string().optional(),
   is_active: z.boolean().default(true),
   sort_order: z.number().int().min(0).default(0),
+  // Color theme for the page
+  color_theme: colorThemeEnum.default("dark"),
   // Footer settings for City Landing Pages
   footer_site_name: z.string().max(100).optional(),
   footer_copyright_text: z.string().max(200).optional(),
