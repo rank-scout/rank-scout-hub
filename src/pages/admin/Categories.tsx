@@ -388,24 +388,30 @@ export default function AdminCategories() {
                 <TabsContent value="content" className="space-y-4 pt-4">
                   {/* AI Generator Button */}
                   <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4">
-                    <div className="flex items-center justify-between gap-4">
-                      <div>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                      <div className="flex-1">
                         <h4 className="font-semibold text-foreground flex items-center gap-2">
                           <Sparkles className="w-4 h-4 text-primary" />
                           KI-Content Generator
                         </h4>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Generiere USP-Cards und SEO-Texte automatisch basierend auf dem Seitennamen.
+                          {nameValue 
+                            ? `Generiere Content für "${nameValue}"` 
+                            : "Gib zuerst im Tab 'Grunddaten' einen Seitennamen ein (z.B. Salzburg)"}
                         </p>
                       </div>
                       <Button
                         type="button"
                         variant="outline"
-                        className="gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                        disabled={isGenerating || !nameValue}
+                        className="gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground shrink-0"
+                        disabled={isGenerating}
                         onClick={async () => {
                           if (!nameValue) {
-                            toast({ title: "Bitte gib zuerst einen Seitennamen ein", variant: "destructive" });
+                            toast({ 
+                              title: "Kein Seitenname", 
+                              description: "Bitte gib zuerst im Tab 'Grunddaten' einen Seitennamen ein (z.B. Salzburg)", 
+                              variant: "destructive" 
+                            });
                             return;
                           }
                           const result = await generateContent(nameValue, "Dating");
