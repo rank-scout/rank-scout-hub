@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -54,7 +51,7 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
 
   // Generate data for selects
   const currentYear = new Date().getFullYear();
-  const years = Array.from({ length: 73 }, (_, i) => currentYear - 18 - i); // 18 to 90 years ago
+  const years = Array.from({ length: 82 }, (_, i) => currentYear - 18 - i); // 18 to 99 years ago
   const days = Array.from({ length: 31 }, (_, i) => i + 1);
   const months = [
     { value: "1", label: "Januar" },
@@ -192,8 +189,14 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
     }
   };
 
+  // Native input styling classes (matching Tailwind/shadcn look)
+  const inputClassName =
+    "flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
   const selectClassName =
-    "flex h-10 w-full items-center justify-between rounded-md border border-border bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+    "flex h-10 w-full items-center justify-between rounded-md border border-border bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
+  const labelClassName = "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70";
 
   return (
     <Card className="w-full max-w-md mx-auto shadow-lg border-border/50">
@@ -206,49 +209,49 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
         <div className="space-y-4">
           {/* Nickname */}
           <div className="space-y-2">
-            <Label htmlFor="nick">Nickname</Label>
-            <Input
+            <label htmlFor="nick" className={labelClassName}>Nickname</label>
+            <input
+              type="text"
               id="nick"
               name="nick"
-              type="text"
               placeholder="Dein Nickname"
               disabled={isLoading}
-              className="bg-input border-border"
+              className={inputClassName}
             />
             <div className="invalid-feedback"></div>
           </div>
 
           {/* Password */}
           <div className="space-y-2">
-            <Label htmlFor="pass">Passwort</Label>
-            <Input
+            <label htmlFor="pass" className={labelClassName}>Passwort</label>
+            <input
+              type="password"
               id="pass"
               name="pass"
-              type="password"
               placeholder="Dein Passwort"
               disabled={isLoading}
-              className="bg-input border-border"
+              className={inputClassName}
             />
             <div className="invalid-feedback"></div>
           </div>
 
           {/* Email */}
           <div className="space-y-2">
-            <Label htmlFor="email">E-Mail</Label>
-            <Input
+            <label htmlFor="email" className={labelClassName}>E-Mail</label>
+            <input
+              type="email"
               id="email"
               name="email"
-              type="email"
               placeholder="deine@email.de"
               disabled={isLoading}
-              className="bg-input border-border"
+              className={inputClassName}
             />
             <div className="invalid-feedback"></div>
           </div>
 
           {/* Birthday - 3 Selects nebeneinander */}
           <div className="space-y-2">
-            <Label>Geburtstag</Label>
+            <label className={labelClassName}>Geburtstag</label>
             <div className="grid grid-cols-3 gap-2">
               <select id="day" name="day" disabled={isLoading} className={selectClassName}>
                 <option value="">Tag</option>
@@ -280,35 +283,26 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
             <div className="invalid-feedback"></div>
           </div>
 
-          {/* Country - API fills this typically */}
-          <div className="space-y-2">
-            <Label htmlFor="country">Land</Label>
-            <select id="country" name="country" disabled={isLoading} className={selectClassName}>
-              <option value="">Land wählen</option>
-              <option value="DE">Deutschland</option>
-              <option value="AT">Österreich</option>
-              <option value="CH">Schweiz</option>
-            </select>
-            <div className="invalid-feedback"></div>
-          </div>
+          {/* Hidden Country field - API expects this */}
+          <input type="hidden" id="country" name="country" value="DE" />
 
           {/* City */}
           <div className="space-y-2">
-            <Label htmlFor="city">Stadt</Label>
-            <Input
+            <label htmlFor="city" className={labelClassName}>Stadt</label>
+            <input
+              type="text"
               id="city"
               name="city"
-              type="text"
               placeholder="Deine Stadt"
               disabled={isLoading}
-              className="bg-input border-border"
+              className={inputClassName}
             />
             <div className="invalid-feedback"></div>
           </div>
 
           {/* Gender */}
           <div className="space-y-2">
-            <Label htmlFor="gender">Ich bin</Label>
+            <label htmlFor="gender" className={labelClassName}>Ich bin</label>
             <select id="gender" name="gender" disabled={isLoading} className={selectClassName}>
               <option value="">Geschlecht wählen</option>
               <option value="m">Mann</option>
@@ -319,7 +313,7 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
 
           {/* Search preference */}
           <div className="space-y-2">
-            <Label htmlFor="gender_search">Ich suche</Label>
+            <label htmlFor="gender_search" className={labelClassName}>Ich suche</label>
             <select id="gender_search" name="gender_search" disabled={isLoading} className={selectClassName}>
               <option value="">Was suchst du?</option>
               <option value="m">Mann</option>
@@ -328,10 +322,16 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
             <div className="invalid-feedback"></div>
           </div>
 
-          {/* Terms checkbox */}
+          {/* Terms checkbox - NATIVE INPUT for API compatibility! */}
           <div className="flex items-start space-x-3 pt-2">
-            <Checkbox id="conditions" name="conditions" disabled={isLoading} />
-            <Label htmlFor="conditions" className="text-sm leading-tight cursor-pointer text-muted-foreground">
+            <input
+              type="checkbox"
+              id="conditions"
+              name="conditions"
+              disabled={isLoading}
+              className="h-4 w-4 mt-0.5 rounded border-border text-primary focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            />
+            <label htmlFor="conditions" className="text-sm leading-tight cursor-pointer text-muted-foreground">
               Ich akzeptiere die{" "}
               <a href="/agb" className="text-primary hover:underline">
                 AGB
@@ -340,7 +340,7 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
               <a href="/datenschutz" className="text-primary hover:underline">
                 Datenschutzerklärung
               </a>
-            </Label>
+            </label>
           </div>
           <div className="invalid-feedback"></div>
 
