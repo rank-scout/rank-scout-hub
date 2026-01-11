@@ -22,6 +22,11 @@ export type Category = {
   long_content_bottom: string | null;
   analytics_code: string | null;
   banner_override: string | null;
+  // Footer fields
+  footer_site_name: string | null;
+  footer_copyright_text: string | null;
+  footer_designer_name: string | null;
+  footer_designer_url: string | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -107,6 +112,11 @@ export function useCreateCategory() {
           h1_title: input.h1_title || null,
           long_content_top: input.long_content_top || null,
           long_content_bottom: input.long_content_bottom || null,
+          // Footer fields
+          footer_site_name: input.footer_site_name || null,
+          footer_copyright_text: input.footer_copyright_text || null,
+          footer_designer_name: input.footer_designer_name || "Digital-Perfect",
+          footer_designer_url: input.footer_designer_url || "https://digital-perfect.at",
           is_active: input.is_active ?? true,
           sort_order: input.sort_order ?? 0,
         })
@@ -146,6 +156,11 @@ export function useUpdateCategory() {
           ...(input.h1_title !== undefined && { h1_title: input.h1_title }),
           ...(input.long_content_top !== undefined && { long_content_top: input.long_content_top }),
           ...(input.long_content_bottom !== undefined && { long_content_bottom: input.long_content_bottom }),
+          // Footer fields
+          ...(input.footer_site_name !== undefined && { footer_site_name: input.footer_site_name }),
+          ...(input.footer_copyright_text !== undefined && { footer_copyright_text: input.footer_copyright_text }),
+          ...(input.footer_designer_name !== undefined && { footer_designer_name: input.footer_designer_name }),
+          ...(input.footer_designer_url !== undefined && { footer_designer_url: input.footer_designer_url }),
           ...(input.is_active !== undefined && { is_active: input.is_active }),
           ...(input.sort_order !== undefined && { sort_order: input.sort_order }),
         })
@@ -206,6 +221,11 @@ export function useDuplicateCategory() {
           long_content_bottom: category.long_content_bottom,
           analytics_code: category.analytics_code,
           banner_override: category.banner_override,
+          // Footer fields
+          footer_site_name: category.footer_site_name,
+          footer_copyright_text: category.footer_copyright_text,
+          footer_designer_name: category.footer_designer_name,
+          footer_designer_url: category.footer_designer_url,
           is_active: false,
           sort_order: category.sort_order + 1,
         })

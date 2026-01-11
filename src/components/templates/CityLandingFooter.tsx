@@ -13,12 +13,11 @@ export function CityLandingFooter({ category }: CityLandingFooterProps) {
   const footerLinks = useFooterLinks();
   const { data: popularLinks = [] } = usePopularFooterLinks(category?.id);
 
-  // Get footer settings from category or use defaults (cast for new fields)
-  const cat = category as any;
-  const siteName = cat?.footer_site_name || category?.site_name || "DatingAppVergleichAT";
-  const copyrightText = cat?.footer_copyright_text || `© ${new Date().getFullYear()} ${siteName}. Alle Rechte vorbehalten.`;
-  const designerName = cat?.footer_designer_name || "Digital-Perfect";
-  const designerUrl = cat?.footer_designer_url || "https://digital-perfect.at";
+  // Get footer settings from category or use defaults
+  const siteName = category?.footer_site_name || category?.site_name || "DatingAppVergleichAT";
+  const copyrightText = category?.footer_copyright_text || `© ${new Date().getFullYear()} ${siteName}. Alle Rechte vorbehalten.`;
+  const designerName = category?.footer_designer_name || "Digital-Perfect";
+  const designerUrl = category?.footer_designer_url || "https://digital-perfect.at";
 
   // Parse siteName to highlight parts (e.g., "DatingAppVergleichAT")
   const renderSiteName = () => {
