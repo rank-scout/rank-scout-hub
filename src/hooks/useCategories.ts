@@ -12,6 +12,9 @@ export type Category = {
   template: "comparison" | "review";
   site_name: string | null;
   hero_headline: string | null;
+  hero_pretitle: string | null;
+  hero_cta_text: string | null;
+  hero_badge_text: string | null;
   meta_title: string | null;
   meta_description: string | null;
   h1_title: string | null;
@@ -96,6 +99,9 @@ export function useCreateCategory() {
           template: input.template || "comparison",
           site_name: input.site_name || null,
           hero_headline: input.hero_headline || null,
+          hero_pretitle: input.hero_pretitle || null,
+          hero_cta_text: input.hero_cta_text || null,
+          hero_badge_text: input.hero_badge_text || null,
           meta_title: input.meta_title || null,
           meta_description: input.meta_description || null,
           h1_title: input.h1_title || null,
@@ -132,6 +138,9 @@ export function useUpdateCategory() {
           ...(input.template !== undefined && { template: input.template }),
           ...(input.site_name !== undefined && { site_name: input.site_name }),
           ...(input.hero_headline !== undefined && { hero_headline: input.hero_headline }),
+          ...(input.hero_pretitle !== undefined && { hero_pretitle: input.hero_pretitle }),
+          ...(input.hero_cta_text !== undefined && { hero_cta_text: input.hero_cta_text }),
+          ...(input.hero_badge_text !== undefined && { hero_badge_text: input.hero_badge_text }),
           ...(input.meta_title !== undefined && { meta_title: input.meta_title }),
           ...(input.meta_description !== undefined && { meta_description: input.meta_description }),
           ...(input.h1_title !== undefined && { h1_title: input.h1_title }),
@@ -187,6 +196,9 @@ export function useDuplicateCategory() {
           template: category.template,
           site_name: category.site_name,
           hero_headline: category.hero_headline,
+          hero_pretitle: category.hero_pretitle,
+          hero_cta_text: category.hero_cta_text,
+          hero_badge_text: category.hero_badge_text,
           meta_title: category.meta_title,
           meta_description: category.meta_description,
           h1_title: category.h1_title,

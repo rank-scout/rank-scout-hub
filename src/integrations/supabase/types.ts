@@ -21,7 +21,10 @@ export type Database = {
           created_at: string
           description: string | null
           h1_title: string | null
+          hero_badge_text: string | null
+          hero_cta_text: string | null
           hero_headline: string | null
+          hero_pretitle: string | null
           icon: string | null
           id: string
           is_active: boolean
@@ -48,7 +51,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           h1_title?: string | null
+          hero_badge_text?: string | null
+          hero_cta_text?: string | null
           hero_headline?: string | null
+          hero_pretitle?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean
@@ -75,7 +81,10 @@ export type Database = {
           created_at?: string
           description?: string | null
           h1_title?: string | null
+          hero_badge_text?: string | null
+          hero_cta_text?: string | null
           hero_headline?: string | null
+          hero_pretitle?: string | null
           icon?: string | null
           id?: string
           is_active?: boolean

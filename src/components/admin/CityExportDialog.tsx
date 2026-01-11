@@ -290,7 +290,7 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
                 <i class="fas fa-heart mr-2"></i><span id="hero-subtitle">Die Top Online-Portale für Singles in Salzburg 2026</span>
             </p>
             <h1 class="font-heading font-bold text-3xl md:text-5xl lg:text-6xl text-white leading-tight mb-6">
-                Finde Singles in <br><span id="hero-title" class="text-brand-gold">Salzburg & Umgebung</span>
+                <span id="hero-pretitle">Finde Singles in</span> <br><span id="hero-title" class="text-brand-gold">Salzburg & Umgebung</span>
             </h1>
             <p id="hero-description" class="text-gray-300 text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
                 Ob Stadt Salzburg, Flachgau oder Hallein – du musst nicht alleine durch die Getreidegasse spazieren. Wir haben geprüft, welche Dating-Apps im Salzburger Land wirklich funktionieren und wo du echte Treffer landest.
@@ -817,18 +817,35 @@ export default function CityExportDialog({ open, onOpenChange, category }: CityE
             const locationName = category.name.replace(/^Singles\\s*/i, '').trim() || category.name;
             if (category.h1_title) el('hero-subtitle').textContent = category.h1_title.replace(/2026/g, year);
             
+            // Hero Pretitle (z.B. "Finde Singles in")
+            if (category.hero_pretitle) {
+                el('hero-pretitle').textContent = category.hero_pretitle;
+            } else {
+                el('hero-pretitle').textContent = 'Finde Singles in';
+            }
+            
             // Nutze hero_headline wenn vorhanden, sonst Fallback
             if (category.hero_headline) {
-                // Entferne "Finde Singles in " am Anfang falls vorhanden, wir brauchen nur den dynamischen Teil
-                const headlineText = category.hero_headline.replace(/^Finde Singles in\\s*/i, '').trim();
-                el('hero-title').textContent = headlineText;
+                el('hero-title').textContent = category.hero_headline;
             } else {
                 el('hero-title').textContent = locationName + ' & Umgebung';
             }
             
             if (category.description) el('hero-description').textContent = category.description;
-            el('hero-cta').textContent = locationName + 'er Singles finden';
-            el('hero-badge').textContent = 'Geprüft für Stadt & Land ' + locationName;
+            
+            // CTA Button Text
+            if (category.hero_cta_text) {
+                el('hero-cta').textContent = category.hero_cta_text;
+            } else {
+                el('hero-cta').textContent = locationName + 'er Singles finden';
+            }
+            
+            // Badge Text
+            if (category.hero_badge_text) {
+                el('hero-badge').textContent = category.hero_badge_text;
+            } else {
+                el('hero-badge').textContent = 'Geprüft für Stadt & Land ' + locationName;
+            }
             
             // Site Name im Header (falls custom)
             if (category.site_name) {
