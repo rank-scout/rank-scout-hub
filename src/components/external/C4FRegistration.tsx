@@ -1,26 +1,42 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface C4FRegistrationProps {
   partnerCode?: string;
 }
 
+interface C4FInstance {
+  registerUser: () => void;
+  getInitData: () => void;
+  showError: (msg: string) => void;
+  registerUserSuccess: (data: unknown) => void;
+}
+
+declare global {
+  interface Window {
+    C4fRegister: new (config: {
+      code: string;
+      onSuccess?: (data: unknown) => void;
+      onError?: (error: unknown) => void;
+    }) => C4FInstance;
+    cfr: C4FInstance | null;
+    jQuery: unknown;
+    $: unknown;
+  }
+}
+
 const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationProps) => {
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
   const [scriptsLoaded, setScriptsLoaded] = useState(false);
-  const cfrRef = useRef<Window["cfr"] | null>(null);
+  const cfrRef = useRef<Window["cfr"]>(null);
 
   // Generate years for birthday select (18+ years ago to 80 years ago)
   const currentYear = new Date().getFullYear();
@@ -44,7 +60,6 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
   useEffect(() => {
     const loadScript = (src: string): Promise<void> => {
       return new Promise((resolve, reject) => {
-        // Check if script already exists
         const existingScript = document.querySelector(`script[src="${src}"]`);
         if (existingScript) {
           resolve();
@@ -62,79 +77,110 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
 
     const initializeC4F = async () => {
       try {
-        setIsLoading(true);
-        setError(null);
-
         // Load jQuery first
         await loadScript("https://api.cash4flirt.com/js/jquery.min.js");
-        
-        // Wait a bit for jQuery to initialize
         await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Then load register.js
         await loadScript("https://api.cash4flirt.com/js/register.js");
-
-        // Wait for register.js to initialize
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         // Initialize C4fRegister
         if (window.C4fRegister) {
           const cfr = new window.C4fRegister({
             code: partnerCode,
-            onSuccess: (data) => {
-              console.log("C4F Registration success:", data);
-            },
-            onError: (err) => {
-              console.error("C4F Registration error:", err);
-              setError("Registrierung fehlgeschlagen. Bitte versuche es erneut.");
-            },
           });
+
+          // Override showError method
+          cfr.showError = (msg: string) => {
+            toast({
+              title: "Fehler",
+              description: msg,
+              variant: "destructive",
+            });
+            setIsLoading(false);
+          };
+
+          // Override registerUserSuccess method
+          cfr.registerUserSuccess = () => {
+            toast({
+              title: "Erfolgreich!",
+              description: "Deine Registrierung war erfolgreich.",
+            });
+            navigate("/welcome");
+          };
+
           cfrRef.current = cfr;
           window.cfr = cfr;
+
+          // Get initial data from API
+          cfr.getInitData();
+          
           setScriptsLoaded(true);
         } else {
           throw new Error("C4fRegister class not found");
         }
       } catch (err) {
         console.error("Error loading C4F scripts:", err);
-        setError("Fehler beim Laden der Registrierung. Bitte lade die Seite neu.");
-      } finally {
-        setIsLoading(false);
+        toast({
+          title: "Ladefehler",
+          description: "Fehler beim Laden der Registrierung. Bitte lade die Seite neu.",
+          variant: "destructive",
+        });
       }
     };
 
     initializeC4F();
 
-    // Cleanup
     return () => {
       cfrRef.current = null;
     };
-  }, [partnerCode]);
+  }, [partnerCode, navigate]);
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
+    setIsLoading(true);
+
+    // SCHRITT A: Lead Capture - E-Mail in Supabase speichern
+    try {
+      const emailInput = document.getElementById("email") as HTMLInputElement;
+      const email = emailInput?.value?.trim();
+
+      if (email) {
+        await supabase.from("subscribers").insert({
+          email: email,
+          source_page: "c4f-direct-signup",
+          is_active: true,
+        });
+        console.log("Lead captured successfully");
+      }
+    } catch (error) {
+      // Fehler abfangen aber weitermachen (Provision nicht verlieren!)
+      console.error("Lead capture failed, continuing with registration:", error);
+    }
+
+    // SCHRITT B: C4F API aufrufen
     if (cfrRef.current) {
       cfrRef.current.registerUser();
     } else if (window.cfr) {
       window.cfr.registerUser();
     } else {
-      setError("Registrierung nicht verfügbar. Bitte lade die Seite neu.");
+      toast({
+        title: "Fehler",
+        description: "Registrierung nicht verfügbar. Bitte lade die Seite neu.",
+        variant: "destructive",
+      });
+      setIsLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-2xl font-display text-center">
+    <Card className="w-full max-w-md mx-auto shadow-lg border-border/50">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-2xl font-display text-center text-gradient-primary">
           Kostenlos registrieren
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {error && (
-          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
-            {error}
-          </div>
-        )}
-
         <div className="space-y-4">
           {/* Nickname */}
           <div className="space-y-2">
@@ -145,19 +191,23 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
               type="text"
               placeholder="Dein Nickname"
               disabled={isLoading}
+              className="bg-input border-border"
             />
+            <div className="invalid-feedback"></div>
           </div>
 
           {/* Password */}
           <div className="space-y-2">
-            <Label htmlFor="password">Passwort</Label>
+            <Label htmlFor="pass">Passwort</Label>
             <Input
-              id="password"
-              name="password"
+              id="pass"
+              name="pass"
               type="password"
               placeholder="Dein Passwort"
               disabled={isLoading}
+              className="bg-input border-border"
             />
+            <div className="invalid-feedback"></div>
           </div>
 
           {/* Email */}
@@ -169,54 +219,58 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
               type="email"
               placeholder="deine@email.de"
               disabled={isLoading}
+              className="bg-input border-border"
             />
+            <div className="invalid-feedback"></div>
           </div>
 
           {/* Birthday */}
           <div className="space-y-2">
             <Label>Geburtstag</Label>
             <div className="grid grid-cols-3 gap-2">
-              <Select disabled={isLoading}>
-                <SelectTrigger id="birthday_day">
-                  <SelectValue placeholder="Tag" />
-                </SelectTrigger>
-                <SelectContent>
-                  {days.map((day) => (
-                    <SelectItem key={day} value={day.toString().padStart(2, "0")}>
-                      {day}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                id="day"
+                name="day"
+                disabled={isLoading}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Tag</option>
+                {days.map((day) => (
+                  <option key={day} value={day.toString().padStart(2, "0")}>
+                    {day}
+                  </option>
+                ))}
+              </select>
 
-              <Select disabled={isLoading}>
-                <SelectTrigger id="birthday_month">
-                  <SelectValue placeholder="Monat" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month) => (
-                    <SelectItem key={month.value} value={month.value}>
-                      {month.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                id="month"
+                name="month"
+                disabled={isLoading}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Monat</option>
+                {months.map((month) => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
 
-              <Select disabled={isLoading}>
-                <SelectTrigger id="birthday_year">
-                  <SelectValue placeholder="Jahr" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <select
+                id="year"
+                name="year"
+                disabled={isLoading}
+                className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">Jahr</option>
+                {years.map((year) => (
+                  <option key={year} value={year.toString()}>
+                    {year}
+                  </option>
+                ))}
+              </select>
             </div>
-            {/* Hidden combined birthday field for the API */}
-            <input type="hidden" id="birthday" name="birthday" />
+            <div className="invalid-feedback"></div>
           </div>
 
           {/* City */}
@@ -228,42 +282,48 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
               type="text"
               placeholder="Deine Stadt"
               disabled={isLoading}
+              className="bg-input border-border"
             />
+            <div className="invalid-feedback"></div>
           </div>
 
           {/* Gender */}
           <div className="space-y-2">
             <Label htmlFor="gender">Geschlecht</Label>
-            <Select disabled={isLoading}>
-              <SelectTrigger id="gender">
-                <SelectValue placeholder="Geschlecht wählen" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="m">Mann</SelectItem>
-                <SelectItem value="w">Frau</SelectItem>
-              </SelectContent>
-            </Select>
+            <select
+              id="gender"
+              name="gender"
+              disabled={isLoading}
+              className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">Geschlecht wählen</option>
+              <option value="m">Mann</option>
+              <option value="w">Frau</option>
+            </select>
+            <div className="invalid-feedback"></div>
           </div>
 
           {/* Search preference */}
           <div className="space-y-2">
-            <Label htmlFor="search">Ich suche</Label>
-            <Select disabled={isLoading}>
-              <SelectTrigger id="search">
-                <SelectValue placeholder="Was suchst du?" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="m">Männer</SelectItem>
-                <SelectItem value="w">Frauen</SelectItem>
-                <SelectItem value="mw">Beide</SelectItem>
-              </SelectContent>
-            </Select>
+            <Label htmlFor="gender_search">Ich suche</Label>
+            <select
+              id="gender_search"
+              name="gender_search"
+              disabled={isLoading}
+              className="flex h-10 w-full items-center justify-between rounded-md border border-border bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <option value="">Was suchst du?</option>
+              <option value="m">Männer</option>
+              <option value="w">Frauen</option>
+              <option value="mw">Beide</option>
+            </select>
+            <div className="invalid-feedback"></div>
           </div>
 
           {/* Terms checkbox */}
           <div className="flex items-start space-x-3 pt-2">
-            <Checkbox id="agb" disabled={isLoading} />
-            <Label htmlFor="agb" className="text-sm leading-tight cursor-pointer">
+            <Checkbox id="conditions" disabled={isLoading} />
+            <Label htmlFor="conditions" className="text-sm leading-tight cursor-pointer text-muted-foreground">
               Ich akzeptiere die{" "}
               <a href="/agb" className="text-primary hover:underline">
                 AGB
@@ -274,19 +334,20 @@ const C4FRegistration = ({ partnerCode = "PLACEHOLDER_CODE" }: C4FRegistrationPr
               </a>
             </Label>
           </div>
+          <div className="invalid-feedback"></div>
 
           {/* Register button */}
           <Button
             type="button"
-            className="w-full mt-4"
+            className="w-full mt-4 bg-primary-gradient hover:opacity-90 transition-opacity"
             onClick={handleRegister}
             disabled={isLoading || !scriptsLoaded}
           >
-            {isLoading ? "Lädt..." : "Jetzt registrieren"}
+            {isLoading ? "Registrierung läuft..." : scriptsLoaded ? "Jetzt registrieren" : "Wird geladen..."}
           </Button>
 
-          {!scriptsLoaded && !isLoading && !error && (
-            <p className="text-xs text-muted-foreground text-center">
+          {!scriptsLoaded && (
+            <p className="text-xs text-muted-foreground text-center animate-pulse">
               Registrierung wird vorbereitet...
             </p>
           )}
