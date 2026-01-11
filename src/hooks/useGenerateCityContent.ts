@@ -6,19 +6,24 @@ interface GeneratedContent {
   contentBottom: string;
   city: string;
   keyword: string;
+  wordCount: number;
 }
 
 export function useGenerateCityContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const generateContent = async (city: string, keyword: string = "Dating"): Promise<GeneratedContent | null> => {
+  const generateContent = async (
+    city: string, 
+    keyword: string = "Dating",
+    wordCount: number = 1000
+  ): Promise<GeneratedContent | null> => {
     setIsGenerating(true);
     setError(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("generate-city-content", {
-        body: { city, keyword },
+        body: { city, keyword, wordCount },
       });
 
       if (fnError) {

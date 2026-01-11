@@ -500,57 +500,104 @@ export default function AdminCategories() {
                 </TabsContent>
 
                 <TabsContent value="content" className="space-y-4 pt-4">
-                  {/* AI Generator Button */}
+                  {/* AI Generator with Keyword and Word Count */}
                   <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-foreground flex items-center gap-2">
-                          <Sparkles className="w-4 h-4 text-primary" />
-                          KI-Content Generator
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {nameValue 
-                            ? `Generiere Content für "${nameValue}"` 
-                            : "Gib zuerst im Tab 'Grunddaten' einen Seitennamen ein (z.B. Salzburg)"}
-                        </p>
+                    <h4 className="font-semibold text-foreground flex items-center gap-2 mb-3">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      KI-Content Generator
+                    </h4>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Generiere thematisch passenden Content mit moderner Schrift
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                      <div>
+                        <Label htmlFor="content_keyword" className="text-sm">Keyword / Thema</Label>
+                        <Input 
+                          id="content_keyword" 
+                          placeholder="z.B. LGBTQ Dating, 50+ Dating, Casual Dating" 
+                          defaultValue={nameValue || "Dating"}
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Der Content wird 100% auf dieses Thema zugeschnitten</p>
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="gap-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground shrink-0"
-                        disabled={isGenerating}
-                        onClick={async () => {
-                          if (!nameValue) {
-                            toast({ 
-                              title: "Kein Seitenname", 
-                              description: "Bitte gib zuerst im Tab 'Grunddaten' einen Seitennamen ein (z.B. Salzburg)", 
-                              variant: "destructive" 
-                            });
-                            return;
-                          }
-                          const result = await generateContent(nameValue, "Dating");
-                          if (result) {
-                            setValue("long_content_top", result.contentTop);
-                            setValue("long_content_bottom", result.contentBottom);
-                            toast({ title: "Content generiert!", description: `USPs und SEO-Text für ${nameValue} wurden erstellt.` });
-                          } else {
-                            toast({ title: "Fehler bei der Generierung", variant: "destructive" });
-                          }
-                        }}
-                      >
-                        {isGenerating ? (
-                          <>
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                            Generiere...
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles className="w-4 h-4" />
-                            KI-Inhalt generieren
-                          </>
-                        )}
-                      </Button>
+                      <div>
+                        <Label htmlFor="content_location" className="text-sm">Ort / Stadt</Label>
+                        <Input 
+                          id="content_location" 
+                          placeholder="z.B. Wien, Salzburg, Österreich" 
+                          defaultValue={nameValue || ""}
+                          className="mt-1"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Für lokalen Bezug im Content</p>
+                      </div>
+                      <div>
+                        <Label htmlFor="content_wordcount" className="text-sm">Wortanzahl</Label>
+                        <Select defaultValue="1000">
+                          <SelectTrigger id="content_wordcount" className="mt-1">
+                            <SelectValue placeholder="Wortanzahl wählen" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1000">~1.000 Wörter (kurz)</SelectItem>
+                            <SelectItem value="2000">~2.000 Wörter (mittel)</SelectItem>
+                            <SelectItem value="3000">~3.000 Wörter (lang)</SelectItem>
+                            <SelectItem value="4000">~4.000 Wörter (sehr lang)</SelectItem>
+                            <SelectItem value="5000">~5.000 Wörter (umfangreich)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">Mehr Wörter = besseres SEO</p>
+                      </div>
                     </div>
+
+                    <Button
+                      type="button"
+                      className="gap-2 w-full bg-primary hover:bg-primary/90"
+                      disabled={isGenerating}
+                      onClick={async () => {
+                        const keywordInput = (document.getElementById("content_keyword") as HTMLInputElement)?.value || "Dating";
+                        const locationInput = (document.getElementById("content_location") as HTMLInputElement)?.value || nameValue || "Österreich";
+                        const wordCountSelect = (document.getElementById("content_wordcount") as HTMLSelectElement)?.value || "1000";
+                        const wordCount = parseInt(wordCountSelect, 10);
+                        
+                        if (!locationInput) {
+                          toast({ 
+                            title: "Kein Ort angegeben", 
+                            description: "Bitte gib einen Ort oder Seitennamen ein", 
+                            variant: "destructive" 
+                          });
+                          return;
+                        }
+                        
+                        toast({ 
+                          title: "Content wird generiert...", 
+                          description: `${wordCount} Wörter zum Thema "${keywordInput}" für "${locationInput}"` 
+                        });
+                        
+                        const result = await generateContent(locationInput, keywordInput, wordCount);
+                        if (result) {
+                          setValue("long_content_top", result.contentTop);
+                          setValue("long_content_bottom", result.contentBottom);
+                          toast({ 
+                            title: "Content generiert!", 
+                            description: `${wordCount} Wörter zu "${keywordInput}" in "${locationInput}" wurden erstellt.` 
+                          });
+                        } else {
+                          toast({ title: "Fehler bei der Generierung", variant: "destructive" });
+                        }
+                      }}
+                    >
+                      {isGenerating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Generiere Content...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          Content generieren
+                        </>
+                      )}
+                    </Button>
                   </div>
 
                   <div>
