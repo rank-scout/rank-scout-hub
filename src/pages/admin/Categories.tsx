@@ -132,7 +132,7 @@ export default function AdminCategories() {
       icon: category.icon || "📍",
       theme: category.theme,
       template: category.template || "comparison",
-      color_theme: (category as any).color_theme || "dark",
+      color_theme: category.color_theme || "dark",
       site_name: category.site_name || "",
       hero_headline: category.hero_headline || "",
       hero_pretitle: category.hero_pretitle || "Finde Singles in",

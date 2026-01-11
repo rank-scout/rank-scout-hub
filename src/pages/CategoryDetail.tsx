@@ -15,7 +15,7 @@ export default function CategoryDetail() {
   const { data: category, isLoading: categoryLoading } = useCategoryBySlug(slug || "");
   const { data: allProjects = [], isLoading: projectsLoading } = useProjects();
   const { setTheme } = useTheme();
-  const categoryColorTheme = useCategoryTheme((category as any)?.color_theme);
+  const categoryColorTheme = useCategoryTheme(category?.color_theme);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
