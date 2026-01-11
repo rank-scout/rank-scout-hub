@@ -20,6 +20,7 @@ import AdminDashboard from "./pages/admin/Dashboard";
 import AdminCategories from "./pages/admin/Categories";
 import AdminProjects from "./pages/admin/Projects";
 import AdminRedirects from "./pages/admin/Redirects";
+import AdminFooterLinks from "./pages/admin/FooterLinks";
 import AdminLeads from "./pages/admin/Leads";
 import AdminSettings from "./pages/admin/Settings";
 
@@ -49,6 +50,7 @@ const App = () => (
                 <Route path="categories" element={<AdminCategories />} />
                 <Route path="projects" element={<AdminProjects />} />
                 <Route path="redirects" element={<AdminRedirects />} />
+                <Route path="footer-links" element={<AdminFooterLinks />} />
                 <Route path="leads" element={<AdminLeads />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
