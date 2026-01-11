@@ -152,7 +152,7 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           <section className="py-12 md:py-16">
             <div className="container mx-auto px-4">
               <div 
-                className="prose prose-invert max-w-none"
+                className="prose prose-invert max-w-none font-sans"
                 dangerouslySetInnerHTML={sanitizeHtml(category.long_content_top)}
               />
             </div>
@@ -270,7 +270,7 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           <section className="py-12 md:py-16">
             <div className="container mx-auto px-4">
               <div 
-                className="prose prose-invert max-w-4xl mx-auto"
+                className="prose prose-invert max-w-4xl mx-auto font-sans [&_h2]:font-display [&_h3]:font-display [&_summary]:font-display"
                 dangerouslySetInnerHTML={sanitizeHtml(category.long_content_bottom)}
               />
             </div>
