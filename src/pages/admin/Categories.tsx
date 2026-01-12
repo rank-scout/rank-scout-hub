@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette, Wand2, AlertTriangle, Globe, Link2 } from "lucide-react";
+import BulkImportDialog from "@/components/admin/BulkImportDialog";
 import { supabase } from "@/integrations/supabase/client";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
@@ -386,6 +387,9 @@ export default function AdminCategories() {
               ))}
             </SelectContent>
           </Select>
+
+          {/* Bulk Import Button */}
+          <BulkImportDialog />
           
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
