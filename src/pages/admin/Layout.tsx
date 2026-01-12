@@ -2,6 +2,7 @@ import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useDashboardTheme } from "@/hooks/useDashboardTheme";
 import { 
   LayoutDashboard, 
   FolderTree, 
@@ -33,6 +34,7 @@ export default function AdminLayout() {
   const { user, isLoading, signOut } = useAuth();
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const dashboardTheme = useDashboardTheme();
 
   // Server-side admin verification - critical for security
   const { data: isServerAdmin, isLoading: isVerifyingAdmin } = useQuery({
@@ -67,7 +69,7 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-screen flex bg-sidebar light">
+    <div className={cn("min-h-screen flex", dashboardTheme === "light" ? "bg-white" : "bg-sidebar")}>
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 

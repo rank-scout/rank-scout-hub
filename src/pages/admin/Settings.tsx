@@ -6,9 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles, Building } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles, Building, BarChart3, Palette } from "lucide-react";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 export default function AdminSettings() {
   const { data: settings, isLoading } = useSettings();
@@ -27,6 +28,8 @@ export default function AdminSettings() {
   const [footerSiteName, setFooterSiteName] = useState("");
   const [footerDesignerName, setFooterDesignerName] = useState("");
   const [footerDesignerUrl, setFooterDesignerUrl] = useState("");
+  const [analyticsCode, setAnalyticsCode] = useState("");
+  const [dashboardTheme, setDashboardTheme] = useState<"light" | "dark">("dark");
   const [initialized, setInitialized] = useState(false);
 
   // Initialize form values from settings
@@ -43,6 +46,8 @@ export default function AdminSettings() {
     setFooterSiteName((settings.footer_site_name as string) || "Rank-Scout");
     setFooterDesignerName((settings.footer_designer_name as string) || "Digital-Perfect");
     setFooterDesignerUrl((settings.footer_designer_url as string) || "https://digital-perfect.com");
+    setAnalyticsCode((settings.global_analytics_code as string) || "");
+    setDashboardTheme((settings.dashboard_theme as "light" | "dark") || "dark");
     setInitialized(true);
   }
 
@@ -456,6 +461,80 @@ export default function AdminSettings() {
               saveSetting("footer_designer_name", footerDesignerName);
               saveSetting("footer_designer_url", footerDesignerUrl);
             }}
+            disabled={updateSetting.isPending}
+            className="gap-2"
+          >
+            {updateSetting.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Speichern
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Global Analytics Code */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <BarChart3 className="w-5 h-5" />
+            Analytics Code
+          </CardTitle>
+          <CardDescription>Google Analytics oder anderer Tracking-Code für die Hauptseite (wird im &lt;head&gt; eingefügt).</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="analyticsCode">Tracking Code</Label>
+            <Textarea
+              id="analyticsCode"
+              value={analyticsCode}
+              onChange={(e) => setAnalyticsCode(e.target.value)}
+              placeholder="<!-- Google tag (gtag.js) --> ..."
+              rows={8}
+              className="font-mono text-xs"
+            />
+            <p className="text-xs text-muted-foreground mt-1">Kompletter Script-Tag inkl. &lt;script&gt; Tags</p>
+          </div>
+          <Button 
+            onClick={() => saveSetting("global_analytics_code", analyticsCode)}
+            disabled={updateSetting.isPending}
+            className="gap-2"
+          >
+            {updateSetting.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            Speichern
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Dashboard Theme */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <Palette className="w-5 h-5" />
+            Dashboard Farbe
+          </CardTitle>
+          <CardDescription>Wähle die Hintergrundfarbe für den Admin-Bereich.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <RadioGroup 
+            value={dashboardTheme} 
+            onValueChange={(value: "light" | "dark") => setDashboardTheme(value)}
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="dark" id="theme-dark" />
+              <Label htmlFor="theme-dark" className="flex items-center gap-2 cursor-pointer">
+                <div className="w-6 h-6 rounded bg-zinc-900 border border-border" />
+                Dark
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="light" id="theme-light" />
+              <Label htmlFor="theme-light" className="flex items-center gap-2 cursor-pointer">
+                <div className="w-6 h-6 rounded bg-white border border-border" />
+                Light
+              </Label>
+            </div>
+          </RadioGroup>
+          <Button 
+            onClick={() => saveSetting("dashboard_theme", dashboardTheme)}
             disabled={updateSetting.isPending}
             className="gap-2"
           >
