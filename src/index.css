@@ -448,44 +448,12 @@ textarea.error:focus {
   @apply text-muted-foreground leading-relaxed mb-4;
 }
 
-/* ========== CUSTOM HTML OVERRIDE - FULL ISOLATION ========== */
-/* Isolates custom HTML from app styles without overriding custom HTML's own styles */
+/* ========== CUSTOM HTML OVERRIDE - MINIMAL ISOLATION ========== */
+/* Only layout properties - custom HTML controls all styling */
 .custom-html-override {
-  /* Create a new stacking context and isolate from parent styles */
-  isolation: isolate;
-  contain: layout style;
-  
-  /* Full viewport takeover */
   display: block;
   width: 100%;
   min-height: 100vh;
   margin: 0;
   padding: 0;
-  
-  /* Reset only inherited properties from parent app */
-  color: initial;
-  background: initial;
-  font-family: initial;
-  font-size: initial;
-  line-height: initial;
-  
-  /* Ensure custom HTML controls everything */
-  all: revert;
-  display: block !important;
-  width: 100% !important;
-  min-height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-/* Ensure custom HTML content is rendered as-is */
-.custom-html-override .custom-html-content {
-  display: block;
-  width: 100%;
-}
-
-/* Only style the React ProjectListEmbed component that we inject */
-.custom-html-override .project-list-embed {
-  /* This is our React component - apply our design system */
-  font-family: 'Inter', system-ui, sans-serif;
 }
