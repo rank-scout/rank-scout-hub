@@ -448,103 +448,44 @@ textarea.error:focus {
   @apply text-muted-foreground leading-relaxed mb-4;
 }
 
-/* ========== CUSTOM HTML OVERRIDE - FULL RESET ========== */
-/* Complete CSS reset for custom HTML to ensure 100% design consistency */
+/* ========== CUSTOM HTML OVERRIDE - FULL ISOLATION ========== */
+/* Isolates custom HTML from app styles without overriding custom HTML's own styles */
 .custom-html-override {
-  /* Remove all inherited styles */
-  all: initial;
+  /* Create a new stacking context and isolate from parent styles */
+  isolation: isolate;
+  contain: layout style;
+  
+  /* Full viewport takeover */
   display: block;
   width: 100%;
   min-height: 100vh;
   margin: 0;
   padding: 0;
   
-  /* Reset box model */
-  box-sizing: border-box;
+  /* Reset only inherited properties from parent app */
+  color: initial;
+  background: initial;
+  font-family: initial;
+  font-size: initial;
+  line-height: initial;
   
-  /* Reset font to browser defaults (custom HTML should define its own) */
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
-  color: #000;
-  background-color: #fff;
-  
-  /* Enable smooth scrolling */
-  scroll-behavior: smooth;
-  
-  /* Text rendering */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  /* Ensure custom HTML controls everything */
+  all: revert;
+  display: block !important;
+  width: 100% !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
-/* Reset all elements inside custom HTML container */
-.custom-html-override *,
-.custom-html-override *::before,
-.custom-html-override *::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-/* Reset common HTML elements */
-.custom-html-override h1,
-.custom-html-override h2,
-.custom-html-override h3,
-.custom-html-override h4,
-.custom-html-override h5,
-.custom-html-override h6 {
-  font-size: inherit;
-  font-weight: inherit;
-}
-
-.custom-html-override ul,
-.custom-html-override ol {
-  list-style: none;
-}
-
-.custom-html-override a {
-  color: inherit;
-  text-decoration: inherit;
-}
-
-.custom-html-override img,
-.custom-html-override svg,
-.custom-html-override video,
-.custom-html-override canvas,
-.custom-html-override audio,
-.custom-html-override iframe,
-.custom-html-override embed,
-.custom-html-override object {
-  display: block;
-  max-width: 100%;
-  height: auto;
-}
-
-.custom-html-override button,
-.custom-html-override input,
-.custom-html-override optgroup,
-.custom-html-override select,
-.custom-html-override textarea {
-  font: inherit;
-  color: inherit;
-}
-
-.custom-html-override table {
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-
-/* Allow custom HTML to fully control styles */
+/* Ensure custom HTML content is rendered as-is */
 .custom-html-override .custom-html-content {
   display: block;
   width: 100%;
 }
 
-/* Ensure the ProjectListEmbed component still works correctly inside custom HTML */
+/* Only style the React ProjectListEmbed component that we inject */
 .custom-html-override .project-list-embed {
-  /* Reset to use our design system for the React component */
+  /* This is our React component - apply our design system */
   font-family: 'Inter', system-ui, sans-serif;
-  color: hsl(var(--foreground));
-  background-color: hsl(var(--background));
 }

@@ -31,13 +31,24 @@ export default function CustomHtmlRenderer({ category, projects, htmlContent }: 
     };
   }, [htmlContent]);
 
-  // Sanitize HTML content
+  // Sanitize HTML content - allow EVERYTHING for full override mode
+  // This is an admin-only feature, so we trust the HTML input
   const sanitizeHtml = (html: string) => {
-    // Configure DOMPurify to allow more elements for full HTML override
+    // Configure DOMPurify to allow full HTML override including scripts and styles
     return DOMPurify.sanitize(html, {
-      ADD_TAGS: ['style', 'link', 'meta', 'iframe'],
-      ADD_ATTR: ['target', 'rel', 'style', 'class', 'id', 'data-*', 'aria-*'],
+      ADD_TAGS: ['style', 'link', 'meta', 'iframe', 'script', 'noscript'],
+      ADD_ATTR: [
+        'target', 'rel', 'style', 'class', 'id', 
+        'data-*', 'aria-*', 'onclick', 'onload', 'onerror',
+        'src', 'href', 'integrity', 'crossorigin', 'referrerpolicy',
+        'type', 'async', 'defer', 'charset', 'name', 'content',
+        'property', 'sizes', 'media', 'as', 'fetchpriority'
+      ],
       ALLOW_DATA_ATTR: true,
+      ALLOW_UNKNOWN_PROTOCOLS: true,
+      // Allow inline styles completely
+      FORCE_BODY: false,
+      WHOLE_DOCUMENT: false,
     });
   };
 
