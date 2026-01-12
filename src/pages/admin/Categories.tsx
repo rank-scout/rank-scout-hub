@@ -16,7 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette, Wand2, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette, Wand2, AlertTriangle, Globe, Link2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
@@ -59,6 +60,8 @@ export default function AdminCategories() {
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [exportCategory, setExportCategory] = useState<Category | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [importUrl, setImportUrl] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
 
   // Fetch assigned projects when editing
   const { data: categoryProjects = [] } = useCategoryProjects(editingCategory?.id);
@@ -870,6 +873,95 @@ export default function AdminCategories() {
                 </TabsContent>
 
                 <TabsContent value="override" className="space-y-4 pt-4">
+                  {/* URL Import Section */}
+                  <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-xl p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Globe className="w-5 h-5 text-primary" />
+                      <h4 className="font-semibold text-foreground">Schnell-Import von URL</h4>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Gib die URL einer bestehenden Landingpage ein. HTML, Slug, Name und SEO-Daten werden automatisch extrahiert.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <div className="flex-1 relative">
+                        <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                          value={importUrl}
+                          onChange={(e) => setImportUrl(e.target.value)}
+                          placeholder="https://dating.rank-scout.com/singles-wien/"
+                          className="pl-10"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="default"
+                        className="gap-2 shrink-0"
+                        disabled={isImporting || !importUrl.trim()}
+                        onClick={async () => {
+                          if (!importUrl.trim()) return;
+                          setIsImporting(true);
+                          try {
+                            const { data, error } = await supabase.functions.invoke('fetch-html', {
+                              body: { url: importUrl.trim() }
+                            });
+                            
+                            if (error) throw error;
+                            if (data.error) throw new Error(data.error);
+                            
+                            const { html, slug } = data;
+                            
+                            // Set the HTML
+                            setValue("custom_html_override", html);
+                            
+                            // Set slug from URL
+                            if (slug && !editingCategory) {
+                              setValue("slug", slug);
+                              // Convert slug to name
+                              const name = slug
+                                .split('-')
+                                .map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+                                .join(' ');
+                              setValue("name", name);
+                            }
+                            
+                            // Extract SEO data
+                            const extracted = extractMetaFromHtml(html);
+                            if (extracted.title) setValue("meta_title", extracted.title);
+                            if (extracted.metaDescription) setValue("meta_description", extracted.metaDescription);
+                            if (extracted.h1Title) setValue("h1_title", extracted.h1Title);
+                            
+                            setImportUrl("");
+                            toast({
+                              title: "✅ Import erfolgreich!",
+                              description: `HTML geladen, Slug "${slug}" und SEO-Daten automatisch gefüllt.`,
+                            });
+                          } catch (error) {
+                            console.error('Import error:', error);
+                            toast({
+                              title: "Import fehlgeschlagen",
+                              description: error instanceof Error ? error.message : "Konnte die URL nicht laden",
+                              variant: "destructive",
+                            });
+                          } finally {
+                            setIsImporting(false);
+                          }
+                        }}
+                      >
+                        {isImporting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Lade...
+                          </>
+                        ) : (
+                          <>
+                            <Download className="w-4 h-4" />
+                            HTML laden
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
                   {/* Status Badge */}
                   {customHtmlOverride && customHtmlOverride.trim() !== "" && (
                     <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center justify-between">
