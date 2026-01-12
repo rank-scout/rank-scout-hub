@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SEOProvider } from "@/components/SEOProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
-import { GlobalAnalytics } from "@/components/GlobalAnalytics";
 
 // Pages
 import Index from "./pages/Index";
@@ -34,7 +33,6 @@ const App = () => (
       <ThemeProvider defaultTheme="dark">
         <SEOProvider>
           <TooltipProvider>
-            <GlobalAnalytics />
             <Toaster />
             <Sonner />
             <BrowserRouter>
