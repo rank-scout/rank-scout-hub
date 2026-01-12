@@ -20,6 +20,7 @@ export type Database = {
           banner_override: string | null
           color_theme: string
           created_at: string
+          custom_html_override: string | null
           description: string | null
           footer_copyright_text: string | null
           footer_designer_name: string | null
@@ -55,6 +56,7 @@ export type Database = {
           banner_override?: string | null
           color_theme?: string
           created_at?: string
+          custom_html_override?: string | null
           description?: string | null
           footer_copyright_text?: string | null
           footer_designer_name?: string | null
@@ -90,6 +92,7 @@ export type Database = {
           banner_override?: string | null
           color_theme?: string
           created_at?: string
+          custom_html_override?: string | null
           description?: string | null
           footer_copyright_text?: string | null
           footer_designer_name?: string | null

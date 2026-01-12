@@ -15,6 +15,9 @@ export type Project = {
   rating: number;
   badge_text: string | null;
   features: string[];
+  pros_list: string[] | null;
+  cons_list: string[] | null;
+  is_default: boolean | null;
   country_scope: "AT" | "DE" | "DACH" | "EU";
   tags: string[];
   is_active: boolean;

@@ -23,6 +23,8 @@ export type Category = {
   long_content_bottom: string | null;
   analytics_code: string | null;
   banner_override: string | null;
+  // Full HTML override for custom designs
+  custom_html_override: string | null;
   // Footer fields
   footer_site_name: string | null;
   footer_copyright_text: string | null;
@@ -114,6 +116,7 @@ export function useCreateCategory() {
           h1_title: input.h1_title || null,
           long_content_top: input.long_content_top || null,
           long_content_bottom: input.long_content_bottom || null,
+          custom_html_override: input.custom_html_override || null,
           // Footer fields
           footer_site_name: input.footer_site_name || null,
           footer_copyright_text: input.footer_copyright_text || null,
@@ -159,6 +162,7 @@ export function useUpdateCategory() {
           ...(input.h1_title !== undefined && { h1_title: input.h1_title }),
           ...(input.long_content_top !== undefined && { long_content_top: input.long_content_top }),
           ...(input.long_content_bottom !== undefined && { long_content_bottom: input.long_content_bottom }),
+          ...(input.custom_html_override !== undefined && { custom_html_override: input.custom_html_override }),
           // Footer fields
           ...(input.footer_site_name !== undefined && { footer_site_name: input.footer_site_name }),
           ...(input.footer_copyright_text !== undefined && { footer_copyright_text: input.footer_copyright_text }),
@@ -225,6 +229,7 @@ export function useDuplicateCategory() {
           long_content_bottom: category.long_content_bottom,
           analytics_code: category.analytics_code,
           banner_override: category.banner_override,
+          custom_html_override: category.custom_html_override,
           // Footer fields
           footer_site_name: category.footer_site_name,
           footer_copyright_text: category.footer_copyright_text,

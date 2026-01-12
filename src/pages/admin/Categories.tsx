@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette, Wand2, AlertTriangle } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
@@ -294,13 +294,17 @@ export default function AdminCategories() {
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-6">
+                <TabsList className="grid w-full grid-cols-7">
                   <TabsTrigger value="basic">Grunddaten</TabsTrigger>
                   <TabsTrigger value="seo">SEO</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
                   <TabsTrigger value="footer">Footer</TabsTrigger>
                   <TabsTrigger value="projects">Apps</TabsTrigger>
                   <TabsTrigger value="tracking">Tracking</TabsTrigger>
+                  <TabsTrigger value="override" className="flex items-center gap-1">
+                    <Wand2 className="w-3 h-3" />
+                    Override
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="basic" className="space-y-4 pt-4">
@@ -792,6 +796,68 @@ export default function AdminCategories() {
                     <p className="text-xs text-muted-foreground mt-1">
                       Dieser Code wird im &lt;head&gt; der exportierten Seite eingefügt. 
                       Perfekt für Google Analytics, Facebook Pixel, etc.
+                    </p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="override" className="space-y-4 pt-4">
+                  <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-foreground flex items-center gap-2">
+                          🎨 Design Override (Experten-Modus)
+                        </h4>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Füge hier komplettes HTML ein. Das Standard-Template wird vollständig ignoriert.
+                          <br />
+                          <strong className="text-amber-400">Nutze den Platzhalter <code className="bg-muted px-1 rounded">{"{{APPS}}"}</code> dort, wo die App-Liste erscheinen soll.</strong>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="custom_html_override" className="flex items-center gap-2">
+                      <Wand2 className="w-4 h-4" />
+                      Vollständiges HTML Override
+                    </Label>
+                    <Textarea 
+                      id="custom_html_override" 
+                      {...register("custom_html_override")} 
+                      placeholder={`<!-- Dein komplettes HTML hier -->
+<div class="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
+  <header class="py-8">
+    <div class="container mx-auto px-4">
+      <h1 class="text-4xl font-bold text-white">Meine Landingpage</h1>
+    </div>
+  </header>
+  
+  <main>
+    <section class="py-12">
+      <div class="container mx-auto px-4">
+        <p class="text-gray-300">Dein Content hier...</p>
+        
+        <!-- WICHTIG: Platzhalter für die App-Liste -->
+        {{APPS}}
+        
+        <p class="text-gray-300">Mehr Content nach der Liste...</p>
+      </div>
+    </section>
+  </main>
+  
+  <footer class="py-8 bg-slate-950">
+    <div class="container mx-auto px-4 text-center text-gray-500">
+      © 2025 Deine Seite
+    </div>
+  </footer>
+</div>`}
+                      rows={25}
+                      className="font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground mt-2">
+                      <strong>Leer lassen:</strong> Standard-Template wird verwendet.<br />
+                      <strong>HTML eingeben:</strong> Überschreibt das gesamte Template. Tailwind-Klassen funktionieren automatisch.
                     </p>
                   </div>
                 </TabsContent>

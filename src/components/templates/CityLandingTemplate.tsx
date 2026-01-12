@@ -13,14 +13,12 @@ import {
   Award
 } from "lucide-react";
 import DOMPurify from "dompurify";
-import type { Tables } from "@/integrations/supabase/types";
-
-type Category = Tables<"categories">;
-type Project = Tables<"projects">;
+import type { Category } from "@/hooks/useCategories";
+import type { ProjectWithCategory } from "@/hooks/useProjects";
 
 interface CityLandingTemplateProps {
   category: Category;
-  projects: Project[];
+  projects: ProjectWithCategory[];
 }
 
 export default function CityLandingTemplate({ category, projects }: CityLandingTemplateProps) {
