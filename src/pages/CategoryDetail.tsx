@@ -4,20 +4,28 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useCategoryBySlug } from "@/hooks/useCategories";
 import { useProjects } from "@/hooks/useProjects";
+import { useCategoryProjects } from "@/hooks/useCategoryProjects";
 import { useTheme, useCategoryTheme } from "@/hooks/useTheme";
+import { usePageSEO } from "@/hooks/useSEO";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, ChevronRight, ExternalLink, Loader2, ArrowLeft } from "lucide-react";
+import CustomHtmlRenderer from "@/components/templates/CustomHtmlRenderer";
+import CityLandingTemplate from "@/components/templates/CityLandingTemplate";
 
 export default function CategoryDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useCategoryBySlug(slug || "");
   const { data: allProjects = [], isLoading: projectsLoading } = useProjects();
+  const { data: categoryProjects = [] } = useCategoryProjects(category?.id);
   const { setTheme } = useTheme();
   const categoryColorTheme = useCategoryTheme(category?.color_theme);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  // Apply SEO meta tags from category
+  usePageSEO(category?.meta_title || category?.name, category?.meta_description || category?.description || undefined);
 
   // Apply category theme when it loads
   useEffect(() => {
@@ -29,10 +37,22 @@ export default function CategoryDetail() {
       setTheme("dark");
     };
   }, [category, categoryColorTheme, setTheme]);
-  
+
+  // Get projects for this category, sorted by category_projects sort_order
   const projects = useMemo(() => {
+    if (categoryProjects.length > 0) {
+      // Use category_projects ordering
+      const sortedProjectIds = [...categoryProjects]
+        .sort((a, b) => a.sort_order - b.sort_order)
+        .map(cp => cp.project_id);
+      
+      return sortedProjectIds
+        .map(id => allProjects.find(p => p.id === id && p.is_active))
+        .filter(Boolean) as typeof allProjects;
+    }
+    // Fallback to direct category_id match
     return allProjects.filter((p) => p.category_id === category?.id && p.is_active);
-  }, [allProjects, category?.id]);
+  }, [allProjects, category?.id, categoryProjects]);
 
   // Get all unique tags from projects
   const allTags = useMemo(() => {
@@ -128,6 +148,25 @@ export default function CategoryDetail() {
     );
   }
 
+  // Check if custom HTML override is set - use hybrid mode
+  if (category.custom_html_override && category.custom_html_override.trim()) {
+    return (
+      <div className="min-h-screen bg-background">
+        <CustomHtmlRenderer 
+          category={category} 
+          projects={projects}
+          htmlContent={category.custom_html_override}
+        />
+      </div>
+    );
+  }
+
+  // Check if template is "review" - use CityLandingTemplate
+  if (category.template === "review") {
+    return <CityLandingTemplate category={category} projects={projects} />;
+  }
+
+  // Default comparison template
   const theme = getThemeClasses(category.theme);
 
   return (

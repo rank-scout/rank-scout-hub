@@ -32,6 +32,8 @@ export const categorySchema = z.object({
   long_content_bottom: z.string().optional(),
   analytics_code: z.string().optional(),
   banner_override: z.string().optional(),
+  // Full HTML override for custom designs - use {{APPS}} placeholder
+  custom_html_override: z.string().optional(),
   is_active: z.boolean().default(true),
   sort_order: z.number().int().min(0).default(0),
   // Color theme for the page
