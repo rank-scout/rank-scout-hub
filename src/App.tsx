@@ -37,7 +37,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <Routes>
-                {/* Public Routes - Static paths FIRST */}
+                {/* Public Routes */}
                 <Route path="/" element={<Index />} />
                 <Route path="/kategorien" element={<Categories />} />
                 <Route path="/kategorien/:slug" element={<CategoryDetail />} />
@@ -57,10 +57,7 @@ const App = () => (
                   <Route path="settings" element={<AdminSettings />} />
                 </Route>
                 
-                {/* Dynamic Category Route - catches /:slug AFTER static routes */}
-                <Route path="/:slug" element={<CategoryDetail />} />
-                
-                {/* Catch-all 404 - MUST be last */}
+                {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

@@ -43,8 +43,6 @@ export const categorySchema = z.object({
   footer_copyright_text: z.string().max(200).optional(),
   footer_designer_name: z.string().max(100).optional(),
   footer_designer_url: z.string().url().optional().or(z.literal("")),
-  // Target domain for multi-domain support
-  target_domain: z.string().default("dating.rank-scout.com"),
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;

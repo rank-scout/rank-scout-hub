@@ -8,6 +8,3 @@ verify_jwt = false
 
 [functions.generate-city-content]
 verify_jwt = false
-
-[functions.fetch-html]
-verify_jwt = false

@@ -14,11 +14,6 @@ import { Search, ChevronRight, ExternalLink, Loader2, ArrowLeft } from "lucide-r
 import CustomHtmlRenderer from "@/components/templates/CustomHtmlRenderer";
 import CityLandingTemplate from "@/components/templates/CityLandingTemplate";
 
-// Helper to check if custom override is active
-const hasCustomOverride = (category: { custom_html_override?: string | null } | undefined): boolean => {
-  return Boolean(category?.custom_html_override?.trim());
-};
-
 export default function CategoryDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: category, isLoading: categoryLoading } = useCategoryBySlug(slug || "");
@@ -29,27 +24,19 @@ export default function CategoryDetail() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // Determine if override is active (for conditional logic below)
-  const isOverrideActive = hasCustomOverride(category);
+  // Apply SEO meta tags from category
+  usePageSEO(category?.meta_title || category?.name, category?.meta_description || category?.description || undefined);
 
-  // Apply SEO meta tags from category (only when NOT in override mode - CustomHtmlRenderer handles its own)
-  usePageSEO(
-    isOverrideActive ? undefined : (category?.meta_title || category?.name),
-    isOverrideActive ? undefined : (category?.meta_description || category?.description || undefined)
-  );
-
-  // Apply category theme when it loads - SKIP if override is active
+  // Apply category theme when it loads
   useEffect(() => {
-    // Don't apply theme when custom override is active - the override controls everything
-    if (!category || isOverrideActive) return;
-    
-    setTheme(categoryColorTheme);
-    
+    if (category) {
+      setTheme(categoryColorTheme);
+    }
     // Reset to dark theme when leaving the page
     return () => {
       setTheme("dark");
     };
-  }, [category, categoryColorTheme, setTheme, isOverrideActive]);
+  }, [category, categoryColorTheme, setTheme]);
 
   // Get projects for this category, sorted by category_projects sort_order
   const projects = useMemo(() => {
@@ -159,16 +146,24 @@ export default function CategoryDetail() {
     );
   }
 
-  // STRICT CUSTOM HTML OVERRIDE - COMPLETE BYPASS
-  // NO Header, NO Footer, NO Layout, NO DB texts - 100% custom HTML
-  if (isOverrideActive) {
+  // Check if custom HTML override is set - FULL BYPASS MODE
+  // No standard layout (Header/Footer), no margins, completely custom
+  if (category.custom_html_override && category.custom_html_override.trim()) {
+    // Clean HTML: Remove <html>, <head>, <body> wrapper tags that cause React errors
+    const cleanHtml = category.custom_html_override
+      .replace(/<\/?html[^>]*>/gi, '')
+      .replace(/<\/?body[^>]*>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '') // Remove entire head section
+      .replace(/<!DOCTYPE[^>]*>/gi, '');
+
     return (
-      <CustomHtmlRenderer 
-        htmlContent={category.custom_html_override!}
-        projects={projects}
-        metaTitle={category.meta_title || category.name}
-        metaDescription={category.meta_description || category.description || undefined}
-      />
+      <div className="w-full min-h-screen m-0 p-0">
+        <CustomHtmlRenderer 
+          category={category} 
+          projects={projects}
+          htmlContent={cleanHtml}
+        />
+      </div>
     );
   }
 

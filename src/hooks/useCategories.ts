@@ -30,8 +30,6 @@ export type Category = {
   footer_copyright_text: string | null;
   footer_designer_name: string | null;
   footer_designer_url: string | null;
-  // Target domain for multi-domain support
-  target_domain: string;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -76,24 +74,15 @@ export function useCategory(id: string) {
 }
 
 export function useCategoryBySlug(slug: string) {
-  const currentHostname = typeof window !== 'undefined' ? window.location.hostname : '';
-  const isDevEnvironment = currentHostname === 'localhost' || currentHostname.includes('.lovableproject.com');
-
   return useQuery({
-    queryKey: ["categories", "slug", slug, currentHostname],
+    queryKey: ["categories", "slug", slug],
     queryFn: async () => {
-      let query = supabase
+      const { data, error } = await supabase
         .from("categories")
         .select("*")
         .eq("slug", slug)
-        .eq("is_active", true);
-
-      // In production, filter by target_domain; in dev, show all
-      if (!isDevEnvironment && currentHostname) {
-        query = query.eq("target_domain", currentHostname);
-      }
-
-      const { data, error } = await query.maybeSingle();
+        .eq("is_active", true)
+        .maybeSingle();
 
       if (error) throw error;
       return data as Category | null;
@@ -133,8 +122,6 @@ export function useCreateCategory() {
           footer_copyright_text: input.footer_copyright_text || null,
           footer_designer_name: input.footer_designer_name || "Digital-Perfect",
           footer_designer_url: input.footer_designer_url || "https://digital-perfect.at",
-          // Target domain
-          target_domain: input.target_domain || "dating.rank-scout.com",
           is_active: input.is_active ?? true,
           sort_order: input.sort_order ?? 0,
         })
@@ -181,8 +168,6 @@ export function useUpdateCategory() {
           ...(input.footer_copyright_text !== undefined && { footer_copyright_text: input.footer_copyright_text }),
           ...(input.footer_designer_name !== undefined && { footer_designer_name: input.footer_designer_name }),
           ...(input.footer_designer_url !== undefined && { footer_designer_url: input.footer_designer_url }),
-          // Target domain
-          ...(input.target_domain !== undefined && { target_domain: input.target_domain }),
           ...(input.is_active !== undefined && { is_active: input.is_active }),
           ...(input.sort_order !== undefined && { sort_order: input.sort_order }),
         })
@@ -250,8 +235,6 @@ export function useDuplicateCategory() {
           footer_copyright_text: category.footer_copyright_text,
           footer_designer_name: category.footer_designer_name,
           footer_designer_url: category.footer_designer_url,
-          // Target domain
-          target_domain: category.target_domain,
           is_active: false,
           sort_order: category.sort_order + 1,
         })

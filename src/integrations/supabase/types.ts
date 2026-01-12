@@ -47,7 +47,6 @@ export type Database = {
           sort_order: number
           sticky_cta_link: string | null
           sticky_cta_text: string | null
-          target_domain: string
           template: string
           theme: Database["public"]["Enums"]["category_theme"]
           updated_at: string
@@ -84,7 +83,6 @@ export type Database = {
           sort_order?: number
           sticky_cta_link?: string | null
           sticky_cta_text?: string | null
-          target_domain?: string
           template?: string
           theme?: Database["public"]["Enums"]["category_theme"]
           updated_at?: string
@@ -121,7 +119,6 @@ export type Database = {
           sort_order?: number
           sticky_cta_link?: string | null
           sticky_cta_text?: string | null
-          target_domain?: string
           template?: string
           theme?: Database["public"]["Enums"]["category_theme"]
           updated_at?: string
@@ -166,36 +163,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      domains: {
-        Row: {
-          created_at: string
-          display_name: string
-          domain: string
-          id: string
-          is_active: boolean
-          is_default: boolean
-          sort_order: number
-        }
-        Insert: {
-          created_at?: string
-          display_name: string
-          domain: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          sort_order?: number
-        }
-        Update: {
-          created_at?: string
-          display_name?: string
-          domain?: string
-          id?: string
-          is_active?: boolean
-          is_default?: boolean
-          sort_order?: number
-        }
-        Relationships: []
       }
       footer_links: {
         Row: {
