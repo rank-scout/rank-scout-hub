@@ -109,14 +109,12 @@ export default function CategoryDetail() {
 
   const isLoading = categoryLoading || projectsLoading;
 
+  // CRITICAL: Show minimal loading state to prevent template flash
+  // Don't render ANY template content until we know if custom HTML is set
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="pt-16 flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </main>
-        <Footer category={category} />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -148,14 +146,22 @@ export default function CategoryDetail() {
     );
   }
 
-  // Check if custom HTML override is set - use hybrid mode
+  // Check if custom HTML override is set - FULL BYPASS MODE
+  // No standard layout (Header/Footer), no margins, completely custom
   if (category.custom_html_override && category.custom_html_override.trim()) {
+    // Clean HTML: Remove <html>, <head>, <body> wrapper tags that cause React errors
+    const cleanHtml = category.custom_html_override
+      .replace(/<\/?html[^>]*>/gi, '')
+      .replace(/<\/?body[^>]*>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '') // Remove entire head section
+      .replace(/<!DOCTYPE[^>]*>/gi, '');
+
     return (
-      <div className="min-h-screen bg-background">
+      <div className="w-full min-h-screen m-0 p-0">
         <CustomHtmlRenderer 
           category={category} 
           projects={projects}
-          htmlContent={category.custom_html_override}
+          htmlContent={cleanHtml}
         />
       </div>
     );
