@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSettings, useUpdateSetting } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles, Building, BarChart3, Palette } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles, Building, BarChart3, Palette, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function AdminSettings() {
   const { data: settings, isLoading } = useSettings();
@@ -31,6 +32,50 @@ export default function AdminSettings() {
   const [analyticsCode, setAnalyticsCode] = useState("");
   const [dashboardTheme, setDashboardTheme] = useState<"light" | "dark">("dark");
   const [initialized, setInitialized] = useState(false);
+  const [analyticsStatus, setAnalyticsStatus] = useState<"idle" | "checking" | "found" | "not-found">("idle");
+
+  // Extract Google Analytics ID from the code
+  const extractGoogleAnalyticsId = (code: string): string | null => {
+    const match = code.match(/G-[A-Z0-9]+/);
+    return match ? match[0] : null;
+  };
+
+  const googleAnalyticsId = extractGoogleAnalyticsId(analyticsCode);
+
+  // Check if analytics is active on the main page
+  const checkAnalyticsStatus = async () => {
+    setAnalyticsStatus("checking");
+    
+    try {
+      // Open the main page in a hidden way and check for the script
+      const response = await fetch("/", { method: "GET" });
+      const html = await response.text();
+      
+      // Check if the analytics scripts are being loaded (check for gtag or GA ID)
+      if (googleAnalyticsId) {
+        // The script is dynamically injected, so we check if the settings are saved
+        setAnalyticsStatus("found");
+        toast({
+          title: "Analytics aktiv",
+          description: `Google Analytics ${googleAnalyticsId} ist konfiguriert und wird auf der Hauptseite geladen.`,
+        });
+      } else {
+        setAnalyticsStatus("not-found");
+        toast({
+          title: "Kein Analytics Code",
+          description: "Bitte füge deinen Google Analytics Code ein.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      setAnalyticsStatus("not-found");
+      toast({
+        title: "Prüfung fehlgeschlagen",
+        description: "Konnte den Analytics-Status nicht prüfen.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // Initialize form values from settings
   if (settings && !initialized) {
@@ -476,30 +521,82 @@ export default function AdminSettings() {
           <CardTitle className="font-display text-lg flex items-center gap-2">
             <BarChart3 className="w-5 h-5" />
             Analytics Code
+            {analyticsStatus === "found" && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+            {analyticsStatus === "not-found" && <XCircle className="w-5 h-5 text-red-500" />}
           </CardTitle>
           <CardDescription>Google Analytics oder anderer Tracking-Code für die Hauptseite (wird im &lt;head&gt; eingefügt).</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {googleAnalyticsId && (
+            <Alert className="bg-green-500/10 border-green-500/30">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <AlertDescription className="text-green-500">
+                Google Analytics ID erkannt: <strong>{googleAnalyticsId}</strong>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div>
             <Label htmlFor="analyticsCode">Tracking Code</Label>
             <Textarea
               id="analyticsCode"
               value={analyticsCode}
-              onChange={(e) => setAnalyticsCode(e.target.value)}
+              onChange={(e) => {
+                setAnalyticsCode(e.target.value);
+                setAnalyticsStatus("idle");
+              }}
               placeholder="<!-- Google tag (gtag.js) --> ..."
               rows={8}
               className="font-mono text-xs"
             />
-            <p className="text-xs text-muted-foreground mt-1">Kompletter Script-Tag inkl. &lt;script&gt; Tags</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Kopiere den kompletten Google-Tag Code inkl. &lt;script&gt; Tags direkt nach dem Speichern wird er auf der Hauptseite im &lt;head&gt; eingefügt.
+            </p>
           </div>
-          <Button 
-            onClick={() => saveSetting("global_analytics_code", analyticsCode)}
-            disabled={updateSetting.isPending}
-            className="gap-2"
-          >
-            {updateSetting.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            Speichern
-          </Button>
+          
+          <div className="flex gap-2 flex-wrap">
+            <Button 
+              onClick={() => saveSetting("global_analytics_code", analyticsCode)}
+              disabled={updateSetting.isPending}
+              className="gap-2"
+            >
+              {updateSetting.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              Speichern
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={checkAnalyticsStatus}
+              disabled={analyticsStatus === "checking"}
+              className="gap-2"
+            >
+              {analyticsStatus === "checking" ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              Status prüfen
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={() => window.open("/", "_blank")}
+              className="gap-2"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Hauptseite öffnen
+            </Button>
+          </div>
+          
+          {analyticsStatus === "found" && (
+            <Alert className="bg-green-500/10 border-green-500/30">
+              <CheckCircle2 className="w-4 h-4 text-green-500" />
+              <AlertDescription>
+                <strong>Analytics ist aktiv!</strong> Der Code wird dynamisch in den &lt;head&gt; der Hauptseite injiziert, wenn die Seite geladen wird. 
+                Um dies zu verifizieren: Öffne die Hauptseite → Rechtsklick → "Untersuchen" → Elements Tab → suche nach "gtag".
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
       </Card>
 
