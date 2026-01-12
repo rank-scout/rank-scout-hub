@@ -33,6 +33,18 @@ function generateSlug(name: string): string {
     .replace(/^-|-$/g, "");
 }
 
+// Helper to extract SEO data from HTML
+function extractMetaFromHtml(html: string): { title: string | null; metaDescription: string | null; h1Title: string | null } {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  
+  return {
+    title: doc.querySelector('title')?.textContent?.trim() || null,
+    metaDescription: doc.querySelector('meta[name="description"]')?.getAttribute('content') || null,
+    h1Title: doc.querySelector('h1')?.textContent?.trim() || null,
+  };
+}
+
 export default function AdminCategories() {
   const { data: categories = [], isLoading } = useCategories(true);
   const createCategory = useCreateCategory();
@@ -82,6 +94,61 @@ export default function AdminCategories() {
   const colorTheme = watch("color_theme");
   const isActive = watch("is_active");
   const nameValue = watch("name");
+  const customHtmlOverride = watch("custom_html_override");
+
+  // Auto-fill SEO fields from HTML
+  function handleExtractFromHtml() {
+    const html = customHtmlOverride;
+    if (!html || html.trim() === "") {
+      toast({ title: "Kein HTML vorhanden", description: "Füge zuerst HTML-Code ein.", variant: "destructive" });
+      return;
+    }
+
+    const extracted = extractMetaFromHtml(html);
+    const updates: string[] = [];
+
+    const currentMetaTitle = watch("meta_title");
+    const currentMetaDescription = watch("meta_description");
+    const currentH1Title = watch("h1_title");
+
+    if (extracted.title && !currentMetaTitle) {
+      setValue("meta_title", extracted.title);
+      updates.push(`Meta-Titel: "${extracted.title}"`);
+    }
+    if (extracted.metaDescription && !currentMetaDescription) {
+      setValue("meta_description", extracted.metaDescription);
+      updates.push(`Meta-Beschreibung: "${extracted.metaDescription.substring(0, 50)}..."`);
+    }
+    if (extracted.h1Title && !currentH1Title) {
+      setValue("h1_title", extracted.h1Title);
+      updates.push(`H1-Titel: "${extracted.h1Title}"`);
+    }
+
+    if (updates.length > 0) {
+      toast({ 
+        title: "SEO-Daten extrahiert", 
+        description: updates.join("\n"),
+      });
+    } else {
+      const foundItems: string[] = [];
+      if (extracted.title) foundItems.push("Title");
+      if (extracted.metaDescription) foundItems.push("Meta Description");
+      if (extracted.h1Title) foundItems.push("H1");
+      
+      if (foundItems.length > 0) {
+        toast({ 
+          title: "Felder bereits gefüllt", 
+          description: `Gefunden: ${foundItems.join(", ")} - aber Felder sind bereits gefüllt.`,
+        });
+      } else {
+        toast({ 
+          title: "Keine SEO-Daten gefunden", 
+          description: "Der HTML-Code enthält kein <title>, <meta description> oder <h1>.",
+          variant: "destructive",
+        });
+      }
+    }
+  }
 
   // Auto-generate slug when name changes (only for new pages)
   useEffect(() => {
@@ -113,6 +180,7 @@ export default function AdminCategories() {
       long_content_bottom: "",
       analytics_code: "",
       banner_override: "",
+      custom_html_override: "",
       footer_site_name: "",
       footer_copyright_text: "",
       footer_designer_name: "Digital-Perfect",
@@ -145,6 +213,7 @@ export default function AdminCategories() {
       long_content_bottom: category.long_content_bottom || "",
       analytics_code: category.analytics_code || "",
       banner_override: category.banner_override || "",
+      custom_html_override: category.custom_html_override || "",
       footer_site_name: category.footer_site_name || "",
       footer_copyright_text: category.footer_copyright_text || "",
       footer_designer_name: category.footer_designer_name || "Digital-Perfect",
@@ -801,6 +870,27 @@ export default function AdminCategories() {
                 </TabsContent>
 
                 <TabsContent value="override" className="space-y-4 pt-4">
+                  {/* Status Badge */}
+                  {customHtmlOverride && customHtmlOverride.trim() !== "" && (
+                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                        <span className="text-sm font-medium text-green-400">Custom HTML aktiv</span>
+                        <span className="text-xs text-muted-foreground">({customHtmlOverride.length} Zeichen)</span>
+                      </div>
+                      {editingCategory && (
+                        <a 
+                          href={`/kategorien/${editingCategory.slug}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary hover:underline"
+                        >
+                          Vorschau öffnen →
+                        </a>
+                      )}
+                    </div>
+                  )}
+
                   <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4">
                     <div className="flex items-start gap-3">
                       <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
@@ -818,10 +908,23 @@ export default function AdminCategories() {
                   </div>
 
                   <div>
-                    <Label htmlFor="custom_html_override" className="flex items-center gap-2">
-                      <Wand2 className="w-4 h-4" />
-                      Vollständiges HTML Override
-                    </Label>
+                    <div className="flex items-center justify-between mb-2">
+                      <Label htmlFor="custom_html_override" className="flex items-center gap-2">
+                        <Wand2 className="w-4 h-4" />
+                        Vollständiges HTML Override
+                      </Label>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleExtractFromHtml}
+                        disabled={!customHtmlOverride || customHtmlOverride.trim() === ""}
+                        className="gap-2"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        Daten aus Code ziehen
+                      </Button>
+                    </div>
                     <Textarea 
                       id="custom_html_override" 
                       {...register("custom_html_override")} 
@@ -857,7 +960,8 @@ export default function AdminCategories() {
                     />
                     <p className="text-xs text-muted-foreground mt-2">
                       <strong>Leer lassen:</strong> Standard-Template wird verwendet.<br />
-                      <strong>HTML eingeben:</strong> Überschreibt das gesamte Template. Tailwind-Klassen funktionieren automatisch.
+                      <strong>HTML eingeben:</strong> Überschreibt das gesamte Template. Tailwind-Klassen funktionieren automatisch.<br />
+                      <strong>Daten extrahieren:</strong> Klicke "Daten aus Code ziehen" um Title, Meta Description und H1 automatisch in die SEO-Felder zu übernehmen.
                     </p>
                   </div>
                 </TabsContent>
