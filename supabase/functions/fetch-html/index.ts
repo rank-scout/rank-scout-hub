@@ -39,11 +39,24 @@ serve(async (req) => {
       );
     }
 
-    const html = await response.text();
+    let html = await response.text();
     console.log(`Successfully fetched ${html.length} characters`);
 
-    // Extract slug from URL
+    // Extract base URL for converting relative paths to absolute
     const urlObj = new URL(url);
+    const baseUrl = urlObj.origin;
+
+    // Convert relative URLs to absolute URLs
+    html = html
+      .replace(/href="\/(?!\/)/g, `href="${baseUrl}/`)
+      .replace(/src="\/(?!\/)/g, `src="${baseUrl}/`)
+      .replace(/url\(\/(?!\/)/g, `url(${baseUrl}/`)
+      .replace(/href='\/(?!\/)/g, `href='${baseUrl}/`)
+      .replace(/src='\/(?!\/)/g, `src='${baseUrl}/`);
+
+    console.log(`Converted relative URLs to absolute using base: ${baseUrl}`);
+
+    // Extract slug from URL
     let slug = urlObj.pathname.replace(/^\/|\/$/g, ''); // Remove leading/trailing slashes
     if (!slug) {
       slug = urlObj.hostname.split('.')[0]; // Use subdomain as fallback
@@ -53,7 +66,8 @@ serve(async (req) => {
       JSON.stringify({ 
         html, 
         slug,
-        originalUrl: url 
+        originalUrl: url,
+        baseUrl
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

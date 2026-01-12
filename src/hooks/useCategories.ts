@@ -76,15 +76,24 @@ export function useCategory(id: string) {
 }
 
 export function useCategoryBySlug(slug: string) {
+  const currentHostname = typeof window !== 'undefined' ? window.location.hostname : '';
+  const isDevEnvironment = currentHostname === 'localhost' || currentHostname.includes('.lovableproject.com');
+
   return useQuery({
-    queryKey: ["categories", "slug", slug],
+    queryKey: ["categories", "slug", slug, currentHostname],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("categories")
         .select("*")
         .eq("slug", slug)
-        .eq("is_active", true)
-        .maybeSingle();
+        .eq("is_active", true);
+
+      // In production, filter by target_domain; in dev, show all
+      if (!isDevEnvironment && currentHostname) {
+        query = query.eq("target_domain", currentHostname);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error) throw error;
       return data as Category | null;
