@@ -42,7 +42,7 @@ export default function CustomHtmlRenderer({ category, projects, htmlContent }: 
   };
 
   return (
-    <div className="custom-html-override">
+    <div className="custom-html-override w-full m-0 p-0">
       {/* Render HTML before {{APPS}} */}
       {beforeApps && (
         <div 
