@@ -10,7 +10,8 @@ import {
   Shield, 
   CheckCircle2,
   Clock,
-  Award
+  Award,
+  AlertTriangle
 } from "lucide-react";
 import DOMPurify from "dompurify";
 import type { Category } from "@/hooks/useCategories";
@@ -67,6 +68,23 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
 
   const siteName = category.site_name;
   const isDev = import.meta.env.DEV;
+
+  // Navigation settings with defaults
+  const navSettings = category.navigation_settings || {
+    show_top3_dating_apps: true,
+    show_singles_in_der_naehe: true,
+    show_chat_mit_einer_frau: true,
+    show_online_dating_cafe: true,
+    show_bildkontakte_login: true,
+    show_18plus_hint_box: true,
+  };
+
+  // Check if any quick navigation links should be shown
+  const hasQuickNavLinks = navSettings.show_top3_dating_apps || 
+    navSettings.show_singles_in_der_naehe || 
+    navSettings.show_chat_mit_einer_frau || 
+    navSettings.show_online_dating_cafe || 
+    navSettings.show_bildkontakte_login;
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,6 +187,79 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </section>
         )}
 
+        {/* Quick Navigation Section */}
+        {hasQuickNavLinks && (
+          <section className="py-8 bg-background">
+            <div className="container mx-auto px-4">
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <h2 className="font-display font-semibold text-xl text-foreground">
+                      Schnellnavigation: Dating-Themen & Regionen
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                      Praktische interne Links, passend zu „{category.name}" – ohne Umwege.
+                    </p>
+                  </div>
+                  <a href="#vergleich" className={`text-sm ${theme.text} hover:underline flex items-center gap-1`}>
+                    ↓ Zum Vergleich
+                  </a>
+                </div>
+                
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {navSettings.show_top3_dating_apps && (
+                    <Link to="/top3-dating-apps" className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-border bg-card hover:bg-muted transition-colors text-sm">
+                      ⭐ Top3 Dating Apps
+                    </Link>
+                  )}
+                  {navSettings.show_singles_in_der_naehe && (
+                    <Link to="/singles-in-der-naehe" className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-border bg-card hover:bg-muted transition-colors text-sm">
+                      📍 Singles in der Nähe
+                    </Link>
+                  )}
+                  {navSettings.show_chat_mit_einer_frau && (
+                    <Link to="/chat-mit-einer-frau" className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-border bg-card hover:bg-muted transition-colors text-sm">
+                      👩 Chat mit einer Frau
+                    </Link>
+                  )}
+                  {navSettings.show_online_dating_cafe && (
+                    <Link to="/online-dating-cafe" className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-border bg-card hover:bg-muted transition-colors text-sm">
+                      💻 Online Dating Cafe
+                    </Link>
+                  )}
+                  {navSettings.show_bildkontakte_login && (
+                    <Link to="/bildkontakte-login" className="inline-flex items-center gap-2 px-3 py-2 rounded-full border border-border bg-card hover:bg-muted transition-colors text-sm">
+                      🖼️ Bildkontakte Login
+                    </Link>
+                  )}
+                </div>
+
+                {/* 18+ Hint Box */}
+                {navSettings.show_18plus_hint_box && (
+                  <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 flex items-start gap-3">
+                    <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-red-400 text-sm">Hinweis: 18+ Bereich</p>
+                      <p className="text-sm text-muted-foreground">
+                        Wenn du explizit Inhalte für Erwachsene suchst, nutze bitte ausschließlich den 18+ Bereich:
+                      </p>
+                      <a 
+                        href="https://adult.rank-scout.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-red-400 hover:underline mt-1"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        adult.rank-scout.com (18+)
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* Content Top - USPs with enhanced styling */}
         {category.long_content_top && (
           <section className="py-12 md:py-16 bg-gradient-to-b from-background to-muted/20">
@@ -182,7 +273,7 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
         )}
 
         {/* App Comparison List with enhanced styling */}
-        <section className="py-12 md:py-20 bg-muted/30">
+        <section id="vergleich" className="py-12 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium mb-4">
