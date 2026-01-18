@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import type { CategoryInput } from "@/lib/schemas";
+import type { CategoryInput, NavigationSettings } from "@/lib/schemas";
 
 export type Category = {
   id: string;
@@ -30,6 +30,8 @@ export type Category = {
   footer_copyright_text: string | null;
   footer_designer_name: string | null;
   footer_designer_url: string | null;
+  // Navigation settings
+  navigation_settings: NavigationSettings | null;
   is_active: boolean;
   sort_order: number;
   created_at: string;
@@ -122,6 +124,8 @@ export function useCreateCategory() {
           footer_copyright_text: input.footer_copyright_text || null,
           footer_designer_name: input.footer_designer_name || "Digital-Perfect",
           footer_designer_url: input.footer_designer_url || "https://digital-perfect.at",
+          // Navigation settings
+          navigation_settings: input.navigation_settings || null,
           is_active: input.is_active ?? true,
           sort_order: input.sort_order ?? 0,
         })
@@ -168,6 +172,8 @@ export function useUpdateCategory() {
           ...(input.footer_copyright_text !== undefined && { footer_copyright_text: input.footer_copyright_text }),
           ...(input.footer_designer_name !== undefined && { footer_designer_name: input.footer_designer_name }),
           ...(input.footer_designer_url !== undefined && { footer_designer_url: input.footer_designer_url }),
+          // Navigation settings
+          ...(input.navigation_settings !== undefined && { navigation_settings: input.navigation_settings }),
           ...(input.is_active !== undefined && { is_active: input.is_active }),
           ...(input.sort_order !== undefined && { sort_order: input.sort_order }),
         })
@@ -235,6 +241,8 @@ export function useDuplicateCategory() {
           footer_copyright_text: category.footer_copyright_text,
           footer_designer_name: category.footer_designer_name,
           footer_designer_url: category.footer_designer_url,
+          // Navigation settings
+          navigation_settings: category.navigation_settings,
           is_active: false,
           sort_order: category.sort_order + 1,
         })

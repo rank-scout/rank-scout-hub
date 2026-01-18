@@ -185,6 +185,14 @@ export default function AdminCategories() {
       footer_copyright_text: "",
       footer_designer_name: "Digital-Perfect",
       footer_designer_url: "https://digital-perfect.at",
+      navigation_settings: {
+        show_top3_dating_apps: true,
+        show_singles_in_der_naehe: true,
+        show_chat_mit_einer_frau: true,
+        show_online_dating_cafe: true,
+        show_bildkontakte_login: true,
+        show_18plus_hint_box: true,
+      },
       is_active: true,
       sort_order: categories.length,
     });
@@ -193,6 +201,14 @@ export default function AdminCategories() {
 
   function openEditDialog(category: Category) {
     setEditingCategory(category);
+    const defaultNavSettings = {
+      show_top3_dating_apps: true,
+      show_singles_in_der_naehe: true,
+      show_chat_mit_einer_frau: true,
+      show_online_dating_cafe: true,
+      show_bildkontakte_login: true,
+      show_18plus_hint_box: true,
+    };
     reset({
       slug: category.slug,
       name: category.name,
@@ -218,6 +234,7 @@ export default function AdminCategories() {
       footer_copyright_text: category.footer_copyright_text || "",
       footer_designer_name: category.footer_designer_name || "Digital-Perfect",
       footer_designer_url: category.footer_designer_url || "https://digital-perfect.at",
+      navigation_settings: category.navigation_settings || defaultNavSettings,
       is_active: category.is_active,
       sort_order: category.sort_order,
     });
@@ -363,10 +380,11 @@ export default function AdminCategories() {
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <Tabs defaultValue="basic" className="w-full">
-                <TabsList className="grid w-full grid-cols-7">
+                <TabsList className="grid w-full grid-cols-8">
                   <TabsTrigger value="basic">Grunddaten</TabsTrigger>
                   <TabsTrigger value="seo">SEO</TabsTrigger>
                   <TabsTrigger value="content">Content</TabsTrigger>
+                  <TabsTrigger value="navigation">Navigation</TabsTrigger>
                   <TabsTrigger value="footer">Footer</TabsTrigger>
                   <TabsTrigger value="projects">Apps</TabsTrigger>
                   <TabsTrigger value="tracking">Tracking</TabsTrigger>
@@ -778,6 +796,85 @@ export default function AdminCategories() {
                     <p className="text-xs text-muted-foreground mt-1">
                       Leer lassen = globaler Banner wird verwendet. Eingetragen = überschreibt den globalen Banner für diese Seite.
                     </p>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="navigation" className="space-y-4 pt-4">
+                  <div className="border rounded-lg p-4 space-y-4">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      🧭 Schnellnavigation-Einstellungen
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      Wähle, welche Links in der Schnellnavigation auf dieser Landingpage angezeigt werden sollen.
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <div className="space-y-0.5">
+                          <Label className="text-base font-medium">⭐ Top 3 Dating Apps</Label>
+                          <p className="text-sm text-muted-foreground">Link zu Top3 Dating Apps anzeigen</p>
+                        </div>
+                        <Switch
+                          checked={watch("navigation_settings.show_top3_dating_apps") ?? true}
+                          onCheckedChange={(checked) => setValue("navigation_settings.show_top3_dating_apps", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <div className="space-y-0.5">
+                          <Label className="text-base font-medium">📍 Singles in der Nähe</Label>
+                          <p className="text-sm text-muted-foreground">Link zu Singles in der Nähe anzeigen</p>
+                        </div>
+                        <Switch
+                          checked={watch("navigation_settings.show_singles_in_der_naehe") ?? true}
+                          onCheckedChange={(checked) => setValue("navigation_settings.show_singles_in_der_naehe", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <div className="space-y-0.5">
+                          <Label className="text-base font-medium">💬 Chat mit einer Frau</Label>
+                          <p className="text-sm text-muted-foreground">Link zu Chat mit einer Frau anzeigen</p>
+                        </div>
+                        <Switch
+                          checked={watch("navigation_settings.show_chat_mit_einer_frau") ?? true}
+                          onCheckedChange={(checked) => setValue("navigation_settings.show_chat_mit_einer_frau", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <div className="space-y-0.5">
+                          <Label className="text-base font-medium">☕ Online Dating Cafe</Label>
+                          <p className="text-sm text-muted-foreground">Link zu Online Dating Cafe anzeigen</p>
+                        </div>
+                        <Switch
+                          checked={watch("navigation_settings.show_online_dating_cafe") ?? true}
+                          onCheckedChange={(checked) => setValue("navigation_settings.show_online_dating_cafe", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <div className="space-y-0.5">
+                          <Label className="text-base font-medium">🖼️ Bildkontakte Login</Label>
+                          <p className="text-sm text-muted-foreground">Link zu Bildkontakte Login anzeigen</p>
+                        </div>
+                        <Switch
+                          checked={watch("navigation_settings.show_bildkontakte_login") ?? true}
+                          onCheckedChange={(checked) => setValue("navigation_settings.show_bildkontakte_login", checked)}
+                        />
+                      </div>
+                      
+                      <div className="flex items-center justify-between py-2 bg-red-500/5 rounded-lg px-3 border border-red-500/20">
+                        <div className="space-y-0.5">
+                          <Label className="text-base font-medium text-red-400">🔞 18+ Hinweis Box</Label>
+                          <p className="text-sm text-muted-foreground">Die rote 18+ Warnbox anzeigen</p>
+                        </div>
+                        <Switch
+                          checked={watch("navigation_settings.show_18plus_hint_box") ?? true}
+                          onCheckedChange={(checked) => setValue("navigation_settings.show_18plus_hint_box", checked)}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </TabsContent>
 

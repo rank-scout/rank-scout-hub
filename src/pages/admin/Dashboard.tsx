@@ -6,7 +6,8 @@ import { useSettings, useUpdateSetting } from "@/hooks/useSettings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { FolderTree, FileBox, TrendingUp, Users, Mail, Link2, MousePointer } from "lucide-react";
+import { FolderTree, FileBox, TrendingUp, Users, Mail, Link2, MousePointer, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -178,12 +179,32 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Leads */}
         <Card className="bg-card border-border">
-          <CardHeader>
-            <CardTitle className="text-lg font-display">📧 Letzte Leads</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg font-display">📧 Newsletter Anmeldungen</CardTitle>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => {
+                const csv = "Email,Quelle,Datum\n" + 
+                  subscribers.map(s => 
+                    `"${s.email}","${s.source_page || 'Direkt'}","${new Date(s.created_at).toLocaleDateString('de-DE')}"`
+                  ).join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.download = `newsletter_${new Date().toISOString().split("T")[0]}.csv`;
+                link.click();
+                toast({ title: "CSV heruntergeladen" });
+              }}
+            >
+              <Download className="w-4 h-4" />
+              CSV Export
+            </Button>
           </CardHeader>
           <CardContent>
             {subscribers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Keine Leads vorhanden.</p>
+              <p className="text-sm text-muted-foreground">Keine Anmeldungen vorhanden.</p>
             ) : (
               <div className="space-y-3">
                 {subscribers.slice(0, 5).map((sub) => (

@@ -13,6 +13,18 @@ export const categoryThemeEnum = z.enum(["DATING", "ADULT", "CASINO", "GENERIC"]
 export const categoryTemplateEnum = z.enum(["comparison", "review"]);
 export const colorThemeEnum = z.enum(["dark", "light", "neon"]);
 
+// Navigation settings schema for quick navigation toggles
+export const navigationSettingsSchema = z.object({
+  show_top3_dating_apps: z.boolean().default(true),
+  show_singles_in_der_naehe: z.boolean().default(true),
+  show_chat_mit_einer_frau: z.boolean().default(true),
+  show_online_dating_cafe: z.boolean().default(true),
+  show_bildkontakte_login: z.boolean().default(true),
+  show_18plus_hint_box: z.boolean().default(true),
+});
+
+export type NavigationSettings = z.infer<typeof navigationSettingsSchema>;
+
 export const categorySchema = z.object({
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
   name: z.string().min(1, "Name erforderlich").max(100),
@@ -43,6 +55,8 @@ export const categorySchema = z.object({
   footer_copyright_text: z.string().max(200).optional(),
   footer_designer_name: z.string().max(100).optional(),
   footer_designer_url: z.string().url().optional().or(z.literal("")),
+  // Navigation settings for quick navigation
+  navigation_settings: navigationSettingsSchema.optional(),
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;
