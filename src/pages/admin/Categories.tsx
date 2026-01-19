@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette, Wand2, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette, Wand2, AlertTriangle, UploadCloud, Globe } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
@@ -57,8 +57,11 @@ export default function AdminCategories() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
+  
+  // State für Export & Deploy
   const [exportCategory, setExportCategory] = useState<Category | null>(null);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isDeploying, setIsDeploying] = useState<string | null>(null);
 
   // Fetch assigned projects when editing
   const { data: categoryProjects = [] } = useCategoryProjects(editingCategory?.id);
@@ -95,6 +98,90 @@ export default function AdminCategories() {
   const isActive = watch("is_active");
   const nameValue = watch("name");
   const customHtmlOverride = watch("custom_html_override");
+
+  // --- DEPLOYMENT LOGIC START ---
+  async function handleDeploy(category: Category) {
+    setIsDeploying(category.id);
+    
+    // KONFIGURATION: Bridge-URL und Passwort
+    const BRIDGE_URL = "https://dating.rank-scout.com/bridge.php"; 
+    const API_KEY = "CHANGE_ME_123"; // <--- HIER DEIN PASSWORT REIN!
+
+    try {
+      // 1. HTML Generieren
+      let htmlContent = "";
+
+      if (category.custom_html_override && category.custom_html_override.trim() !== "") {
+        htmlContent = category.custom_html_override;
+      } else {
+        htmlContent = `<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${category.meta_title || category.name}</title>
+    <meta name="description" content="${category.meta_description || ''}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    ${category.analytics_code || ''}
+    <style>body { font-family: 'Inter', sans-serif; }</style>
+</head>
+<body class="${category.color_theme === 'dark' ? 'bg-slate-900 text-white' : 'bg-slate-50 text-slate-900'}">
+    <header class="py-16 text-center">
+        <h1 class="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-amber-400 to-orange-600">
+            ${category.hero_headline || category.name}
+        </h1>
+        <p class="text-lg opacity-80 max-w-2xl mx-auto">${category.description || ''}</p>
+        ${category.hero_cta_text ? `<a href="#vergleich" class="inline-block mt-8 bg-amber-500 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:scale-105 transition-transform">${category.hero_cta_text}</a>` : ''}
+    </header>
+    <main class="max-w-5xl mx-auto px-4 py-12">
+        ${category.long_content_top ? `<div class="prose ${category.color_theme === 'dark' ? 'prose-invert' : ''} max-w-none mb-12">${category.long_content_top}</div>` : ''}
+        <div id="vergleich" class="bg-card border border-white/10 rounded-xl p-8 text-center my-12">
+            <h2 class="text-2xl font-bold mb-2">Vergleichstabelle wird geladen...</h2>
+            <p class="opacity-60">Hier werden die Apps geladen.</p>
+        </div>
+        ${category.long_content_bottom ? `<div class="prose ${category.color_theme === 'dark' ? 'prose-invert' : ''} max-w-none mt-12">${category.long_content_bottom}</div>` : ''}
+    </main>
+    <footer class="py-8 text-center opacity-60 border-t border-white/10 mt-12">
+        <p>${category.footer_copyright_text || `© ${new Date().getFullYear()} ${category.site_name || 'Rank Scout'}`}</p>
+    </footer>
+</body>
+</html>`;
+      }
+
+      // 2. An Bridge senden
+      const response = await fetch(BRIDGE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Auth-Token": API_KEY },
+        body: JSON.stringify({
+          html: htmlContent,
+          slug: category.slug // Erstellt Ordner z.B. /wien/
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.status === "success") {
+        toast({
+          title: "🚀 Live geschaltet!",
+          description: `Seite online: ${result.url}`,
+          className: "bg-green-600 text-white border-green-700"
+        });
+      } else {
+        throw new Error(result.message || "Fehler bei der Übertragung");
+      }
+
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Fehler beim Deployment",
+        description: error instanceof Error ? error.message : "Verbindung fehlgeschlagen",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeploying(null);
+    }
+  }
+  // --- DEPLOYMENT LOGIC END ---
 
   // Auto-fill SEO fields from HTML
   function handleExtractFromHtml() {
@@ -494,11 +581,6 @@ export default function AdminCategories() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {colorTheme === "dark" && "Klassisches dunkles Design"}
-                        {colorTheme === "light" && "Helles, modernes Design"}
-                        {colorTheme === "neon" && "Cyberpunk-Stil mit Neon-Farben"}
-                      </p>
                     </div>
                     <div className="flex items-center justify-between pt-6">
                       <Label htmlFor="is_active">Aktiv</Label>
@@ -512,7 +594,6 @@ export default function AdminCategories() {
                 </TabsContent>
 
                 <TabsContent value="seo" className="space-y-4 pt-4">
-                  {/* AI Generator with Keyword Input */}
                   <div className="bg-gradient-to-r from-secondary/10 to-secondary/5 border border-secondary/20 rounded-xl p-4">
                     <div className="flex flex-col gap-4">
                       <div className="flex items-center gap-2">
@@ -538,15 +619,10 @@ export default function AdminCategories() {
                             const keywordInput = document.getElementById('keyword-input') as HTMLInputElement;
                             const keyword = keywordInput?.value || nameValue;
                             if (!keyword) {
-                              toast({ 
-                                title: "Kein Keyword", 
-                                description: "Bitte gib ein Keyword ein", 
-                                variant: "destructive" 
-                              });
+                              toast({ title: "Kein Keyword", description: "Bitte gib ein Keyword ein", variant: "destructive" });
                               return;
                             }
                             const year = new Date().getFullYear();
-                            // Generate ALL fields based on keyword
                             setValue("site_name", keyword.replace(/\s+/g, '') + "AT");
                             setValue("hero_pretitle", "Finde Singles in");
                             setValue("hero_headline", `Lerne ${keyword} Singles kennen`);
@@ -566,501 +642,187 @@ export default function AdminCategories() {
                     </div>
                   </div>
 
-                  {/* Header & Hero Settings */}
                   <div className="border rounded-lg p-4 space-y-4">
-                    <h4 className="font-semibold text-foreground flex items-center gap-2">
-                      Header & Hero Bereich
-                    </h4>
-                    
+                    <h4 className="font-semibold text-foreground">Header & Hero Bereich</h4>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="site_name">Seitenname im Header</Label>
                         <Input id="site_name" {...register("site_name")} placeholder="z.B. LGBTQ Dating" />
-                        <p className="text-xs text-muted-foreground mt-1">Wird oben links im Header angezeigt</p>
                       </div>
                       <div>
-                        <Label htmlFor="hero_pretitle">Hero Pretitle (klein, über Headline)</Label>
+                        <Label htmlFor="hero_pretitle">Hero Pretitle</Label>
                         <Input id="hero_pretitle" {...register("hero_pretitle")} placeholder="z.B. Finde Singles in" />
-                        <p className="text-xs text-muted-foreground mt-1">Der goldene Text über der Hauptüberschrift</p>
                       </div>
                     </div>
-
                     <div>
-                      <Label htmlFor="hero_headline">Hero Headline (groß, goldene Schrift)</Label>
+                      <Label htmlFor="hero_headline">Hero Headline</Label>
                       <Input id="hero_headline" {...register("hero_headline")} placeholder="z.B. Lerne Lgbtq Singles kennen" />
-                      <p className="text-xs text-muted-foreground mt-1">Die große Hauptüberschrift im Hero-Bereich</p>
                     </div>
-
                     <div>
                       <Label htmlFor="description">Hero Beschreibung</Label>
-                      <Textarea id="description" {...register("description")} placeholder="Die ausführliche Beschreibung unter der Headline..." rows={3} />
+                      <Textarea id="description" {...register("description")} placeholder="Die ausführliche Beschreibung..." rows={3} />
                     </div>
-
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label htmlFor="hero_cta_text">CTA-Button Text</Label>
                         <Input id="hero_cta_text" {...register("hero_cta_text")} placeholder="z.B. LGBTQ Singles finden" />
-                        <p className="text-xs text-muted-foreground mt-1">Text auf dem goldenen Button</p>
                       </div>
                       <div>
-                        <Label htmlFor="hero_badge_text">Badge Text (unter Button)</Label>
+                        <Label htmlFor="hero_badge_text">Badge Text</Label>
                         <Input id="hero_badge_text" {...register("hero_badge_text")} placeholder="z.B. Geprüft für Stadt & Land LGBTQ" />
-                        <p className="text-xs text-muted-foreground mt-1">Der grüne Haken-Text unter dem Button</p>
                       </div>
                     </div>
                   </div>
 
-                  {/* SEO Meta Tags */}
                   <div className="border rounded-lg p-4 space-y-4">
                     <h4 className="font-semibold text-foreground">SEO Meta Tags</h4>
-                    
                     <div>
-                      <Label htmlFor="h1_title">H1 Titel / Breadcrumb</Label>
-                      <Input id="h1_title" {...register("h1_title")} placeholder="Singles in LGBTQ Dating - Die besten Dating Apps" />
-                      <p className="text-xs text-muted-foreground mt-1">Wird auch in Breadcrumbs und als Untertitel verwendet</p>
+                      <Label htmlFor="h1_title">H1 Titel</Label>
+                      <Input id="h1_title" {...register("h1_title")} placeholder="Singles in LGBTQ Dating" />
                     </div>
-                    
                     <div>
-                      <Label htmlFor="meta_title">Meta Title (max. 60 Zeichen)</Label>
-                      <Input id="meta_title" {...register("meta_title")} placeholder="Singles LGBTQ 2025 » Top Dating Apps im Vergleich" maxLength={60} />
-                      {errors.meta_title && <p className="text-sm text-destructive mt-1">{errors.meta_title.message}</p>}
+                      <Label htmlFor="meta_title">Meta Title</Label>
+                      <Input id="meta_title" {...register("meta_title")} placeholder="Singles LGBTQ 2025" maxLength={60} />
                     </div>
-
                     <div>
-                      <Label htmlFor="meta_description">Meta Description (max. 160 Zeichen)</Label>
-                      <Textarea 
-                        id="meta_description" 
-                        {...register("meta_description")} 
-                        placeholder="Finde Singles in LGBTQ mit den besten Dating Apps. ✓ Kostenlos testen ✓ Echte Matches ✓ Seriöse Plattformen"
-                        maxLength={160}
-                        rows={3}
-                      />
-                      {errors.meta_description && <p className="text-sm text-destructive mt-1">{errors.meta_description.message}</p>}
+                      <Label htmlFor="meta_description">Meta Description</Label>
+                      <Textarea id="meta_description" {...register("meta_description")} placeholder="Finde Singles in LGBTQ..." maxLength={160} rows={3} />
                     </div>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="content" className="space-y-4 pt-4">
-                  {/* AI Generator with Keyword and Word Count */}
                   <div className="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-xl p-4">
                     <h4 className="font-semibold text-foreground flex items-center gap-2 mb-3">
                       <Sparkles className="w-4 h-4 text-primary" />
                       KI-Content Generator
                     </h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Generiere thematisch passenden Content mit moderner Schrift
-                    </p>
-                    
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                       <div>
-                        <Label htmlFor="content_keyword" className="text-sm">Keyword / Thema</Label>
-                        <Input 
-                          id="content_keyword" 
-                          placeholder="z.B. LGBTQ Dating, 50+ Dating, Casual Dating" 
-                          defaultValue={nameValue || "Dating"}
-                          className="mt-1"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Der Content wird 100% auf dieses Thema zugeschnitten</p>
+                        <Label htmlFor="content_keyword" className="text-sm">Keyword</Label>
+                        <Input id="content_keyword" defaultValue={nameValue || "Dating"} className="mt-1" />
                       </div>
                       <div>
-                        <Label htmlFor="content_location" className="text-sm">Ort / Stadt</Label>
-                        <Input 
-                          id="content_location" 
-                          placeholder="z.B. Wien, Salzburg, Österreich" 
-                          defaultValue={nameValue || ""}
-                          className="mt-1"
-                        />
-                        <p className="text-xs text-muted-foreground mt-1">Für lokalen Bezug im Content</p>
+                        <Label htmlFor="content_location" className="text-sm">Ort</Label>
+                        <Input id="content_location" defaultValue={nameValue || ""} className="mt-1" />
                       </div>
                       <div>
                         <Label htmlFor="content_wordcount" className="text-sm">Wortanzahl</Label>
                         <Select defaultValue="1000">
-                          <SelectTrigger id="content_wordcount" className="mt-1">
-                            <SelectValue placeholder="Wortanzahl wählen" />
-                          </SelectTrigger>
+                          <SelectTrigger id="content_wordcount" className="mt-1"><SelectValue /></SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="1000">~1.000 Wörter (kurz)</SelectItem>
-                            <SelectItem value="2000">~2.000 Wörter (mittel)</SelectItem>
-                            <SelectItem value="3000">~3.000 Wörter (lang)</SelectItem>
-                            <SelectItem value="4000">~4.000 Wörter (sehr lang)</SelectItem>
-                            <SelectItem value="5000">~5.000 Wörter (umfangreich)</SelectItem>
+                            <SelectItem value="1000">1.000 Wörter</SelectItem>
+                            <SelectItem value="2000">2.000 Wörter</SelectItem>
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground mt-1">Mehr Wörter = besseres SEO</p>
                       </div>
                     </div>
-
                     <Button
                       type="button"
-                      className="gap-2 w-full bg-primary hover:bg-primary/90"
-                      disabled={isGenerating}
+                      className="w-full gap-2"
                       onClick={async () => {
-                        const keywordInput = (document.getElementById("content_keyword") as HTMLInputElement)?.value || "Dating";
-                        const locationInput = (document.getElementById("content_location") as HTMLInputElement)?.value || nameValue || "Österreich";
-                        const wordCountSelect = (document.getElementById("content_wordcount") as HTMLSelectElement)?.value || "1000";
-                        const wordCount = parseInt(wordCountSelect, 10);
-                        
-                        if (!locationInput) {
-                          toast({ 
-                            title: "Kein Ort angegeben", 
-                            description: "Bitte gib einen Ort oder Seitennamen ein", 
-                            variant: "destructive" 
-                          });
-                          return;
-                        }
-                        
-                        toast({ 
-                          title: "Content wird generiert...", 
-                          description: `${wordCount} Wörter zum Thema "${keywordInput}" für "${locationInput}"` 
-                        });
-                        
-                        const result = await generateContent(locationInput, keywordInput, wordCount);
-                        if (result) {
-                          setValue("long_content_top", result.contentTop);
-                          setValue("long_content_bottom", result.contentBottom);
-                          toast({ 
-                            title: "Content generiert!", 
-                            description: `${wordCount} Wörter zu "${keywordInput}" in "${locationInput}" wurden erstellt.` 
-                          });
-                        } else {
-                          toast({ title: "Fehler bei der Generierung", variant: "destructive" });
+                        const kw = (document.getElementById("content_keyword") as HTMLInputElement)?.value;
+                        const loc = (document.getElementById("content_location") as HTMLInputElement)?.value;
+                        const wc = parseInt((document.getElementById("content_wordcount") as HTMLSelectElement)?.value || "1000");
+                        if (!loc) return toast({ title: "Fehler", description: "Ort fehlt", variant: "destructive" });
+                        toast({ title: "Generiere...", description: "Bitte warten." });
+                        const res = await generateContent(loc, kw, wc);
+                        if (res) {
+                          setValue("long_content_top", res.contentTop);
+                          setValue("long_content_bottom", res.contentBottom);
+                          toast({ title: "Fertig!" });
                         }
                       }}
                     >
-                      {isGenerating ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Generiere Content...
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-4 h-4" />
-                          Content generieren
-                        </>
-                      )}
+                      <Sparkles className="w-4 h-4" /> Generieren
                     </Button>
                   </div>
 
                   <div>
-                    <Label htmlFor="long_content_top">Content oben (HTML) - USP-Cards, Einleitung</Label>
-                    <Textarea 
-                      id="long_content_top" 
-                      {...register("long_content_top")} 
-                      placeholder={`<div class="grid grid-cols-1 md:grid-cols-3 gap-6 my-8">
-  <div class="bg-card border border-border rounded-2xl p-6 text-center">
-    <div class="text-4xl mb-4">💕</div>
-    <h3 class="text-lg font-semibold text-foreground mb-2">Echte Singles</h3>
-    <p class="text-muted-foreground text-sm">Verifizierte Profile aus deiner Stadt</p>
-  </div>
-</div>`}
-                      rows={16}
-                      className="font-mono text-sm min-h-[200px]"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">HTML-Content oberhalb der App-Liste. Nutze USP-Cards, Einleitungstexte etc.</p>
+                    <Label htmlFor="long_content_top">Content oben (HTML)</Label>
+                    <Textarea id="long_content_top" {...register("long_content_top")} rows={10} className="font-mono text-sm" />
                   </div>
-
                   <div>
-                    <Label htmlFor="long_content_bottom">Content unten (HTML) - SEO-Text, FAQs</Label>
-                    <Textarea 
-                      id="long_content_bottom" 
-                      {...register("long_content_bottom")} 
-                      placeholder={`<div class="bg-muted/30 rounded-2xl p-8 my-12">
-  <h2 class="text-2xl font-display font-bold text-foreground mb-6">Dating in [Stadt]</h2>
-  <p class="text-muted-foreground">SEO-Text hier...</p>
-</div>
-
-<div class="space-y-4 my-12">
-  <details class="bg-card border border-border rounded-xl p-4">
-    <summary class="font-semibold cursor-pointer">FAQ Frage hier?</summary>
-    <p class="mt-3 text-muted-foreground text-sm">Antwort hier...</p>
-  </details>
-</div>`}
-                      rows={16}
-                      className="font-mono text-sm min-h-[200px]"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">HTML-Content unterhalb der App-Liste. Nutze FAQs, SEO-Texte etc.</p>
+                    <Label htmlFor="long_content_bottom">Content unten (HTML)</Label>
+                    <Textarea id="long_content_bottom" {...register("long_content_bottom")} rows={10} className="font-mono text-sm" />
                   </div>
-
                   <div>
-                    <Label htmlFor="banner_override" className="flex items-center gap-2">
-                      <Flag className="w-4 h-4" />
-                      Banner-Override (HTML)
-                    </Label>
-                    <Textarea 
-                      id="banner_override" 
-                      {...register("banner_override")} 
-                      placeholder="<div class='banner'>Spezial-Banner nur für diese Seite...</div>"
-                      rows={4}
-                      className="font-mono text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Leer lassen = globaler Banner wird verwendet. Eingetragen = überschreibt den globalen Banner für diese Seite.
-                    </p>
+                    <Label htmlFor="banner_override">Banner-Override (HTML)</Label>
+                    <Textarea id="banner_override" {...register("banner_override")} rows={4} className="font-mono text-sm" />
                   </div>
                 </TabsContent>
 
                 <TabsContent value="navigation" className="space-y-4 pt-4">
-                  <div className="border rounded-lg p-4 space-y-4">
-                    <h4 className="font-semibold text-foreground flex items-center gap-2">
-                      🧭 Schnellnavigation-Einstellungen
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      Wähle, welche Links in der Schnellnavigation auf dieser Landingpage angezeigt werden sollen.
-                    </p>
-                    
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <div className="space-y-0.5">
-                          <Label className="text-base font-medium">⭐ Top 3 Dating Apps</Label>
-                          <p className="text-sm text-muted-foreground">Link zu Top3 Dating Apps anzeigen</p>
-                        </div>
-                        <Switch
-                          checked={watch("navigation_settings.show_top3_dating_apps") ?? true}
-                          onCheckedChange={(checked) => setValue("navigation_settings.show_top3_dating_apps", checked)}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <div className="space-y-0.5">
-                          <Label className="text-base font-medium">📍 Singles in der Nähe</Label>
-                          <p className="text-sm text-muted-foreground">Link zu Singles in der Nähe anzeigen</p>
-                        </div>
-                        <Switch
-                          checked={watch("navigation_settings.show_singles_in_der_naehe") ?? true}
-                          onCheckedChange={(checked) => setValue("navigation_settings.show_singles_in_der_naehe", checked)}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <div className="space-y-0.5">
-                          <Label className="text-base font-medium">💬 Chat mit einer Frau</Label>
-                          <p className="text-sm text-muted-foreground">Link zu Chat mit einer Frau anzeigen</p>
-                        </div>
-                        <Switch
-                          checked={watch("navigation_settings.show_chat_mit_einer_frau") ?? true}
-                          onCheckedChange={(checked) => setValue("navigation_settings.show_chat_mit_einer_frau", checked)}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <div className="space-y-0.5">
-                          <Label className="text-base font-medium">☕ Online Dating Cafe</Label>
-                          <p className="text-sm text-muted-foreground">Link zu Online Dating Cafe anzeigen</p>
-                        </div>
-                        <Switch
-                          checked={watch("navigation_settings.show_online_dating_cafe") ?? true}
-                          onCheckedChange={(checked) => setValue("navigation_settings.show_online_dating_cafe", checked)}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between py-2 border-b border-border">
-                        <div className="space-y-0.5">
-                          <Label className="text-base font-medium">🖼️ Bildkontakte Login</Label>
-                          <p className="text-sm text-muted-foreground">Link zu Bildkontakte Login anzeigen</p>
-                        </div>
-                        <Switch
-                          checked={watch("navigation_settings.show_bildkontakte_login") ?? true}
-                          onCheckedChange={(checked) => setValue("navigation_settings.show_bildkontakte_login", checked)}
-                        />
-                      </div>
-                      
-                      <div className="flex items-center justify-between py-2 bg-red-500/5 rounded-lg px-3 border border-red-500/20">
-                        <div className="space-y-0.5">
-                          <Label className="text-base font-medium text-red-400">🔞 18+ Hinweis Box</Label>
-                          <p className="text-sm text-muted-foreground">Die rote 18+ Warnbox anzeigen</p>
-                        </div>
-                        <Switch
-                          checked={watch("navigation_settings.show_18plus_hint_box") ?? true}
-                          onCheckedChange={(checked) => setValue("navigation_settings.show_18plus_hint_box", checked)}
-                        />
-                      </div>
+                  <div className="space-y-3 border rounded-lg p-4">
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <Label>⭐ Top 3 Dating Apps</Label>
+                      <Switch checked={watch("navigation_settings.show_top3_dating_apps") ?? true} onCheckedChange={(c) => setValue("navigation_settings.show_top3_dating_apps", c)} />
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <Label>📍 Singles in der Nähe</Label>
+                      <Switch checked={watch("navigation_settings.show_singles_in_der_naehe") ?? true} onCheckedChange={(c) => setValue("navigation_settings.show_singles_in_der_naehe", c)} />
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <Label>💬 Chat mit einer Frau</Label>
+                      <Switch checked={watch("navigation_settings.show_chat_mit_einer_frau") ?? true} onCheckedChange={(c) => setValue("navigation_settings.show_chat_mit_einer_frau", c)} />
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <Label>☕ Online Dating Cafe</Label>
+                      <Switch checked={watch("navigation_settings.show_online_dating_cafe") ?? true} onCheckedChange={(c) => setValue("navigation_settings.show_online_dating_cafe", c)} />
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <Label>🖼️ Bildkontakte Login</Label>
+                      <Switch checked={watch("navigation_settings.show_bildkontakte_login") ?? true} onCheckedChange={(c) => setValue("navigation_settings.show_bildkontakte_login", c)} />
+                    </div>
+                    <div className="flex items-center justify-between py-2 bg-red-500/5 px-2 rounded">
+                      <Label className="text-red-400">🔞 18+ Hinweis Box</Label>
+                      <Switch checked={watch("navigation_settings.show_18plus_hint_box") ?? true} onCheckedChange={(c) => setValue("navigation_settings.show_18plus_hint_box", c)} />
                     </div>
                   </div>
                 </TabsContent>
 
                 <TabsContent value="footer" className="space-y-4 pt-4">
-                  <div className="border rounded-lg p-4 space-y-4">
-                    <h4 className="font-semibold text-foreground">Footer-Einstellungen für diese Seite</h4>
-                    <p className="text-sm text-muted-foreground">
-                      Überschreibe die globalen Footer-Einstellungen für diese Landingpage.
-                    </p>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="footer_site_name">Footer Logo-Text</Label>
-                        <Input id="footer_site_name" {...register("footer_site_name")} placeholder="z.B. DatingAppVergleichAT" />
-                        <p className="text-xs text-muted-foreground mt-1">Leer = Site Name aus Grunddaten wird verwendet</p>
-                      </div>
-                      <div>
-                        <Label htmlFor="footer_copyright_text">Copyright-Text</Label>
-                        <Input id="footer_copyright_text" {...register("footer_copyright_text")} placeholder="© 2026 DatingVergleichAT. Alle Rechte vorbehalten." />
-                        <p className="text-xs text-muted-foreground mt-1">Leer = automatisch generiert</p>
-                      </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="footer_site_name">Footer Logo-Text</Label>
+                      <Input id="footer_site_name" {...register("footer_site_name")} />
                     </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="footer_designer_name">Designer Name</Label>
-                        <Input id="footer_designer_name" {...register("footer_designer_name")} placeholder="Digital-Perfect" />
-                      </div>
-                      <div>
-                        <Label htmlFor="footer_designer_url">Designer URL</Label>
-                        <Input id="footer_designer_url" {...register("footer_designer_url")} placeholder="https://digital-perfect.at" />
-                      </div>
+                    <div>
+                      <Label htmlFor="footer_copyright_text">Copyright-Text</Label>
+                      <Input id="footer_copyright_text" {...register("footer_copyright_text")} />
                     </div>
                   </div>
-
-                  {/* Popular Footer Links Editor */}
-                  <div className="border rounded-lg p-4">
-                    <CategoryFooterLinksEditor categoryId={editingCategory?.id || null} />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="footer_designer_name">Designer Name</Label>
+                      <Input id="footer_designer_name" {...register("footer_designer_name")} />
+                    </div>
+                    <div>
+                      <Label htmlFor="footer_designer_url">Designer URL</Label>
+                      <Input id="footer_designer_url" {...register("footer_designer_url")} />
+                    </div>
                   </div>
-
-                  {/* Legal Links Editor */}
-                  <div className="border rounded-lg p-4">
-                    <CategoryLegalLinksEditor categoryId={editingCategory?.id || null} />
-                  </div>
+                  <CategoryFooterLinksEditor categoryId={editingCategory?.id || null} />
+                  <CategoryLegalLinksEditor categoryId={editingCategory?.id || null} />
                 </TabsContent>
 
                 <TabsContent value="projects" className="space-y-4 pt-4">
-                  <div>
-                    <Label className="text-base font-semibold">Welche Anbieter sollen auf dieser Seite erscheinen?</Label>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Wähle die Anbieter aus und ordne sie per Pfeilen. Die Reihenfolge bestimmt die Anzeige.
-                    </p>
-                    <ProjectCheckboxList
-                      selectedIds={selectedProjectIds}
-                      onChange={setSelectedProjectIds}
-                    />
-                  </div>
+                  <ProjectCheckboxList selectedIds={selectedProjectIds} onChange={setSelectedProjectIds} />
                 </TabsContent>
 
                 <TabsContent value="tracking" className="space-y-4 pt-4">
-                  <div>
-                    <Label htmlFor="analytics_code" className="flex items-center gap-2">
-                      <Code className="w-4 h-4" />
-                      Analytics/Tracking Code
-                    </Label>
-                    <Textarea 
-                      id="analytics_code" 
-                      {...register("analytics_code")} 
-                      placeholder={`<!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-XXXXXXX');
-</script>
-
-<!-- Facebook Pixel -->
-<script>
-  !function(f,b,e,v,n,t,s)...
-</script>`}
-                      rows={15}
-                      className="font-mono text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Dieser Code wird im &lt;head&gt; der exportierten Seite eingefügt. 
-                      Perfekt für Google Analytics, Facebook Pixel, etc.
-                    </p>
-                  </div>
+                  <Label htmlFor="analytics_code">Analytics/Tracking Code</Label>
+                  <Textarea id="analytics_code" {...register("analytics_code")} rows={10} className="font-mono text-sm" />
                 </TabsContent>
 
                 <TabsContent value="override" className="space-y-4 pt-4">
-                  {/* Status Badge */}
-                  {customHtmlOverride && customHtmlOverride.trim() !== "" && (
-                    <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        <span className="text-sm font-medium text-green-400">Custom HTML aktiv</span>
-                        <span className="text-xs text-muted-foreground">({customHtmlOverride.length} Zeichen)</span>
-                      </div>
-                      {editingCategory && (
-                        <a 
-                          href={`/kategorien/${editingCategory.slug}`} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-xs text-primary hover:underline"
-                        >
-                          Vorschau öffnen →
-                        </a>
-                      )}
-                    </div>
-                  )}
-
-                  <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-xl p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5" />
-                      <div>
-                        <h4 className="font-semibold text-foreground flex items-center gap-2">
-                          🎨 Design Override (Experten-Modus)
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Füge hier komplettes HTML ein. Das Standard-Template wird vollständig ignoriert.
-                          <br />
-                          <strong className="text-amber-400">Nutze den Platzhalter <code className="bg-muted px-1 rounded">{"{{APPS}}"}</code> dort, wo die App-Liste erscheinen soll.</strong>
-                        </p>
-                      </div>
-                    </div>
+                  <div className="flex justify-between mb-2">
+                    <Label className="flex items-center gap-2"><Wand2 className="w-4 h-4" /> Vollständiges HTML Override</Label>
+                    <Button type="button" variant="outline" size="sm" onClick={handleExtractFromHtml} disabled={!customHtmlOverride} className="gap-2">
+                      <Sparkles className="w-4 h-4" /> Daten extrahieren
+                    </Button>
                   </div>
-
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <Label htmlFor="custom_html_override" className="flex items-center gap-2">
-                        <Wand2 className="w-4 h-4" />
-                        Vollständiges HTML Override
-                      </Label>
-                      <Button 
-                        type="button" 
-                        variant="outline" 
-                        size="sm"
-                        onClick={handleExtractFromHtml}
-                        disabled={!customHtmlOverride || customHtmlOverride.trim() === ""}
-                        className="gap-2"
-                      >
-                        <Sparkles className="w-4 h-4" />
-                        Daten aus Code ziehen
-                      </Button>
-                    </div>
-                    <Textarea 
-                      id="custom_html_override" 
-                      {...register("custom_html_override")} 
-                      placeholder={`<!-- Dein komplettes HTML hier -->
-<div class="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800">
-  <header class="py-8">
-    <div class="container mx-auto px-4">
-      <h1 class="text-4xl font-bold text-white">Meine Landingpage</h1>
-    </div>
-  </header>
-  
-  <main>
-    <section class="py-12">
-      <div class="container mx-auto px-4">
-        <p class="text-gray-300">Dein Content hier...</p>
-        
-        <!-- WICHTIG: Platzhalter für die App-Liste -->
-        {{APPS}}
-        
-        <p class="text-gray-300">Mehr Content nach der Liste...</p>
-      </div>
-    </section>
-  </main>
-  
-  <footer class="py-8 bg-slate-950">
-    <div class="container mx-auto px-4 text-center text-gray-500">
-      © 2025 Deine Seite
-    </div>
-  </footer>
-</div>`}
-                      rows={25}
-                      className="font-mono text-sm"
-                    />
-                    <p className="text-xs text-muted-foreground mt-2">
-                      <strong>Leer lassen:</strong> Standard-Template wird verwendet.<br />
-                      <strong>HTML eingeben:</strong> Überschreibt das gesamte Template. Tailwind-Klassen funktionieren automatisch.<br />
-                      <strong>Daten extrahieren:</strong> Klicke "Daten aus Code ziehen" um Title, Meta Description und H1 automatisch in die SEO-Felder zu übernehmen.
-                    </p>
-                  </div>
+                  <Textarea id="custom_html_override" {...register("custom_html_override")} rows={20} className="font-mono text-sm" placeholder="" />
                 </TabsContent>
               </Tabs>
 
@@ -1106,20 +868,8 @@ export default function AdminCategories() {
                   <TableRow key={category.id}>
                     <TableCell>
                       <div className="flex flex-col gap-1">
-                        <button
-                          onClick={() => handleMoveOrder(category, "up")}
-                          disabled={index === 0}
-                          className="p-1 hover:bg-muted rounded disabled:opacity-30"
-                        >
-                          <ArrowUp className="w-3 h-3" />
-                        </button>
-                        <button
-                          onClick={() => handleMoveOrder(category, "down")}
-                          disabled={index === categories.length - 1}
-                          className="p-1 hover:bg-muted rounded disabled:opacity-30"
-                        >
-                          <ArrowDown className="w-3 h-3" />
-                        </button>
+                        <button onClick={() => handleMoveOrder(category, "up")} disabled={index === 0} className="p-1 hover:bg-muted rounded disabled:opacity-30"><ArrowUp className="w-3 h-3" /></button>
+                        <button onClick={() => handleMoveOrder(category, "down")} disabled={index === categories.length - 1} className="p-1 hover:bg-muted rounded disabled:opacity-30"><ArrowDown className="w-3 h-3" /></button>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -1132,79 +882,33 @@ export default function AdminCategories() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        {category.template === "review" ? (
-                          <span className="inline-flex items-center gap-1 text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">
-                            <FileCheck className="w-3 h-3" />
-                            Review
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                            <LayoutTemplate className="w-3 h-3" />
-                            Vergleich
-                          </span>
-                        )}
-                      </div>
+                      {category.template === "review" ? <span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">Review</span> : <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Vergleich</span>}
                     </TableCell>
+                    <TableCell><code className="text-xs bg-muted px-2 py-1 rounded">/{category.slug}</code></TableCell>
+                    <TableCell>{category.meta_title ? <FileText className="w-4 h-4 text-green-500" /> : <FileText className="w-4 h-4 text-muted-foreground/30" />}</TableCell>
+                    <TableCell>{category.analytics_code ? <Code className="w-4 h-4 text-green-500" /> : <Code className="w-4 h-4 text-muted-foreground/30" />}</TableCell>
                     <TableCell>
-                      <code className="text-xs bg-muted px-2 py-1 rounded">/{category.slug}</code>
-                    </TableCell>
-                    <TableCell>
-                      {category.meta_title ? (
-                        <FileText className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <FileText className="w-4 h-4 text-muted-foreground/30" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {category.analytics_code ? (
-                        <Code className="w-4 h-4 text-green-500" />
-                      ) : (
-                        <Code className="w-4 h-4 text-muted-foreground/30" />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={category.is_active}
-                        onCheckedChange={() => handleToggleActive(category)}
-                      />
+                      <Switch checked={category.is_active} onCheckedChange={() => handleToggleActive(category)} />
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {/* NEU: Live schalten Button */}
                         <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleExport(category)}
-                          title="FTP-Export"
-                          className="text-primary hover:text-primary"
+                          variant="default"
+                          size="sm"
+                          onClick={() => handleDeploy(category)}
+                          disabled={isDeploying === category.id}
+                          className="bg-green-600 hover:bg-green-700 text-white gap-2 mr-2 shadow-sm"
+                          title="Auf dating.rank-scout.com veröffentlichen"
                         >
-                          <Download className="w-4 h-4" />
+                          {isDeploying === category.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+                          {isDeploying === category.id ? "..." : "Live"}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDuplicate(category)}
-                          title="Duplizieren"
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => openEditDialog(category)}
-                          title="Bearbeiten"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(category.id)}
-                          className="text-destructive hover:text-destructive"
-                          title="Löschen"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+
+                        <Button variant="ghost" size="icon" onClick={() => handleExport(category)} title="FTP-Export"><Download className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDuplicate(category)} title="Duplizieren"><Copy className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => openEditDialog(category)} title="Bearbeiten"><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(category.id)} className="text-destructive hover:text-destructive" title="Löschen"><Trash2 className="w-4 h-4" /></Button>
                       </div>
                     </TableCell>
                   </TableRow>
