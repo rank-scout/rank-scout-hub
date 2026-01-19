@@ -157,10 +157,15 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
         window.closeTopBar = function() { el('top-bar').classList.add('hidden'); };
         try {
             const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+            const setRes = await fetch(SUPABASE_URL + '/rest/v1/settings?select=*', { headers });
+            const settingsArr = await setRes.json();
+            const settings = {}; (settingsArr||[]).forEach(s => settings[s.key] = s.value);
+            if(settings.custom_css) el('custom-css').textContent = settings.custom_css;
+            if(settings.top_bar_active) { el('top-bar').classList.remove('hidden'); if(settings.top_bar_text) el('top-bar-text').textContent=settings.top_bar_text; if(settings.top_bar_link) el('top-bar-link').href=addSubId(settings.top_bar_link); }
             const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?slug=eq.' + SLUG + '&select=*', { headers });
             const categories = await catRes.json();
+            if(!categories || categories.length === 0) { el('project-list-container').innerHTML = '<p class="text-center">Kategorie nicht gefunden.</p>'; return; }
             const category = categories[0];
-            if (!category) { el('article-content').innerHTML = 'Nicht gefunden'; return; }
             const year = new Date().getFullYear();
             if(category.meta_title) el('page-title').textContent = category.meta_title.replace(/2026/g, year);
             if(category.meta_description) el('meta-description').setAttribute('content', category.meta_description.replace(/2026/g, year));
@@ -422,7 +427,7 @@ function generateQuickNavHtml(settings: any) {
     const btnClass = "inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full text-sm text-gray-700 hover:text-brand-primary hover:shadow-md transition-all border border-gray-200";
 
     if (settings.show_top3_dating_apps) {
-        links.push(`<a href="/top3-dating-apps/" class="${btnClass}"><i class="fas fa-star text-brand-gold"></i> Top3 Apps</a>`);
+        links.push(`<a href="/top3-dating-apps/" class="${btnClass}"><i class="fas fa-star text-brand-gold"></i> Top3 Dating Apps</a>`);
     }
     if (settings.show_singles_in_der_naehe) {
         links.push(`<a href="/singles-in-der-naehe/" class="${btnClass}"><i class="fas fa-location-dot text-brand-primary"></i> Singles in der Nähe</a>`);
