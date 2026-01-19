@@ -516,7 +516,7 @@ export default function AdminCategories() {
   async function handleDeploy(category: Category) {
     setIsDeploying(category.id);
     const BRIDGE_URL = "https://dating.rank-scout.com/bridge.php"; 
-    const API_KEY = "CHANGE_ME_123"; // <--- PASSWORT HIER!
+    const API_KEY = "4382180593Rank-Scout"; // <--- PASSWORT HIER!
 
     try {
       let htmlContent = "";
