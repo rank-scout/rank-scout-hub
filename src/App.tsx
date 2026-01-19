@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SEOProvider } from "@/components/SEOProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
-import AdminPublisher from "./pages/admin/Publisher";
+import AdminPublisher from "./pages/admin/MultiPublisher";
 
 // Pages
 import Index from "./pages/Index";
