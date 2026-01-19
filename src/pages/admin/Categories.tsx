@@ -16,12 +16,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, FileText, Download, LayoutTemplate, Code, Flag, FileCheck, Sparkles, Palette, Wand2, AlertTriangle, UploadCloud, Globe, Clock } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, Download, LayoutTemplate, Flag, FileCheck, Sparkles, Wand2, UploadCloud, Clock } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
 import { CategoryLegalLinksEditor } from "@/components/admin/CategoryLegalLinksEditor";
-import { supabase } from "@/integrations/supabase/client";
 
 // Helper: Datum formatieren
 const formatDate = (dateString: string | null) => {
@@ -33,7 +32,7 @@ const formatDate = (dateString: string | null) => {
 };
 
 // ============================================================================
-// 🟢 VORLAGE 1: VERGLEICHSTABELLE (Original Design + Platzhalter für Navi)
+// 🟢 VORLAGE 1: VERGLEICHSTABELLE (Optimierte Fonts & Script)
 // ============================================================================
 const COMPARISON_TEMPLATE = `<!DOCTYPE html>
 <html lang="de">
@@ -44,21 +43,16 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
     <link rel="icon" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="16x16" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="https://dating.rank-scout.com/top3-dating-apps/images/apple-touch-icon.png">
-    <link rel="manifest" href="https://dating.rank-scout.com/top3-dating-apps/images/site.webmanifest">
-    <link rel="icon" type="image/png" sizes="192x192" href="https://dating.rank-scout.com/top3-dating-apps/images/android-chrome-192x192.png">
-    <link rel="icon" type="image/png" sizes="512x512" href="https://dating.rank-scout.com/top3-dating-apps/images/android-chrome-512x512.png">
     <title id="page-title">Vergleich</title>
     <meta id="meta-description" name="description" content="">
     <meta name="robots" content="index, follow">
     <script type="application/ld+json" id="json-ld-schema">{}</script>
     <style id="custom-css"></style>
-    <style type="text/css">
-        @font-face {font-family:Montserrat;font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2) format('woff2');font-display:swap;}
-        @font-face {font-family:Montserrat;font-style:normal;font-weight:700;src:url(https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2) format('woff2');font-display:swap;}
-        @font-face {font-family:'Open Sans';font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVQUwaEQbjA.woff2) format('woff2');font-display:swap;}
-        @font-face {font-family:'Open Sans';font-style:normal;font-weight:600;src:url(https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVQUwaEQbjA.woff2) format('woff2');font-display:swap;}
-    </style>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -159,19 +153,28 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
         window.closeTopBar = function() { el('top-bar').classList.add('hidden'); };
         try {
             const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+            
+            // Settings Fetch
             const setRes = await fetch(SUPABASE_URL + '/rest/v1/settings?select=*', { headers });
-            const settingsArr = await setRes.json();
+            const settingsArr = setRes.ok ? await setRes.json() : [];
             const settings = {}; (settingsArr||[]).forEach(s => settings[s.key] = s.value);
-            if(settings.custom_css) el('custom-css').textContent = settings.custom_css;
+            
+            if(settings.custom_css && el('custom-css')) el('custom-css').textContent = settings.custom_css;
             if(settings.top_bar_active) { el('top-bar').classList.remove('hidden'); if(settings.top_bar_text) el('top-bar-text').textContent=settings.top_bar_text; if(settings.top_bar_link) el('top-bar-link').href=addSubId(settings.top_bar_link); }
+            
+            // Category Fetch
             const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?slug=eq.' + SLUG + '&select=*', { headers });
-            const categories = await catRes.json();
+            const categories = catRes.ok ? await catRes.json() : [];
+            
             if(!categories || categories.length === 0) { el('project-list-container').innerHTML = '<p class="text-center">Kategorie nicht gefunden.</p>'; return; }
             const category = categories[0];
             const year = new Date().getFullYear();
+            
+            // Meta & Content Fill
             if(category.meta_title) el('page-title').textContent = category.meta_title.replace(/2026/g, year);
             if(category.meta_description) el('meta-description').setAttribute('content', category.meta_description.replace(/2026/g, year));
             el('canonical-link').href = 'https://dating.rank-scout.com/' + SLUG + '/';
+            
             if(category.hero_pretitle) el('hero-pretitle').textContent = category.hero_pretitle;
             if(category.hero_headline) el('hero-title').textContent = category.hero_headline;
             if(category.description) el('hero-description').textContent = category.description;
@@ -183,19 +186,29 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
             if(category.long_content_top) el('long-content-top').innerHTML = category.long_content_top;
             if(category.long_content_bottom) el('long-content-bottom').innerHTML = category.long_content_bottom;
             if(category.banner_override) el('banner-container').innerHTML = category.banner_override;
+            
+            // Project Loading Logic (Fixing 400 Bad Request)
             let projects = [];
             const cpRes = await fetch(SUPABASE_URL + '/rest/v1/category_projects?category_id=eq.' + category.id + '&select=project_id,sort_order&order=sort_order.asc', { headers });
-            const catProjs = await cpRes.json();
+            const catProjs = cpRes.ok ? await cpRes.json() : [];
+            
             if(catProjs.length > 0) {
-                const pIds = catProjs.map(c => c.project_id);
-                const pRes = await fetch(SUPABASE_URL + '/rest/v1/projects?id=in.(' + pIds.join(',') + ')&is_active=eq.true&select=*', { headers });
-                projects = await pRes.json();
-                const oMap = {}; catProjs.forEach(c => oMap[c.project_id]=c.sort_order);
-                projects.sort((a,b) => (oMap[a.id]||0)-(oMap[b.id]||0));
-            } else {
+                const pIds = catProjs.map(c => c.project_id).filter(Boolean); // Filter nulls
+                if (pIds.length > 0) {
+                    const pRes = await fetch(SUPABASE_URL + '/rest/v1/projects?id=in.(' + pIds.join(',') + ')&is_active=eq.true&select=*', { headers });
+                    projects = pRes.ok ? await pRes.json() : [];
+                    const oMap = {}; catProjs.forEach(c => oMap[c.project_id]=c.sort_order);
+                    projects.sort((a,b) => (oMap[a.id]||0)-(oMap[b.id]||0));
+                }
+            } 
+            
+            // Fallback: Default Projects
+            if (projects.length === 0) {
                 const defRes = await fetch(SUPABASE_URL + '/rest/v1/projects?is_default=eq.true&is_active=eq.true&select=*&order=sort_order.asc&limit=5', { headers });
-                projects = await defRes.json();
+                projects = defRes.ok ? await defRes.json() : [];
             }
+
+            // Rendering
             if(projects.length > 0) {
                 const html = projects.map((p,i) => {
                     const isFirst = i===0;
@@ -206,21 +219,27 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
                     return '<div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden '+border+'"><div class="p-1">'+badge+'</div><div class="p-4 md:p-6 pt-2"><div class="flex flex-col md:flex-row gap-4 md:gap-6"><div class="flex-shrink-0 flex justify-center md:justify-start"><div class="w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center"><img src="'+sanitizeUrl(p.logo_url)+'" class="w-full h-full object-cover"></div></div><div class="flex-1 min-w-0"><h3 class="font-heading font-bold text-lg md:text-xl text-gray-900 mb-2 text-center md:text-left">'+escapeHtml(p.name)+'</h3><div class="flex items-center justify-center md:justify-start gap-2 mb-4"><div class="flex text-brand-gold"><i class="fas fa-star"></i></div><span class="font-bold text-gray-900">'+(p.rating||9.5)+'/10</span></div><div class="space-y-2 mb-4">'+features+'</div></div><div class="flex-shrink-0 flex items-center justify-center md:justify-end w-full md:w-auto"><a href="'+link+'" target="_blank" rel="nofollow" class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover">Kostenlos Registrieren <i class="fas fa-arrow-right"></i></a></div></div></div></div>';
                 }).join('');
                 el('project-list-container').innerHTML = html;
-            } else { el('project-list-container').innerHTML = '<p class="text-center text-gray-500">Keine Projekte.</p>'; }
+            } else { el('project-list-container').innerHTML = '<p class="text-center text-gray-500">Keine Projekte verfügbar.</p>'; }
+            
+            // Footer
             el('footer-site-name').textContent = category.footer_site_name || category.site_name || 'Rank-Scout';
             el('footer-copyright').textContent = '© ' + year + ' ' + (category.site_name||'Rank-Scout');
+            
             const legRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&select=*', { headers });
-            let legalLinks = await legRes.json();
-            if(legalLinks.length===0) { const gLeg = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers }); legalLinks = await gLeg.json(); }
+            let legalLinks = legRes.ok ? await legRes.json() : [];
+            if(legalLinks.length===0) { 
+                const gLeg = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers }); 
+                legalLinks = gLeg.ok ? await gLeg.json() : []; 
+            }
             if(legalLinks.length>0) el('footer-links').innerHTML = legalLinks.map(l => '<a href="'+sanitizeUrl(l.url)+'" class="text-gray-400 hover:text-white text-sm uppercase">'+escapeHtml(l.label)+'</a>').join('');
-        } catch(e) { console.error(e); }
+        } catch(e) { console.error('Render Error:', e); }
     })();
     </script>
 </body>
 </html>`;
 
 // ============================================================================
-// 🟢 VORLAGE 2: ERFAHRUNGSBERICHT (Original + Platzhalter)
+// 🟢 VORLAGE 2: ERFAHRUNGSBERICHT (Optimierte Fonts & Script)
 // ============================================================================
 const REVIEW_TEMPLATE = `<!DOCTYPE html>
 <html lang="de">
@@ -231,17 +250,15 @@ const REVIEW_TEMPLATE = `<!DOCTYPE html>
     <link rel="icon" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon.ico" sizes="any">
     <link rel="icon" type="image/png" sizes="16x16" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon-32x32.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="https://dating.rank-scout.com/top3-dating-apps/images/apple-touch-icon.png">
     <title id="page-title">Erfahrungsbericht</title>
     <meta id="meta-description" name="description" content="Ausführlicher Testbericht und Erfahrungen.">
     <meta name="robots" content="index, follow">
     <script type="application/ld+json" id="json-ld-schema">{}</script>
-    <style type="text/css">
-        @font-face {font-family:Montserrat;font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2) format('woff2');font-display:swap;}
-        @font-face {font-family:Montserrat;font-style:normal;font-weight:700;src:url(https://fonts.gstatic.com/s/montserrat/v25/JTUSjIg1_i6t8kCHKm459Wlhyw.woff2) format('woff2');font-display:swap;}
-        @font-face {font-family:'Open Sans';font-style:normal;font-weight:400;src:url(https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVQUwaEQbjA.woff2) format('woff2');font-display:swap;}
-        @font-face {font-family:'Open Sans';font-style:normal;font-weight:600;src:url(https://fonts.gstatic.com/s/opensans/v35/memSYaGs126MiZpBA-UvWbX2vVnXBbObj2OVZyOOSr4dVJWUgsjZ0B4gaVQUwaEQbjA.woff2) format('woff2');font-display:swap;}
-    </style>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -362,7 +379,7 @@ const REVIEW_TEMPLATE = `<!DOCTYPE html>
         try {
             const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
             const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?slug=eq.' + SLUG + '&select=*', { headers });
-            const categories = await catRes.json();
+            const categories = catRes.ok ? await catRes.json() : [];
             const category = categories[0];
             if (!category) { el('article-content').innerHTML = 'Nicht gefunden'; return; }
             const year = new Date().getFullYear();
@@ -375,7 +392,7 @@ const REVIEW_TEMPLATE = `<!DOCTYPE html>
             else if(category.long_content_top) el('article-content').innerHTML = category.long_content_top;
             
             const projRes = await fetch(SUPABASE_URL + '/rest/v1/category_projects?category_id=eq.' + category.id + '&select=*,projects(*)&order=sort_order.asc&limit=1', { headers });
-            const categoryProjects = await projRes.json();
+            const categoryProjects = projRes.ok ? await projRes.json() : [];
             const topProject = categoryProjects[0]?.projects;
             if (topProject) {
                 el('winner-name').textContent = topProject.name;
@@ -391,7 +408,7 @@ const REVIEW_TEMPLATE = `<!DOCTYPE html>
             } else { el('testsieger-card').style.display = 'none'; }
             
             el('footer-copyright').textContent = '© ' + year + ' ' + (category.site_name||'Rank-Scout');
-        } catch(e) { console.error(e); }
+        } catch(e) { console.error('Render Error:', e); }
     })();
     </script>
 </body>
