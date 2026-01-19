@@ -7,9 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Globe } from "lucide-react";
+import { Loader2, UploadCloud, Globe, Link as LinkIcon } from "lucide-react";
 
-// Typdefinition für unsere Ziele
 type DeploymentTarget = {
   id: string;
   name: string;
@@ -20,28 +19,22 @@ type DeploymentTarget = {
 export default function AdminPublisher() {
   const [targets, setTargets] = useState<DeploymentTarget[]>([]);
   const [selectedTargetId, setSelectedTargetId] = useState<string>("");
+  
+  // Neue Felder
+  const [slug, setSlug] = useState(""); // z.B. "test-bericht"
   const [pageTitle, setPageTitle] = useState("");
   const [pageContent, setPageContent] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // 1. Ziele aus Supabase laden
   useEffect(() => {
     async function loadTargets() {
-      const { data, error } = await supabase
-        .from("deployment_targets")
-        .select("*");
-      
-      if (error) {
-        console.error(error);
-        toast({ variant: "destructive", title: "Fehler beim Laden der Ziele" });
-      } else if (data) {
-        setTargets(data);
-      }
+      const { data } = await supabase.from("deployment_targets").select("*");
+      if (data) setTargets(data);
     }
     loadTargets();
   }, []);
 
-  // 2. HTML Generieren (Der Generator)
+  // Simples Template (wird später erweitert)
   const generateHtml = (title: string, content: string) => {
     return `<!DOCTYPE html>
 <html lang="de">
@@ -63,17 +56,21 @@ export default function AdminPublisher() {
         </main>
         <footer class="text-center mt-16 text-slate-400 text-sm">
             <p>&copy; ${new Date().getFullYear()} Rank-Scout. Alle Rechte vorbehalten.</p>
-            <div class="mt-2 text-xs">Empfohlen von Rank-Scout</div>
         </footer>
     </div>
 </body>
 </html>`;
   };
 
-  // 3. Veröffentlichen (Der Upload)
   async function handlePublish() {
     if (!selectedTargetId) {
-      toast({ variant: "destructive", title: "Bitte wähle ein Ziel aus!" });
+      toast({ variant: "destructive", title: "Kein Ziel gewählt!" });
+      return;
+    }
+
+    // Slug Validierung (nur a-z, 0-9, -)
+    if (slug && !/^[a-z0-9\-]+$/i.test(slug)) {
+      toast({ variant: "destructive", title: "Ungültiger Pfad", description: "Nur Buchstaben, Zahlen und Bindestriche erlaubt." });
       return;
     }
 
@@ -82,37 +79,30 @@ export default function AdminPublisher() {
 
     setIsLoading(true);
     try {
-      // A. HTML bauen
       const finalHtml = generateHtml(pageTitle, pageContent);
 
-      // B. An die Bridge senden
       const response = await fetch(target.bridge_url, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Auth-Token": target.api_key
-        },
-        body: JSON.stringify({ html: finalHtml })
+        headers: { "Content-Type": "application/json", "X-Auth-Token": target.api_key },
+        // Wir senden jetzt auch den SLUG mit
+        body: JSON.stringify({ html: finalHtml, slug: slug })
       });
 
       const result = await response.json();
 
       if (response.ok && result.status === "success") {
         toast({ 
-          title: "Erfolgreich veröffentlicht! 🚀", 
-          description: `Die Seite ist jetzt auf ${target.name} live.`,
-          className: "bg-green-600 text-white border-green-700"
+          title: "Online! 🚀", 
+          description: `Seite liegt unter: ${result.url}`,
+          className: "bg-green-600 text-white"
         });
+        // Optional: Reset Felder
+        // setSlug(""); 
       } else {
-        throw new Error(result.message || "Unbekannter Fehler");
+        throw new Error(result.message || "Fehler");
       }
     } catch (error) {
-      console.error(error);
-      toast({ 
-        title: "Fehler beim Deploy", 
-        description: error instanceof Error ? error.message : "Verbindung fehlgeschlagen",
-        variant: "destructive" 
-      });
+      toast({ title: "Fehler", description: error instanceof Error ? error.message : "Unbekannt", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
@@ -121,71 +111,62 @@ export default function AdminPublisher() {
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-20">
       <div className="flex items-center gap-4">
-        <div className="p-4 bg-primary/10 rounded-xl">
-          <UploadCloud className="w-10 h-10 text-primary" />
-        </div>
+        <div className="p-4 bg-primary/10 rounded-xl"><UploadCloud className="w-10 h-10 text-primary" /></div>
         <div>
-          <h2 className="text-4xl font-bold tracking-tight">Multi-Channel Publisher</h2>
-          <p className="text-muted-foreground text-lg">Erstelle Landingpages und verteile sie auf deine Subdomains.</p>
+          <h2 className="text-4xl font-bold">Multi-Channel Publisher</h2>
+          <p className="text-muted-foreground">Erstelle Landingpages in beliebigen Unterordnern.</p>
         </div>
       </div>
 
       <Card className="shadow-lg border-primary/10">
         <CardHeader className="bg-slate-50/50 pb-8 border-b">
-          <CardTitle className="text-xl">Inhalt erstellen</CardTitle>
-          <CardDescription>Wähle das Ziel und schreibe den Inhalt.</CardDescription>
+          <CardTitle>Neue Seite anlegen</CardTitle>
+          <CardDescription>Wähle Domain und Pfad.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-8 pt-8">
           
-          {/* Ziel-Auswahl */}
-          <div className="space-y-3">
-            <Label className="text-base">Ziel-Domain wählen</Label>
-            <Select onValueChange={setSelectedTargetId} value={selectedTargetId}>
-              <SelectTrigger className="h-12 text-lg">
-                <SelectValue placeholder="Wähle eine Subdomain..." />
-              </SelectTrigger>
-              <SelectContent>
-                {targets.map(t => (
-                  <SelectItem key={t.id} value={t.id} className="text-base py-3">
-                    {t.name} <span className="text-muted-foreground text-sm ml-2">({t.bridge_url})</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-3">
+              <Label>Ziel-Domain</Label>
+              <Select onValueChange={setSelectedTargetId} value={selectedTargetId}>
+                <SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Wählen..." /></SelectTrigger>
+                <SelectContent>
+                  {targets.map(t => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="flex items-center gap-2"><LinkIcon className="w-4 h-4" /> Pfad (Slug)</Label>
+              <div className="flex items-center gap-2">
+                 <span className="text-muted-foreground text-lg">/</span>
+                 <Input 
+                  className="h-12 text-lg font-mono" 
+                  placeholder="meine-neue-seite (Leer = Startseite)" 
+                  value={slug}
+                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9\-]/g, ''))} // Auto-Formatierung
+                 />
+              </div>
+              <p className="text-xs text-muted-foreground">Erstellt automatisch einen Ordner, z.B. <code>/single-test/</code>. Leer lassen für Hauptseite.</p>
+            </div>
           </div>
 
-          <div className="grid gap-6">
-            <div className="space-y-3">
-              <Label className="text-base">Seiten-Titel (Browser & H1)</Label>
-              <Input 
-                className="h-12 text-lg"
-                placeholder="z.B. Die besten Dating-Portale 2026" 
-                value={pageTitle}
-                onChange={e => setPageTitle(e.target.value)}
-              />
-            </div>
+          <div className="space-y-3">
+            <Label>Browser Titel</Label>
+            <Input className="h-12 text-lg" placeholder="Der große Vergleich 2026" value={pageTitle} onChange={e => setPageTitle(e.target.value)} />
+          </div>
 
-            <div className="space-y-3">
-              <Label className="text-base">Inhalt</Label>
-              <Textarea 
-                className="min-h-[300px] text-lg leading-relaxed font-mono bg-slate-50"
-                placeholder="Hier kommt dein Text rein..." 
-                value={pageContent}
-                onChange={e => setPageContent(e.target.value)}
-              />
-              <p className="text-sm text-muted-foreground">Tipp: Du kannst hier einfachen Text schreiben oder HTML verwenden.</p>
-            </div>
+          <div className="space-y-3">
+            <Label>Inhalt</Label>
+            <Textarea className="min-h-[300px] text-lg font-mono bg-slate-50" placeholder="HTML oder Text..." value={pageContent} onChange={e => setPageContent(e.target.value)} />
           </div>
 
           <div className="pt-6 border-t">
-            <Button 
-              size="lg" 
-              className="w-full text-xl h-16 gap-3 font-bold shadow-xl shadow-primary/20 hover:shadow-primary/40 transition-all" 
-              onClick={handlePublish}
-              disabled={isLoading || !selectedTargetId}
-            >
-              {isLoading ? <Loader2 className="animate-spin w-6 h-6" /> : <Globe className="w-6 h-6" />}
-              {isLoading ? "Wird übertragen..." : "Veröffentlichen (Live schalten)"}
+            <Button size="lg" className="w-full text-xl h-16 font-bold shadow-xl hover:shadow-primary/40 transition-all" onClick={handlePublish} disabled={isLoading || !selectedTargetId}>
+              {isLoading ? <Loader2 className="animate-spin" /> : <Globe className="mr-2" />}
+              {isLoading ? "Erstelle Ordner & Lade hoch..." : "Seite Veröffentlichen"}
             </Button>
           </div>
 
