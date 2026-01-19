@@ -33,7 +33,7 @@ const formatDate = (dateString: string | null) => {
 };
 
 // ============================================================================
-// 🟢 VORLAGE 1: VERGLEICHSTABELLE (Mit Platzhaltern für Navigation & 18+)
+// 🟢 VORLAGE 1: VERGLEICHSTABELLE (Original Design + Platzhalter für Navi)
 // ============================================================================
 const COMPARISON_TEMPLATE = `<!DOCTYPE html>
 <html lang="de">
@@ -82,7 +82,9 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
         <div class="max-w-6xl mx-auto flex items-center justify-between flex-wrap gap-2">
             <a id="header-site-name" href="/" class="font-heading font-bold text-xl tracking-tight text-brand-gold hover:text-brand-light transition-colors">Lade...</a>
             <nav class="hidden md:flex items-center space-x-2 text-sm">
-                {{HEADER_NAV}}
+                <a href="/singles-in-der-naehe/" class="hover:text-brand-gold transition-colors">Singles in der Nähe</a>
+                <span class="text-gray-500">|</span>
+                <a href="/top3-dating-apps/" class="hover:text-brand-gold transition-colors">Top3 Apps</a>
             </nav>
             <a href="/" class="text-xs bg-brand-primary hover:bg-brand-light text-white px-3 py-1.5 rounded-full transition-all duration-300">Zum Hauptportal</a>
         </div>
@@ -115,10 +117,14 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
                 </div>
                 <div class="flex items-center justify-center"><div id="banner-container" class="w-full"><div class="ad-box rounded-xl"><span class="ad-label">Anzeige</span><div class="text-center"><p class="text-gray-500 text-sm">Werbefläche</p></div></div></div></div>
             </div>
+            
             <div class="mt-12 bg-gray-50 rounded-2xl p-6 md:p-8">
                 <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-                    <div><h3 class="font-heading font-bold text-lg text-gray-900">Schnellnavigation</h3></div>
+                    <div><h3 class="font-heading font-bold text-lg text-gray-900">Schnellnavigation</h3><p class="text-gray-600 text-sm">Beliebte Themen</p></div>
                     <a href="#vergleich" class="inline-flex items-center gap-2 text-brand-primary hover:text-brand-dark font-semibold"><i class="fas fa-arrow-down"></i> Zum Vergleich</a>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    {{QUICK_NAV_LINKS}}
                 </div>
                 {{18_PLUS_HINT}}
             </div>
@@ -158,7 +164,7 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
             const settings = {}; (settingsArr||[]).forEach(s => settings[s.key] = s.value);
             if(settings.custom_css) el('custom-css').textContent = settings.custom_css;
             if(settings.top_bar_active) { el('top-bar').classList.remove('hidden'); if(settings.top_bar_text) el('top-bar-text').textContent=settings.top_bar_text; if(settings.top_bar_link) el('top-bar-link').href=addSubId(settings.top_bar_link); }
-            const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?slug=eq.' + SLUG + '&is_active=eq.true&select=*', { headers });
+            const catRes = await fetch(SUPABASE_URL + '/rest/v1/categories?slug=eq.' + SLUG + '&select=*', { headers });
             const categories = await catRes.json();
             if(!categories || categories.length === 0) { el('project-list-container').innerHTML = '<p class="text-center">Kategorie nicht gefunden.</p>'; return; }
             const category = categories[0];
@@ -214,7 +220,7 @@ const COMPARISON_TEMPLATE = `<!DOCTYPE html>
 </html>`;
 
 // ============================================================================
-// 🟢 VORLAGE 2: ERFAHRUNGSBERICHT (Mit Platzhaltern für Navigation & 18+)
+// 🟢 VORLAGE 2: ERFAHRUNGSBERICHT (Original + Platzhalter)
 // ============================================================================
 const REVIEW_TEMPLATE = `<!DOCTYPE html>
 <html lang="de">
@@ -266,7 +272,8 @@ const REVIEW_TEMPLATE = `<!DOCTYPE html>
         <div class="max-w-7xl mx-auto flex items-center justify-between">
             <a id="header-site-name" href="/" class="font-heading font-bold text-xl tracking-tight text-brand-gold hover:text-brand-light transition-colors">DatingRankScout</a>
             <nav class="hidden md:flex items-center space-x-6 text-sm">
-                {{HEADER_NAV}}
+                <a href="/top3-dating-apps/" class="hover:text-brand-gold transition-colors">Top Dating Apps</a>
+                <a href="/testberichte/" class="hover:text-brand-gold transition-colors">Testberichte</a>
             </nav>
             <a href="/top3-dating-apps/" class="text-sm bg-brand-primary hover:bg-brand-light text-white px-4 py-2 rounded-full transition-all duration-300">Apps vergleichen</a>
         </div>
@@ -303,7 +310,17 @@ const REVIEW_TEMPLATE = `<!DOCTYPE html>
                     </div>
                 </div>
                 <div id="article-content" class="article-content"><p>Lade Inhalt...</p></div>
-                <div class="mt-8">{{18_PLUS_HINT}}</div>
+                
+                <div class="mt-12 bg-gray-50 rounded-2xl p-6 md:p-8">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                        <div><h3 class="font-heading font-bold text-lg text-gray-900">Schnellnavigation</h3><p class="text-gray-600 text-sm">Beliebte Themen</p></div>
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        {{QUICK_NAV_LINKS}}
+                    </div>
+                    {{18_PLUS_HINT}}
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 my-12">
                     <div class="pros-card rounded-2xl p-6"><h3 class="font-heading font-bold text-lg text-green-800 flex items-center gap-2 mb-4"><i class="fas fa-check-circle"></i> Vorteile</h3><ul id="pros-list" class="space-y-2 text-green-900"></ul></div>
                     <div class="cons-card rounded-2xl p-6"><h3 class="font-heading font-bold text-lg text-red-800 flex items-center gap-2 mb-4"><i class="fas fa-times-circle"></i> Nachteile</h3><ul id="cons-list" class="space-y-2 text-red-900"></ul></div>
@@ -404,30 +421,31 @@ function extractMetaFromHtml(html: string): { title: string | null; metaDescript
 }
 
 // --- DYNAMIC CONTENT GENERATORS ---
-function generateNavigationHtml(settings: any, colorTheme: string) {
+function generateQuickNavHtml(settings: any) {
     if (!settings) return "";
     
-    // Mapping der Settings zu Links
     const links = [];
     
+    // Style für die Buttons
+    const btnClass = "inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full text-sm text-gray-700 hover:text-brand-primary hover:shadow-md transition-all border border-gray-200";
+
     if (settings.show_top3_dating_apps) {
-        links.push(`<a href="/top3-dating-apps/" class="hover:text-brand-gold transition-colors">Top3 Dating Apps</a>`);
+        links.push(`<a href="/top3-dating-apps/" class="${btnClass}"><i class="fas fa-star text-brand-gold"></i> Top3 Dating Apps</a>`);
     }
     if (settings.show_singles_in_der_naehe) {
-        links.push(`<a href="/singles-in-der-naehe/" class="hover:text-brand-gold transition-colors">Singles in der Nähe</a>`);
+        links.push(`<a href="/singles-in-der-naehe/" class="${btnClass}"><i class="fas fa-location-dot text-brand-primary"></i> Singles in der Nähe</a>`);
     }
     if (settings.show_chat_mit_einer_frau) {
-        links.push(`<a href="/chat-mit-einer-frau/" class="hover:text-brand-gold transition-colors">Chat mit einer Frau</a>`);
+        links.push(`<a href="/chat-mit-einer-frau/" class="${btnClass}"><i class="fas fa-comments text-brand-primary"></i> Chat mit einer Frau</a>`);
     }
     if (settings.show_online_dating_cafe) {
-        links.push(`<a href="/online-dating-cafe/" class="hover:text-brand-gold transition-colors">Online Dating Cafe</a>`);
+        links.push(`<a href="/online-dating-cafe/" class="${btnClass}"><i class="fas fa-coffee text-brand-primary"></i> Online Dating Cafe</a>`);
     }
     if (settings.show_bildkontakte_login) {
-        links.push(`<a href="/bildkontakte-login/" class="hover:text-brand-gold transition-colors">Bildkontakte Login</a>`);
+        links.push(`<a href="/bildkontakte-login/" class="${btnClass}"><i class="fas fa-image text-brand-primary"></i> Bildkontakte Login</a>`);
     }
 
-    // Verbinden mit Trennzeichen
-    return links.join(`\n<span class="text-gray-500 mx-2">|</span>\n`);
+    return links.join('\n');
 }
 
 function generate18PlusHintHtml(settings: any) {
@@ -526,11 +544,11 @@ export default function AdminCategories() {
       }
 
       // --- DYNAMISCHE INHALTE EINBAUEN ---
-      // Hier ersetzen wir die Platzhalter mit dem echten HTML basierend auf Settings
-      const navHtml = generateNavigationHtml(category.navigation_settings, category.color_theme || 'dark');
+      const quickNavHtml = generateQuickNavHtml(category.navigation_settings);
       const hintHtml = generate18PlusHintHtml(category.navigation_settings);
 
-      htmlContent = htmlContent.replace("{{HEADER_NAV}}", navHtml);
+      // Wir ersetzen die Platzhalter in den Templates
+      htmlContent = htmlContent.replace("{{QUICK_NAV_LINKS}}", quickNavHtml);
       htmlContent = htmlContent.replace("{{18_PLUS_HINT}}", hintHtml);
 
       // Senden an die Bridge
@@ -671,28 +689,33 @@ export default function AdminCategories() {
     setIsDialogOpen(true);
   }
 
-  // 🔥🔥🔥 AUTOMATISCHES DEPLOYMENT BEIM SPEICHERN 🔥🔥🔥
+  // 🔥🔥🔥 AUTOMATISCHES DEPLOYMENT + ZEITSTEMPEL FIX 🔥🔥🔥
   async function onSubmit(data: CategoryInput) {
     try {
+      // 🟢 Datum JETZT setzen
+      const now = new Date().toISOString();
       let categoryForDeploy: Category;
 
+      // Wir fügen das Datum zu den Eingabedaten hinzu, falls die API es akzeptiert,
+      // oder verlassen uns darauf, dass die DB es beim Update setzt.
+      // ABER: Für die UI-Anzeige direkt danach und das Deployment brauchen wir es.
+      
       if (editingCategory) {
-        // 1. DB Update
-        await updateCategory.mutateAsync({ id: editingCategory.id, input: data });
+        // 1. DB Update (mit explizitem Datum, falls schema es erlaubt, sonst macht es Supabase hoffentlich per Trigger)
+        // Um sicherzugehen, dass die UI aktualisiert wird, invalidieren wir später die Query.
+        await updateCategory.mutateAsync({ id: editingCategory.id, input: { ...data, updated_at: now } as any });
         
-        // 2. Objekt für Deployment vorbereiten
-        categoryForDeploy = { ...editingCategory, ...data } as Category;
+        categoryForDeploy = { ...editingCategory, ...data, updated_at: now } as Category;
         
         toast({ title: "Gespeichert... Starte Deployment 🚀" });
       } else {
         // 1. DB Create
         const result = await createCategory.mutateAsync(data);
         
-        // 2. Objekt für Deployment vorbereiten
         categoryForDeploy = { 
             id: result.id, 
-            created_at: new Date().toISOString(), 
-            updated_at: new Date().toISOString(),
+            created_at: now, 
+            updated_at: now,
             user_id: 'system', 
             ...data 
         } as Category;
@@ -878,7 +901,6 @@ export default function AdminCategories() {
                   <TableCell><div className="flex gap-3"><span className="text-xl">{cat.icon}</span><div><div className="font-medium">{cat.name}</div><div className="text-xs text-muted-foreground">{cat.theme}</div></div></div></TableCell>
                   <TableCell>{cat.template==='review'?<span className="text-xs bg-amber-100 text-amber-800 px-2 py-1 rounded-full">Review</span>:<span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Vergleich</span>}</TableCell>
                   <TableCell><code className="text-xs bg-muted px-2 py-1 rounded">/{cat.slug}</code></TableCell>
-                  {/* Neue Spalte: Zuletzt aktualisiert */}
                   <TableCell>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Clock className="w-3 h-3" />
