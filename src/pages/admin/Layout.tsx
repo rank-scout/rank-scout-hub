@@ -14,7 +14,8 @@ import {
   Search,
   Loader2,
   Menu,
-  X
+  X,
+  UploadCloud
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -24,6 +25,7 @@ const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Landingpages", icon: FolderTree, path: "/admin/categories" },
   { label: "Projekte", icon: FileBox, path: "/admin/projects" },
+  { label: "Publisher", icon: UploadCloud, path: "/admin/publisher" },
   { label: "Redirects", icon: Link2, path: "/admin/redirects" },
   { label: "Footer-Links", icon: Link2, path: "/admin/footer-links" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },

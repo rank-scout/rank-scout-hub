@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SEOProvider } from "@/components/SEOProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
+import AdminPublisher from "./pages/admin/Publisher";
 
 // Pages
 import Index from "./pages/Index";
@@ -55,6 +56,7 @@ const App = () => (
                   <Route path="footer-links" element={<AdminFooterLinks />} />
                   <Route path="leads" element={<AdminLeads />} />
                   <Route path="settings" element={<AdminSettings />} />
+                  <Route path="/admin/publisher" element={<AdminPublisher />} />
                 </Route>
                 
                 {/* Catch-all */}
