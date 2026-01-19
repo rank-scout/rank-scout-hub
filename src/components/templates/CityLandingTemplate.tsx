@@ -69,8 +69,10 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
   const siteName = category.site_name;
   const isDev = import.meta.env.DEV;
 
-  // Navigation settings with defaults
-  const navSettings = category.navigation_settings || {
+  // --- FIX START: Robuste Settings-Logik ---
+  
+  // 1. Definition der Standardwerte (Alles AN)
+  const defaultSettings = {
     show_top3_dating_apps: true,
     show_singles_in_der_naehe: true,
     show_chat_mit_einer_frau: true,
@@ -79,12 +81,25 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
     show_18plus_hint_box: true,
   };
 
+  // 2. Merge: Defaults nehmen + Datenbank-Werte darüberlegen
+  // Das verhindert, dass fehlende Werte das Layout zerschießen.
+  const navSettings = {
+    ...defaultSettings,
+    ...(category.navigation_settings || {})
+  };
+
+  // Debugging: Zeigt dir in der Browser-Konsole (F12), was wirklich ankommt.
+  console.log(`Settings für ${category.name}:`, navSettings);
+
+  // --- FIX ENDE ---
+
   // Check if any quick navigation links should be shown
   const hasQuickNavLinks = navSettings.show_top3_dating_apps || 
     navSettings.show_singles_in_der_naehe || 
     navSettings.show_chat_mit_einer_frau || 
     navSettings.show_online_dating_cafe || 
-    navSettings.show_bildkontakte_login;
+    navSettings.show_bildkontakte_login ||
+    navSettings.show_18plus_hint_box;
 
   return (
     <div className="min-h-screen bg-background">
