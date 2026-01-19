@@ -1052,7 +1052,7 @@ export default function AdminCategories() {
 
     const BRIDGE_URL = "https://dating.rank-scout.com/bridge.php"; 
 
-    const API_KEY = "CHANGE_ME_123"; 
+    const API_KEY = "4382180593Rank-Scout"; 
 
 
 
