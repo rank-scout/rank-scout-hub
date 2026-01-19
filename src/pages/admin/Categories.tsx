@@ -33,7 +33,7 @@ const formatDate = (dateString: string | null) => {
 };
 
 // ============================================================================
-// 🟢 VORLAGE 1: VERGLEICHSTABELLE (Original Design + Platzhalter für Navi)
+// 🟢 VORLAGE 1: VERGLEICHSTABELLE (Dein Original-Code mit Platzhaltern)
 // ============================================================================
 const COMPARISON_TEMPLATE = `<!DOCTYPE html>
 <html lang="de">
@@ -311,6 +311,7 @@ const REVIEW_TEMPLATE = `<!DOCTYPE html>
                 <div class="mt-12 bg-gray-50 rounded-2xl p-6 md:p-8">
                     <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
                         <div><h3 class="font-heading font-bold text-lg text-gray-900">Schnellnavigation</h3><p class="text-gray-600 text-sm">Beliebte Themen</p></div>
+                        <a href="#vergleich" class="inline-flex items-center gap-2 text-brand-primary hover:text-brand-dark font-semibold"><i class="fas fa-arrow-down"></i> Zum Vergleich</a>
                     </div>
                     <div class="flex flex-wrap gap-3">
                         {{QUICK_NAV_LINKS}}
@@ -363,31 +364,50 @@ const REVIEW_TEMPLATE = `<!DOCTYPE html>
             const category = categories[0];
             if (!category) { el('article-content').innerHTML = 'Nicht gefunden'; return; }
             const year = new Date().getFullYear();
-            el('article-date').textContent = new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-            if(category.h1_title) el('article-title').textContent = category.h1_title.replace(/2026/g, year);
-            if(category.meta_title) document.title = category.meta_title.replace(/2026/g, year);
-            el('breadcrumb-current').textContent = category.name;
+            if(category.meta_title) el('page-title').textContent = category.meta_title.replace(/2026/g, year);
+            if(category.meta_description) el('meta-description').setAttribute('content', category.meta_description.replace(/2026/g, year));
+            el('canonical-link').href = 'https://dating.rank-scout.com/' + SLUG + '/';
+            if(category.hero_pretitle) el('hero-pretitle').textContent = category.hero_pretitle;
+            if(category.hero_headline) el('hero-title').textContent = category.hero_headline;
+            if(category.description) el('hero-description').textContent = category.description;
+            if(category.hero_cta_text) el('hero-cta').textContent = category.hero_cta_text;
+            if(category.hero_badge_text) el('hero-badge').textContent = category.hero_badge_text;
             if(category.site_name) el('header-site-name').textContent = category.site_name;
-            if(category.description) el('article-content').innerHTML = category.description;
-            else if(category.long_content_top) el('article-content').innerHTML = category.long_content_top;
-            
-            const projRes = await fetch(SUPABASE_URL + '/rest/v1/category_projects?category_id=eq.' + category.id + '&select=*,projects(*)&order=sort_order.asc&limit=1', { headers });
-            const categoryProjects = await projRes.json();
-            const topProject = categoryProjects[0]?.projects;
-            if (topProject) {
-                el('winner-name').textContent = topProject.name;
-                el('winner-rating').textContent = (topProject.rating || 9.0).toFixed(1) + '/10';
-                if (topProject.logo_url) el('winner-logo').src = topProject.logo_url;
-                el('winner-link').href = topProject.affiliate_link || '#';
-                el('rating-overall').textContent = (topProject.rating || 9.0).toFixed(1);
-                el('rating-usability').textContent = ((topProject.rating || 9.0) - 0.2).toFixed(1);
-                el('rating-value').textContent = ((topProject.rating || 9.0) - 0.3).toFixed(1);
-                el('rating-quality').textContent = (Math.min((topProject.rating || 9.0) + 0.1, 10)).toFixed(1);
-                if (topProject.pros_list) el('pros-list').innerHTML = topProject.pros_list.map(p => '<li class="flex gap-2"><i class="fas fa-check text-green-600 mt-1"></i><span>'+escapeHtml(p)+'</span></li>').join('');
-                if (topProject.cons_list) el('cons-list').innerHTML = topProject.cons_list.map(c => '<li class="flex gap-2"><i class="fas fa-times text-red-600 mt-1"></i><span>'+escapeHtml(c)+'</span></li>').join('');
-            } else { el('testsieger-card').style.display = 'none'; }
-            
+            el('breadcrumb-current').textContent = category.name;
+            el('intro-title').textContent = 'Dein Dating-Guide für ' + category.name;
+            if(category.long_content_top) el('long-content-top').innerHTML = category.long_content_top;
+            if(category.long_content_bottom) el('long-content-bottom').innerHTML = category.long_content_bottom;
+            if(category.banner_override) el('banner-container').innerHTML = category.banner_override;
+            let projects = [];
+            const cpRes = await fetch(SUPABASE_URL + '/rest/v1/category_projects?category_id=eq.' + category.id + '&select=project_id,sort_order&order=sort_order.asc', { headers });
+            const catProjs = await cpRes.json();
+            if(catProjs.length > 0) {
+                const pIds = catProjs.map(c => c.project_id);
+                const pRes = await fetch(SUPABASE_URL + '/rest/v1/projects?id=in.(' + pIds.join(',') + ')&is_active=eq.true&select=*', { headers });
+                projects = await pRes.json();
+                const oMap = {}; catProjs.forEach(c => oMap[c.project_id]=c.sort_order);
+                projects.sort((a,b) => (oMap[a.id]||0)-(oMap[b.id]||0));
+            } else {
+                const defRes = await fetch(SUPABASE_URL + '/rest/v1/projects?is_default=eq.true&is_active=eq.true&select=*&order=sort_order.asc&limit=5', { headers });
+                projects = await defRes.json();
+            }
+            if(projects.length > 0) {
+                const html = projects.map((p,i) => {
+                    const isFirst = i===0;
+                    const badge = isFirst ? '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-brand-gold to-yellow-500 text-brand-black"><i class="fas fa-trophy mr-1"></i>'+(p.badge_text||'Testsieger')+'</span>' : '<span class="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gray-200 text-gray-700">Platz '+(i+1)+'</span>';
+                    const border = isFirst ? 'border-2 border-brand-gold ring-2 ring-brand-gold/20' : 'border border-gray-100';
+                    const link = addSubId(p.affiliate_link || p.url);
+                    const features = (p.features||[]).map(f => '<p class="flex items-start gap-2 text-sm text-gray-700"><i class="fas fa-check text-green-500 mt-1"></i>'+escapeHtml(f)+'</p>').join('');
+                    return '<div class="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden '+border+'"><div class="p-1">'+badge+'</div><div class="p-4 md:p-6 pt-2"><div class="flex flex-col md:flex-row gap-4 md:gap-6"><div class="flex-shrink-0 flex justify-center md:justify-start"><div class="w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden bg-gray-100 shadow-md flex items-center justify-center"><img src="'+sanitizeUrl(p.logo_url)+'" class="w-full h-full object-cover"></div></div><div class="flex-1 min-w-0"><h3 class="font-heading font-bold text-lg md:text-xl text-gray-900 mb-2 text-center md:text-left">'+escapeHtml(p.name)+'</h3><div class="flex items-center justify-center md:justify-start gap-2 mb-4"><div class="flex text-brand-gold"><i class="fas fa-star"></i></div><span class="font-bold text-gray-900">'+(p.rating||9.5)+'/10</span></div><div class="space-y-2 mb-4">'+features+'</div></div><div class="flex-shrink-0 flex items-center justify-center md:justify-end w-full md:w-auto"><a href="'+link+'" target="_blank" rel="nofollow" class="w-full md:w-auto inline-flex items-center justify-center gap-2 bg-brand-primary hover:bg-brand-dark text-white font-bold py-3 px-6 rounded-full transition-all duration-300 btn-gold-hover">Kostenlos Registrieren <i class="fas fa-arrow-right"></i></a></div></div></div></div>';
+                }).join('');
+                el('project-list-container').innerHTML = html;
+            } else { el('project-list-container').innerHTML = '<p class="text-center text-gray-500">Keine Projekte.</p>'; }
+            el('footer-site-name').textContent = category.footer_site_name || category.site_name || 'Rank-Scout';
             el('footer-copyright').textContent = '© ' + year + ' ' + (category.site_name||'Rank-Scout');
+            const legRes = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=eq.' + category.id + '&is_active=eq.true&order=sort_order.asc&select=*', { headers });
+            let legalLinks = await legRes.json();
+            if(legalLinks.length===0) { const gLeg = await fetch(SUPABASE_URL + '/rest/v1/footer_links?category_id=is.null&is_active=eq.true&order=sort_order.asc&select=*', { headers }); legalLinks = await gLeg.json(); }
+            if(legalLinks.length>0) el('footer-links').innerHTML = legalLinks.map(l => '<a href="'+sanitizeUrl(l.url)+'" class="text-gray-400 hover:text-white text-sm uppercase">'+escapeHtml(l.label)+'</a>').join('');
         } catch(e) { console.error(e); }
     })();
     </script>
@@ -427,7 +447,7 @@ function generateQuickNavHtml(settings: any) {
     const btnClass = "inline-flex items-center gap-2 bg-white px-4 py-2 rounded-full text-sm text-gray-700 hover:text-brand-primary hover:shadow-md transition-all border border-gray-200";
 
     if (settings.show_top3_dating_apps) {
-        links.push(`<a href="/top3-dating-apps/" class="${btnClass}"><i class="fas fa-star text-brand-gold"></i> Top3 Dating Apps</a>`);
+        links.push(`<a href="/top3-dating-apps/" class="${btnClass}"><i class="fas fa-star text-brand-gold"></i> Top3 Apps</a>`);
     }
     if (settings.show_singles_in_der_naehe) {
         links.push(`<a href="/singles-in-der-naehe/" class="${btnClass}"><i class="fas fa-location-dot text-brand-primary"></i> Singles in der Nähe</a>`);
@@ -582,7 +602,134 @@ export default function AdminCategories() {
     } catch (error) { toast({ title: "Fehler", variant: "destructive" }); }
   }
 
-  // Restliche Render-Logik... (Wird übernommen wie vorher)
+  function handleExtractFromHtml() {
+    const html = customHtmlOverride;
+    if (!html || html.trim() === "") {
+      toast({ title: "Kein HTML", description: "Füge HTML ein.", variant: "destructive" });
+      return;
+    }
+    const extracted = extractMetaFromHtml(html);
+    if (extracted.title) setValue("meta_title", extracted.title);
+    if (extracted.metaDescription) setValue("meta_description", extracted.metaDescription);
+    if (extracted.h1Title) setValue("h1_title", extracted.h1Title);
+    toast({ title: "Extrahiert!" });
+  }
+
+  function openCreateDialog() {
+    setEditingCategory(null);
+    setSelectedProjectIds([]);
+    reset({
+      slug: "",
+      name: "",
+      description: "",
+      icon: "📍",
+      theme: "DATING",
+      template: "comparison",
+      color_theme: "dark",
+      site_name: "",
+      hero_headline: "",
+      hero_pretitle: "Finde Singles in",
+      hero_cta_text: "",
+      hero_badge_text: "",
+      meta_title: "",
+      meta_description: "",
+      h1_title: "",
+      long_content_top: "",
+      long_content_bottom: "",
+      analytics_code: "",
+      banner_override: "",
+      custom_html_override: "",
+      footer_site_name: "",
+      footer_copyright_text: "",
+      footer_designer_name: "Digital-Perfect",
+      footer_designer_url: "https://digital-perfect.at",
+      navigation_settings: {
+        show_top3_dating_apps: true,
+        show_singles_in_der_naehe: true,
+        show_chat_mit_einer_frau: true,
+        show_online_dating_cafe: true,
+        show_bildkontakte_login: true,
+        show_18plus_hint_box: true,
+      },
+      is_active: true,
+      sort_order: categories.length,
+    });
+    setIsDialogOpen(true);
+  }
+
+  function openEditDialog(category: Category) {
+    setEditingCategory(category);
+    const defaultNavSettings = {
+      show_top3_dating_apps: true,
+      show_singles_in_der_naehe: true,
+      show_chat_mit_einer_frau: true,
+      show_online_dating_cafe: true,
+      show_bildkontakte_login: true,
+      show_18plus_hint_box: true,
+    };
+    reset({
+      slug: category.slug,
+      name: category.name,
+      description: category.description || "",
+      icon: category.icon || "📍",
+      theme: category.theme,
+      template: category.template || "comparison",
+      color_theme: category.color_theme || "dark",
+      site_name: category.site_name || "",
+      hero_headline: category.hero_headline || "",
+      hero_pretitle: category.hero_pretitle || "Finde Singles in",
+      hero_cta_text: category.hero_cta_text || "",
+      hero_badge_text: category.hero_badge_text || "",
+      meta_title: category.meta_title || "",
+      meta_description: category.meta_description || "",
+      h1_title: category.h1_title || "",
+      long_content_top: category.long_content_top || "",
+      long_content_bottom: category.long_content_bottom || "",
+      analytics_code: category.analytics_code || "",
+      banner_override: category.banner_override || "",
+      custom_html_override: category.custom_html_override || "",
+      footer_site_name: category.footer_site_name || "",
+      footer_copyright_text: category.footer_copyright_text || "",
+      footer_designer_name: category.footer_designer_name || "Digital-Perfect",
+      footer_designer_url: category.footer_designer_url || "https://digital-perfect.at",
+      navigation_settings: category.navigation_settings || defaultNavSettings,
+      is_active: category.is_active,
+      sort_order: category.sort_order,
+    });
+    setIsDialogOpen(true);
+  }
+
+  async function handleDelete(id: string) {
+    if (!confirm("Löschen?")) return;
+    try { await deleteCategory.mutateAsync(id); toast({ title: "Gelöscht" }); } catch (error) { toast({ title: "Fehler", variant: "destructive" }); }
+  }
+
+  async function handleDuplicate(category: Category) {
+    try { await duplicateCategory.mutateAsync(category); toast({ title: "Dupliziert" }); } catch (error) { toast({ title: "Fehler", variant: "destructive" }); }
+  }
+
+  async function handleToggleActive(category: Category) {
+    try { await updateCategory.mutateAsync({ id: category.id, input: { is_active: !category.is_active } }); } catch (error) { toast({ title: "Fehler", variant: "destructive" }); }
+  }
+
+  async function handleMoveOrder(category: Category, direction: "up" | "down") {
+    const currentIndex = categories.findIndex((c) => c.id === category.id);
+    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+    if (newIndex < 0 || newIndex >= categories.length) return;
+    const otherCategory = categories[newIndex];
+    try {
+      await Promise.all([
+        updateCategory.mutateAsync({ id: category.id, input: { sort_order: otherCategory.sort_order } }),
+        updateCategory.mutateAsync({ id: otherCategory.id, input: { sort_order: category.sort_order } }),
+      ]);
+    } catch (error) { toast({ title: "Fehler", variant: "destructive" }); }
+  }
+
+  function handleExport(category: Category) {
+    setExportCategory(category);
+    setIsExportOpen(true);
+  }
+
   if (isLoading) return <div className="flex justify-center py-12"><Loader2 className="animate-spin" /></div>;
 
   return (
@@ -644,7 +791,6 @@ export default function AdminCategories() {
                     ))}
                 </TabsContent>
                 
-                {/* Weitere Tabs hier (Footer, Projects, etc. wie vorher) */}
                 <TabsContent value="footer" className="pt-4"><div className="grid grid-cols-2 gap-4"><div><Label>Footer Logo</Label><Input {...register("footer_site_name")} /></div><div><Label>Copyright</Label><Input {...register("footer_copyright_text")} /></div></div><CategoryFooterLinksEditor categoryId={editingCategory?.id || null} /><CategoryLegalLinksEditor categoryId={editingCategory?.id || null} /></TabsContent>
                 <TabsContent value="projects" className="pt-4"><ProjectCheckboxList selectedIds={selectedProjectIds} onChange={setSelectedProjectIds} /></TabsContent>
                 <TabsContent value="tracking" className="pt-4"><Label>Analytics Code</Label><Textarea {...register("analytics_code")} rows={10} /></TabsContent>
