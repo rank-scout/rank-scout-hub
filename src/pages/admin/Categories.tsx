@@ -105,7 +105,7 @@ export default function AdminCategories() {
     
     // KONFIGURATION: Bridge-URL und Passwort
     const BRIDGE_URL = "https://dating.rank-scout.com/bridge.php"; 
-    const API_KEY = "CHANGE_ME_123"; // <--- HIER DEIN PASSWORT REIN!
+    const API_KEY = "4382180593Rank-Scout"; // <--- HIER DEIN PASSWORT REIN!
 
     try {
       // 1. HTML Generieren
