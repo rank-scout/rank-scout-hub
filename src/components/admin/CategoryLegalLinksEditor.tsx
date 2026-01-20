@@ -1,294 +1,158 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowUp, ArrowDown, Scale, Loader2 } from "lucide-react";
+import { Trash2, Plus, GripVertical, RefreshCw, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface FooterLink {
+interface LinkItem {
   id: string;
-  category_id: string | null;
   label: string;
   url: string;
   sort_order: number;
-  is_active: boolean;
-  column_name: string | null;
-  created_at: string;
 }
 
-interface CategoryLegalLinksEditorProps {
-  categoryId: string | null;
-}
+export function CategoryLegalLinksEditor({ categoryId }: { categoryId: string | null }) {
+  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-export function CategoryLegalLinksEditor({ categoryId }: CategoryLegalLinksEditorProps) {
-  const queryClient = useQueryClient();
-  const [newLabel, setNewLabel] = useState("");
-  const [newUrl, setNewUrl] = useState("");
-
-  // Fetch category-specific legal links
-  const { data: links = [], isLoading } = useQuery({
-    queryKey: ["category-legal-links", categoryId],
-    queryFn: async () => {
-      if (!categoryId) return [];
-      
-      const { data, error } = await supabase
-        .from("footer_links")
-        .select("*")
-        .eq("category_id", categoryId)
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as FooterLink[];
-    },
-    enabled: !!categoryId,
-  });
-
-  // Create link mutation
-  const createLink = useMutation({
-    mutationFn: async (link: { label: string; url: string; category_id: string; sort_order: number }) => {
-      const { data, error } = await supabase
-        .from("footer_links")
-        .insert({ ...link, is_active: true, column_name: "legal" })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category-legal-links", categoryId] });
-      queryClient.invalidateQueries({ queryKey: ["footer-links"] });
-      setNewLabel("");
-      setNewUrl("");
-      toast({ title: "Legal-Link hinzugefügt" });
-    },
-    onError: () => {
-      toast({ title: "Fehler beim Hinzufügen", variant: "destructive" });
-    },
-  });
-
-  // Update link mutation
-  const updateLink = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<FooterLink> & { id: string }) => {
-      const { error } = await supabase
-        .from("footer_links")
-        .update(updates)
-        .eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category-legal-links", categoryId] });
-      queryClient.invalidateQueries({ queryKey: ["footer-links"] });
-    },
-  });
-
-  // Delete link mutation
-  const deleteLink = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("footer_links")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category-legal-links", categoryId] });
-      queryClient.invalidateQueries({ queryKey: ["footer-links"] });
-      toast({ title: "Legal-Link gelöscht" });
-    },
-    onError: () => {
-      toast({ title: "Fehler beim Löschen", variant: "destructive" });
-    },
-  });
-
-  const handleAddLink = () => {
-    if (!categoryId) {
-      toast({ 
-        title: "Hinweis", 
-        description: "Bitte speichere zuerst die Landingpage, dann kannst du Legal-Links hinzufügen.", 
-        variant: "destructive" 
-      });
-      return;
-    }
-    if (!newLabel.trim() || !newUrl.trim()) {
-      toast({ title: "Bitte Label und URL eingeben", variant: "destructive" });
-      return;
-    }
-    createLink.mutate({
-      label: newLabel.trim(),
-      url: newUrl.trim(),
-      category_id: categoryId,
-      sort_order: links.length,
-    });
-  };
-
-  const handleMoveOrder = async (link: FooterLink, direction: "up" | "down") => {
-    const currentIndex = links.findIndex((l) => l.id === link.id);
-    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  const fetchLinks = async () => {
+    if (!categoryId) return;
+    setLoading(true);
     
-    if (newIndex < 0 || newIndex >= links.length) return;
+    try {
+      // 1. Versuche, Links für DIESE Kategorie zu laden
+      const { data: catLinks, error: catError } = await supabase
+        .from('footer_links') // Tabelle für Legal Links
+        .select('*')
+        .eq('category_id', categoryId)
+        .order('sort_order', { ascending: true });
 
-    const otherLink = links[newIndex];
-    
-    await Promise.all([
-      updateLink.mutateAsync({ id: link.id, sort_order: otherLink.sort_order }),
-      updateLink.mutateAsync({ id: otherLink.id, sort_order: link.sort_order }),
-    ]);
-  };
+      if (catError) throw catError;
 
-  const handleToggleActive = (link: FooterLink) => {
-    updateLink.mutate({ id: link.id, is_active: !link.is_active });
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm("Legal-Link wirklich löschen?")) {
-      deleteLink.mutate(id);
+      // 2. Wenn Kategorie-Links existieren, nimm diese
+      if (catLinks && catLinks.length > 0) {
+        setLinks(catLinks);
+      } else {
+        // 3. SONST: Lade die GLOBALEN Links als Vorschlag
+        const { data: globalLinks } = await supabase
+          .from('footer_links')
+          .select('*')
+          .is('category_id', null)
+          .order('sort_order', { ascending: true });
+        
+        if (globalLinks) {
+          const prefilled = globalLinks.map((l, idx) => ({
+            ...l,
+            id: `temp-${idx}`, 
+            category_id: categoryId 
+          }));
+          setLinks(prefilled);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Fehler beim Laden", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLabelChange = (id: string, label: string) => {
-    updateLink.mutate({ id, label });
+  useEffect(() => {
+    fetchLinks();
+  }, [categoryId]);
+
+  const handleSave = async () => {
+    if (!categoryId) return;
+    setLoading(true);
+
+    try {
+      await supabase.from('footer_links').delete().eq('category_id', categoryId);
+
+      const linksToSave = links.map((l, idx) => ({
+        category_id: categoryId,
+        label: l.label,
+        url: l.url,
+        sort_order: idx,
+        is_active: true
+      }));
+
+      if (linksToSave.length > 0) {
+        const { error } = await supabase.from('footer_links').insert(linksToSave);
+        if (error) throw error;
+      }
+
+      toast({ title: "Gespeichert", description: "Rechtliche Links aktualisiert." });
+      fetchLinks(); 
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Fehler", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUrlChange = (id: string, url: string) => {
-    updateLink.mutate({ id, url });
+  const addLink = () => {
+    setLinks([...links, { id: `new-${Date.now()}`, label: "", url: "", sort_order: links.length }]);
   };
 
-  if (!categoryId) {
-    return (
-      <div className="border border-dashed border-muted-foreground/30 rounded-lg p-6 text-center">
-        <Scale className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-        <p className="text-sm text-muted-foreground">
-          Speichere zuerst die Landingpage, dann kannst du hier Legal-Links hinzufügen.
-        </p>
-      </div>
-    );
-  }
+  const removeLink = (index: number) => {
+    const newLinks = [...links];
+    newLinks.splice(index, 1);
+    setLinks(newLinks);
+  };
+
+  const updateLink = (index: number, field: keyof LinkItem, value: string) => {
+    const newLinks = [...links];
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setLinks(newLinks);
+  };
+
+  if (!categoryId) return null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Scale className="w-4 h-4 text-primary" />
-        <h5 className="font-medium text-foreground">Legal-Links (Impressum, Datenschutz etc.)</h5>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Diese Links erscheinen im Footer dieser Landingpage. Wenn keine Links definiert sind, werden die globalen Links verwendet.
-      </p>
+    <Card className="mt-4 border shadow-sm">
+      <CardHeader className="pb-3 bg-muted/50">
+        <CardTitle className="text-sm font-medium flex justify-between items-center">
+          Rechtliches (Footer)
+          <Button variant="ghost" size="sm" onClick={fetchLinks} disabled={loading}><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-4">
+        {links.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Keine Links vorhanden.</p>}
 
-      {/* Existing links */}
-      {isLoading ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : links.length > 0 ? (
-        <div className="space-y-2 max-h-[200px] overflow-y-auto">
-          {links.map((link, index) => (
-            <div 
-              key={link.id} 
-              className={`flex items-center gap-2 p-2 rounded-lg border ${link.is_active ? 'bg-card' : 'bg-muted/30 opacity-60'}`}
-            >
-              <div className="flex flex-col gap-0.5">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => handleMoveOrder(link, "up")}
-                  disabled={index === 0}
-                >
-                  <ArrowUp className="w-3 h-3" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => handleMoveOrder(link, "down")}
-                  disabled={index === links.length - 1}
-                >
-                  <ArrowDown className="w-3 h-3" />
-                </Button>
-              </div>
-              <Input
-                defaultValue={link.label}
-                onBlur={(e) => {
-                  if (e.target.value !== link.label) {
-                    handleLabelChange(link.id, e.target.value);
-                  }
-                }}
-                placeholder="Label"
-                className="flex-1 h-8 text-sm"
-              />
-              <Input
-                defaultValue={link.url}
-                onBlur={(e) => {
-                  if (e.target.value !== link.url) {
-                    handleUrlChange(link.id, e.target.value);
-                  }
-                }}
-                placeholder="URL"
-                className="flex-1 h-8 text-sm"
-              />
-              <Switch
-                checked={link.is_active}
-                onCheckedChange={() => handleToggleActive(link)}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                onClick={() => handleDelete(link.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+        {links.map((link, idx) => (
+          <div key={link.id} className="flex gap-2 items-center group">
+            <GripVertical className="w-4 h-4 text-gray-300 cursor-move group-hover:text-gray-500 transition-colors" />
+            <div className="grid grid-cols-2 gap-2 flex-1">
+                <Input 
+                    placeholder="Label (z.B. Impressum)" 
+                    value={link.label} 
+                    onChange={(e) => updateLink(idx, "label", e.target.value)} 
+                    className="h-8 text-sm"
+                />
+                <Input 
+                    placeholder="URL (z.B. /impressum)" 
+                    value={link.url} 
+                    onChange={(e) => updateLink(idx, "url", e.target.value)} 
+                    className="h-8 text-sm font-mono text-muted-foreground"
+                />
             </div>
-          ))}
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeLink(idx)}>
+                <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
+        ))}
+        
+        <div className="flex justify-between items-center mt-4 pt-4 border-t">
+            <Button variant="outline" size="sm" onClick={addLink}><Plus className="w-3 h-3 mr-2" /> Eintrag hinzufügen</Button>
+            <Button size="sm" onClick={handleSave} disabled={loading} className="min-w-[100px]">
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Speichern"}
+            </Button>
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground italic py-2">
-          Keine spezifischen Legal-Links für diese Landingpage. Es werden die globalen Links verwendet.
-        </p>
-      )}
-
-      {/* Add new link */}
-      <div className="border-t pt-4 mt-4">
-        <Label className="text-sm font-medium mb-2 block">Neuen Legal-Link hinzufügen</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            placeholder="Label (z.B. Impressum)"
-            className="flex-1 h-9"
-          />
-          <Input
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-            placeholder="URL (z.B. /impressum)"
-            className="flex-1 h-9"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddLink}
-            disabled={createLink.isPending}
-            className="gap-1 shrink-0"
-          >
-            {createLink.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
-            Hinzufügen
-          </Button>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

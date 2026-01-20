@@ -26,64 +26,58 @@ export const navigationSettingsSchema = z.object({
 export type NavigationSettings = z.infer<typeof navigationSettingsSchema>;
 
 export const categorySchema = z.object({
-  slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
-  name: z.string().min(1, "Name erforderlich").max(100),
-  description: z.string().max(500).optional(),
-  icon: z.string().max(10).optional(),
-  theme: categoryThemeEnum,
-  template: categoryTemplateEnum.default("comparison"),
-  site_name: z.string().max(50).optional(),
-  hero_headline: z.string().max(150).optional(),
-  hero_pretitle: z.string().max(100).optional(),
-  hero_cta_text: z.string().max(100).optional(),
-  hero_badge_text: z.string().max(100).optional(),
-  meta_title: z.string().max(60).optional(),
-  meta_description: z.string().max(160).optional(),
-  h1_title: z.string().max(100).optional(),
+  slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt"),
+  name: z.string().min(1, "Name erforderlich"),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  
+  // SEO & Content
+  meta_title: z.string().max(60, "Max. 60 Zeichen").optional(),
+  meta_description: z.string().max(160, "Max. 160 Zeichen").optional(),
+  h1_title: z.string().optional(),
+  hero_pretitle: z.string().optional(),
+  hero_headline: z.string().optional(),
+  hero_cta_text: z.string().optional(),
+  hero_badge_text: z.string().optional(),
+  intro_title: z.string().optional(),
+  
+  // HTML Content
   long_content_top: z.string().optional(),
   long_content_bottom: z.string().optional(),
+  
+  // NEW: FAQ Data (JSON)
+  faq_data: z.array(z.object({ question: z.string(), answer: z.string() })).optional(),
+
+  // Settings
+  theme: categoryThemeEnum.default("DATING"),
+  template: categoryTemplateEnum.default("comparison"),
+  color_theme: colorThemeEnum.default("dark"),
+  is_active: z.boolean().default(true),
+  sort_order: z.number().default(0),
+  
+  // Navigation
+  navigation_settings: navigationSettingsSchema.optional(),
+  
+  // Footer & Branding
+  site_name: z.string().optional(),
+  footer_site_name: z.string().optional(),
+  footer_copyright_text: z.string().optional(),
+  footer_designer_name: z.string().optional(),
+  footer_designer_url: z.string().optional(),
+  
+  // Advanced
   analytics_code: z.string().optional(),
   banner_override: z.string().optional(),
-  // Full HTML override for custom designs - use {{APPS}} placeholder
   custom_html_override: z.string().optional(),
-  is_active: z.boolean().default(true),
-  sort_order: z.number().int().min(0).default(0),
-  // Color theme for the page
-  color_theme: colorThemeEnum.default("dark"),
-  // Footer settings for City Landing Pages
-  footer_site_name: z.string().max(100).optional(),
-  footer_copyright_text: z.string().max(200).optional(),
-  footer_designer_name: z.string().max(100).optional(),
-  footer_designer_url: z.string().url().optional().or(z.literal("")),
-  // Navigation settings for quick navigation
-  navigation_settings: navigationSettingsSchema.optional(),
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;
 
-// Popular Footer Links schema
-export const popularFooterLinkSchema = z.object({
-  id: z.string().uuid().optional(),
-  category_id: z.string().uuid().nullable().optional(),
-  label: z.string().min(1, "Label erforderlich").max(100),
-  url: z.string().min(1, "URL erforderlich").max(500),
-  sort_order: z.number().int().min(0).default(0),
-  is_active: z.boolean().default(true),
-});
-
-export type PopularFooterLinkInput = z.infer<typeof popularFooterLinkSchema>;
-
 // Project schemas
-export const countryScopeEnum = z.enum(["AT", "DE", "DACH", "EU"]);
+const countryScopeEnum = z.enum(["DACH", "AT", "DE", "CH"]);
 
 export const projectSchema = z.object({
-  category_id: z.string().uuid().nullable().optional(),
-  name: z.string().min(1, "Name erforderlich").max(100),
-  slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
-  url: z.string().url("Ungültige URL").refine(
-    (url) => url.startsWith('https://') || url.startsWith('http://'),
-    "URL muss http:// oder https:// verwenden"
-  ),
+  name: z.string().min(1, "Projektname erforderlich"),
   short_description: z.string().max(300).optional(),
   description: z.string().optional(),
   logo_url: z.string().url("Ungültige Logo-URL").optional().or(z.literal("")),
@@ -114,14 +108,10 @@ export const navLinkSchema = z.object({
 export const siteSettingsSchema = z.object({
   site_title: z.string().min(1).max(100),
   site_description: z.string().max(300),
-  hero_title: z.string().max(100),
-  hero_subtitle: z.string().max(200),
+  contact_email: z.string().email(),
+  trending_links: z.array(trendingLinkSchema).default([]),
+  header_nav_links: z.array(navLinkSchema).default([]),
+  custom_css: z.string().optional(),
 });
 
-export const trendingLinksSchema = z.array(trendingLinkSchema);
-export const navLinksSchema = z.array(navLinkSchema);
-export const footerLinksSchema = z.array(navLinkSchema);
-
-export type TrendingLink = z.infer<typeof trendingLinkSchema>;
-export type NavLink = z.infer<typeof navLinkSchema>;
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;

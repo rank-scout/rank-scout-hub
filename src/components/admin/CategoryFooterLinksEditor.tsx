@@ -1,296 +1,146 @@
 import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { toast } from "@/hooks/use-toast";
-import { Plus, Trash2, ArrowUp, ArrowDown, Link as LinkIcon, Loader2 } from "lucide-react";
+import { Trash2, Plus, GripVertical, RefreshCw, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-interface PopularFooterLink {
+interface LinkItem {
   id: string;
-  category_id: string | null;
   label: string;
   url: string;
   sort_order: number;
-  is_active: boolean;
-  created_at: string;
 }
 
-interface CategoryFooterLinksEditorProps {
-  categoryId: string | null; // null for new category (will be saved after category creation)
-}
+export function CategoryFooterLinksEditor({ categoryId }: { categoryId: string | null }) {
+  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
-export function CategoryFooterLinksEditor({ categoryId }: CategoryFooterLinksEditorProps) {
-  const queryClient = useQueryClient();
-  const [newLabel, setNewLabel] = useState("");
-  const [newUrl, setNewUrl] = useState("");
-
-  // Fetch category-specific links
-  const { data: links = [], isLoading } = useQuery({
-    queryKey: ["category-footer-links", categoryId],
-    queryFn: async () => {
-      if (!categoryId) return [];
-      
-      const { data, error } = await supabase
-        .from("popular_footer_links")
-        .select("*")
-        .eq("category_id", categoryId)
-        .order("sort_order", { ascending: true });
-
-      if (error) throw error;
-      return (data || []) as PopularFooterLink[];
-    },
-    enabled: !!categoryId,
-  });
-
-  // Create link mutation
-  const createLink = useMutation({
-    mutationFn: async (link: { label: string; url: string; category_id: string; sort_order: number }) => {
-      const { data, error } = await supabase
-        .from("popular_footer_links")
-        .insert({ ...link, is_active: true })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category-footer-links", categoryId] });
-      queryClient.invalidateQueries({ queryKey: ["popular-footer-links"] });
-      queryClient.invalidateQueries({ queryKey: ["all-popular-footer-links"] });
-      setNewLabel("");
-      setNewUrl("");
-      toast({ title: "Link hinzugefügt" });
-    },
-    onError: () => {
-      toast({ title: "Fehler beim Hinzufügen", variant: "destructive" });
-    },
-  });
-
-  // Update link mutation
-  const updateLink = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<PopularFooterLink> & { id: string }) => {
-      const { error } = await supabase
-        .from("popular_footer_links")
-        .update(updates)
-        .eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category-footer-links", categoryId] });
-      queryClient.invalidateQueries({ queryKey: ["popular-footer-links"] });
-      queryClient.invalidateQueries({ queryKey: ["all-popular-footer-links"] });
-    },
-  });
-
-  // Delete link mutation
-  const deleteLink = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("popular_footer_links")
-        .delete()
-        .eq("id", id);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["category-footer-links", categoryId] });
-      queryClient.invalidateQueries({ queryKey: ["popular-footer-links"] });
-      queryClient.invalidateQueries({ queryKey: ["all-popular-footer-links"] });
-      toast({ title: "Link gelöscht" });
-    },
-    onError: () => {
-      toast({ title: "Fehler beim Löschen", variant: "destructive" });
-    },
-  });
-
-  const handleAddLink = () => {
-    if (!categoryId) {
-      toast({ 
-        title: "Hinweis", 
-        description: "Bitte speichere zuerst die Landingpage, dann kannst du Footer-Links hinzufügen.", 
-        variant: "destructive" 
-      });
-      return;
-    }
-    if (!newLabel.trim() || !newUrl.trim()) {
-      toast({ title: "Bitte Label und URL eingeben", variant: "destructive" });
-      return;
-    }
-    createLink.mutate({
-      label: newLabel.trim(),
-      url: newUrl.trim(),
-      category_id: categoryId,
-      sort_order: links.length,
-    });
-  };
-
-  const handleMoveOrder = async (link: PopularFooterLink, direction: "up" | "down") => {
-    const currentIndex = links.findIndex((l) => l.id === link.id);
-    const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  const fetchLinks = async () => {
+    if (!categoryId) return;
+    setLoading(true);
     
-    if (newIndex < 0 || newIndex >= links.length) return;
+    try {
+      // 1. Lade KATEGORIE-Links
+      const { data: catLinks, error: catError } = await supabase
+        .from('popular_footer_links')
+        .select('*')
+        .eq('category_id', categoryId)
+        .order('sort_order', { ascending: true });
 
-    const otherLink = links[newIndex];
-    
-    await Promise.all([
-      updateLink.mutateAsync({ id: link.id, sort_order: otherLink.sort_order }),
-      updateLink.mutateAsync({ id: otherLink.id, sort_order: link.sort_order }),
-    ]);
-  };
+      if (catError) throw catError;
 
-  const handleToggleActive = (link: PopularFooterLink) => {
-    updateLink.mutate({ id: link.id, is_active: !link.is_active });
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm("Link wirklich löschen?")) {
-      deleteLink.mutate(id);
+      // 2. Wenn vorhanden, nutzen
+      if (catLinks && catLinks.length > 0) {
+        setLinks(catLinks);
+      } else {
+        // 3. Wenn LEER -> Lade GLOBALE Links als Vorschlag (Pre-Fill)
+        const { data: globalLinks } = await supabase
+          .from('popular_footer_links')
+          .select('*')
+          .is('category_id', null)
+          .order('sort_order', { ascending: true });
+        
+        if (globalLinks) {
+          const prefilled = globalLinks.map((l, idx) => ({
+            ...l,
+            id: `temp-${idx}`,
+            category_id: categoryId
+          }));
+          setLinks(prefilled);
+          toast({
+              title: "Standard-Links geladen",
+              description: "Da noch keine eigenen Links existieren, haben wir die globalen als Vorlage geladen.",
+              duration: 3000
+          });
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Fehler beim Laden", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleLabelChange = (id: string, label: string) => {
-    updateLink.mutate({ id, label });
+  useEffect(() => {
+    fetchLinks();
+  }, [categoryId]);
+
+  const handleSave = async () => {
+    if (!categoryId) return;
+    setLoading(true);
+
+    try {
+      await supabase.from('popular_footer_links').delete().eq('category_id', categoryId);
+
+      const linksToSave = links.map((l, idx) => ({
+        category_id: categoryId,
+        label: l.label,
+        url: l.url,
+        sort_order: idx,
+        is_active: true
+      }));
+
+      if (linksToSave.length > 0) {
+        const { error } = await supabase.from('popular_footer_links').insert(linksToSave);
+        if (error) throw error;
+      }
+
+      toast({ title: "Gespeichert", description: "Footer Links aktualisiert." });
+      fetchLinks(); 
+    } catch (e) {
+      console.error(e);
+      toast({ title: "Fehler beim Speichern", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleUrlChange = (id: string, url: string) => {
-    updateLink.mutate({ id, url });
+  const addLink = () => {
+    setLinks([...links, { id: `new-${Date.now()}`, label: "", url: "", sort_order: links.length }]);
   };
 
-  if (!categoryId) {
-    return (
-      <div className="border border-dashed border-muted-foreground/30 rounded-lg p-6 text-center">
-        <LinkIcon className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-        <p className="text-sm text-muted-foreground">
-          Speichere zuerst die Landingpage, dann kannst du hier Footer-Links hinzufügen.
-        </p>
-      </div>
-    );
-  }
+  const removeLink = (index: number) => {
+    const newLinks = [...links];
+    newLinks.splice(index, 1);
+    setLinks(newLinks);
+  };
+
+  const updateLink = (index: number, field: keyof LinkItem, value: string) => {
+    const newLinks = [...links];
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setLinks(newLinks);
+  };
+
+  if (!categoryId) return null;
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-2 mb-2">
-        <LinkIcon className="w-4 h-4 text-primary" />
-        <h5 className="font-medium text-foreground">Beliebte Suche & Regionen Links</h5>
-      </div>
-      <p className="text-xs text-muted-foreground">
-        Diese Links erscheinen im Footer dieser Landingpage. Wenn keine Links definiert sind, werden die globalen Links verwendet.
-      </p>
-
-      {/* Existing links */}
-      {isLoading ? (
-        <div className="flex justify-center py-4">
-          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : links.length > 0 ? (
-        <div className="space-y-2 max-h-[300px] overflow-y-auto">
-          {links.map((link, index) => (
-            <div 
-              key={link.id} 
-              className={`flex items-center gap-2 p-2 rounded-lg border ${link.is_active ? 'bg-card' : 'bg-muted/30 opacity-60'}`}
-            >
-              <div className="flex flex-col gap-0.5">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => handleMoveOrder(link, "up")}
-                  disabled={index === 0}
-                >
-                  <ArrowUp className="w-3 h-3" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  onClick={() => handleMoveOrder(link, "down")}
-                  disabled={index === links.length - 1}
-                >
-                  <ArrowDown className="w-3 h-3" />
-                </Button>
-              </div>
-              <Input
-                defaultValue={link.label}
-                onBlur={(e) => {
-                  if (e.target.value !== link.label) {
-                    handleLabelChange(link.id, e.target.value);
-                  }
-                }}
-                placeholder="Label"
-                className="flex-1 h-8 text-sm"
-              />
-              <Input
-                defaultValue={link.url}
-                onBlur={(e) => {
-                  if (e.target.value !== link.url) {
-                    handleUrlChange(link.id, e.target.value);
-                  }
-                }}
-                placeholder="URL"
-                className="flex-1 h-8 text-sm"
-              />
-              <Switch
-                checked={link.is_active}
-                onCheckedChange={() => handleToggleActive(link)}
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 text-destructive hover:text-destructive"
-                onClick={() => handleDelete(link.id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+    <Card className="mt-4 border shadow-sm">
+      <CardHeader className="pb-3 bg-muted/50">
+        <CardTitle className="text-sm font-medium flex justify-between items-center">
+          Beliebte Kategorien (Footer)
+          <Button variant="ghost" size="sm" onClick={fetchLinks} disabled={loading}><RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} /></Button>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 pt-4">
+        {links.map((link, idx) => (
+          <div key={link.id} className="flex gap-2 items-center group">
+            <GripVertical className="w-4 h-4 text-gray-300 cursor-move group-hover:text-gray-500 transition-colors" />
+            <div className="grid grid-cols-2 gap-2 flex-1">
+                <Input placeholder="Label" value={link.label} onChange={(e) => updateLink(idx, "label", e.target.value)} className="h-8 text-sm" />
+                <Input placeholder="URL" value={link.url} onChange={(e) => updateLink(idx, "url", e.target.value)} className="h-8 text-sm font-mono text-muted-foreground" />
             </div>
-          ))}
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={() => removeLink(idx)}><Trash2 className="w-4 h-4" /></Button>
+          </div>
+        ))}
+        <div className="flex justify-between items-center mt-4 pt-4 border-t">
+            <Button variant="outline" size="sm" onClick={addLink}><Plus className="w-3 h-3 mr-2" /> Eintrag hinzufügen</Button>
+            <Button size="sm" onClick={handleSave} disabled={loading} className="min-w-[100px]">{loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Speichern"}</Button>
         </div>
-      ) : (
-        <p className="text-sm text-muted-foreground italic py-2">
-          Keine spezifischen Links für diese Landingpage. Es werden die globalen Links verwendet.
-        </p>
-      )}
-
-      {/* Add new link */}
-      <div className="border-t pt-4 mt-4">
-        <Label className="text-sm font-medium mb-2 block">Neuen Link hinzufügen</Label>
-        <div className="flex items-center gap-2">
-          <Input
-            value={newLabel}
-            onChange={(e) => setNewLabel(e.target.value)}
-            placeholder="Label (z.B. Singles Wien)"
-            className="flex-1 h-9"
-          />
-          <Input
-            value={newUrl}
-            onChange={(e) => setNewUrl(e.target.value)}
-            placeholder="URL (z.B. /wien)"
-            className="flex-1 h-9"
-          />
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleAddLink}
-            disabled={createLink.isPending}
-            className="gap-1 shrink-0"
-          >
-            {createLink.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4" />
-            )}
-            Hinzufügen
-          </Button>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

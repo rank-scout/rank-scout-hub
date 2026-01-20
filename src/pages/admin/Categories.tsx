@@ -16,14 +16,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, Download, LayoutTemplate, FileCheck, Sparkles, Wand2, UploadCloud, Clock, Zap, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, Download, LayoutTemplate, FileCheck, Sparkles, Wand2, UploadCloud, Clock, Zap, MessageSquare } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
 import { CategoryLegalLinksEditor } from "@/components/admin/CategoryLegalLinksEditor";
+import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor"; // NEU
 import { supabase } from "@/integrations/supabase/client";
 
-// --- NEU: Generator Importe ---
+// --- Generator Importe ---
 import { renderToStaticMarkup } from "react-dom/server";
 import { NewComparisonTemplate } from "@/components/templates/NewComparisonTemplate";
 import { ReviewTemplate } from "@/components/templates/ReviewTemplate";
@@ -80,21 +81,15 @@ export default function AdminCategories() {
     }
   }, [categoryProjects, editingCategory]);
 
-  const {
-    register,
-    handleSubmit,
-    reset,
-    setValue,
-    watch,
-    formState: { errors }
-  } = useForm<CategoryInput>({
+  const form = useForm<CategoryInput>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { theme: "DATING", template: "comparison", is_active: true, sort_order: 0 },
+    defaultValues: { theme: "DATING", template: "comparison", is_active: true, sort_order: 0, faq_data: [] },
   });
+
+  const { register, handleSubmit, reset, setValue, watch, formState: { errors }, control, getValues } = form;
 
   const theme = watch("theme");
   const template = watch("template");
-  const colorTheme = watch("color_theme");
   const isActive = watch("is_active");
   const nameValue = watch("name");
   const customHtmlOverride = watch("custom_html_override");
@@ -106,44 +101,26 @@ export default function AdminCategories() {
   // --- ERROR HANDLER ---
   const onInvalid = (errors: any) => {
     console.error("Form Errors:", errors);
-    
-    const errorMessages = [];
-    if (errors.name) errorMessages.push("Name (Grunddaten)");
-    if (errors.slug) errorMessages.push("Slug (Grunddaten)");
-    if (errors.meta_title) errorMessages.push("Meta Title (SEO)");
-    if (errors.meta_description) errorMessages.push("Meta Description (SEO)");
-    if (errors.h1_title) errorMessages.push("H1 Titel (SEO)");
-    
-    const msg = errorMessages.length > 0 
-        ? `Fehlende Felder: ${errorMessages.join(", ")}`
-        : "Bitte überprüfe alle Tabs auf rote Felder.";
-
     toast({
       title: "Speichern nicht möglich ❌",
-      description: msg,
+      description: "Bitte überprüfe rote Felder in allen Tabs.",
       variant: "destructive",
-      duration: 5000,
     });
   };
 
-  // --- 🧠 INTELLIGENTE AUTO-FILL FUNKTION ---
+  // --- AUTO-FILL ---
   const handleAutoFill = () => {
     const kw = (document.getElementById('keyword-input') as HTMLInputElement).value;
     if (!kw) return toast({ title: "Fehler", description: "Bitte Keyword eingeben.", variant: "destructive" });
 
-    // WICHTIG: { shouldValidate: true } entfernt sofort die rote Fehlermeldung
     if (!nameValue) setValue("name", kw, { shouldValidate: true });
     setValue("slug", generateSlug(kw), { shouldValidate: true });
-
-    // SEO / Header Settings
     setValue("site_name", `Vergleich: ${kw}`, { shouldValidate: true });
     setValue("hero_pretitle", "Die besten Anbieter für", { shouldValidate: true });
     setValue("hero_headline", kw, { shouldValidate: true });
     setValue("description", `Du suchst nach ${kw}? Wir haben die besten Plattformen getestet. Erfahre hier, wo sich eine Anmeldung wirklich lohnt.`, { shouldValidate: true });
     setValue("hero_cta_text", "Jetzt vergleichen", { shouldValidate: true });
     setValue("hero_badge_text", "Geprüft & Seriös 2026", { shouldValidate: true });
-
-    // Meta Settings
     setValue("h1_title", `${kw} im großen Vergleich`, { shouldValidate: true });
     setValue("meta_title", `${kw} 2026: Die besten Anbieter im Test & Vergleich`, { shouldValidate: true });
     setValue("meta_description", `Unser großer Testbericht für ${kw} 2026. Wir haben Preise, Mitgliederzahlen und Erfolgschancen verglichen. Hier sind die aktuellen Testsieger.`, { shouldValidate: true });
@@ -151,6 +128,7 @@ export default function AdminCategories() {
     toast({ title: "✨ Alles ausgefüllt!", className: "bg-blue-600 text-white" });
   };
 
+  // --- DEPLOY ---
   async function handleDeploy(category: Category) {
     setIsDeploying(category.id);
     const BRIDGE_URL = "https://dating.rank-scout.com/bridge.php"; 
@@ -223,16 +201,21 @@ export default function AdminCategories() {
     setEditingCategory(null); setSelectedProjectIds([]);
     reset({
       slug: "", name: "", description: "", icon: "📍", theme: "DATING", template: "comparison", color_theme: "dark", site_name: "", hero_headline: "", hero_pretitle: "Finde Singles in", hero_cta_text: "", hero_badge_text: "", meta_title: "", meta_description: "", h1_title: "", long_content_top: "", long_content_bottom: "", analytics_code: "", banner_override: "", custom_html_override: "", footer_site_name: "", footer_copyright_text: "", footer_designer_name: "Digital-Perfect", footer_designer_url: "https://digital-perfect.at",
-      navigation_settings: { show_top3_dating_apps: true, show_singles_in_der_naehe: true, show_chat_mit_einer_frau: true, show_online_dating_cafe: true, show_bildkontakte_login: true, show_18plus_hint_box: true, }, is_active: true, sort_order: categories.length,
+      navigation_settings: { show_top3_dating_apps: true, show_singles_in_der_naehe: true, show_chat_mit_einer_frau: true, show_online_dating_cafe: true, show_bildkontakte_login: true, show_18plus_hint_box: true, }, is_active: true, sort_order: categories.length, faq_data: []
     });
     setIsDialogOpen(true);
   }
 
   function openEditDialog(category: Category) {
     setEditingCategory(category);
+    // Parse FAQ if it's a string, otherwise use directly
+    let parsedFaqs = [];
+    if (Array.isArray(category.faq_data)) parsedFaqs = category.faq_data;
+    
     reset({
       slug: category.slug, name: category.name, description: category.description || "", icon: category.icon || "📍", theme: category.theme, template: category.template || "comparison", color_theme: category.color_theme || "dark", site_name: category.site_name || "", hero_headline: category.hero_headline || "", hero_pretitle: category.hero_pretitle || "", hero_cta_text: category.hero_cta_text || "", hero_badge_text: category.hero_badge_text || "", meta_title: category.meta_title || "", meta_description: category.meta_description || "", h1_title: category.h1_title || "", long_content_top: category.long_content_top || "", long_content_bottom: category.long_content_bottom || "", analytics_code: category.analytics_code || "", banner_override: category.banner_override || "", custom_html_override: category.custom_html_override || "", footer_site_name: category.footer_site_name || "", footer_copyright_text: category.footer_copyright_text || "", footer_designer_name: category.footer_designer_name || "", footer_designer_url: category.footer_designer_url || "",
       navigation_settings: category.navigation_settings || { show_top3_dating_apps: true }, is_active: category.is_active, sort_order: category.sort_order,
+      faq_data: parsedFaqs
     });
     setIsDialogOpen(true);
   }
@@ -262,8 +245,6 @@ export default function AdminCategories() {
   async function handleMoveOrder(category: Category, direction: "up" | "down") { const currentIndex = categories.findIndex((c) => c.id === category.id); const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1; if (newIndex < 0 || newIndex >= categories.length) return; const otherCategory = categories[newIndex]; try { await Promise.all([ updateCategory.mutateAsync({ id: category.id, input: { sort_order: otherCategory.sort_order } }), updateCategory.mutateAsync({ id: otherCategory.id, input: { sort_order: category.sort_order } }), ]); } catch { toast({ title: "Fehler", variant: "destructive" }); } }
   function handleExport(category: Category) { setExportCategory(category); setIsExportOpen(true); }
 
-  if (isLoading) return <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -277,7 +258,16 @@ export default function AdminCategories() {
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
               <Tabs defaultValue="seo" className="w-full">
-                <TabsList className="grid w-full grid-cols-8"><TabsTrigger value="basic">Grunddaten</TabsTrigger><TabsTrigger value="seo">SEO & AI</TabsTrigger><TabsTrigger value="content">Content</TabsTrigger><TabsTrigger value="navigation">Navi</TabsTrigger><TabsTrigger value="footer">Footer</TabsTrigger><TabsTrigger value="projects">Apps</TabsTrigger><TabsTrigger value="tracking">Tracking</TabsTrigger><TabsTrigger value="override"><Wand2 className="w-3 h-3" /></TabsTrigger></TabsList>
+                <TabsList className="grid w-full grid-cols-8">
+                    <TabsTrigger value="basic">Grunddaten</TabsTrigger>
+                    <TabsTrigger value="seo">SEO & AI</TabsTrigger>
+                    <TabsTrigger value="content">Content</TabsTrigger>
+                    <TabsTrigger value="faq" className="text-blue-600 font-bold bg-blue-50">FAQ</TabsTrigger>
+                    <TabsTrigger value="navigation">Navi</TabsTrigger>
+                    <TabsTrigger value="footer">Footer</TabsTrigger>
+                    <TabsTrigger value="projects">Apps</TabsTrigger>
+                    <TabsTrigger value="override"><Wand2 className="w-3 h-3" /></TabsTrigger>
+                </TabsList>
                 
                 <TabsContent value="seo" className="space-y-4 pt-4">
                   <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm">
@@ -336,19 +326,32 @@ export default function AdminCategories() {
                   <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex gap-4 items-end">
                     <div className="flex-1"><Label className="text-orange-900">Keyword (für AI)</Label><Input id="ck" defaultValue={nameValue||"Dating"} className="bg-white text-black font-medium" /></div>
                     <div className="flex-1"><Label className="text-orange-900">Ort/Thema</Label><Input id="cl" defaultValue={nameValue||""} className="bg-white text-black font-medium" /></div>
-                    <Button type="button" onClick={async()=>{ const k=(document.getElementById('ck')as any).value;const l=(document.getElementById('cl')as any).value;if(l){
-                        toast({title:"🤖 Generiere 5.000 Wörter...", description:"Bitte warten, das kann 30-60 Sekunden dauern."});
-                        const r=await generateContent(l,k,5000);
-                        if(r){
-                            setValue("long_content_top",r.contentTop, { shouldValidate: true });
-                            setValue("long_content_bottom",r.contentBottom, { shouldValidate: true });
-                            toast({title:"✅ Content erfolgreich erstellt!", description:"5.000 Wörter wurden eingefügt.", className:"bg-green-600 text-white"});
-                        }
-                    } }} className="bg-orange-600 hover:bg-orange-700 text-white font-bold"><Sparkles className="w-4 h-4 mr-2"/>Text (5k)</Button>
+                    <Button type="button" onClick={async()=>{ 
+                        const k=(document.getElementById('ck')as any).value;
+                        const l=(document.getElementById('cl')as any).value;
+                        if(l){
+                            toast({title:"🤖 Generiere Text + FAQs...", description:"Bitte warten (ca. 45s)..."});
+                            const r=await generateContent(l,k,5000);
+                            if(r){
+                                setValue("long_content_top",r.contentTop, { shouldValidate: true });
+                                setValue("long_content_bottom",r.contentBottom, { shouldValidate: true });
+                                if (r.faqs && r.faqs.length > 0) {
+                                    setValue("faq_data", r.faqs, { shouldValidate: true });
+                                    toast({title:"✅ Fertig!", description:"Text und FAQs wurden generiert. Check den FAQ-Tab!", className:"bg-green-600 text-white"});
+                                } else {
+                                    toast({title:"✅ Fertig!", description:"Text generiert (ohne FAQs).", className:"bg-green-600 text-white"});
+                                }
+                            }
+                        } 
+                    }} className="bg-orange-600 hover:bg-orange-700 text-white font-bold"><Sparkles className="w-4 h-4 mr-2"/>Text & FAQ (5k)</Button>
                   </div>
                   <div><Label>Content Oben</Label><Textarea {...register("long_content_top")} rows={8} className="font-mono text-sm" /></div>
-                  <div><Label>Content Unten (mit FAQ)</Label><Textarea {...register("long_content_bottom")} rows={8} className="font-mono text-sm" /></div>
+                  <div><Label>Content Unten</Label><Textarea {...register("long_content_bottom")} rows={8} className="font-mono text-sm" /></div>
                   <div><Label>Banner Override</Label><Textarea {...register("banner_override")} rows={4} className="font-mono text-sm" /></div>
+                </TabsContent>
+
+                <TabsContent value="faq" className="space-y-4 pt-4">
+                    <CategoryFAQEditor form={form} />
                 </TabsContent>
 
                 <TabsContent value="navigation" className="space-y-4 pt-4"><div className="space-y-3 border rounded-lg p-4">{["show_top3_dating_apps", "show_singles_in_der_naehe", "show_chat_mit_einer_frau", "show_online_dating_cafe", "show_bildkontakte_login", "show_18plus_hint_box"].map(k => (<div key={k} className="flex items-center justify-between py-2 border-b"><Label>{k}</Label><Switch checked={watch(`navigation_settings.${k}` as any)??true} onCheckedChange={c=>setValue(`navigation_settings.${k}` as any,c)}/></div>))}</div></TabsContent>
