@@ -8,43 +8,45 @@ const corsHeaders = {
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    const { city, keyword = "Dating", wordCount = 5000 } = await req.json();
+    let body;
+    try {
+      body = await req.json();
+    } catch (e) {
+      throw new Error("Request Body ist leer oder ungültiges JSON");
+    }
+
+    const { keyword, mode = 'content', wordCount = 1000 } = body;
     
-    // API KEY LOGIC (Lovable Proxy wie gewünscht)
     const openAiKey = Deno.env.get('LOVABLE_API_KEY'); 
-    if (!openAiKey) throw new Error("API Key missing");
+    if (!openAiKey) {
+      throw new Error("Server-Konfiguration fehlt: LOVABLE_API_KEY");
+    }
 
-    console.log(`Generating structured content for: ${city}`);
+    console.log(`Verarbeite: ${keyword} (Mode: ${mode})`);
 
-    // --- PROMPT FÜR STRUKTURIERTE DATEN (TEXT + JSON FAQS) ---
-    const systemPrompt = `
-      Du bist ein professioneller Redakteur für ein Vergleichsportal.
-      Aufgabe: Content für Landingpage "${keyword} in ${city}".
-      
-      OUTPUT FORMAT (EXAKTES JSON):
-      {
-        "contentTop": "HTML STRING (Einleitung, Vorteile)",
-        "contentBottom": "HTML STRING (Tipps, Sicherheit - KEINE FAQS HIER!)",
-        "faqs": [
-          { "question": "Frage 1?", "answer": "Antwort 1..." },
-          { "question": "Frage 2?", "answer": "Antwort 2..." },
-          { "question": "Frage 3?", "answer": "Antwort 3..." },
-          { "question": "Frage 4?", "answer": "Antwort 4..." },
-          { "question": "Frage 5?", "answer": "Antwort 5..." }
-        ]
-      }
-      
-      REGELN:
-      1. contentTop/Bottom: HTML (h2, p, ul). Nutze IMMER class="text-center".
-      2. faqs: Reine Text-Strings, KEIN HTML.
-      3. Schreibe hochwertig, abwechslungsreich und hilfreich.
-    `;
+    let systemPrompt = "";
+    let userPrompt = "";
 
-    const userPrompt = `Erstelle einen sehr ausführlichen Text für ${city} (Ziel: ${wordCount} Wörter). Trenne die FAQs strikt als Array ab.`;
+    if (mode === 'faq') {
+      systemPrompt = `
+        Du bist ein Experte. Erstelle 5-7 FAQs zum Thema "${keyword}".
+        Antworte NUR mit validem JSON.
+        Format: { "faqs": [ { "question": "...", "answer": "..." } ] }
+      `;
+      userPrompt = `FAQs für: ${keyword}`;
+    } else {
+      systemPrompt = `
+        Du bist Redakteur. Thema: "${keyword}".
+        Erstelle Content als JSON: { "contentTop": "HTML", "contentBottom": "HTML" }.
+        Regel: Nutze HTML mit class="text-center". KEINE FAQs im Text.
+        Umfang: ca. ${wordCount} Wörter.
+      `;
+      userPrompt = `Schreibe Artikel über: ${keyword}`;
+    }
 
     const response = await fetch('https://api.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -58,23 +60,29 @@ serve(async (req) => {
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.8,
+        temperature: 0.7,
       }),
     });
 
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("OpenAI API Fehler:", errText);
+      throw new Error(`KI-Dienst antwortet nicht (Status ${response.status})`);
+    }
+
     const aiData = await response.json();
-    let generatedContent = aiData.choices[0].message.content;
-    generatedContent = generatedContent.replace(/```json/g, '').replace(/```/g, '').trim();
+    let content = aiData.choices[0].message.content;
+    content = content.replace(/```json/g, '').replace(/```/g, '').trim();
 
     let jsonResponse;
     try {
-      jsonResponse = JSON.parse(generatedContent);
+      jsonResponse = JSON.parse(content);
     } catch (e) {
-      console.error("JSON Error", e);
+      console.error("JSON Parse Error:", e);
       jsonResponse = { 
-        contentTop: `<div class="text-center"><p>${generatedContent}</p></div>`, 
+        contentTop: `<div class="text-center"><p>${content}</p></div>`, 
         contentBottom: "",
-        faqs: []
+        faqs: [] 
       };
     }
 
@@ -84,9 +92,13 @@ serve(async (req) => {
     );
 
   } catch (error) {
+    console.error("Critical Function Error:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
     );
   }
 });
