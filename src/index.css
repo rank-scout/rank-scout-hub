@@ -41,17 +41,12 @@
   body {
     @apply bg-background text-foreground font-body antialiased;
     
-    /* TECH-GRID BACKGROUND */
-    /* Layer 1: Feines lineares Gitter (Millimeterpapier-Style) */
-    /* Layer 2: Größere Punkte im Raster (Daten-Punkte) */
-    background-image: 
-      linear-gradient(rgba(3, 14, 62, 0.03) 1px, transparent 1px), 
-      linear-gradient(90deg, rgba(3, 14, 62, 0.03) 1px, transparent 1px),
-      radial-gradient(circle, rgba(3, 14, 62, 0.06) 1.5px, transparent 1.5px);
-      
-    background-size: 50px 50px, 50px 50px, 50px 50px;
-    background-position: -1px -1px, -1px -1px, 25px 25px; /* Punkte mittig im Gitter */
-    background-attachment: fixed;
+    /* KYRA UPGRADE: PREMIUM TECH GRID */
+    /* Wir nutzen radial-gradient für Punkte statt Linien - wirkt moderner und weniger wie Excel */
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(hsl(var(--primary) / 0.08) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: center top;
   }
 
   h1, h2, h3, h4, h5, h6 {

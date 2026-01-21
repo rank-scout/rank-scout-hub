@@ -120,3 +120,9 @@ export function useFooterDesignerName() {
 export function useFooterDesignerUrl() {
   return useSetting<string>("footer_designer_url", "https://digital-perfect.com");
 }
+
+// NEU: Ads Toggle Hook
+export function useAdsEnabled() {
+  // Standardmäßig false, damit wir erst aktivieren, wenn wir bereit sind
+  return useSetting<boolean>("ads_enabled", false);
+}

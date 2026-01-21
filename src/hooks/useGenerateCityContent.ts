@@ -1,13 +1,22 @@
-// src/hooks/useGenerateCityContent.ts
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
-// ... (Imports bleiben gleich)
+export interface GeneratedContent {
+  contentTop: string;
+  contentBottom: string;
+  faqs: any[];
+  city: string;
+  keyword: string;
+  wordCount: number;
+}
 
 export function useGenerateCityContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const generateContent = async (
-    city: string, // Wir lassen city im Funktionsaufruf, falls du es später brauchst
+    city: string,
     keyword: string = "Dating",
     wordCount: number = 1000
   ): Promise<GeneratedContent | null> => {
@@ -17,13 +26,11 @@ export function useGenerateCityContent() {
     try {
       console.log(`Starte Generierung für Keyword: ${keyword}...`);
 
-      // HIER IST DIE KORREKTUR:
-      // Wir senden jetzt explizit 'mode: "content"' mit.
       const { data, error: fnError } = await supabase.functions.invoke("generate-city-content", {
         body: { 
-          keyword,      // Das Keyword (z.B. "Dating in Berlin")
-          wordCount,    // Die Wortanzahl
-          mode: 'content' // WICHTIG: Sagt dem Backend, dass es Text sein soll (keine FAQs)
+          keyword,      
+          wordCount,    
+          mode: 'content' 
         },
       });
 
@@ -32,12 +39,9 @@ export function useGenerateCityContent() {
       let contentTop = "";
       let contentBottom = "";
       
-      // ... (Der Rest der Parsing-Logik bleibt exakt wie vorher) ...
-      
       if (typeof data === 'object' && data !== null && !data.error) {
           contentTop = data.contentTop || "";
           contentBottom = data.contentBottom || "";
-          // FAQs ignorieren wir hier, da wir im Content-Mode sind
       } else if (typeof data === 'string') {
           try {
               const cleanData = data.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -50,7 +54,7 @@ export function useGenerateCityContent() {
           }
       }
 
-      // Cleanup HTML & Zentrierung Helper (bleibt gleich)
+      // Cleanup HTML & Zentrierung Helper
       const wrapCentered = (html: string) => {
         if (!html) return "";
         let clean = html.replace(/```html/g, "").replace(/```/g, "").trim();

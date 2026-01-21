@@ -1,65 +1,54 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { renderToStaticMarkup } from "react-dom/server"; // WICHTIG: Das macht aus React -> HTML String
+import { ExportTemplate } from "@/components/templates/ExportTemplate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Globe, Link as LinkIcon } from "lucide-react";
+import { Loader2, UploadCloud, Globe, Link as LinkIcon, FileText, LayoutList } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
-type DeploymentTarget = {
-  id: string;
-  name: string;
-  bridge_url: string;
-  api_key: string;
-};
+// Typen
+type DeploymentTarget = { id: string; name: string; bridge_url: string; api_key: string; };
+type Project = { id: string; name: string; logo_url: string; rating: number; affiliate_link: string; features: any; badge_text: string; };
 
 export default function AdminPublisher() {
   const [targets, setTargets] = useState<DeploymentTarget[]>([]);
-  const [selectedTargetId, setSelectedTargetId] = useState<string>("");
+  const [projects, setProjects] = useState<Project[]>([]);
   
-  // Neue Felder
-  const [slug, setSlug] = useState(""); // z.B. "test-bericht"
+  // State
+  const [selectedTargetId, setSelectedTargetId] = useState<string>("");
+  const [templateType, setTemplateType] = useState<"COMPARISON" | "ARTICLE">("COMPARISON");
+  const [slug, setSlug] = useState("");
   const [pageTitle, setPageTitle] = useState("");
-  const [pageContent, setPageContent] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [pageContent, setPageContent] = useState("<h2>Hier startet dein Content...</h2><p>Schreibe etwas geniales.</p>");
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    async function loadTargets() {
-      const { data } = await supabase.from("deployment_targets").select("*");
-      if (data) setTargets(data);
+    async function loadData() {
+      // Load Targets
+      const { data: tData } = await supabase.from("deployment_targets").select("*");
+      if (tData) setTargets(tData);
+
+      // Load Projects for Selection
+      const { data: pData } = await supabase.from("projects").select("*").order('rating', { ascending: false });
+      if (pData) setProjects(pData);
     }
-    loadTargets();
+    loadData();
   }, []);
 
-  // Simples Template (wird später erweitert)
-  const generateHtml = (title: string, content: string) => {
-    return `<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>body { font-family: sans-serif; }</style>
-</head>
-<body class="bg-slate-50 text-slate-900 min-h-screen">
-    <div class="max-w-4xl mx-auto py-12 px-6">
-        <header class="text-center mb-16">
-            <h1 class="text-5xl font-extrabold text-blue-700 mb-6 tracking-tight">${title}</h1>
-            <div class="w-32 h-1.5 bg-blue-600 mx-auto rounded-full"></div>
-        </header>
-        <main class="bg-white p-10 rounded-2xl shadow-xl border border-slate-100 prose prose-lg max-w-none">
-            ${content.replace(/\n/g, '<br>')}
-        </main>
-        <footer class="text-center mt-16 text-slate-400 text-sm">
-            <p>&copy; ${new Date().getFullYear()} Rank-Scout. Alle Rechte vorbehalten.</p>
-        </footer>
-    </div>
-</body>
-</html>`;
+  const toggleProject = (id: string) => {
+    setSelectedProjectIds(prev => 
+      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
+    );
   };
 
   async function handlePublish() {
@@ -68,23 +57,38 @@ export default function AdminPublisher() {
       return;
     }
 
-    // Slug Validierung (nur a-z, 0-9, -)
-    if (slug && !/^[a-z0-9\-]+$/i.test(slug)) {
-      toast({ variant: "destructive", title: "Ungültiger Pfad", description: "Nur Buchstaben, Zahlen und Bindestriche erlaubt." });
-      return;
-    }
-
     const target = targets.find(t => t.id === selectedTargetId);
     if (!target) return;
 
     setIsLoading(true);
-    try {
-      const finalHtml = generateHtml(pageTitle, pageContent);
 
+    try {
+      // 1. Daten vorbereiten
+      const selectedProjectsData = projects.filter(p => selectedProjectIds.includes(p.id));
+      
+      // Sortiere Projekte so, wie sie ausgewählt wurden (hier simpel nach Rating, später Drag&Drop)
+      const sortedProjects = selectedProjectsData.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+
+      // 2. HTML Generieren via React Server Rendering (im Client)
+      const htmlString = renderToStaticMarkup(
+        <ExportTemplate
+          title={pageTitle}
+          description={metaDescription}
+          content={pageContent}
+          type={templateType}
+          projects={sortedProjects}
+          siteName={target.name} // Nimmt den Namen des Ziels als Site Name
+          year={new Date().getFullYear()}
+        />
+      );
+
+      // Füge DOCTYPE hinzu (renderToStaticMarkup macht das nicht)
+      const finalHtml = `<!DOCTYPE html>${htmlString}`;
+
+      // 3. Senden an Bridge
       const response = await fetch(target.bridge_url, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Auth-Token": target.api_key },
-        // Wir senden jetzt auch den SLUG mit
         body: JSON.stringify({ html: finalHtml, slug: slug })
       });
 
@@ -92,86 +96,180 @@ export default function AdminPublisher() {
 
       if (response.ok && result.status === "success") {
         toast({ 
-          title: "Online! 🚀", 
-          description: `Seite liegt unter: ${result.url}`,
+          title: "Erfolgreich veröffentlicht! 🚀", 
+          description: `URL: ${target.bridge_url.replace('bridge.php', '')}${result.url}`,
           className: "bg-green-600 text-white"
         });
-        // Optional: Reset Felder
-        // setSlug(""); 
       } else {
-        throw new Error(result.message || "Fehler");
+        throw new Error(result.message || "Unbekannter Fehler");
       }
     } catch (error) {
-      toast({ title: "Fehler", description: error instanceof Error ? error.message : "Unbekannt", variant: "destructive" });
+      console.error(error);
+      toast({ title: "Fehler beim Upload", description: error instanceof Error ? error.message : "Prüfe Konsole", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-20">
-      <div className="flex items-center gap-4">
-        <div className="p-4 bg-primary/10 rounded-xl"><UploadCloud className="w-10 h-10 text-primary" /></div>
+    <div className="max-w-6xl mx-auto space-y-8 pb-20">
+      
+      {/* Header */}
+      <div className="flex items-center gap-4 border-b border-border pb-6">
+        <div className="p-3 bg-secondary/10 rounded-xl">
+            <UploadCloud className="w-8 h-8 text-secondary" />
+        </div>
         <div>
-          <h2 className="text-4xl font-bold">Multi-Channel Publisher</h2>
-          <p className="text-muted-foreground">Erstelle Landingpages in beliebigen Unterordnern.</p>
+          <h2 className="font-display font-bold text-3xl">Multi-Channel Publisher</h2>
+          <p className="text-muted-foreground">Verteile Vergleiche & Artikel auf deine Satelliten-Seiten.</p>
         </div>
       </div>
 
-      <Card className="shadow-lg border-primary/10">
-        <CardHeader className="bg-slate-50/50 pb-8 border-b">
-          <CardTitle>Neue Seite anlegen</CardTitle>
-          <CardDescription>Wähle Domain und Pfad.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-8 pt-8">
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="space-y-3">
-              <Label>Ziel-Domain</Label>
-              <Select onValueChange={setSelectedTargetId} value={selectedTargetId}>
-                <SelectTrigger className="h-12 text-lg"><SelectValue placeholder="Wählen..." /></SelectTrigger>
-                <SelectContent>
-                  {targets.map(t => (
-                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+      <div className="grid lg:grid-cols-3 gap-8">
+        
+        {/* LEFT COLUMN: Configuration */}
+        <div className="lg:col-span-2 space-y-6">
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>1. Konfiguration</CardTitle>
+                    <CardDescription>Wohin soll die Seite?</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Ziel-Domain</Label>
+                            <Select onValueChange={setSelectedTargetId} value={selectedTargetId}>
+                                <SelectTrigger><SelectValue placeholder="Domain wählen..." /></SelectTrigger>
+                                <SelectContent>
+                                    {targets.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>URL-Slug (Ordner)</Label>
+                            <Input 
+                                placeholder="z.B. beste-krypto-app (leer = home)" 
+                                value={slug} 
+                                onChange={e => setSlug(e.target.value)} 
+                                className="font-mono"
+                            />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>2. Inhalt & SEO</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>H1 Titel (Browser Title)</Label>
+                        <Input value={pageTitle} onChange={e => setPageTitle(e.target.value)} placeholder="Der große Krypto Vergleich 2026" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Meta Beschreibung</Label>
+                        <Input value={metaDescription} onChange={e => setMetaDescription(e.target.value)} placeholder="Finde die besten Anbieter..." />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Inhalt (HTML erlaubt)</Label>
+                        <Textarea 
+                            value={pageContent} 
+                            onChange={e => setPageContent(e.target.value)} 
+                            className="min-h-[200px] font-mono text-sm"
+                            placeholder="<p>Dein Einleitungstext...</p>" 
+                        />
+                        <p className="text-xs text-muted-foreground">Tipp: Du kannst hier HTML aus dem Editor oder KI einfügen.</p>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <div className="flex gap-4">
+                <Button 
+                    size="lg" 
+                    className="w-full bg-secondary hover:bg-orange-600 text-white font-bold h-14 text-lg shadow-xl"
+                    onClick={handlePublish}
+                    disabled={isLoading}
+                >
+                    {isLoading ? <Loader2 className="animate-spin mr-2" /> : <UploadCloud className="mr-2" />}
+                    {isLoading ? "Wird veröffentlicht..." : "JETZT VERÖFFENTLICHEN"}
+                </Button>
             </div>
 
-            <div className="space-y-3">
-              <Label className="flex items-center gap-2"><LinkIcon className="w-4 h-4" /> Pfad (Slug)</Label>
-              <div className="flex items-center gap-2">
-                 <span className="text-muted-foreground text-lg">/</span>
-                 <Input 
-                  className="h-12 text-lg font-mono" 
-                  placeholder="meine-neue-seite (Leer = Startseite)" 
-                  value={slug}
-                  onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9\-]/g, ''))} // Auto-Formatierung
-                 />
-              </div>
-              <p className="text-xs text-muted-foreground">Erstellt automatisch einen Ordner, z.B. <code>/single-test/</code>. Leer lassen für Hauptseite.</p>
-            </div>
-          </div>
+        </div>
 
-          <div className="space-y-3">
-            <Label>Browser Titel</Label>
-            <Input className="h-12 text-lg" placeholder="Der große Vergleich 2026" value={pageTitle} onChange={e => setPageTitle(e.target.value)} />
-          </div>
+        {/* RIGHT COLUMN: Type & Projects */}
+        <div className="space-y-6">
+            
+            <Card className="bg-slate-50 border-primary/20">
+                <CardHeader>
+                    <CardTitle>3. Seitentyp</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                        <div 
+                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${templateType === 'COMPARISON' ? 'border-secondary bg-white shadow-md' : 'border-transparent hover:bg-white'}`}
+                            onClick={() => setTemplateType('COMPARISON')}
+                        >
+                            <LayoutList className={templateType === 'COMPARISON' ? 'text-secondary' : 'text-slate-400'} />
+                            <div>
+                                <div className="font-bold">Vergleichs-Tabelle</div>
+                                <div className="text-xs text-muted-foreground">Für "Beste X" Keywords. Hohe Conversion.</div>
+                            </div>
+                        </div>
 
-          <div className="space-y-3">
-            <Label>Inhalt</Label>
-            <Textarea className="min-h-[300px] text-lg font-mono bg-slate-50" placeholder="HTML oder Text..." value={pageContent} onChange={e => setPageContent(e.target.value)} />
-          </div>
+                        <div 
+                            className={`p-4 rounded-lg border-2 cursor-pointer transition-all flex items-center gap-3 ${templateType === 'ARTICLE' ? 'border-secondary bg-white shadow-md' : 'border-transparent hover:bg-white'}`}
+                            onClick={() => setTemplateType('ARTICLE')}
+                        >
+                            <FileText className={templateType === 'ARTICLE' ? 'text-secondary' : 'text-slate-400'} />
+                            <div>
+                                <div className="font-bold">Ratgeber / Artikel</div>
+                                <div className="text-xs text-muted-foreground">Nur Text & Bilder. Gut für Info-Keywords.</div>
+                            </div>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
 
-          <div className="pt-6 border-t">
-            <Button size="lg" className="w-full text-xl h-16 font-bold shadow-xl hover:shadow-primary/40 transition-all" onClick={handlePublish} disabled={isLoading || !selectedTargetId}>
-              {isLoading ? <Loader2 className="animate-spin" /> : <Globe className="mr-2" />}
-              {isLoading ? "Erstelle Ordner & Lade hoch..." : "Seite Veröffentlichen"}
-            </Button>
-          </div>
+            {templateType === "COMPARISON" && (
+                <Card className="border-secondary/20 h-[500px] flex flex-col">
+                    <CardHeader className="bg-secondary/5 pb-3">
+                        <CardTitle className="text-base">Projekte auswählen</CardTitle>
+                        <CardDescription>Welche Anbieter sollen in die Tabelle?</CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0 flex-1 overflow-hidden">
+                        <ScrollArea className="h-full p-4">
+                            <div className="space-y-2">
+                                {projects.map(project => (
+                                    <div key={project.id} className="flex items-center space-x-3 p-2 hover:bg-slate-100 rounded-lg">
+                                        <Checkbox 
+                                            id={`p-${project.id}`} 
+                                            checked={selectedProjectIds.includes(project.id)}
+                                            onCheckedChange={() => toggleProject(project.id)}
+                                        />
+                                        <div className="flex-1">
+                                            <Label htmlFor={`p-${project.id}`} className="font-medium cursor-pointer block">
+                                                {project.name}
+                                            </Label>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] bg-slate-200 px-1.5 rounded text-slate-600">Rating: {project.rating}</span>
+                                            </div>
+                                        </div>
+                                        {project.logo_url && (
+                                            <img src={project.logo_url} alt="" className="w-8 h-8 object-contain opacity-50" />
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                    </CardContent>
+                </Card>
+            )}
 
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

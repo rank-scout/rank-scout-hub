@@ -1,6 +1,13 @@
 import { Info } from "lucide-react";
+import { useAdsEnabled } from "@/hooks/useSettings";
 
 export const AdSenseBanner = ({ slotId }: { slotId?: string }) => {
+  const adsEnabled = useAdsEnabled();
+
+  if (!adsEnabled) {
+    return null;
+  }
+
   return (
     <div className="w-full my-12 flex flex-col items-center justify-center animate-fade-in">
       <div className="text-[10px] text-slate-300 uppercase tracking-widest mb-1 flex items-center gap-1">

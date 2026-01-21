@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles, Building, BarChart3, Palette, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles, Building, BarChart3, Palette, CheckCircle2, XCircle, ExternalLink, DollarSign } from "lucide-react";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
 
 export default function AdminSettings() {
   const { data: settings, isLoading } = useSettings();
@@ -31,6 +32,7 @@ export default function AdminSettings() {
   const [footerDesignerUrl, setFooterDesignerUrl] = useState("");
   const [analyticsCode, setAnalyticsCode] = useState("");
   const [dashboardTheme, setDashboardTheme] = useState<"light" | "dark">("dark");
+  const [adsEnabled, setAdsEnabled] = useState(false); // NEU
   const [initialized, setInitialized] = useState(false);
   const [analyticsStatus, setAnalyticsStatus] = useState<"idle" | "checking" | "found" | "not-found">("idle");
 
@@ -93,6 +95,7 @@ export default function AdminSettings() {
     setFooterDesignerUrl((settings.footer_designer_url as string) || "https://digital-perfect.com");
     setAnalyticsCode((settings.global_analytics_code as string) || "");
     setDashboardTheme((settings.dashboard_theme as "light" | "dark") || "dark");
+    setAdsEnabled((settings.ads_enabled as boolean) || false); // NEU
     setInitialized(true);
   }
 
@@ -108,6 +111,12 @@ export default function AdminSettings() {
       });
     }
   }
+
+  // NEU: Eigene Funktion für den Switch, um den State sofort visuell zu ändern
+  const handleAdsToggle = (enabled: boolean) => {
+    setAdsEnabled(enabled);
+    saveSetting("ads_enabled", enabled);
+  };
 
   async function savePin() {
     if (newPin.length < 4) {
@@ -179,6 +188,32 @@ export default function AdminSettings() {
         <h2 className="font-display text-2xl font-bold text-foreground">Einstellungen</h2>
         <p className="text-muted-foreground">Verwalte globale Website-Einstellungen.</p>
       </div>
+
+      {/* NEU: Monetarisierung / Ads Toggle */}
+      <Card className="bg-card border-border">
+        <CardHeader>
+          <CardTitle className="font-display text-lg flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Monetarisierung
+          </CardTitle>
+          <CardDescription>Steuere die Sichtbarkeit von Werbebannern global.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between space-x-2">
+            <div className="flex flex-col space-y-1">
+              <Label htmlFor="ads-toggle" className="font-medium">Werbebanner anzeigen</Label>
+              <span className="text-sm text-muted-foreground">
+                Aktiviert AdSense und Amazon Banner auf allen Seiten.
+              </span>
+            </div>
+            <Switch 
+              id="ads-toggle" 
+              checked={adsEnabled}
+              onCheckedChange={handleAdsToggle}
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Site Settings */}
       <Card className="bg-card border-border">
@@ -545,7 +580,7 @@ export default function AdminSettings() {
                 setAnalyticsCode(e.target.value);
                 setAnalyticsStatus("idle");
               }}
-              placeholder="<!-- Google tag (gtag.js) --> ..."
+              placeholder="..."
               rows={8}
               className="font-mono text-xs"
             />

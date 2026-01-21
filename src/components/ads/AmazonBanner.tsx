@@ -1,7 +1,15 @@
+import { useAdsEnabled } from "@/hooks/useSettings";
+
 export const AmazonBanner = ({ format = "horizontal" }: { format?: "horizontal" | "rectangle" | "vertical" }) => {
+  const adsEnabled = useAdsEnabled();
+
   // WICHTIG: Ersetze diesen Kommentar später mit deinem echten Amazon-HTML-Code aus dem PartnerNet.
   // Beispiel für horizontal: Ein 728x90 Banner
   // Beispiel für rectangle: Ein 300x250 Banner
+
+  if (!adsEnabled) {
+    return null;
+  }
   
   return (
     <div className={`flex justify-center items-center my-8 ${format === "horizontal" ? "w-full" : "w-auto"}`}>
