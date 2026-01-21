@@ -1,22 +1,13 @@
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+// src/hooks/useGenerateCityContent.ts
 
-interface GeneratedContent {
-  contentTop: string;
-  contentBottom: string;
-  faqs: { question: string; answer: string }[];
-  city: string;
-  keyword: string;
-  wordCount: number;
-}
+// ... (Imports bleiben gleich)
 
 export function useGenerateCityContent() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const generateContent = async (
-    city: string, 
+    city: string, // Wir lassen city im Funktionsaufruf, falls du es später brauchst
     keyword: string = "Dating",
     wordCount: number = 1000
   ): Promise<GeneratedContent | null> => {
@@ -24,38 +15,42 @@ export function useGenerateCityContent() {
     setError(null);
 
     try {
-      console.log(`Starte Generierung für ${city} mit Keyword ${keyword}...`);
+      console.log(`Starte Generierung für Keyword: ${keyword}...`);
 
+      // HIER IST DIE KORREKTUR:
+      // Wir senden jetzt explizit 'mode: "content"' mit.
       const { data, error: fnError } = await supabase.functions.invoke("generate-city-content", {
-        body: { city, keyword, wordCount },
+        body: { 
+          keyword,      // Das Keyword (z.B. "Dating in Berlin")
+          wordCount,    // Die Wortanzahl
+          mode: 'content' // WICHTIG: Sagt dem Backend, dass es Text sein soll (keine FAQs)
+        },
       });
 
       if (fnError) throw new Error(fnError.message);
       
       let contentTop = "";
       let contentBottom = "";
-      let faqs: any[] = [];
-
-      // Parsing Logik für JSON-Antwort
+      
+      // ... (Der Rest der Parsing-Logik bleibt exakt wie vorher) ...
+      
       if (typeof data === 'object' && data !== null && !data.error) {
           contentTop = data.contentTop || "";
           contentBottom = data.contentBottom || "";
-          faqs = Array.isArray(data.faqs) ? data.faqs : [];
+          // FAQs ignorieren wir hier, da wir im Content-Mode sind
       } else if (typeof data === 'string') {
           try {
-              // Notfall-Parsing falls es String ist
               const cleanData = data.replace(/```json/g, "").replace(/```/g, "").trim();
               const parsed = JSON.parse(cleanData);
               contentTop = parsed.contentTop || "";
               contentBottom = parsed.contentBottom || "";
-              faqs = Array.isArray(parsed.faqs) ? parsed.faqs : [];
           } catch (e) {
               console.warn("Parsing Fallback", e);
               contentTop = data;
           }
       }
 
-      // Cleanup HTML & Zentrierung
+      // Cleanup HTML & Zentrierung Helper (bleibt gleich)
       const wrapCentered = (html: string) => {
         if (!html) return "";
         let clean = html.replace(/```html/g, "").replace(/```/g, "").trim();
@@ -68,7 +63,7 @@ export function useGenerateCityContent() {
       const finalResult: GeneratedContent = {
         contentTop: wrapCentered(contentTop),
         contentBottom: wrapCentered(contentBottom),
-        faqs: faqs,
+        faqs: [], // Leeres Array, da nur Content
         city,
         keyword,
         wordCount

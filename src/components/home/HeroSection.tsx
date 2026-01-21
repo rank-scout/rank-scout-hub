@@ -1,79 +1,66 @@
-import { useHeroTitle, useHeroSubtitle, useTrendingLinks } from "@/hooks/useSettings";
 import { SearchBar } from "./SearchBar";
-import { TrendingUp } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useHeroTitle, useHeroSubtitle } from "@/hooks/useSettings";
+import { Sparkles } from "lucide-react";
 
-export function HeroSection() {
+export const HeroSection = () => {
   const heroTitle = useHeroTitle();
   const heroSubtitle = useHeroSubtitle();
-  const trendingLinks = useTrendingLinks();
 
   return (
-    <section className="relative min-h-[70vh] flex items-center justify-center bg-hero-gradient pt-16">
-      {/* Decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
-      </div>
-
-      <div className="container mx-auto px-4 py-20 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8 animate-fade-in">
-            <TrendingUp className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">
-              Über 500+ Anbieter verglichen
-            </span>
-          </div>
-
-          {/* Title */}
-          <h1 className="font-display font-bold text-4xl md:text-6xl lg:text-7xl text-foreground mb-6 animate-slide-up">
-            {heroTitle}
-          </h1>
-
-          {/* Subtitle */}
-          <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            {heroSubtitle}
-          </p>
-
-          {/* Search Bar */}
-          <div className="mb-10 animate-slide-up" style={{ animationDelay: "0.2s" }}>
-            <SearchBar />
-          </div>
-
-          {/* Trending Pills */}
-          {trendingLinks.length > 0 && (
-            <div className="flex flex-wrap items-center justify-center gap-3 animate-slide-up" style={{ animationDelay: "0.3s" }}>
-              <span className="text-sm text-muted-foreground">Trending:</span>
-              {trendingLinks.map((link, index) => {
-                const isInternal = link.url.startsWith("/");
-                if (isInternal) {
-                  return (
-                    <Link
-                      key={index}
-                      to={link.url}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm font-medium text-foreground transition-all hover:scale-105"
-                    >
-                      {link.emoji && <span>{link.emoji}</span>}
-                      {link.label}
-                    </Link>
-                  );
-                }
-                return (
-                  <a
-                    key={index}
-                    href={link.url}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-muted/50 hover:bg-muted text-sm font-medium text-foreground transition-all hover:scale-105"
-                  >
-                    {link.emoji && <span>{link.emoji}</span>}
-                    {link.label}
-                  </a>
-                );
-              })}
+    <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
+      {/* Background Decor - Reduziert, damit das Grid wirkt */}
+      <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      
+      <div className="container px-4 mx-auto relative z-10">
+        <div className="flex flex-col items-center text-center max-w-5xl mx-auto space-y-10">
+          
+          <div className="space-y-6 animate-fade-in">
+            {/* Pill Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-primary/10 shadow-sm text-primary text-sm font-semibold tracking-wide uppercase mb-4 hover:border-secondary/50 transition-colors cursor-default">
+              <span className="w-2 h-2 rounded-full bg-secondary animate-pulse"></span>
+              Deutschlands B2B-Vergleichsportal Nr. 1
             </div>
-          )}
+            
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-display font-bold tracking-tight text-primary text-balance drop-shadow-sm">
+              {heroTitle || "Entscheidungssicherheit für die C-Suite"}
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-slate-500 max-w-3xl mx-auto text-balance leading-relaxed font-light">
+              {heroSubtitle || "Validierte Daten, echte Experten-Analysen und maximale Transparenz für digitale Dienstleistungen & Software."}
+            </p>
+          </div>
+
+          {/* AI-Style Search Container */}
+          <div className="w-full max-w-3xl animate-slide-up relative group" style={{ animationDelay: "0.2s" }}>
+            {/* Glowing Border Effect */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary via-secondary to-primary rounded-2xl opacity-20 group-hover:opacity-40 blur transition duration-500" />
+            
+            <div className="relative bg-white rounded-xl shadow-2xl shadow-primary/10 p-2">
+               {/* Label oberhalb der Suche für AI-Feeling */}
+               <div className="absolute -top-8 left-4 flex items-center gap-1.5 text-xs font-bold text-secondary uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                 <Sparkles className="w-3 h-3" />
+                 AI-Live-Search
+               </div>
+               <SearchBar />
+            </div>
+
+            <div className="mt-8 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm font-medium text-slate-500">
+              <span className="flex items-center gap-2 hover:text-secondary transition-colors cursor-pointer group">
+                <span className="w-1.5 h-1.5 rounded-full bg-secondary group-hover:scale-125 transition-transform"></span>
+                Topnews & Insights
+              </span>
+              <span className="flex items-center gap-2 hover:text-secondary transition-colors cursor-pointer group">
+                <span className="w-1.5 h-1.5 rounded-full bg-secondary group-hover:scale-125 transition-transform"></span>
+                Geprüfte Vergleiche
+              </span>
+              <span className="flex items-center gap-2 hover:text-secondary transition-colors cursor-pointer group">
+                <span className="w-1.5 h-1.5 rounded-full bg-secondary group-hover:scale-125 transition-transform"></span>
+                Premium Netzwerk
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
-}
+};

@@ -1,73 +1,90 @@
 import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
 import { useNavLinks } from "@/hooks/useSettings";
-import { Search, Menu, X } from "lucide-react";
-import { useState } from "react";
 
-interface HeaderProps {
-  siteName?: string;
-}
-
-export function Header({ siteName }: HeaderProps = {}) {
+export const Header = () => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navLinks = useNavLinks();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled ? "bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100" : "bg-transparent"
+      }`}
+    >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            {!siteName && (
-              <div className="w-8 h-8 bg-primary-gradient rounded-lg flex items-center justify-center">
-                <Search className="w-4 h-4 text-primary-foreground" />
-              </div>
-            )}
-            <span className="font-display font-bold text-xl text-foreground">
-              {siteName || "Rank-Scout"}
-            </span>
+          <Link to="/" className="flex items-center gap-2 group">
+            <img 
+              src="/rank-scout-logo.webp" 
+              alt="Rank-Scout Logo" 
+              className="h-10 w-auto object-contain transition-transform duration-300 group-hover:scale-105" 
+            />
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6">
-            {navLinks.map((link, index) => (
-              <a
-                key={index}
-                href={link.url}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                target={link.url.startsWith("http") ? "_blank" : undefined}
-                rel={link.url.startsWith("http") ? "noopener noreferrer" : undefined}
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                to={link.url}
+                className="text-sm font-medium text-primary/80 hover:text-secondary transition-colors"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
+            <Link to="/kategorien">
+              {/* Button Update: Navy Background, Feuer-Orange Text */}
+              <Button className="bg-primary text-secondary font-bold hover:bg-primary/90 hover:text-orange-400 border border-transparent hover:border-secondary/20 transition-all shadow-lg shadow-primary/20">
+                Vergleiche starten
+              </Button>
+            </Link>
           </nav>
 
-          {/* Mobile Toggle */}
+          {/* Mobile Menu Button */}
           <button
-            className="md:hidden p-2 text-foreground"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-primary hover:text-secondary transition-colors"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            {isMobileMenuOpen ? <X /> : <Menu />}
           </button>
         </div>
+      </div>
 
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <nav className="md:hidden py-4 border-t border-white/10">
-            {navLinks.map((link, index) => (
-              <a
-                key={index}
-                href={link.url}
-                className="block py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                target={link.url.startsWith("http") ? "_blank" : undefined}
-                rel={link.url.startsWith("http") ? "noopener noreferrer" : undefined}
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden absolute top-20 left-0 w-full bg-white border-b border-gray-100 p-4 shadow-lg animate-fade-in">
+          <nav className="flex flex-col gap-4">
+            {navLinks.map((link) => (
+              <Link
+                key={link.label}
+                to={link.url}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="text-lg font-medium text-primary hover:text-secondary"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
+            <Link to="/kategorien" onClick={() => setIsMobileMenuOpen(false)}>
+              <Button className="w-full bg-primary text-secondary font-bold hover:bg-primary/90">
+                Vergleiche starten
+              </Button>
+            </Link>
           </nav>
-        )}
-      </div>
+        </div>
+      )}
     </header>
   );
-}
+};

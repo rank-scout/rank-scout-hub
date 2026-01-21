@@ -9,7 +9,6 @@ export function SearchBar() {
   const { data: projects = [] } = useProjects();
   const wrapperRef = useRef<HTMLDivElement>(null);
 
-  // Filter projects based on query
   const filteredProjects = query.length >= 2
     ? projects.filter((project) =>
         project.name.toLowerCase().includes(query.toLowerCase()) ||
@@ -18,7 +17,6 @@ export function SearchBar() {
       ).slice(0, 6)
     : [];
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target as Node)) {
@@ -31,8 +29,9 @@ export function SearchBar() {
 
   return (
     <div ref={wrapperRef} className="relative w-full max-w-2xl mx-auto">
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+      <div className="relative group">
+        {/* Icon ist jetzt Orange */}
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary group-hover:scale-110 transition-transform duration-300" />
         <Input
           type="text"
           placeholder="Suche nach Portalen, Apps oder Kategorien..."
@@ -42,13 +41,13 @@ export function SearchBar() {
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          className="w-full h-14 pl-12 pr-4 text-lg bg-muted/50 border-border/50 rounded-xl focus:border-primary focus:ring-primary/20 placeholder:text-muted-foreground"
+          // Focus Ring & Caret in Orange
+          className="w-full h-14 pl-12 pr-4 text-lg bg-muted/30 border-border/50 rounded-xl focus:border-secondary focus:ring-secondary/20 focus:bg-white transition-all duration-300 caret-secondary placeholder:text-muted-foreground/70"
         />
       </div>
 
-      {/* Dropdown Results */}
       {isOpen && filteredProjects.length > 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden z-50 animate-fade-in">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-border/50 rounded-xl shadow-xl shadow-primary/5 overflow-hidden z-50 animate-fade-in">
           {filteredProjects.map((project) => (
             <SearchResultItem key={project.id} project={project} onClose={() => setIsOpen(false)} />
           ))}
@@ -56,8 +55,8 @@ export function SearchBar() {
       )}
 
       {isOpen && query.length >= 2 && filteredProjects.length === 0 && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-xl shadow-lg p-6 text-center z-50 animate-fade-in">
-          <p className="text-muted-foreground">Keine Ergebnisse gefunden für "{query}"</p>
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-border/50 rounded-xl shadow-xl shadow-primary/5 p-6 text-center z-50 animate-fade-in">
+          <p className="text-muted-foreground">Keine Ergebnisse gefunden für "<span className="text-secondary font-medium">{query}</span>"</p>
         </div>
       )}
     </div>
@@ -65,41 +64,27 @@ export function SearchBar() {
 }
 
 function SearchResultItem({ project, onClose }: { project: ProjectWithCategory; onClose: () => void }) {
-  const themeColor = getThemeColor(project.categories?.theme);
-
+  // Wir nutzen hier globale Theme-Farben, aber Hover ist immer Secondary
   return (
     <a
       href={`/go/${project.slug}`}
       onClick={onClose}
-      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors border-b border-border last:border-b-0 group"
+      className="flex items-center gap-4 p-4 hover:bg-secondary/5 transition-colors border-b border-border/50 last:border-b-0 group"
     >
-      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${themeColor}`}>
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center bg-muted text-muted-foreground group-hover:bg-secondary group-hover:text-white transition-colors`}>
         <span className="text-lg">{project.categories?.icon || "📊"}</span>
       </div>
       <div className="flex-1 min-w-0">
-        <h4 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+        <h4 className="font-medium text-foreground truncate group-hover:text-secondary transition-colors">
           {project.name}
         </h4>
         {project.short_description && (
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-sm text-muted-foreground truncate group-hover:text-muted-foreground/80">
             {project.short_description}
           </p>
         )}
       </div>
-      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+      <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-secondary transition-colors" />
     </a>
   );
-}
-
-function getThemeColor(theme?: string): string {
-  switch (theme) {
-    case "DATING":
-      return "bg-dating/20 text-dating";
-    case "CASINO":
-      return "bg-casino/20 text-casino";
-    case "ADULT":
-      return "bg-adult/20 text-adult";
-    default:
-      return "bg-primary/20 text-primary";
-  }
 }
