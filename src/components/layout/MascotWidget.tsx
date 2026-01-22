@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Search, ExternalLink, Send, ShoppingCart, MessageCircle, ChevronLeft, ChevronRight, Binoculars } from "lucide-react";
+import { X, Search, ExternalLink, Send, ShoppingCart, MessageCircle, ChevronLeft, ChevronRight, Binoculars, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProjects } from "@/hooks/useProjects";
@@ -63,7 +63,7 @@ export const MascotWidget = () => {
           <div className="bg-[#030E3E] p-4 flex items-center justify-between text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             <div className="flex items-center gap-3 relative z-10">
-              <div className="w-12 h-12 rounded-full border-2 border-white/20 overflow-hidden bg-white shadow-inner flex items-center justify-center">
+              <div className="w-12 h-12 rounded-full border-2 border-secondary overflow-hidden bg-white shadow-lg flex items-center justify-center ring-2 ring-secondary/20">
                 <img src={SCOUTY_IMAGE} alt="Scouty" className="w-full h-full object-cover scale-110" />
               </div>
               <div>
@@ -88,7 +88,7 @@ export const MascotWidget = () => {
             
             {/* Intro Nachricht */}
             <div className="flex gap-3 animate-message-in">
-              <div className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden bg-white flex-shrink-0 shadow-sm">
+              <div className="w-8 h-8 rounded-full border-2 border-secondary overflow-hidden bg-white flex-shrink-0 shadow-sm">
                 <img src={SCOUTY_IMAGE} alt="Scouty" className="w-full h-full object-cover" />
               </div>
               <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-600 leading-relaxed">
@@ -124,7 +124,7 @@ export const MascotWidget = () => {
             {searchQuery.length >= 3 && (
                <div className="flex flex-col gap-2 animate-message-in delay-100">
                  <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full border border-slate-200 overflow-hidden bg-white flex-shrink-0 shadow-sm">
+                    <div className="w-8 h-8 rounded-full border-2 border-secondary overflow-hidden bg-white flex-shrink-0 shadow-sm">
                       <img src={SCOUTY_IMAGE} alt="Scouty" className="w-full h-full object-cover" />
                     </div>
                     <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-600 leading-relaxed">
@@ -162,7 +162,7 @@ export const MascotWidget = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAmazonRedirect()}
-                autoFocus
+                /* KYRA FIX: autoFocus entfernt, um automatische Tastatur auf Mobile zu verhindern */
               />
               <Button 
                 size="icon" 
@@ -172,7 +172,6 @@ export const MascotWidget = () => {
                 <Send className="w-4 h-4" />
               </Button>
             </div>
-            {/* KYRA UPDATE: Powered By Link zu Digital-Perfect */}
             <p className="text-[9px] text-center text-slate-400 mt-2 uppercase tracking-tighter">
               Scouty AI Powered By <a href="https://digital-perfect.com" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors font-bold">Digital-Perfect</a>
             </p>
@@ -199,7 +198,7 @@ export const MascotWidget = () => {
           {!isOpen && !isMinimized && <div className="absolute inset-0 bg-secondary rounded-full animate-ping opacity-25 duration-1000" />}
           <Button 
             className={`h-14 w-14 sm:h-16 sm:w-16 rounded-full border-4 shadow-2xl hover:scale-110 transition-all p-0 overflow-hidden relative z-10 ${
-              isOpen ? 'bg-secondary border-secondary rotate-90' : 'bg-white border-white'
+              isOpen ? 'bg-secondary border-secondary rotate-90' : 'bg-white border-secondary'
             } ${isMinimized ? 'opacity-80 scale-90 translate-x-2' : ''}`}
           >
              {isOpen ? (
