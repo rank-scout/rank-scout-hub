@@ -6,67 +6,37 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%;
     --foreground: 229 88% 13%;
-    --primary: 229 88% 13%; /* #030E3E */
-    --primary-foreground: 210 40% 98%;
-    --secondary: 10 100% 58%; /* #FF4C29 */
-    --secondary-foreground: 0 0% 100%;
-    --muted: 220 20% 97%;
-    --muted-foreground: 220 20% 45%;
-    --card: 0 0% 100%;
-    --card-foreground: 229 88% 13%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 229 88% 13%;
-    --border: 220 20% 92%;
-    --input: 220 20% 92%;
-    --ring: 10 100% 58%;
+    --primary: 229 88% 13%;
+    --secondary: 10 100% 58%;
     --radius: 0.75rem;
-
-    /* Projekt-Farben */
-    --dating: 340 82% 52%;
-    --dating-foreground: 0 0% 100%;
-    --casino: 142 70% 45%;
-    --casino-foreground: 0 0% 100%;
-    --adult: 280 65% 50%;
-    --adult-foreground: 0 0% 100%;
   }
 }
 
 @layer base {
-  * {
-    @apply border-border;
-  }
+  * { @apply border-border; }
   
   body {
-    @apply bg-background text-foreground font-body antialiased;
+    @apply text-foreground font-body antialiased;
+    background-color: #F8FAFC;
     
-    /* KYRA UPGRADE: PREMIUM TECH GRID */
-    /* Wir nutzen radial-gradient für Punkte statt Linien - wirkt moderner und weniger wie Excel */
-    background-color: hsl(var(--background));
-    background-image: radial-gradient(hsl(var(--primary) / 0.08) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-position: center top;
+    /* KYRA UPGRADE: Sauberes, feines Punkt-Raster (Dunkle Punkte auf Hellem Grund) */
+    background-image: radial-gradient(#030E3E 0.5px, transparent 0.5px);
+    background-size: 24px 24px; /* Abstand der Punkte */
+    background-position: 0 0;
+    opacity: 1;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-bold tracking-tight text-primary;
   }
+}
 
-  button:not(:disabled) {
-    @apply transition-all duration-300;
-  }
-
-  /* Animations & Scrollbar */
-  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
-  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-  .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-  
-  @keyframes message-in {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
-  .animate-message-in {
-    animation: message-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+@layer components {
+  /* Hilfsklasse für weiße Punkte auf dunklem Grund (für den Hero) */
+  .dots-white {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+    background-size: 30px 30px;
   }
 }

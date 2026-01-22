@@ -1,60 +1,82 @@
-import { Target, BarChart3, Rocket } from "lucide-react";
+import { ArrowRight, Trophy, Star, TrendingUp } from "lucide-react";
+import { Link } from "react-router-dom";
+
+// Daten für die Karten
+const categories = [
+  {
+    id: "finance",
+    title: "Finanzen & Krypto",
+    icon: <TrendingUp className="w-8 h-8 text-blue-500" />,
+    desc: "Broker, Kredite & Geschäftskonten im Härtetest.",
+    link: "/finanzen",
+    color: "bg-blue-50 text-blue-600",
+    border: "hover:border-blue-200"
+  },
+  {
+    id: "software",
+    title: "Software & SaaS",
+    icon: <Trophy className="w-8 h-8 text-secondary" />,
+    desc: "Die besten Tools für Marketing, HR und Vertrieb.",
+    link: "/software",
+    color: "bg-orange-50 text-orange-600",
+    border: "hover:border-orange-200"
+  },
+  {
+    id: "services",
+    title: "Dienstleistungen",
+    icon: <Star className="w-8 h-8 text-yellow-500" />,
+    desc: "Agenturen, Berater und Services auf dem Prüfstand.",
+    link: "/dienstleistungen",
+    color: "bg-yellow-50 text-yellow-600",
+    border: "hover:border-yellow-200"
+  }
+];
 
 export const BigThreeSection = () => {
-  const features = [
-    {
-      icon: Target,
-      title: "Präzise Analysen",
-      description: "Kein Bauchgefühl. Unsere Daten basieren auf Millionen von Crawls und echten Marktsignalen.",
-      color: "text-blue-600",
-      bg: "bg-blue-50",
-    },
-    {
-      icon: Rocket,
-      title: "Maximale Performance",
-      description: "Geschwindigkeit ist ein Ranking-Faktor. Wir zeigen dir, wie du deine Core Web Vitals optimierst.",
-      color: "text-indigo-600",
-      bg: "bg-indigo-50",
-    },
-    {
-      icon: BarChart3,
-      title: "Nachhaltiges Wachstum",
-      description: "Vermeide Abstrafungen. Wir setzen auf langfristige Strategien statt kurzfristiger Hacks.",
-      color: "text-purple-600",
-      bg: "bg-purple-50",
-    },
-  ];
-
   return (
-    <section className="bg-slate-50 py-24 border-t border-slate-100">
+    <section className="py-24 relative z-10">
       <div className="container mx-auto px-4">
-        <div className="mb-16 text-center">
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-            Warum Rank-Scout?
+        
+        <div className="text-center mb-16 space-y-4">
+          <span className="text-secondary font-bold tracking-widest text-xs uppercase bg-secondary/5 px-3 py-1 rounded-full border border-secondary/10">
+            Unsere Kernbereiche
+          </span>
+          <h2 className="text-4xl md:text-5xl font-display font-bold text-primary">
+            Wo suchst du <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-secondary">Exzellenz?</span>
           </h2>
-          <p className="mt-4 text-lg text-slate-600">
-            Die Infrastruktur für deinen digitalen Erfolg.
-          </p>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-3">
-          {features.map((feature, index) => (
-            <div
-              key={index}
-              className="group relative rounded-2xl bg-white p-8 shadow-sm ring-1 ring-slate-200/50 transition-all hover:-translate-y-1 hover:shadow-md hover:ring-slate-200"
+        <div className="grid md:grid-cols-3 gap-8">
+          {categories.map((cat, idx) => (
+            <Link 
+              key={cat.id} 
+              to={cat.link}
+              className={`tech-card group p-8 flex flex-col items-start gap-6 ${cat.border}`}
             >
-              <div className={`mb-6 inline-flex rounded-xl ${feature.bg} p-3 ${feature.color}`}>
-                <feature.icon className="h-6 w-6" />
+              {/* Icon Box mit Glow */}
+              <div className={`p-4 rounded-2xl ${cat.color} group-hover:scale-110 transition-transform duration-500 shadow-sm`}>
+                {cat.icon}
               </div>
-              <h3 className="mb-3 text-xl font-bold text-slate-900">
-                {feature.title}
-              </h3>
-              <p className="text-slate-600 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
+
+              <div className="space-y-3">
+                <h3 className="text-2xl font-bold text-primary group-hover:text-secondary transition-colors">
+                  {cat.title}
+                </h3>
+                <p className="text-slate-500 leading-relaxed">
+                  {cat.desc}
+                </p>
+              </div>
+
+              <div className="mt-auto pt-6 flex items-center text-sm font-bold text-primary group-hover:translate-x-2 transition-transform">
+                Jetzt vergleichen <ArrowRight className="ml-2 w-4 h-4 text-secondary" />
+              </div>
+              
+              {/* Dekorativer Hintergrund-Effekt beim Hover */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-slate-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-bl-full -z-10" />
+            </Link>
           ))}
         </div>
+
       </div>
     </section>
   );

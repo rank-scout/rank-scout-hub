@@ -8,8 +8,8 @@ import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
 import { MascotWidget } from "@/components/layout/MascotWidget";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
-import { AdSenseBanner } from "@/components/ads/AdSenseBanner"; // NEU
-import { AmazonBanner } from "@/components/ads/AmazonBanner"; // NEU
+import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
+import { AmazonBanner } from "@/components/ads/AmazonBanner";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
 
@@ -49,7 +49,8 @@ const Index = () => {
   }, [analyticsCode]);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col relative">
+    // KYRA FIX: bg-background entfernt, damit der High-Tech-Body-Hintergrund sichtbar ist!
+    <div className="min-h-screen flex flex-col relative bg-transparent">
       <Header />
       
       <main className="flex-grow">
