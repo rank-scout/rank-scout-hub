@@ -1,13 +1,21 @@
 import { useState } from "react";
-import { useSettings, useUpdateSetting, useHomeLayout, useHomeContent, defaultHomeLayout, defaultHomeContent } from "@/hooks/useSettings";
+import { 
+  useSettings, 
+  useUpdateSetting, 
+  useHomeLayout, 
+  useHomeContent, 
+  useAdSenseConfig, 
+  useAmazonConfig,
+  defaultHomeLayout, 
+  defaultHomeContent 
+} from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, CheckCircle2, DollarSign, Image as ImageIcon, Upload } from "lucide-react";
-import type { TrendingLink, NavLink } from "@/lib/schemas";
+import { Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,9 +26,11 @@ export default function AdminSettings() {
   const { data: settings, isLoading } = useSettings();
   const updateSetting = useUpdateSetting();
   
-  // Neue Hooks für Home-Steuerung
+  // Hooks für Home-Steuerung & Ads
   const { layout } = useHomeLayout();
   const { content } = useHomeContent();
+  const { clientId, defaultSlotId } = useAdSenseConfig();
+  const { headline, text, buttonText, link } = useAmazonConfig();
 
   // Bestehende States
   const [siteTitle, setSiteTitle] = useState("");
@@ -35,7 +45,17 @@ export default function AdminSettings() {
   const [analyticsStatus, setAnalyticsStatus] = useState<"idle" | "checking" | "found" | "not-found">("idle");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
-  // Initialisierung der alten Settings
+  // States für Monetarisierung
+  const [adSenseClient, setAdSenseClient] = useState("");
+  const [adSenseSlot, setAdSenseSlot] = useState("");
+  
+  // KYRA UPDATE: Neue States für Native Amazon Banner
+  const [amznHeadline, setAmznHeadline] = useState("");
+  const [amznText, setAmznText] = useState("");
+  const [amznButton, setAmznButton] = useState("");
+  const [amznLink, setAmznLink] = useState("");
+
+  // Initialisierung aller Settings
   if (settings && !initialized) {
     setSiteTitle((settings.site_title as string) || "Rank-Scout");
     setSiteLogoUrl((settings.site_logo_url as string) || "");
@@ -44,6 +64,17 @@ export default function AdminSettings() {
     setTopBarLink((settings.top_bar_link as string) || "");
     setAnalyticsCode((settings.global_analytics_code as string) || "");
     setAdsEnabled((settings.ads_enabled as boolean) || false);
+    
+    // Init Ads Config
+    setAdSenseClient((settings.ads_sense_client_id as string) || "");
+    setAdSenseSlot((settings.ads_sense_slot_id as string) || "");
+    
+    // Init Native Amazon Config
+    setAmznHeadline((settings.ads_amazon_headline as string) || "");
+    setAmznText((settings.ads_amazon_text as string) || "");
+    setAmznButton((settings.ads_amazon_button_text as string) || "");
+    setAmznLink((settings.ads_amazon_link as string) || "");
+
     setInitialized(true);
   }
 
@@ -57,7 +88,7 @@ export default function AdminSettings() {
     }
   }
 
-  // Neue Funktionen für Home-Layout & Content
+  // Funktionen für Home-Layout & Content
   const toggleSection = (key: keyof typeof defaultHomeLayout) => {
     const newLayout = { ...layout, [key]: !layout[key] };
     saveSetting("home_layout", newLayout);
@@ -75,7 +106,6 @@ export default function AdminSettings() {
     saveSetting("home_content", newContent);
   };
 
-  // Bestehende Handler
   const handleAdsToggle = (enabled: boolean) => {
     setAdsEnabled(enabled);
     saveSetting("ads_enabled", enabled);
@@ -154,7 +184,6 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="global" className="w-full">
-        {/* KYRA FIX: Tabs Styling - Grauer Hintergrund, Aktiver Tab Blau mit weißer Schrift */}
         <TabsList className="grid w-full grid-cols-2 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl h-auto">
           <TabsTrigger 
             value="global" 
@@ -173,20 +202,22 @@ export default function AdminSettings() {
         {/* TAB 1: GLOBALE EINSTELLUNGEN */}
         <TabsContent value="global" className="space-y-6 mt-6">
           
+          {/* MONETARISIERUNG CARD */}
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle className="font-display text-lg flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-green-600" /> Monetarisierung
               </CardTitle>
-              <CardDescription>Steuere die Sichtbarkeit von Werbebannern global.</CardDescription>
+              <CardDescription>Steuere Werbebanner und Affiliate Links zentral.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-6">
+              
+              {/* Hauptschalter */}
               <div className="flex items-center justify-between space-x-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
                 <div className="flex flex-col space-y-1">
                   <Label htmlFor="ads-toggle" className="font-medium text-base">Werbebanner anzeigen</Label>
-                  <span className="text-sm text-muted-foreground">Aktiviert AdSense und Amazon Banner.</span>
+                  <span className="text-sm text-muted-foreground">Globaler Schalter für alle Anzeigen.</span>
                 </div>
-                {/* KYRA FIX: Switch Styling - Deutlicher Kontrast bei 'Aus' */}
                 <Switch 
                   id="ads-toggle" 
                   checked={adsEnabled} 
@@ -194,6 +225,107 @@ export default function AdminSettings() {
                   className="data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600"
                 />
               </div>
+
+              {/* Google AdSense */}
+              <div className="space-y-4 pt-2">
+                <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"/> Google AdSense
+                </h4>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label>Publisher ID (Client)</Label>
+                    <Input 
+                      placeholder="ca-pub-XXXXXXXXXXXXXXXX" 
+                      value={adSenseClient} 
+                      onChange={(e) => setAdSenseClient(e.target.value)} 
+                    />
+                    <p className="text-[10px] text-muted-foreground">Format: ca-pub-...</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Default Slot ID</Label>
+                    <Input 
+                      placeholder="1234567890" 
+                      value={adSenseSlot} 
+                      onChange={(e) => setAdSenseSlot(e.target.value)} 
+                    />
+                  </div>
+                </div>
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    saveSetting("ads_sense_client_id", adSenseClient);
+                    saveSetting("ads_sense_slot_id", adSenseSlot);
+                  }}
+                >
+                  <Save className="w-4 h-4 mr-2" /> AdSense Daten speichern
+                </Button>
+              </div>
+
+              {/* Amazon PartnerNet - Native Banner Builder */}
+              <div className="space-y-4 pt-4 border-t border-border">
+                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-500"/> Native Amazon Banner (Top)
+                </h4>
+                <div className="space-y-3">
+                  <div className="grid md:grid-cols-2 gap-4">
+                     <div className="space-y-2">
+                        <Label>Headline (Fett)</Label>
+                        <Input 
+                          placeholder="z.B. Die besten Laptops für Gründer" 
+                          value={amznHeadline} 
+                          onChange={(e) => setAmznHeadline(e.target.value)} 
+                        />
+                     </div>
+                     <div className="space-y-2">
+                        <Label>Affiliate Link (SiteStripe)</Label>
+                        <div className="relative">
+                          <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                          <Input 
+                            className="pl-9"
+                            placeholder="https://amzn.to/..." 
+                            value={amznLink} 
+                            onChange={(e) => setAmznLink(e.target.value)} 
+                          />
+                        </div>
+                     </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Beschreibungstext</Label>
+                    <Input 
+                      placeholder="z.B. Top-Leistung für unter 800€. Von unseren Experten geprüft." 
+                      value={amznText} 
+                      onChange={(e) => setAmznText(e.target.value)} 
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Button Text</Label>
+                    <Input 
+                      placeholder="z.B. Jetzt Angebote prüfen" 
+                      value={amznButton} 
+                      onChange={(e) => setAmznButton(e.target.value)} 
+                    />
+                  </div>
+
+                  <p className="text-[10px] text-muted-foreground">Erstellt automatisch einen Premium-Banner im Rank-Scout Design. Keine externen Skripte notwendig.</p>
+                </div>
+
+                <Button 
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                     saveSetting("ads_amazon_headline", amznHeadline);
+                     saveSetting("ads_amazon_text", amznText);
+                     saveSetting("ads_amazon_button_text", amznButton);
+                     saveSetting("ads_amazon_link", amznLink);
+                  }}
+                >
+                  <Save className="w-4 h-4 mr-2" /> Banner speichern
+                </Button>
+              </div>
+
             </CardContent>
           </Card>
 
@@ -295,7 +427,7 @@ export default function AdminSettings() {
           </Card>
         </TabsContent>
 
-        {/* TAB 2: STARTSEITE & CONTENT (NEU) */}
+        {/* TAB 2: STARTSEITE & CONTENT */}
         <TabsContent value="home" className="space-y-6 mt-6">
           
           {/* LAYOUT STEUERUNG */}
@@ -310,7 +442,6 @@ export default function AdminSettings() {
                    <Label className="capitalize font-medium cursor-pointer" onClick={() => toggleSection(key as keyof typeof defaultHomeLayout)}>
                       {key.replace('_', ' ')}
                    </Label>
-                   {/* KYRA FIX: Switch Styling */}
                    <Switch 
                      checked={layout[key as keyof typeof layout]} 
                      onCheckedChange={() => toggleSection(key as keyof typeof defaultHomeLayout)}

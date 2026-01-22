@@ -3,8 +3,6 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
 
-// ... (Bestehende Typen & fetchSettings Funktion bleiben gleich) ...
-
 type SettingsRecord = {
   id: string;
   key: string;
@@ -31,8 +29,13 @@ export function useSettings() {
   return useQuery({
     queryKey: ["settings"],
     queryFn: fetchSettings,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
+}
+
+export function useSetting<T>(key: string, defaultValue: T): T {
+  const { data: settings } = useSettings();
+  return (settings?.[key] as T) ?? defaultValue;
 }
 
 export function useUpdateSetting() {
@@ -71,7 +74,7 @@ export function useUpdateSetting() {
   });
 }
 
-// --- NEUE HOOKS FÜR LAYOUT & CONTENT ---
+// --- STANDARD VALUES FÜR HOME LAYOUT & CONTENT ---
 
 export const defaultHomeLayout = {
   hero: true,
@@ -132,22 +135,46 @@ export const defaultHomeContent = {
   }
 };
 
+// --- HOOKS ---
+
 export function useHomeLayout() {
-  const { data: settings, isLoading } = useSettings();
+  const { data: settings } = useSettings();
   const layout = (settings?.home_layout as typeof defaultHomeLayout) || defaultHomeLayout;
-  return { layout, isLoading };
+  return { layout };
 }
 
 export function useHomeContent() {
-  const { data: settings, isLoading } = useSettings();
+  const { data: settings } = useSettings();
   const content = (settings?.home_content as typeof defaultHomeContent) || defaultHomeContent;
-  return { content, isLoading };
+  return { content };
 }
 
-// Bestehende Helper Hooks (Legacy Support)
+// Ads Config Hooks
+export function useAdSenseConfig() {
+  const { data: settings } = useSettings();
+  return {
+    clientId: (settings?.ads_sense_client_id as string) || "",
+    defaultSlotId: (settings?.ads_sense_slot_id as string) || ""
+  };
+}
+
+// KYRA UPDATE: NATIVE AMAZON CONFIG
+export function useAmazonConfig() {
+  const { data: settings } = useSettings();
+  return {
+    headline: (settings?.ads_amazon_headline as string) || "",
+    text: (settings?.ads_amazon_text as string) || "",
+    buttonText: (settings?.ads_amazon_button_text as string) || "Zum Angebot",
+    link: (settings?.ads_amazon_link as string) || ""
+  };
+}
+
+// Legacy / Simple Getter Hooks
 export function useSiteTitle() { return useSetting<string>("site_title", "Rank-Scout"); }
 export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
 export function useSiteDescription() { return useSetting<string>("site_description", "Dein Vergleichsportal"); }
+export function useHeroTitle() { return useSetting<string>("hero_title", "Entdecke die besten Vergleiche"); }
+export function useHeroSubtitle() { return useSetting<string>("hero_subtitle", "Wir vergleichen, damit du die richtige Wahl triffst"); }
 export function useTrendingLinks() { return useSetting<TrendingLink[]>("trending_links", []); }
 export function useNavLinks() { return useSetting<NavLink[]>("nav_links", []); }
 export function useFooterLinks() { return useSetting<NavLink[]>("footer_links", []); }
@@ -156,9 +183,4 @@ export function useFooterCopyright() { return useSetting<string>("footer_copyrig
 export function useFooterDesignerName() { return useSetting<string>("footer_designer_name", "Digital-Perfect"); }
 export function useFooterDesignerUrl() { return useSetting<string>("footer_designer_url", "https://digital-perfect.com"); }
 export function useAdsEnabled() { return useSetting<boolean>("ads_enabled", false); }
-
-// Helper für einfachen Zugriff
-export function useSetting<T>(key: string, defaultValue: T): T {
-  const { data: settings } = useSettings();
-  return (settings?.[key] as T) ?? defaultValue;
-}
+export function useGlobalAnalyticsCode() { return useSetting<string>("global_analytics_code", ""); }
