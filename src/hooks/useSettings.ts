@@ -43,7 +43,6 @@ export function useUpdateSetting() {
 
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: Json }) => {
-      // Check if setting exists
       const { data: existing } = await supabase
         .from("settings")
         .select("id")
@@ -80,6 +79,10 @@ export function useSiteTitle() {
   return useSetting<string>("site_title", "Rank-Scout");
 }
 
+export function useSiteLogo() {
+  return useSetting<string | null>("site_logo_url", null);
+}
+
 export function useSiteDescription() {
   return useSetting<string>("site_description", "Dein Vergleichsportal");
 }
@@ -104,7 +107,6 @@ export function useFooterLinks() {
   return useSetting<NavLink[]>("footer_links", []);
 }
 
-// Global footer settings hooks (used when no category is provided)
 export function useFooterSiteName() {
   return useSetting<string>("footer_site_name", "Rank-Scout");
 }
@@ -121,8 +123,6 @@ export function useFooterDesignerUrl() {
   return useSetting<string>("footer_designer_url", "https://digital-perfect.com");
 }
 
-// NEU: Ads Toggle Hook
 export function useAdsEnabled() {
-  // Standardmäßig false, damit wir erst aktivieren, wenn wir bereit sind
   return useSetting<boolean>("ads_enabled", false);
 }
