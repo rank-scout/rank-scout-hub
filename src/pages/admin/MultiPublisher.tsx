@@ -52,6 +52,17 @@ export default function AdminPublisher() {
   };
 
   async function handlePublish() {
+    // KYRA UPDATE: Root Protection
+    // Verhindert, dass die Startseite (App) überschrieben wird.
+    if (!slug || slug.trim() === "" || slug === "/") {
+        toast({ 
+          variant: "destructive", 
+          title: "STOPP! Hauptseite geschützt.", 
+          description: "Du darfst die Startseite nicht überschreiben, da hier die App läuft. Bitte gib einen Slug ein (z.B. 'vergleich')." 
+        });
+        return;
+    }
+
     if (!selectedTargetId) {
       toast({ variant: "destructive", title: "Kein Ziel gewählt!" });
       return;
@@ -149,11 +160,12 @@ export default function AdminPublisher() {
                         <div className="space-y-2">
                             <Label>URL-Slug (Ordner)</Label>
                             <Input 
-                                placeholder="z.B. beste-krypto-app (leer = home)" 
+                                placeholder="z.B. beste-krypto-app (PFLICHT!)" 
                                 value={slug} 
                                 onChange={e => setSlug(e.target.value)} 
-                                className="font-mono"
+                                className="font-mono border-l-4 border-l-secondary"
                             />
+                            <p className="text-[10px] text-red-500 font-bold">ACHTUNG: Darf nicht leer sein!</p>
                         </div>
                     </div>
                 </CardContent>
