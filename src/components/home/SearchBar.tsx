@@ -3,7 +3,8 @@ import { Search, ExternalLink } from "lucide-react";
 import { useProjects, type ProjectWithCategory } from "@/hooks/useProjects";
 import { Input } from "@/components/ui/input";
 
-export function SearchBar() {
+// KYRA UPDATE: Prop für dynamischen CMS-Text hinzugefügt
+export function SearchBar({ placeholder }: { placeholder?: string }) {
   const [query, setQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { data: projects = [] } = useProjects();
@@ -34,7 +35,8 @@ export function SearchBar() {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary group-hover:scale-110 transition-transform duration-300" />
         <Input
           type="text"
-          placeholder="Suche nach Portalen, Apps oder Kategorien..."
+          // KYRA FIX: Dynamischer Placeholder aus Admin Settings (mit deinem Fallback)
+          placeholder={placeholder || "Suche nach Portalen, Apps oder Kategorien..."}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);

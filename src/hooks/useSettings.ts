@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
 
+// ... (Bestehende Typen & fetchSettings Funktion bleiben gleich) ...
+
 type SettingsRecord = {
   id: string;
   key: string;
@@ -29,13 +31,8 @@ export function useSettings() {
   return useQuery({
     queryKey: ["settings"],
     queryFn: fetchSettings,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
-}
-
-export function useSetting<T>(key: string, defaultValue: T): T {
-  const { data: settings } = useSettings();
-  return (settings?.[key] as T) ?? defaultValue;
 }
 
 export function useUpdateSetting() {
@@ -74,55 +71,94 @@ export function useUpdateSetting() {
   });
 }
 
-// Type-safe setting hooks
-export function useSiteTitle() {
-  return useSetting<string>("site_title", "Rank-Scout");
+// --- NEUE HOOKS FÜR LAYOUT & CONTENT ---
+
+export const defaultHomeLayout = {
+  hero: true,
+  amazon_top: true,
+  trust: true,
+  big_three: true,
+  adsense_middle: true,
+  categories: true,
+  news: true,
+  mascot: true
+};
+
+export const defaultHomeContent = {
+  hero: {
+    badge: "NEU: Rank-Scout 2.0 ist live",
+    title: "Entdecke die besten Vergleiche",
+    subtitle: "Wir vergleichen, damit du die richtige Wahl triffst. Unabhängig. Datengestützt. Kompromisslos ehrlich.",
+    search_placeholder: "Was möchtest du vergleichen?",
+    search_label: "AI-Live-Search"
+  },
+  trust: {
+    headline: "Markt-Transparenz statt Dschungel.",
+    subheadline: "Wir filtern das Signal aus dem Rauschen. Rank-Scout ist Ihre Intelligence-Plattform für validierte Dienstleister und Software.",
+    card1_title: "Daten statt Meinung",
+    card1_text: "Unsere Algorithmen analysieren tausende Datenpunkte. Keine gekauften Platzierungen, nur harte Fakten.",
+    card2_title: "Echtzeit-Scouting",
+    card2_text: "Der Markt schläft nie. Unsere Datenbank wird täglich aktualisiert, damit Sie keinen Trend verpassen.",
+    card3_title: "Verifizierte Experten",
+    card3_text: "Nur Dienstleister mit nachgewiesenem Track-Record schaffen es in unsere Rankings.",
+    box_title: "Ihr unfairer Wettbewerbsvorteil",
+    box_text: "Während andere noch suchen, haben Sie bereits entschieden. Rank-Scout liefert Ihnen die Marktdaten, die Sie für technologische Führung brauchen."
+  },
+  big_three: {
+    headline: "Wählen Sie Ihren Bereich",
+    finance_title: "Finanzen & Krypto",
+    finance_desc: "Broker, Kredite & Geschäftskonten im Härtetest.",
+    software_title: "Software & SaaS",
+    software_desc: "Die besten Tools für Marketing, HR und Vertrieb.",
+    services_title: "Dienstleistungen",
+    services_desc: "Agenturen, Berater und Services auf dem Prüfstand."
+  },
+  categories: {
+    headline: "Alle Kategorien im Überblick"
+  },
+  news: {
+    headline: "Der \"Unfair Advantage\" Newsletter",
+    subheadline: "Erhalten Sie kuratierte Top-Tools und geheime Markt-Daten, bevor Ihre Konkurrenz davon erfährt. Keine Theorie, nur validiertes Wachstum.",
+    button_text: "Kostenlos anmelden",
+    placeholder: "ihre@firmen-email.de"
+  },
+  seo: {
+    headline: "Rank-Scout: Die Instanz für digitale Markttransparenz",
+    intro: "Wir bringen Licht in den undurchsichtigen Markt digitaler Dienstleistungen und Technologien. Unabhängig. Datengestützt. Kompromisslos ehrlich.",
+    block1_title: "Warum Rank-Scout?",
+    block1_text: "In einer Welt voller Fake-Bewertungen und intransparenter Affiliate-Modelle setzen wir einen neuen Standard. Wir analysieren nicht nur Features, sondern prüfen echte Business-Impacts.",
+    block2_title: "Zukunftssicherheit",
+    block2_text: "Unsere Scouts scannen den globalen Markt permanent nach neuen Trends. Ob Generative AI oder Blockchain – wir übersetzen Trends in Business-Cases."
+  }
+};
+
+export function useHomeLayout() {
+  const { data: settings, isLoading } = useSettings();
+  const layout = (settings?.home_layout as typeof defaultHomeLayout) || defaultHomeLayout;
+  return { layout, isLoading };
 }
 
-export function useSiteLogo() {
-  return useSetting<string | null>("site_logo_url", null);
+export function useHomeContent() {
+  const { data: settings, isLoading } = useSettings();
+  const content = (settings?.home_content as typeof defaultHomeContent) || defaultHomeContent;
+  return { content, isLoading };
 }
 
-export function useSiteDescription() {
-  return useSetting<string>("site_description", "Dein Vergleichsportal");
-}
+// Bestehende Helper Hooks (Legacy Support)
+export function useSiteTitle() { return useSetting<string>("site_title", "Rank-Scout"); }
+export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
+export function useSiteDescription() { return useSetting<string>("site_description", "Dein Vergleichsportal"); }
+export function useTrendingLinks() { return useSetting<TrendingLink[]>("trending_links", []); }
+export function useNavLinks() { return useSetting<NavLink[]>("nav_links", []); }
+export function useFooterLinks() { return useSetting<NavLink[]>("footer_links", []); }
+export function useFooterSiteName() { return useSetting<string>("footer_site_name", "Rank-Scout"); }
+export function useFooterCopyright() { return useSetting<string>("footer_copyright", `© ${new Date().getFullYear()} Rank-Scout. Alle Rechte vorbehalten.`); }
+export function useFooterDesignerName() { return useSetting<string>("footer_designer_name", "Digital-Perfect"); }
+export function useFooterDesignerUrl() { return useSetting<string>("footer_designer_url", "https://digital-perfect.com"); }
+export function useAdsEnabled() { return useSetting<boolean>("ads_enabled", false); }
 
-export function useHeroTitle() {
-  return useSetting<string>("hero_title", "Entdecke die besten Vergleiche");
-}
-
-export function useHeroSubtitle() {
-  return useSetting<string>("hero_subtitle", "Wir vergleichen, damit du die richtige Wahl triffst");
-}
-
-export function useTrendingLinks() {
-  return useSetting<TrendingLink[]>("trending_links", []);
-}
-
-export function useNavLinks() {
-  return useSetting<NavLink[]>("nav_links", []);
-}
-
-export function useFooterLinks() {
-  return useSetting<NavLink[]>("footer_links", []);
-}
-
-export function useFooterSiteName() {
-  return useSetting<string>("footer_site_name", "Rank-Scout");
-}
-
-export function useFooterCopyright() {
-  return useSetting<string>("footer_copyright", `© ${new Date().getFullYear()} Rank-Scout. Alle Rechte vorbehalten.`);
-}
-
-export function useFooterDesignerName() {
-  return useSetting<string>("footer_designer_name", "Digital-Perfect");
-}
-
-export function useFooterDesignerUrl() {
-  return useSetting<string>("footer_designer_url", "https://digital-perfect.com");
-}
-
-export function useAdsEnabled() {
-  return useSetting<boolean>("ads_enabled", false);
+// Helper für einfachen Zugriff
+export function useSetting<T>(key: string, defaultValue: T): T {
+  const { data: settings } = useSettings();
+  return (settings?.[key] as T) ?? defaultValue;
 }

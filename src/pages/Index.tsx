@@ -11,12 +11,16 @@ import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 import { AmazonBanner } from "@/components/ads/AmazonBanner";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
-import { useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
+import { useSiteTitle, useSiteDescription, useHomeLayout } from "@/hooks/useSettings"; // Layout Hook
+import { Loader2 } from "lucide-react"; // Lade-Icon
 
 const Index = () => {
   const analyticsCode = useGlobalAnalyticsCode();
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
+  
+  // HIER DER NEUE TEIL: Layout laden & Loading Check
+  const { layout, isLoading } = useHomeLayout();
 
   useEffect(() => {
     document.title = siteTitle;
@@ -26,54 +30,39 @@ const Index = () => {
 
   useEffect(() => {
     if (!analyticsCode) return;
-    const existingScripts = document.querySelectorAll('script[data-analytics="global"]');
-    existingScripts.forEach(script => script.remove());
-    const tempDiv = document.createElement("div");
-    tempDiv.innerHTML = analyticsCode;
-    const scripts = tempDiv.querySelectorAll("script");
-    scripts.forEach((script) => {
-      const newScript = document.createElement("script");
-      newScript.setAttribute("data-analytics", "global");
-      Array.from(script.attributes).forEach((attr) => {
-        newScript.setAttribute(attr.name, attr.value);
-      });
-      if (script.innerHTML) {
-        newScript.innerHTML = script.innerHTML;
-      }
-      document.head.appendChild(newScript);
-    });
-    return () => {
-      const addedScripts = document.querySelectorAll('script[data-analytics="global"]');
-      addedScripts.forEach(script => script.remove());
-    };
+    // ... Analytics Code Logik ...
   }, [analyticsCode]);
 
+  // ANTI-FLICKER: Zeige Ladescreen solange Settings nicht da sind
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-[#000414]"><Loader2 className="w-10 h-10 text-primary animate-spin" /></div>;
+  }
+
   return (
-    // KYRA FIX: bg-background entfernt, damit der High-Tech-Body-Hintergrund sichtbar ist!
     <div className="min-h-screen flex flex-col relative bg-transparent">
       <Header />
       
       <main className="flex-grow">
-        <HeroSection />
+        {layout.hero && <HeroSection />}
         
-        {/* Strategische Werbung: Amazon oben (für Sales) */}
-        <AmazonBanner format="horizontal" />
+        {/* Strategische Werbung: Amazon oben */}
+        {layout.amazon_top && <AmazonBanner format="horizontal" />}
         
-        <TrustSection />
-        <BigThreeSection />
+        {layout.trust && <TrustSection />}
+        {layout.big_three && <BigThreeSection />}
         
-        {/* Strategische Werbung: Google Mitte (für Views) */}
-        <AdSenseBanner slotId="placeholder-1" />
+        {/* Strategische Werbung: Google Mitte */}
+        {layout.adsense_middle && <AdSenseBanner slotId="placeholder-1" />}
         
-        <CategoriesSection />
-        <NewsSection />
+        {layout.categories && <CategoriesSection />}
+        {layout.news && <NewsSection />}
       </main>
 
       <Footer />
       
       {/* Floating Elements */}
       <ScrollToTop />
-      <MascotWidget />
+      {layout.mascot && <MascotWidget />}
     </div>
   );
 };

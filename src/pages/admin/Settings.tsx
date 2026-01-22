@@ -1,87 +1,53 @@
 import { useState } from "react";
-import { useSettings, useUpdateSetting } from "@/hooks/useSettings";
+import { useSettings, useUpdateSetting, useHomeLayout, useHomeContent, defaultHomeLayout, defaultHomeContent } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Plus, Trash2, Save, Lock, Globe, Layout, Link2, Sparkles, Building, BarChart3, Palette, CheckCircle2, XCircle, ExternalLink, DollarSign, Image as ImageIcon, Upload } from "lucide-react";
+import { Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, CheckCircle2, DollarSign, Image as ImageIcon, Upload } from "lucide-react";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function AdminSettings() {
   const { data: settings, isLoading } = useSettings();
   const updateSetting = useUpdateSetting();
+  
+  // Neue Hooks für Home-Steuerung
+  const { layout } = useHomeLayout();
+  const { content } = useHomeContent();
 
+  // Bestehende States
   const [siteTitle, setSiteTitle] = useState("");
   const [siteLogoUrl, setSiteLogoUrl] = useState("");
   const [siteDescription, setSiteDescription] = useState("");
-  const [heroTitle, setHeroTitle] = useState("");
-  const [heroSubtitle, setHeroSubtitle] = useState("");
   const [topBarText, setTopBarText] = useState("");
   const [topBarLink, setTopBarLink] = useState("");
   const [newPin, setNewPin] = useState("");
-  const [trendingLinks, setTrendingLinks] = useState<TrendingLink[]>([]);
-  const [navLinks, setNavLinks] = useState<NavLink[]>([]);
-  const [footerLinks, setFooterLinks] = useState<NavLink[]>([]);
-  const [footerSiteName, setFooterSiteName] = useState("");
-  const [footerDesignerName, setFooterDesignerName] = useState("");
-  const [footerDesignerUrl, setFooterDesignerUrl] = useState("");
   const [analyticsCode, setAnalyticsCode] = useState("");
-  const [dashboardTheme, setDashboardTheme] = useState<"light" | "dark">("dark");
   const [adsEnabled, setAdsEnabled] = useState(false);
   const [initialized, setInitialized] = useState(false);
   const [analyticsStatus, setAnalyticsStatus] = useState<"idle" | "checking" | "found" | "not-found">("idle");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
-  const extractGoogleAnalyticsId = (code: string): string | null => {
-    const match = code.match(/G-[A-Z0-9]+/);
-    return match ? match[0] : null;
-  };
-
-  const googleAnalyticsId = extractGoogleAnalyticsId(analyticsCode);
-
-  const checkAnalyticsStatus = async () => {
-    setAnalyticsStatus("checking");
-    try {
-      const response = await fetch("/", { method: "GET" });
-      if (googleAnalyticsId) {
-        setAnalyticsStatus("found");
-        toast({ title: "Analytics aktiv", description: `Google Analytics ${googleAnalyticsId} ist konfiguriert.` });
-      } else {
-        setAnalyticsStatus("not-found");
-        toast({ title: "Kein Analytics Code", description: "Bitte füge deinen Code ein.", variant: "destructive" });
-      }
-    } catch (error) {
-      setAnalyticsStatus("not-found");
-    }
-  };
-
+  // Initialisierung der alten Settings
   if (settings && !initialized) {
     setSiteTitle((settings.site_title as string) || "Rank-Scout");
     setSiteLogoUrl((settings.site_logo_url as string) || "");
     setSiteDescription((settings.site_description as string) || "");
-    setHeroTitle((settings.hero_title as string) || "");
-    setHeroSubtitle((settings.hero_subtitle as string) || "");
     setTopBarText((settings.top_bar_text as string) || "");
     setTopBarLink((settings.top_bar_link as string) || "");
-    setTrendingLinks((settings.trending_links as TrendingLink[]) || []);
-    setNavLinks((settings.nav_links as NavLink[]) || []);
-    setFooterLinks((settings.footer_links as NavLink[]) || []);
-    setFooterSiteName((settings.footer_site_name as string) || "Rank-Scout");
-    setFooterDesignerName((settings.footer_designer_name as string) || "Digital-Perfect");
-    setFooterDesignerUrl((settings.footer_designer_url as string) || "https://digital-perfect.com");
     setAnalyticsCode((settings.global_analytics_code as string) || "");
-    setDashboardTheme((settings.dashboard_theme as "light" | "dark") || "dark");
     setAdsEnabled((settings.ads_enabled as boolean) || false);
     setInitialized(true);
   }
 
+  // Speichern Funktion (Global)
   async function saveSetting(key: string, value: Json) {
     try {
       await updateSetting.mutateAsync({ key, value });
@@ -91,6 +57,25 @@ export default function AdminSettings() {
     }
   }
 
+  // Neue Funktionen für Home-Layout & Content
+  const toggleSection = (key: keyof typeof defaultHomeLayout) => {
+    const newLayout = { ...layout, [key]: !layout[key] };
+    saveSetting("home_layout", newLayout);
+  };
+
+  const updateContent = (section: keyof typeof defaultHomeContent, field: string, value: string) => {
+    const newContent = { 
+      ...content, 
+      [section]: { 
+        //@ts-ignore
+        ...content[section], 
+        [field]: value 
+      } 
+    };
+    saveSetting("home_content", newContent);
+  };
+
+  // Bestehende Handler
   const handleAdsToggle = (enabled: boolean) => {
     setAdsEnabled(enabled);
     saveSetting("ads_enabled", enabled);
@@ -141,153 +126,266 @@ export default function AdminSettings() {
     toast({ title: "Admin-PIN geändert" });
   }
 
-  function addTrendingLink() { setTrendingLinks([...trendingLinks, { label: "", url: "", emoji: "" }]); }
-  function updateTrendingLink(index: number, field: keyof TrendingLink, value: string) {
-    const updated = [...trendingLinks];
-    updated[index] = { ...updated[index], [field]: value };
-    setTrendingLinks(updated);
-  }
-  function removeTrendingLink(index: number) { setTrendingLinks(trendingLinks.filter((_, i) => i !== index)); }
-
-  function addNavLink() { setNavLinks([...navLinks, { label: "", url: "" }]); }
-  function updateNavLink(index: number, field: keyof NavLink, value: string) {
-    const updated = [...navLinks];
-    updated[index] = { ...updated[index], [field]: value };
-    setNavLinks(updated);
-  }
-  function removeNavLink(index: number) { setNavLinks(navLinks.filter((_, i) => i !== index)); }
-
-  function addFooterLink() { setFooterLinks([...footerLinks, { label: "", url: "" }]); }
-  function updateFooterLink(index: number, field: keyof NavLink, value: string) {
-    const updated = [...footerLinks];
-    updated[index] = { ...updated[index], [field]: value };
-    setFooterLinks(updated);
-  }
-  function removeFooterLink(index: number) { setFooterLinks(footerLinks.filter((_, i) => i !== index)); }
+  const checkAnalyticsStatus = async () => {
+    setAnalyticsStatus("checking");
+    const id = analyticsCode.match(/G-[A-Z0-9]+/)?.[0];
+    try {
+      if (id) {
+        setAnalyticsStatus("found");
+        toast({ title: "Analytics aktiv", description: `Google Analytics ${id} ist konfiguriert.` });
+      } else {
+        setAnalyticsStatus("not-found");
+        toast({ title: "Kein Analytics Code", description: "Bitte füge deinen Code ein.", variant: "destructive" });
+      }
+    } catch (error) {
+      setAnalyticsStatus("not-found");
+    }
+  };
 
   if (isLoading) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-4xl">
       <div>
         <h2 className="font-display text-2xl font-bold text-foreground">Einstellungen</h2>
-        <p className="text-muted-foreground">Verwalte globale Website-Einstellungen.</p>
+        <p className="text-muted-foreground">Verwalte globale Website-Einstellungen und Startseiten-Inhalte.</p>
       </div>
 
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="font-display text-lg flex items-center gap-2">
-            <DollarSign className="w-5 h-5" />
-            Monetarisierung
-          </CardTitle>
-          <CardDescription>Steuere die Sichtbarkeit von Werbebannern global.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between space-x-2">
-            <div className="flex flex-col space-y-1">
-              <Label htmlFor="ads-toggle" className="font-medium">Werbebanner anzeigen</Label>
-              <span className="text-sm text-muted-foreground">Aktiviert AdSense und Amazon Banner.</span>
-            </div>
-            <Switch id="ads-toggle" checked={adsEnabled} onCheckedChange={handleAdsToggle} />
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="global" className="w-full">
+        {/* KYRA FIX: Tabs Styling - Grauer Hintergrund, Aktiver Tab Blau mit weißer Schrift */}
+        <TabsList className="grid w-full grid-cols-2 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl h-auto">
+          <TabsTrigger 
+            value="global" 
+            className="py-3 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium text-slate-600 dark:text-slate-400"
+          >
+            Global & Branding
+          </TabsTrigger>
+          <TabsTrigger 
+            value="home" 
+            className="py-3 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium text-slate-600 dark:text-slate-400"
+          >
+            Startseite & Content
+          </TabsTrigger>
+        </TabsList>
 
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="font-display text-lg flex items-center gap-2">
-            <Globe className="w-5 h-5" />
-            Branding & SEO
-          </CardTitle>
-          <CardDescription>Logo, Titel und Beschreibung.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        {/* TAB 1: GLOBALE EINSTELLUNGEN */}
+        <TabsContent value="global" className="space-y-6 mt-6">
           
-          {/* LOGO UPLOAD */}
-          <div className="space-y-4 border-b border-border pb-6">
-            <Label>Logo</Label>
-            <div className="flex items-center gap-6">
-              <div className="relative w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/50 overflow-hidden group">
-                {siteLogoUrl ? (
-                  <img src={siteLogoUrl} alt="Logo Preview" className="w-full h-full object-contain p-2" />
-                ) : (
-                  <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
-                )}
-                {isUploadingLogo && (
-                  <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
-                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  </div>
-                )}
-              </div>
-              <div className="space-y-2 flex-1">
-                <div className="flex gap-2">
-                  <Button variant="outline" className="relative cursor-pointer" disabled={isUploadingLogo}>
-                    <input 
-                      type="file" 
-                      className="absolute inset-0 opacity-0 cursor-pointer" 
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                    />
-                    <Upload className="w-4 h-4 mr-2" />
-                    Logo hochladen
-                  </Button>
-                  {siteLogoUrl && (
-                    <Button variant="destructive" variant="ghost" onClick={removeLogo}>
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  )}
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-green-600" /> Monetarisierung
+              </CardTitle>
+              <CardDescription>Steuere die Sichtbarkeit von Werbebannern global.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between space-x-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col space-y-1">
+                  <Label htmlFor="ads-toggle" className="font-medium text-base">Werbebanner anzeigen</Label>
+                  <span className="text-sm text-muted-foreground">Aktiviert AdSense und Amazon Banner.</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Empfohlen: PNG oder WebP mit transparentem Hintergrund. 
-                  Wird auf dunklen Hintergründen automatisch weiß gefärbt.
-                </p>
+                {/* KYRA FIX: Switch Styling - Deutlicher Kontrast bei 'Aus' */}
+                <Switch 
+                  id="ads-toggle" 
+                  checked={adsEnabled} 
+                  onCheckedChange={handleAdsToggle} 
+                  className="data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600"
+                />
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
-          <div>
-            <Label htmlFor="siteTitle">Website Titel</Label>
-            <Input id="siteTitle" value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} placeholder="Rank-Scout" />
-            <p className="text-xs text-muted-foreground mt-1">Fallback, falls kein Logo hochgeladen ist.</p>
-          </div>
-          <div>
-            <Label htmlFor="siteDescription">Meta Beschreibung</Label>
-            <Textarea id="siteDescription" value={siteDescription} onChange={(e) => setSiteDescription(e.target.value)} rows={2} />
-          </div>
-          <Button onClick={() => { saveSetting("site_title", siteTitle); saveSetting("site_description", siteDescription); }}>
-            <Save className="w-4 h-4 mr-2" /> Speichern
-          </Button>
-        </CardContent>
-      </Card>
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <Globe className="w-5 h-5 text-blue-500" /> Branding & SEO
+              </CardTitle>
+              <CardDescription>Logo, Titel und Beschreibung.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4 border-b border-border pb-6">
+                <Label>Logo</Label>
+                <div className="flex items-center gap-6">
+                  <div className="relative w-24 h-24 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center bg-muted/50 overflow-hidden group">
+                    {siteLogoUrl ? (
+                      <img src={siteLogoUrl} alt="Logo Preview" className="w-full h-full object-contain p-2" />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-muted-foreground/50" />
+                    )}
+                    {isUploadingLogo && (
+                      <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <div className="flex gap-2">
+                      <Button variant="outline" className="relative cursor-pointer" disabled={isUploadingLogo}>
+                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={handleLogoUpload} />
+                        <Upload className="w-4 h-4 mr-2" /> Logo hochladen
+                      </Button>
+                      {siteLogoUrl && (
+                        <Button variant="destructive" onClick={removeLogo}>
+                          <Trash2 className="w-4 h-4 text-white" />
+                        </Button>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">Empfohlen: PNG oder WebP mit transparentem Hintergrund.</p>
+                  </div>
+                </div>
+              </div>
 
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="font-display text-lg flex items-center gap-2"><Layout className="w-5 h-5" /> Hero Bereich</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div><Label>Hero Titel</Label><Input value={heroTitle} onChange={(e) => setHeroTitle(e.target.value)} /></div>
-          <div><Label>Hero Untertitel</Label><Input value={heroSubtitle} onChange={(e) => setHeroSubtitle(e.target.value)} /></div>
-          <Button onClick={() => { saveSetting("hero_title", heroTitle); saveSetting("hero_subtitle", heroSubtitle); }}><Save className="w-4 h-4 mr-2" /> Speichern</Button>
-        </CardContent>
-      </Card>
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="siteTitle">Website Titel</Label>
+                  <Input id="siteTitle" value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} placeholder="Rank-Scout" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="siteDescription">Meta Beschreibung</Label>
+                  <Textarea id="siteDescription" value={siteDescription} onChange={(e) => setSiteDescription(e.target.value)} rows={2} />
+                </div>
+              </div>
+              <Button 
+                onClick={() => { saveSetting("site_title", siteTitle); saveSetting("site_description", siteDescription); }}
+                className="text-white"
+              >
+                <Save className="w-4 h-4 mr-2" /> Speichern
+              </Button>
+            </CardContent>
+          </Card>
 
-      {/* Restliche Sektionen (TopBar, Trending, etc.) bleiben gleich, gekürzt für Übersichtlichkeit */}
-      <Card className="bg-card border-border"><CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><Sparkles className="w-5 h-5" />Top-Bar</CardTitle></CardHeader><CardContent className="space-y-4"><div><Label>Text</Label><Input value={topBarText} onChange={(e) => setTopBarText(e.target.value)} /></div><div><Label>Link</Label><Input value={topBarLink} onChange={(e) => setTopBarLink(e.target.value)} /></div><Button onClick={() => { saveSetting("top_bar_text", topBarText); saveSetting("top_bar_link", topBarLink); }}><Save className="w-4 h-4 mr-2" />Speichern</Button></CardContent></Card>
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-500" />Top-Bar</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2"><Label>Text</Label><Input value={topBarText} onChange={(e) => setTopBarText(e.target.value)} /></div>
+              <div className="space-y-2"><Label>Link</Label><Input value={topBarLink} onChange={(e) => setTopBarLink(e.target.value)} /></div>
+              <Button onClick={() => { saveSetting("top_bar_text", topBarText); saveSetting("top_bar_link", topBarLink); }} className="text-white">
+                <Save className="w-4 h-4 mr-2" />Speichern
+              </Button>
+            </CardContent>
+          </Card>
 
-      {/* Global Analytics Code */}
-      <Card className="bg-card border-border">
-        <CardHeader>
-          <CardTitle className="font-display text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5" />Analytics Code {analyticsStatus === "found" && <CheckCircle2 className="w-5 h-5 text-green-500" />}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div><Label>Tracking Code</Label><Textarea value={analyticsCode} onChange={(e) => { setAnalyticsCode(e.target.value); setAnalyticsStatus("idle"); }} rows={8} className="font-mono text-xs" /></div>
-          <div className="flex gap-2"><Button onClick={() => saveSetting("global_analytics_code", analyticsCode)}><Save className="w-4 h-4 mr-2" />Speichern</Button><Button variant="outline" onClick={checkAnalyticsStatus} disabled={analyticsStatus === "checking"}>Status prüfen</Button></div>
-        </CardContent>
-      </Card>
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-orange-500" />Analytics Code {analyticsStatus === "found" && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div><Label>Tracking Code</Label><Textarea value={analyticsCode} onChange={(e) => { setAnalyticsCode(e.target.value); setAnalyticsStatus("idle"); }} rows={8} className="font-mono text-xs bg-slate-50" /></div>
+              <div className="flex gap-2">
+                <Button onClick={() => saveSetting("global_analytics_code", analyticsCode)} className="text-white"><Save className="w-4 h-4 mr-2" />Speichern</Button>
+                <Button variant="outline" onClick={checkAnalyticsStatus} disabled={analyticsStatus === "checking"}>Status prüfen</Button>
+              </div>
+            </CardContent>
+          </Card>
 
-      <Card className="bg-card border-border"><CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><Lock className="w-5 h-5" />Admin PIN</CardTitle></CardHeader><CardContent className="space-y-4"><div><Label>Neuer PIN</Label><Input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Mind. 4 Zeichen" /></div><Button onClick={savePin} variant="outline"><Lock className="w-4 h-4 mr-2" />PIN ändern</Button></CardContent></Card>
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-red-500" />Admin PIN</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div><Label>Neuer PIN</Label><Input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Mind. 4 Zeichen" /></div>
+              <Button onClick={savePin} variant="outline"><Lock className="w-4 h-4 mr-2" />PIN ändern</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* TAB 2: STARTSEITE & CONTENT (NEU) */}
+        <TabsContent value="home" className="space-y-6 mt-6">
+          
+          {/* LAYOUT STEUERUNG */}
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5 text-blue-600" /> Layout Steuerung</CardTitle>
+              <CardDescription>Aktiviere oder deaktiviere Sektionen auf der Startseite.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+               {Object.keys(defaultHomeLayout).map((key) => (
+                 <div key={key} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900 p-2 rounded-lg transition-colors">
+                   <Label className="capitalize font-medium cursor-pointer" onClick={() => toggleSection(key as keyof typeof defaultHomeLayout)}>
+                      {key.replace('_', ' ')}
+                   </Label>
+                   {/* KYRA FIX: Switch Styling */}
+                   <Switch 
+                     checked={layout[key as keyof typeof layout]} 
+                     onCheckedChange={() => toggleSection(key as keyof typeof defaultHomeLayout)}
+                     className="data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600"
+                   />
+                 </div>
+               ))}
+            </CardContent>
+          </Card>
+
+          {/* CONTENT STEUERUNG */}
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-500" /> Texte & Inhalte</CardTitle>
+              <CardDescription>Bearbeite die Texte der Startseiten-Sektionen.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                
+                <AccordionItem value="hero">
+                  <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Hero Section</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4 px-4">
+                    <div className="space-y-2"><Label>Titel</Label><Input value={content.hero.title} onChange={(e) => updateContent('hero', 'title', e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Untertitel</Label><Textarea value={content.hero.subtitle} onChange={(e) => updateContent('hero', 'subtitle', e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Badge Text</Label><Input value={content.hero.badge} onChange={(e) => updateContent('hero', 'badge', e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Such-Platzhalter</Label><Input value={content.hero.search_placeholder} onChange={(e) => updateContent('hero', 'search_placeholder', e.target.value)} /></div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="trust">
+                  <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Trust / Vorteile</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4 px-4">
+                    <div className="space-y-2"><Label>Überschrift</Label><Input value={content.trust.headline} onChange={(e) => updateContent('trust', 'headline', e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Untertext</Label><Textarea value={content.trust.subheadline} onChange={(e) => updateContent('trust', 'subheadline', e.target.value)} /></div>
+                    <div className="grid grid-cols-2 gap-4">
+                       <div className="space-y-2"><Label>Box Titel</Label><Input value={content.trust.box_title} onChange={(e) => updateContent('trust', 'box_title', e.target.value)} /></div>
+                       <div className="space-y-2"><Label>Box Text</Label><Textarea rows={4} value={content.trust.box_text} onChange={(e) => updateContent('trust', 'box_text', e.target.value)} /></div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="big_three">
+                  <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Big Three (Kategorien)</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4 px-4">
+                     <div className="space-y-2"><Label>Headline</Label><Input value={content.big_three.headline} onChange={(e) => updateContent('big_three', 'headline', e.target.value)} /></div>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <div className="space-y-2"><Label>Titel 1</Label><Input value={content.big_three.finance_title} onChange={(e) => updateContent('big_three', 'finance_title', e.target.value)} /></div>
+                       <div className="space-y-2"><Label>Titel 2</Label><Input value={content.big_three.software_title} onChange={(e) => updateContent('big_three', 'software_title', e.target.value)} /></div>
+                       <div className="space-y-2"><Label>Titel 3</Label><Input value={content.big_three.services_title} onChange={(e) => updateContent('big_three', 'services_title', e.target.value)} /></div>
+                     </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="news">
+                  <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Newsletter Bereich</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4 px-4">
+                     <div className="space-y-2"><Label>Überschrift</Label><Input value={content.news.headline} onChange={(e) => updateContent('news', 'headline', e.target.value)} /></div>
+                     <div className="space-y-2"><Label>Text</Label><Textarea value={content.news.subheadline} onChange={(e) => updateContent('news', 'subheadline', e.target.value)} /></div>
+                     <div className="space-y-2"><Label>Button Text</Label><Input value={content.news.button_text} onChange={(e) => updateContent('news', 'button_text', e.target.value)} /></div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="seo">
+                  <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">SEO Content (Unten)</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4 px-4">
+                     <div className="space-y-2"><Label>Überschrift</Label><Input value={content.seo.headline} onChange={(e) => updateContent('seo', 'headline', e.target.value)} /></div>
+                     <div className="space-y-2"><Label>Intro</Label><Textarea value={content.seo.intro} onChange={(e) => updateContent('seo', 'intro', e.target.value)} /></div>
+                  </AccordionContent>
+                </AccordionItem>
+
+              </Accordion>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
