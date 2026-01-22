@@ -21,29 +21,34 @@ export const Footer = () => {
   return (
     <footer className="bg-primary text-white pt-20 pb-10 relative overflow-hidden mt-20 border-t border-white/10">
       
+      {/* Background Effects */}
       <div className="absolute inset-0 dots-white opacity-30 pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[120px] pointer-events-none" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
           
+          {/* Brand Column */}
           <div className="space-y-6">
-            <Link to="/" className="flex items-center gap-2 group">
+            <Link to="/" className="flex items-center gap-3 group">
+              
+              {/* Logo Bild (Groß: h-12) */}
               <div className="group-hover:scale-105 transition-transform duration-300">
-                 {logo ? (
-                   // Footer ist immer dunkel -> Logo immer weiß machen
+                 {logo && (
                    <img 
                     src={logo}
-                    alt={title || "Rank-Scout"} 
-                    className="h-9 w-auto object-contain brightness-0 invert" 
+                    alt="Rank-Scout" 
+                    className="h-12 w-auto object-contain" 
                    />
-                 ) : (
-                   <span className="font-display font-bold text-xl tracking-tight text-white">
-                     {title}
-                   </span>
                  )}
               </div>
+
+              {/* Text (Rank-Scout + Oranger Punkt) */}
+              <span className="font-display font-bold text-2xl tracking-tight text-white">
+                Rank-Scout<span className="text-secondary">.</span>
+              </span>
             </Link>
+
             <p className="text-slate-300 text-sm leading-relaxed max-w-xs">
               Deutschlands führendes B2B-Vergleichsportal. Wir bringen Licht in den Dschungel digitaler Dienstleistungen.
             </p>
@@ -54,6 +59,7 @@ export const Footer = () => {
             </div>
           </div>
 
+          {/* Links Columns */}
           <div>
             <h3 className="font-bold text-white mb-6">Vergleiche</h3>
             <ul className="space-y-4 text-sm text-slate-300">
@@ -81,6 +87,7 @@ export const Footer = () => {
             </ul>
           </div>
 
+          {/* Trust Badge */}
           <div>
             <h3 className="font-bold text-white mb-6">Geprüfte Qualität</h3>
             <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm hover:bg-white/10 transition-colors">
@@ -100,8 +107,9 @@ export const Footer = () => {
           </div>
         </div>
 
+        {/* Bottom Bar */}
         <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
-          <p>© 2026 {title}. Alle Rechte vorbehalten.</p>
+          <p>© 2026 {title || "Rank-Scout"}. Alle Rechte vorbehalten.</p>
           <p className="flex items-center gap-1">
             Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> in Germany
           </p>

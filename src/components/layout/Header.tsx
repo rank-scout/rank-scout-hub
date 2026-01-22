@@ -2,14 +2,13 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import { useState, useEffect } from "react";
-import { useNavLinks, useSiteLogo, useSiteTitle } from "@/hooks/useSettings";
+import { useNavLinks, useSiteLogo } from "@/hooks/useSettings";
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navLinks = useNavLinks();
   const logo = useSiteLogo();
-  const title = useSiteTitle();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -30,30 +29,31 @@ export const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           
-          <Link to="/" className="flex items-center gap-2 group relative z-50">
-            {logo ? (
-              // IMAGE LOGIC:
-              // Dark BG (Top): Filter -> Weiß
-              // Light BG (Scroll): Kein Filter -> Originalfarben
-              <div className="transition-transform duration-300 group-hover:scale-105">
+          {/* BRANDING: Logo + Text nebeneinander */}
+          {/* items-center garantiert die vertikale Mitte */}
+          <Link to="/" className="flex items-center gap-4 group relative z-50">
+            
+            {/* 1. Logo Bild (Größe H18 = h-[4.5rem]) */}
+            {logo && (
+              <div className="transition-transform duration-300 group-hover:scale-105 flex items-center justify-center">
                 <img 
                   src={logo}
-                  alt={title || "Rank-Scout"} 
-                  className={`h-9 w-auto object-contain transition-all duration-300 ${
-                    !isScrolled ? 'brightness-0 invert' : ''
-                  }`}
+                  alt="Rank-Scout" 
+                  // KYRA UPDATE: h-[4.5rem] (H18) und object-center für perfekte Ausrichtung
+                  className="h-[4.5rem] w-auto object-contain object-center"
                 />
               </div>
-            ) : (
-              // TEXT FALLBACK LOGIC:
-              <span className={`font-display font-bold text-2xl tracking-tight transition-colors duration-300 ${
-                  isScrolled ? 'text-primary' : 'text-white'
-              }`}>
-                {title}
-              </span>
             )}
+
+            {/* 2. Text (Rank-Scout + Oranger Punkt) */}
+            <span className={`font-display font-bold text-2xl tracking-tight transition-colors duration-300 ${
+                isScrolled ? 'text-primary' : 'text-white'
+            }`}>
+              Rank-Scout<span className="text-secondary">.</span>
+            </span>
           </Link>
 
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
@@ -77,6 +77,7 @@ export const Header = () => {
             </Link>
           </nav>
 
+          {/* Mobile Menu Button */}
           <button
             className={`md:hidden p-2 transition-colors ${isScrolled ? 'text-primary' : 'text-white'}`}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -86,6 +87,7 @@ export const Header = () => {
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="md:hidden absolute top-[100%] left-0 w-full bg-white border-t border-slate-100 p-6 shadow-2xl animate-fade-in">
           <nav className="flex flex-col gap-6 text-center">
