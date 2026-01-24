@@ -1,50 +1,240 @@
 import { useState, useEffect, useRef } from "react";
-import { X, Search, ExternalLink, Send, ShoppingCart, MessageCircle, ChevronLeft, ChevronRight, Binoculars, ArrowRight } from "lucide-react";
+import { X, Search, ExternalLink, Send, Binoculars, ArrowRight, ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useProjects } from "@/hooks/useProjects";
+import { useLocation } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
+
+// Typendefinition für Chat-Nachrichten
+interface Message {
+  id: string;
+  text: string;
+  sender: 'user' | 'bot';
+  type?: 'text' | 'link' | 'lead-magnet';
+  timestamp: number;
+}
 
 export const MascotWidget = () => {
+  const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   
+  // CHAT STATE (Historie)
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
+  // FEATURES STATES
+  const [hasUnread, setHasUnread] = useState(true);
+  const [clickCount, setClickCount] = useState(0); 
+  const [liveUsers, setLiveUsers] = useState(0); 
+  const [adminHighTicketUrl, setAdminHighTicketUrl] = useState(""); 
+  const [emailInput, setEmailInput] = useState(""); 
+  const [emailSent, setEmailSent] = useState(false);
+  
+  // TRIGGER STATES
+  const [exitIntentTriggered, setExitIntentTriggered] = useState(false);
+  const [hasStartedChatting, setHasStartedChatting] = useState(false);
+  const [idleMessageTriggered, setIdleMessageTriggered] = useState(false);
+
   const { data: projects = [] } = useProjects();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const hasInitialized = useRef(false);
   
   // AMAZON KONFIGURATION
   const AMAZON_TAG = "rank1scout-21"; 
   const SCOUTY_IMAGE = "https://rank-scout.com/Scouty-Rank-Scout-Maskotchen-Ki-Asistent-Chatbot.webp";
 
+  // 1. HELPER: Nachricht hinzufügen
+  const addMessage = (text: string, sender: 'user' | 'bot', type: 'text' | 'link' | 'lead-magnet' = 'text') => {
+    setMessages(prev => [...prev, {
+      id: Math.random().toString(36).substring(7),
+      text,
+      sender,
+      type,
+      timestamp: Date.now()
+    }]);
+    setHasUnread(sender === 'bot' && !isOpen); // Badge nur wenn zu
+  };
+
+  // 2. LOGIC: Kontext-Nachricht ermitteln
+  const getContextMessage = () => {
+    const path = location.pathname.toLowerCase();
+    if (path.includes("dating")) return "Suchst du die große Liebe? ❤️ Ich helfe dir!";
+    if (path.includes("casino") || path.includes("slots")) return "Dein Glückstag? 🎰 Hier sind die besten Boni!";
+    if (path.includes("finanz") || path.includes("kredit")) return "Sparfüchse aufgepasst! 💸 Die besten Raten hier.";
+    if (path.includes("vpn") || path.includes("sicherheit")) return "Sicher surfen? 🔒 Ich zeig dir wie!";
+    if (path.includes("adult")) return "Diskret & sicher. 🔞 Die Top-Anbieter im Check.";
+    return "Hi, ich bin Scouty! Ich finde die besten Produkt-Deals für dich! 🔭";
+  };
+
+  // 3. INIT: Lade Config & Startnachricht
   useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 2000);
+    const loadSettings = async () => {
+      const { data } = await supabase.from("settings").select("value").eq("key", "scouty_config").single();
+      // @ts-ignore
+      if (data?.value) setAdminHighTicketUrl(data.value.high_ticket_url || "https://www.amazon.de");
+    };
+    loadSettings();
+
+    // Fake Live Users
+    setLiveUsers(Math.floor(Math.random() * (140 - 50 + 1)) + 50);
+
+    // Initial Message (nur einmal)
+    if (!hasInitialized.current) {
+      addMessage(getContextMessage(), 'bot');
+      hasInitialized.current = true;
+    }
+  }, []);
+
+  // 4. LIVE USER SIMULATION
+  useEffect(() => {
+    const simulateLiveActivity = () => {
+       const change = Math.floor(Math.random() * 5) - 2; 
+       setLiveUsers(prev => {
+         const newValue = prev + change;
+         return newValue < 45 ? 50 : (newValue > 160 ? 140 : newValue);
+       });
+       setTimeout(simulateLiveActivity, Math.floor(Math.random() * 4000) + 3000);
+    };
+    const timer = setTimeout(simulateLiveActivity, 4000);
     return () => clearTimeout(timer);
   }, []);
 
+  // 5. SEND LOGIC (Das Herzstück)
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return;
+    
+    const text = inputValue.trim();
+    setInputValue(""); // Sofort leeren
+    setHasStartedChatting(true);
+    addMessage(text, 'user'); // User Nachricht anzeigen
+
+    setIsTyping(true);
+
+    // KÜNSTLICHE VERZÖGERUNG (Simuliere Nachdenken)
+    setTimeout(() => {
+      setIsTyping(false);
+      
+      // A) IST ES EINE BEGRÜSSUNG? (Chat Mode)
+      const lowerText = text.toLowerCase();
+      const greetings = ["hallo", "hi", "hey", "moin", "servus", "guten", "wer bist du", "was kannst du", "hilfe"];
+      const isGreeting = greetings.some(g => lowerText.includes(g));
+
+      if (isGreeting && text.length < 15) {
+         addMessage("Hallo! 👋 Ich bin Scouty, deine KI-Suchmaschine. Sag mir einfach, was du suchst (z.B. 'iPhone 15' oder 'Laufschuhe'), und ich finde den besten Preis!", 'bot');
+         return;
+      }
+
+      // B) PRODUKT SUCHE (Default Mode)
+      addMessage(`Alles klar, ich scanne Amazon nach "${text}" für dich... einen Moment! 🔎`, 'bot');
+      
+      // Redirect nach kurzer Lesepause
+      setTimeout(() => {
+         const url = `https://www.amazon.de/s?k=${encodeURIComponent(text)}&tag=${AMAZON_TAG}&linkCode=ll2&linkId=scouty_search`;
+         window.open(url, '_blank');
+      }, 1500);
+
+    }, 1000); // 1s Typing Delay
+  };
+
+  // 6. TRIGGER LOGIC
+
+  // Scroll Trigger
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPercent = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+      if (scrollPercent > 0.30) setIsVisible(true);
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); 
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // Exit Intent (Nur Desktop)
+  useEffect(() => {
+    const handleMouseLeave = (e: MouseEvent) => {
+      if (e.clientY <= 0 && isVisible && !isOpen && !isMinimized && !exitIntentTriggered && !hasStartedChatting) {
+         setExitIntentTriggered(true);
+         // Statt alles zu resetten, hängen wir eine Nachricht an
+         addMessage("Warte! 🛑 Bevor du gehst: Ich habe gerade einen neuen Testsieger gefunden. Willst du ihn sehen?", 'bot');
+         setIsOpen(true);
+      }
+    };
+    if (window.matchMedia("(min-width: 768px)").matches) {
+       document.addEventListener("mouseleave", handleMouseLeave);
+    }
+    return () => document.removeEventListener("mouseleave", handleMouseLeave);
+  }, [isVisible, isOpen, isMinimized, exitIntentTriggered, hasStartedChatting]);
+
+  // Idle Trigger (30s)
+  useEffect(() => {
+     let idleTimer: NodeJS.Timeout;
+     const resetIdle = () => {
+        if (!isVisible || idleMessageTriggered || hasStartedChatting) return; 
+        clearTimeout(idleTimer);
+        
+        idleTimer = setTimeout(() => {
+           if (!isOpen && !isMinimized) {
+             setIdleMessageTriggered(true);
+             addMessage("Brauchst du Entscheidungshilfe? Ich kann dir die Bestseller zeigen! 🤔", 'bot');
+             setIsOpen(true);
+           }
+        }, 30000); 
+     };
+     
+     window.addEventListener("mousemove", resetIdle);
+     window.addEventListener("keydown", resetIdle);
+     window.addEventListener("scroll", resetIdle);
+     window.addEventListener("click", resetIdle);
+     resetIdle();
+     
+     return () => {
+        clearTimeout(idleTimer);
+        window.removeEventListener("mousemove", resetIdle);
+        window.removeEventListener("keydown", resetIdle);
+        window.removeEventListener("scroll", resetIdle);
+        window.removeEventListener("click", resetIdle);
+     };
+  }, [isVisible, isOpen, isMinimized, idleMessageTriggered, hasStartedChatting]);
+
+
+  // Lead Magnet Submit
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailInput.includes("@")) {
+      toast.error("Bitte gültige E-Mail eingeben");
+      return;
+    }
+    const { error } = await supabase.from("subscribers").insert({
+      email: emailInput,
+      source_page: "scouty_widget",
+      is_active: true
+    });
+    if (error) {
+      toast.error("Fehler beim Senden.");
+    } else {
+      confetti({ particleCount: 50, spread: 50, origin: { y: 0.7 } });
+      toast.success("Gesendet!");
+      setEmailSent(true);
+      setEmailInput("");
+      addMessage("Danke! Der Geheimtipp ist unterwegs in dein Postfach. 📬", 'bot');
+      setTimeout(() => {
+        if (adminHighTicketUrl) window.open(adminHighTicketUrl, '_blank');
+      }, 2000);
+    }
+  };
+
+  // Scroll to bottom on new message
   useEffect(() => {
     if (isOpen && scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [isOpen, searchQuery]);
-
-  const filteredInternal = searchQuery.length >= 2
-    ? projects.filter((project) =>
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()))
-      ).slice(0, 3)
-    : [];
-
-  const handleAmazonRedirect = () => {
-    if (!searchQuery) return;
-    const url = `https://www.amazon.de/s?k=${encodeURIComponent(searchQuery)}&tag=${AMAZON_TAG}&linkCode=ll2&linkId=scouty_search`;
-    window.open(url, '_blank');
-  };
-
-  const toggleMinimize = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsMinimized(!isMinimized);
-  };
+  }, [isOpen, messages, isTyping]);
 
   if (!isVisible) return null;
 
@@ -59,7 +249,7 @@ export const MascotWidget = () => {
       {isOpen && (
         <div className="bg-white border border-primary/10 shadow-2xl rounded-2xl w-[92vw] sm:w-[380px] overflow-hidden flex flex-col animate-fade-in origin-bottom-right mb-2 ring-1 ring-black/5 max-h-[80vh]">
           
-          {/* Header */}
+          {/* Header (Navy Blue) */}
           <div className="bg-[#030E3E] p-4 flex items-center justify-between text-white relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
             <div className="flex items-center gap-3 relative z-10">
@@ -68,9 +258,15 @@ export const MascotWidget = () => {
               </div>
               <div>
                 <h4 className="font-bold text-base leading-none mb-1 text-white">Scouty</h4>
-                <p className="text-[11px] text-blue-200 font-medium flex items-center gap-1">
-                  <Binoculars className="w-2.5 h-2.5" /> Preis-Experte aktiv
-                </p>
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2 w-2 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
+                  <p className="text-[10px] text-blue-200 font-medium">
+                    {liveUsers} Nutzer online
+                  </p>
+                </div>
               </div>
             </div>
             <Button 
@@ -84,72 +280,62 @@ export const MascotWidget = () => {
           </div>
 
           {/* Chat Body */}
-          <div className="bg-[#F8F9FC] p-4 h-[350px] overflow-y-auto custom-scrollbar flex flex-col gap-4" ref={scrollRef}>
+          <div className="bg-[#F8F9FC] p-4 h-[380px] overflow-y-auto custom-scrollbar flex flex-col gap-4" ref={scrollRef}>
             
-            {/* Intro Nachricht */}
-            <div className="flex gap-3 animate-message-in">
-              <div className="w-8 h-8 rounded-full border-2 border-secondary overflow-hidden bg-white flex-shrink-0 shadow-sm">
-                <img src={SCOUTY_IMAGE} alt="Scouty" className="w-full h-full object-cover" />
-              </div>
-              <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-600 leading-relaxed">
-                Hi, ich bin Scouty! Ich finde die besten Produkt-Deals für dich! 🔭
-                <br /><span className="text-[11px] text-slate-400 mt-2 block">Was suchst du gerade?</span>
-              </div>
-            </div>
+            {/* Messages Loop */}
+            {messages.map((msg) => (
+              <div key={msg.id} className={`flex gap-3 animate-message-in ${msg.sender === 'user' ? 'flex-row-reverse' : ''}`}>
+                
+                {msg.sender === 'bot' && (
+                  <div className="w-8 h-8 rounded-full border-2 border-secondary overflow-hidden bg-white flex-shrink-0 shadow-sm mt-1">
+                    <img src={SCOUTY_IMAGE} alt="Scouty" className="w-full h-full object-cover" />
+                  </div>
+                )}
 
-            {/* Interne Treffer */}
-            {searchQuery.length >= 2 && filteredInternal.length > 0 && (
-               <div className="flex flex-col gap-2 animate-message-in">
-                 <div className="text-[10px] uppercase tracking-widest text-primary font-bold ml-11 opacity-70">Top Portale</div>
-                 {filteredInternal.map(project => (
-                   <a 
-                     key={project.id} 
-                     href={`/go/${project.slug}`}
-                     className="ml-11 bg-white border border-slate-200 p-2.5 rounded-xl shadow-sm hover:border-primary/30 hover:shadow-md transition-all group flex items-center gap-3"
-                   >
-                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-lg flex-shrink-0 group-hover:bg-primary group-hover:text-white transition-colors">
-                        {project.categories?.icon || "📊"}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-primary text-sm group-hover:text-secondary truncate">{project.name}</div>
-                        <div className="text-[10px] text-slate-400 truncate">Vergleich öffnen</div>
-                      </div>
-                      <ExternalLink className="w-3 h-3 text-slate-300 mt-1" />
-                   </a>
-                 ))}
+                <div className={`p-3 rounded-2xl shadow-sm text-sm leading-relaxed max-w-[85%] ${
+                  msg.sender === 'user' 
+                    ? 'bg-secondary text-white rounded-tr-none' 
+                    : 'bg-white border border-slate-200 text-slate-600 rounded-tl-none'
+                }`}>
+                  {msg.text}
+                </div>
+              </div>
+            ))}
+
+            {/* Typing Indicator */}
+            {isTyping && (
+               <div className="flex gap-3 animate-pulse">
+                  <div className="w-8 h-8 rounded-full border-2 border-secondary/50 overflow-hidden bg-white flex-shrink-0">
+                    <img src={SCOUTY_IMAGE} alt="Scouty" className="w-full h-full object-cover opacity-50" />
+                  </div>
+                  <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
                </div>
             )}
 
-            {/* Amazon Empfehlung */}
-            {searchQuery.length >= 3 && (
-               <div className="flex flex-col gap-2 animate-message-in delay-100">
-                 <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full border-2 border-secondary overflow-hidden bg-white flex-shrink-0 shadow-sm">
-                      <img src={SCOUTY_IMAGE} alt="Scouty" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-600 leading-relaxed">
-                       Ich scanne mit meinem Spezial-Gucker die günstigsten Amazon-Preise aus tausenden Angeboten für dich: 🔭
-                    </div>
-                 </div>
-
-                 <div 
-                   onClick={handleAmazonRedirect}
-                   className="ml-11 bg-gradient-to-r from-[#FF9900]/15 to-[#FF9900]/5 border border-[#FF9900]/30 p-4 rounded-xl cursor-pointer hover:shadow-lg transition-all group flex items-center gap-3 relative overflow-hidden ring-1 ring-[#FF9900]/10"
-                 >
-                    <div className="absolute inset-0 bg-white/40 opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-xl shadow-sm border border-[#FF9900]/20 relative z-10">
-                      📦
-                    </div>
-                    <div className="flex-1 relative z-10">
-                      <div className="text-[10px] text-[#FF9900] font-bold uppercase tracking-wider mb-0.5">Amazon Bestpreis Check</div>
-                      <div className="text-sm font-extrabold text-slate-900 group-hover:text-[#FF9900] transition-colors truncate">"{searchQuery}" ansehen</div>
-                    </div>
-                    <div className="bg-secondary p-1.5 rounded-full text-white shadow-sm group-hover:scale-110 transition-transform">
-                      <ArrowRight className="w-4 h-4" />
-                    </div>
-                 </div>
-               </div>
+            {/* Lead Magnet (Only if not sent) */}
+            {!emailSent && messages.length > 1 && (
+              <div className="ml-11 bg-blue-50/50 border border-blue-100 p-3 rounded-xl animate-message-in">
+                <p className="text-xs text-slate-500 mb-2 font-medium">Top 3 Deals per Mail?</p>
+                <form onSubmit={handleEmailSubmit} className="flex gap-2">
+                  <Input 
+                    placeholder="Deine E-Mail..." 
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    className="h-8 text-xs bg-white"
+                    type="email"
+                  />
+                  <Button type="submit" size="sm" className="h-8 w-8 p-0 bg-[#FF9900] hover:bg-[#FF9900]/90 text-white">
+                    <Mail className="w-3.5 h-3.5" />
+                  </Button>
+                </form>
+              </div>
             )}
+
+            <div className="h-2"></div>
           </div>
 
           {/* Input Area */}
@@ -157,34 +343,35 @@ export const MascotWidget = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input 
-                placeholder="Frag Scouty..." 
-                className="pl-9 pr-12 bg-slate-50 border-slate-200 focus-visible:ring-secondary focus-visible:border-secondary rounded-xl text-sm h-12 transition-all focus:bg-white"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleAmazonRedirect()}
-                /* KYRA FIX: autoFocus entfernt, um automatische Tastatur auf Mobile zu verhindern */
+                placeholder="Frag Scouty... (z.B. iPhone)" 
+                className="pl-9 pr-12 bg-slate-50 border-slate-200 focus-visible:ring-secondary focus-visible:border-secondary rounded-xl text-base sm:text-sm h-12 transition-all focus:bg-white"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
               />
+              {/* ORANGE SEND BUTTON */}
               <Button 
                 size="icon" 
-                onClick={handleAmazonRedirect}
-                className="absolute right-1.5 top-1.5 h-9 w-9 bg-primary text-white hover:bg-secondary rounded-lg transition-all shadow-sm active:scale-95"
+                onClick={handleSendMessage}
+                className="absolute right-1.5 top-1.5 h-9 w-9 bg-[#FF9900] hover:bg-[#FF9900]/90 text-white rounded-lg transition-all shadow-sm active:scale-95"
               >
                 <Send className="w-4 h-4" />
               </Button>
             </div>
-            <p className="text-[9px] text-center text-slate-400 mt-2 uppercase tracking-tighter">
-              Scouty AI Powered By <a href="https://digital-perfect.com" target="_blank" rel="noopener noreferrer" className="hover:text-secondary transition-colors font-bold">Digital-Perfect</a>
+            <p className="text-[9px] text-center text-slate-400 mt-2 uppercase tracking-tighter flex items-center justify-center gap-1">
+               Powered By <span className="font-bold text-slate-500">Rank-Scout AI</span>
             </p>
           </div>
         </div>
       )}
 
-      {/* AVATAR TRIGGER & MINIMIZE CONTROL */}
+      {/* AVATAR TRIGGER */}
       <div className="relative flex items-center group">
         
+        {/* Minimize Button */}
         {!isOpen && isVisible && (
           <button 
-            onClick={toggleMinimize}
+            onClick={(e) => { e.stopPropagation(); setIsMinimized(!isMinimized); }}
             className={`absolute ${isMinimized ? "-left-8" : "-left-10"} bg-[#030E3E] text-white p-1.5 rounded-full shadow-lg border border-white/20 z-20 hover:bg-secondary transition-all duration-300`}
           >
             {isMinimized ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
@@ -193,9 +380,17 @@ export const MascotWidget = () => {
 
         <div 
           className="relative cursor-pointer"
-          onClick={() => isMinimized ? setIsMinimized(false) : setIsOpen(!isOpen)}
+          onClick={() => {
+             if (isMinimized) setIsMinimized(false);
+             else {
+               setIsOpen(!isOpen);
+               if (!isOpen) setHasUnread(false);
+             }
+          }}
         >
+          {/* Pulse Effect */}
           {!isOpen && !isMinimized && <div className="absolute inset-0 bg-secondary rounded-full animate-ping opacity-25 duration-1000" />}
+          
           <Button 
             className={`h-14 w-14 sm:h-16 sm:w-16 rounded-full border-4 shadow-2xl hover:scale-110 transition-all p-0 overflow-hidden relative z-10 ${
               isOpen ? 'bg-secondary border-secondary rotate-90' : 'bg-white border-secondary'
@@ -204,16 +399,24 @@ export const MascotWidget = () => {
              {isOpen ? (
                <X className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
              ) : (
-               <div className="h-full w-full bg-white flex items-center justify-center">
+               <div className="h-full w-full bg-white flex items-center justify-center relative">
                   <img src={SCOUTY_IMAGE} alt="Scouty" className="w-full h-full object-cover scale-110" />
+                  
+                  {/* Notification Badge */}
+                  {hasUnread && isVisible && (
+                    <div className="absolute top-0 right-0 -mt-0.5 -mr-0.5 w-5 h-5 bg-red-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold border-2 border-white z-20 animate-pulse shadow-md">
+                      1
+                    </div>
+                  )}
                </div>
              )}
           </Button>
           
-          {!isOpen && !isMinimized && isVisible && (
-            <div className="absolute bottom-full right-0 mb-3 whitespace-nowrap bg-[#030E3E] text-white text-[11px] font-bold px-3 py-2 rounded-xl shadow-xl animate-bounce origin-bottom-right">
-              Hi, ich bin Scouty! Ich finde die besten Produkt-Deals für dich! 🔭
-              <div className="absolute bottom-0 right-5 translate-y-1/2 rotate-45 w-2.5 h-2.5 bg-[#030E3E]" />
+          {/* SPRECHBLASE (Immer die letzte Bot-Nachricht anzeigen, wenn zu) */}
+          {!isOpen && !isMinimized && isVisible && messages.length > 0 && (
+            <div className="absolute bottom-full right-0 mb-3 whitespace-nowrap bg-[#030E3E] text-white text-[11px] font-bold px-3 py-2 rounded-xl shadow-xl animate-bounce origin-bottom-right border border-[#FF9900] max-w-[200px] truncate">
+              {messages[messages.length - 1].sender === 'bot' ? messages[messages.length - 1].text : "Ich antworte..."}
+              <div className="absolute bottom-0 right-5 translate-y-1/2 rotate-45 w-2.5 h-2.5 bg-[#030E3E] border-b border-r border-[#FF9900]" />
             </div>
           )}
         </div>

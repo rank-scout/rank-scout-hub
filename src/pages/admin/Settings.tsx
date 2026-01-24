@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   useSettings, 
   useUpdateSetting, 
@@ -15,7 +15,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon } from "lucide-react";
+import { 
+  Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
+  CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
+  Target, Users
+} from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,9 +33,7 @@ export default function AdminSettings() {
   // Hooks für Home-Steuerung & Ads
   const { layout } = useHomeLayout();
   const { content } = useHomeContent();
-  const { clientId, defaultSlotId } = useAdSenseConfig();
-  const { headline, text, buttonText, link } = useAmazonConfig();
-
+  
   // Bestehende States
   const [siteTitle, setSiteTitle] = useState("");
   const [siteLogoUrl, setSiteLogoUrl] = useState("");
@@ -49,11 +51,15 @@ export default function AdminSettings() {
   const [adSenseClient, setAdSenseClient] = useState("");
   const [adSenseSlot, setAdSenseSlot] = useState("");
   
-  // KYRA UPDATE: Neue States für Native Amazon Banner
+  // Neue States für Native Amazon Banner
   const [amznHeadline, setAmznHeadline] = useState("");
   const [amznText, setAmznText] = useState("");
   const [amznButton, setAmznButton] = useState("");
   const [amznLink, setAmznLink] = useState("");
+
+  // SCOUTY STATES (Integration)
+  const [scoutyHighTicketUrl, setScoutyHighTicketUrl] = useState("");
+  const [scoutyLeadsCount, setScoutyLeadsCount] = useState(0);
 
   // Initialisierung aller Settings
   if (settings && !initialized) {
@@ -75,8 +81,25 @@ export default function AdminSettings() {
     setAmznButton((settings.ads_amazon_button_text as string) || "");
     setAmznLink((settings.ads_amazon_link as string) || "");
 
+    // Init Scouty Config
+    // @ts-ignore
+    const scoutyConfig = settings.scouty_config as { high_ticket_url?: string } | null;
+    setScoutyHighTicketUrl(scoutyConfig?.high_ticket_url || "");
+
     setInitialized(true);
   }
+
+  // Fetch Scouty Leads Count (Live from Subscribers)
+  useEffect(() => {
+    const fetchLeads = async () => {
+      const { count } = await supabase
+        .from("subscribers")
+        .select("*", { count: 'exact', head: true })
+        .eq("source_page", "scouty_widget");
+      if (count !== null) setScoutyLeadsCount(count);
+    };
+    fetchLeads();
+  }, []);
 
   // Speichern Funktion (Global)
   async function saveSetting(key: string, value: Json) {
@@ -87,6 +110,11 @@ export default function AdminSettings() {
       toast({ title: "Fehler", description: "Speichern fehlgeschlagen", variant: "destructive" });
     }
   }
+
+  // Scouty Speichern Helper
+  const saveScoutyConfig = () => {
+    saveSetting("scouty_config", { high_ticket_url: scoutyHighTicketUrl });
+  };
 
   // Funktionen für Home-Layout & Content
   const toggleSection = (key: keyof typeof defaultHomeLayout) => {
@@ -184,16 +212,17 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="global" className="w-full">
+        {/* TAB NAVIGATION: KYRA UPDATE - Orange/Primary statt Blue */}
         <TabsList className="grid w-full grid-cols-2 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl h-auto">
           <TabsTrigger 
             value="global" 
-            className="py-3 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium text-slate-600 dark:text-slate-400"
+            className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium text-slate-600 dark:text-slate-400"
           >
             Global & Branding
           </TabsTrigger>
           <TabsTrigger 
             value="home" 
-            className="py-3 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium text-slate-600 dark:text-slate-400"
+            className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium text-slate-600 dark:text-slate-400"
           >
             Startseite & Content
           </TabsTrigger>
@@ -202,6 +231,52 @@ export default function AdminSettings() {
         {/* TAB 1: GLOBALE EINSTELLUNGEN */}
         <TabsContent value="global" className="space-y-6 mt-6">
           
+          {/* SCOUTY AI CARD */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card className="bg-slate-900 border-slate-800 text-slate-100">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base text-white">
+                  <Target className="h-4 w-4 text-secondary" />
+                  Scouty High-Ticket Link
+                </CardTitle>
+                <CardDescription className="text-slate-400 text-xs">
+                  Wohin führt das Easter-Egg (5 Klicks)?
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <div className="flex gap-2">
+                    <Input 
+                      placeholder="https://..." 
+                      value={scoutyHighTicketUrl}
+                      onChange={(e) => setScoutyHighTicketUrl(e.target.value)}
+                      className="bg-slate-950 border-slate-800 text-xs h-9" 
+                    />
+                    <Button onClick={saveScoutyConfig} size="sm" className="bg-secondary hover:bg-secondary/80 h-9 px-3">
+                      <Save className="h-4 w-4" />
+                    </Button>
+                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-900 border-slate-800 text-slate-100">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base text-white">
+                  <Users className="h-4 w-4 text-green-500" />
+                  Scouty Leads
+                </CardTitle>
+                <CardDescription className="text-slate-400 text-xs">
+                  Generierte E-Mail Kontakte im Chat.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex items-center gap-4">
+                <div className="text-3xl font-extrabold text-white">{scoutyLeadsCount}</div>
+                <div className="text-xs text-slate-400 leading-tight">
+                  User haben ihre Mail<br/>für Deals hinterlassen.
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* MONETARISIERUNG CARD */}
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
@@ -269,15 +344,15 @@ export default function AdminSettings() {
                 </h4>
                 <div className="space-y-3">
                   <div className="grid md:grid-cols-2 gap-4">
-                     <div className="space-y-2">
+                      <div className="space-y-2">
                         <Label>Headline (Fett)</Label>
                         <Input 
                           placeholder="z.B. Die besten Laptops für Gründer" 
                           value={amznHeadline} 
                           onChange={(e) => setAmznHeadline(e.target.value)} 
                         />
-                     </div>
-                     <div className="space-y-2">
+                      </div>
+                      <div className="space-y-2">
                         <Label>Affiliate Link (SiteStripe)</Label>
                         <div className="relative">
                           <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -288,7 +363,7 @@ export default function AdminSettings() {
                             onChange={(e) => setAmznLink(e.target.value)} 
                           />
                         </div>
-                     </div>
+                      </div>
                   </div>
                   
                   <div className="space-y-2">
@@ -316,10 +391,10 @@ export default function AdminSettings() {
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                     saveSetting("ads_amazon_headline", amznHeadline);
-                     saveSetting("ads_amazon_text", amznText);
-                     saveSetting("ads_amazon_button_text", amznButton);
-                     saveSetting("ads_amazon_link", amznLink);
+                      saveSetting("ads_amazon_headline", amznHeadline);
+                      saveSetting("ads_amazon_text", amznText);
+                      saveSetting("ads_amazon_button_text", amznButton);
+                      saveSetting("ads_amazon_link", amznLink);
                   }}
                 >
                   <Save className="w-4 h-4 mr-2" /> Banner speichern
@@ -332,7 +407,7 @@ export default function AdminSettings() {
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle className="font-display text-lg flex items-center gap-2">
-                <Globe className="w-5 h-5 text-blue-500" /> Branding & SEO
+                <Globe className="w-5 h-5 text-secondary" /> Branding & SEO
               </CardTitle>
               <CardDescription>Logo, Titel und Beschreibung.</CardDescription>
             </CardHeader>
@@ -381,7 +456,7 @@ export default function AdminSettings() {
               </div>
               <Button 
                 onClick={() => { saveSetting("site_title", siteTitle); saveSetting("site_description", siteDescription); }}
-                className="text-white"
+                className="text-white bg-primary hover:bg-primary/90"
               >
                 <Save className="w-4 h-4 mr-2" /> Speichern
               </Button>
@@ -390,12 +465,12 @@ export default function AdminSettings() {
 
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
-              <CardTitle className="font-display text-lg flex items-center gap-2"><Sparkles className="w-5 h-5 text-purple-500" />Top-Bar</CardTitle>
+              <CardTitle className="font-display text-lg flex items-center gap-2"><Sparkles className="w-5 h-5 text-secondary" />Top-Bar</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2"><Label>Text</Label><Input value={topBarText} onChange={(e) => setTopBarText(e.target.value)} /></div>
               <div className="space-y-2"><Label>Link</Label><Input value={topBarLink} onChange={(e) => setTopBarLink(e.target.value)} /></div>
-              <Button onClick={() => { saveSetting("top_bar_text", topBarText); saveSetting("top_bar_link", topBarLink); }} className="text-white">
+              <Button onClick={() => { saveSetting("top_bar_text", topBarText); saveSetting("top_bar_link", topBarLink); }} className="text-white bg-primary hover:bg-primary/90">
                 <Save className="w-4 h-4 mr-2" />Speichern
               </Button>
             </CardContent>
@@ -410,7 +485,7 @@ export default function AdminSettings() {
             <CardContent className="space-y-4">
               <div><Label>Tracking Code</Label><Textarea value={analyticsCode} onChange={(e) => { setAnalyticsCode(e.target.value); setAnalyticsStatus("idle"); }} rows={8} className="font-mono text-xs bg-slate-50" /></div>
               <div className="flex gap-2">
-                <Button onClick={() => saveSetting("global_analytics_code", analyticsCode)} className="text-white"><Save className="w-4 h-4 mr-2" />Speichern</Button>
+                <Button onClick={() => saveSetting("global_analytics_code", analyticsCode)} className="text-white bg-primary hover:bg-primary/90"><Save className="w-4 h-4 mr-2" />Speichern</Button>
                 <Button variant="outline" onClick={checkAnalyticsStatus} disabled={analyticsStatus === "checking"}>Status prüfen</Button>
               </div>
             </CardContent>
@@ -433,7 +508,7 @@ export default function AdminSettings() {
           {/* LAYOUT STEUERUNG */}
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5 text-blue-600" /> Layout Steuerung</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5 text-primary" /> Layout Steuerung</CardTitle>
               <CardDescription>Aktiviere oder deaktiviere Sektionen auf der Startseite.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -455,7 +530,7 @@ export default function AdminSettings() {
           {/* CONTENT STEUERUNG */}
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-500" /> Texte & Inhalte</CardTitle>
+              <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-secondary" /> Texte & Inhalte</CardTitle>
               <CardDescription>Bearbeite die Texte der Startseiten-Sektionen.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -477,8 +552,8 @@ export default function AdminSettings() {
                     <div className="space-y-2"><Label>Überschrift</Label><Input value={content.trust.headline} onChange={(e) => updateContent('trust', 'headline', e.target.value)} /></div>
                     <div className="space-y-2"><Label>Untertext</Label><Textarea value={content.trust.subheadline} onChange={(e) => updateContent('trust', 'subheadline', e.target.value)} /></div>
                     <div className="grid grid-cols-2 gap-4">
-                       <div className="space-y-2"><Label>Box Titel</Label><Input value={content.trust.box_title} onChange={(e) => updateContent('trust', 'box_title', e.target.value)} /></div>
-                       <div className="space-y-2"><Label>Box Text</Label><Textarea rows={4} value={content.trust.box_text} onChange={(e) => updateContent('trust', 'box_text', e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Box Titel</Label><Input value={content.trust.box_title} onChange={(e) => updateContent('trust', 'box_title', e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Box Text</Label><Textarea rows={4} value={content.trust.box_text} onChange={(e) => updateContent('trust', 'box_text', e.target.value)} /></div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -486,29 +561,29 @@ export default function AdminSettings() {
                 <AccordionItem value="big_three">
                   <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Big Three (Kategorien)</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4 px-4">
-                     <div className="space-y-2"><Label>Headline</Label><Input value={content.big_three.headline} onChange={(e) => updateContent('big_three', 'headline', e.target.value)} /></div>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       <div className="space-y-2"><Label>Titel 1</Label><Input value={content.big_three.finance_title} onChange={(e) => updateContent('big_three', 'finance_title', e.target.value)} /></div>
-                       <div className="space-y-2"><Label>Titel 2</Label><Input value={content.big_three.software_title} onChange={(e) => updateContent('big_three', 'software_title', e.target.value)} /></div>
-                       <div className="space-y-2"><Label>Titel 3</Label><Input value={content.big_three.services_title} onChange={(e) => updateContent('big_three', 'services_title', e.target.value)} /></div>
-                     </div>
+                      <div className="space-y-2"><Label>Headline</Label><Input value={content.big_three.headline} onChange={(e) => updateContent('big_three', 'headline', e.target.value)} /></div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2"><Label>Titel 1</Label><Input value={content.big_three.finance_title} onChange={(e) => updateContent('big_three', 'finance_title', e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Titel 2</Label><Input value={content.big_three.software_title} onChange={(e) => updateContent('big_three', 'software_title', e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Titel 3</Label><Input value={content.big_three.services_title} onChange={(e) => updateContent('big_three', 'services_title', e.target.value)} /></div>
+                      </div>
                   </AccordionContent>
                 </AccordionItem>
 
                 <AccordionItem value="news">
                   <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Newsletter Bereich</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4 px-4">
-                     <div className="space-y-2"><Label>Überschrift</Label><Input value={content.news.headline} onChange={(e) => updateContent('news', 'headline', e.target.value)} /></div>
-                     <div className="space-y-2"><Label>Text</Label><Textarea value={content.news.subheadline} onChange={(e) => updateContent('news', 'subheadline', e.target.value)} /></div>
-                     <div className="space-y-2"><Label>Button Text</Label><Input value={content.news.button_text} onChange={(e) => updateContent('news', 'button_text', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Überschrift</Label><Input value={content.news.headline} onChange={(e) => updateContent('news', 'headline', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Text</Label><Textarea value={content.news.subheadline} onChange={(e) => updateContent('news', 'subheadline', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Button Text</Label><Input value={content.news.button_text} onChange={(e) => updateContent('news', 'button_text', e.target.value)} /></div>
                   </AccordionContent>
                 </AccordionItem>
 
                 <AccordionItem value="seo">
                   <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">SEO Content (Unten)</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4 px-4">
-                     <div className="space-y-2"><Label>Überschrift</Label><Input value={content.seo.headline} onChange={(e) => updateContent('seo', 'headline', e.target.value)} /></div>
-                     <div className="space-y-2"><Label>Intro</Label><Textarea value={content.seo.intro} onChange={(e) => updateContent('seo', 'intro', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Überschrift</Label><Input value={content.seo.headline} onChange={(e) => updateContent('seo', 'headline', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Intro</Label><Textarea value={content.seo.intro} onChange={(e) => updateContent('seo', 'intro', e.target.value)} /></div>
                   </AccordionContent>
                 </AccordionItem>
 
