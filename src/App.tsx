@@ -16,6 +16,13 @@ import GoRedirect from "./pages/GoRedirect";
 import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
 import C4FRegistration from "./components/external/C4FRegistration";
+
+// Legal Pages (NEU)
+import Impressum from "./pages/Impressum";
+import AGB from "./pages/AGB";
+import Datenschutz from "./pages/Datenschutz";
+
+// Admin Pages
 import AdminLogin from "./pages/admin/Login";
 import AdminLayout from "./pages/admin/Layout";
 import AdminDashboard from "./pages/admin/Dashboard";
@@ -25,6 +32,9 @@ import AdminRedirects from "./pages/admin/Redirects";
 import AdminFooterLinks from "./pages/admin/FooterLinks";
 import AdminLeads from "./pages/admin/Leads";
 import AdminSettings from "./pages/admin/Settings";
+
+// Components (NEU)
+import { CookieBanner } from "./components/layout/CookieBanner";
 
 const queryClient = new QueryClient();
 
@@ -37,6 +47,9 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+              {/* Der Cookie-Banner ist jetzt global aktiv */}
+              <CookieBanner /> 
+              
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />
@@ -45,6 +58,11 @@ const App = () => (
                 <Route path="/go/:slug" element={<GoRedirect />} />
                 <Route path="/welcome" element={<Welcome />} />
                 <Route path="/test-register" element={<C4FRegistration />} />
+                
+                {/* Legal Routes (Eingefügt auf Basis deiner Footer-Struktur) */}
+                <Route path="/impressum" element={<Impressum />} />
+                <Route path="/agb" element={<AGB />} />
+                <Route path="/datenschutz" element={<Datenschutz />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />

@@ -1,36 +1,22 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavLinks, useSiteLogo } from "@/hooks/useSettings";
 
 export const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navLinks = useNavLinks();
   const logo = useSiteLogo();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 border-b ${
-        isScrolled 
-          ? "bg-white border-slate-200 shadow-md py-3" 
-          : "bg-transparent border-transparent py-6"
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 border-b bg-primary border-white/10 py-3 shadow-lg"
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between">
           
           {/* BRANDING: Logo + Text nebeneinander */}
-          {/* items-center garantiert die vertikale Mitte */}
           <Link to="/" className="flex items-center gap-4 group relative z-50">
             
             {/* 1. Logo Bild (Größe H18 = h-[4.5rem]) */}
@@ -39,16 +25,13 @@ export const Header = () => {
                 <img 
                   src={logo}
                   alt="Rank-Scout" 
-                  // KYRA UPDATE: h-[4.5rem] (H18) und object-center für perfekte Ausrichtung
                   className="h-[4.5rem] w-auto object-contain object-center"
                 />
               </div>
             )}
 
             {/* 2. Text (Rank-Scout + Oranger Punkt) */}
-            <span className={`font-display font-bold text-2xl tracking-tight transition-colors duration-300 ${
-                isScrolled ? 'text-primary' : 'text-white'
-            }`}>
+            <span className="font-display font-bold text-2xl tracking-tight text-white transition-colors duration-300">
               Rank-Scout<span className="text-secondary">.</span>
             </span>
           </Link>
@@ -59,19 +42,14 @@ export const Header = () => {
               <Link
                 key={link.label}
                 to={link.url}
-                className={`text-sm font-medium transition-all hover:scale-105 uppercase tracking-wide ${
-                    isScrolled ? 'text-slate-600 hover:text-primary' : 'text-slate-300 hover:text-white'
-                }`}
+                className="text-sm font-medium transition-all hover:scale-105 uppercase tracking-wide text-slate-300 hover:text-white"
               >
                 {link.label}
               </Link>
             ))}
             <Link to="/kategorien">
-              <Button className={`${
-                  isScrolled 
-                  ? 'bg-primary text-white hover:bg-primary/90' 
-                  : 'bg-white text-primary hover:bg-secondary hover:text-white border-white/20' 
-              } font-bold transition-all shadow-lg px-6 rounded-full`}>
+              {/* BUTTON IN RANK-SCOUT ORANGE (secondary) */}
+              <Button className="bg-secondary text-white hover:bg-secondary/90 font-bold transition-all shadow-lg px-6 rounded-full border-none">
                 Vergleiche starten
               </Button>
             </Link>
@@ -79,7 +57,7 @@ export const Header = () => {
 
           {/* Mobile Menu Button */}
           <button
-            className={`md:hidden p-2 transition-colors ${isScrolled ? 'text-primary' : 'text-white'}`}
+            className="md:hidden p-2 transition-colors text-white"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
@@ -89,14 +67,14 @@ export const Header = () => {
 
       {/* Mobile Menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden absolute top-[100%] left-0 w-full bg-white border-t border-slate-100 p-6 shadow-2xl animate-fade-in">
+        <div className="md:hidden absolute top-[100%] left-0 w-full bg-primary border-t border-white/10 p-6 shadow-2xl animate-fade-in">
           <nav className="flex flex-col gap-6 text-center">
             {navLinks.map((link) => (
               <Link
                 key={link.label}
                 to={link.url}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="text-xl font-medium text-primary hover:text-secondary border-b border-slate-100 pb-4"
+                className="text-xl font-medium text-white hover:text-secondary border-b border-white/5 pb-4"
               >
                 {link.label}
               </Link>
