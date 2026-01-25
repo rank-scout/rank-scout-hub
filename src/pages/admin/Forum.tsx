@@ -2,8 +2,8 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { 
-  Pin, PinOff, Lock, Unlock, Trash2, Eye, EyeOff, Search,
-  MessageSquare, Users, TrendingUp, AlertTriangle, ChevronDown, ChevronRight
+  Pin, PinOff, Lock, Unlock, Trash2, Eye, EyeOff, Search, Plus,
+  MessageSquare, AlertTriangle, ChevronDown, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import { 
   useAllThreads,
   useAllReplies,
+  useCreateThread,
   useTogglePinThread,
   useToggleLockThread,
   useToggleActiveThread,
@@ -36,14 +38,17 @@ export default function AdminForum() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "thread" | "reply"; id: string } | null>(null);
   const [editThread, setEditThread] = useState<ForumThread | null>(null);
   const [expandedThread, setExpandedThread] = useState<string | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [newThread, setNewThread] = useState({ title: "", content: "", author_name: "Redaktion" });
 
   const { data: threads = [], isLoading } = useAllThreads();
+  const createThread = useCreateThread();
   const togglePin = useTogglePinThread();
   const toggleLock = useToggleLockThread();
   const toggleActive = useToggleActiveThread();
-  const deleteThread = useDeleteThread();
+  const deleteThreadMutation = useDeleteThread();
   const updateThread = useUpdateThread();
-  const deleteReply = useDeleteReply();
+  const deleteReplyMutation = useDeleteReply();
   const toggleSpam = useToggleSpamReply();
 
   // Stats
@@ -95,13 +100,32 @@ export default function AdminForum() {
     if (!deleteConfirm) return;
     try {
       if (deleteConfirm.type === "thread") {
-        await deleteThread.mutateAsync(deleteConfirm.id);
+        await deleteThreadMutation.mutateAsync(deleteConfirm.id);
         toast({ title: "Thread gelöscht!" });
       } else {
-        await deleteReply.mutateAsync(deleteConfirm.id);
+        await deleteReplyMutation.mutateAsync(deleteConfirm.id);
         toast({ title: "Antwort gelöscht!" });
       }
       setDeleteConfirm(null);
+    } catch (error: any) {
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    }
+  }
+
+  async function handleCreateThread() {
+    if (!newThread.title.trim() || !newThread.content.trim()) {
+      toast({ title: "Fehler", description: "Titel und Inhalt sind erforderlich", variant: "destructive" });
+      return;
+    }
+    try {
+      await createThread.mutateAsync({
+        title: newThread.title,
+        content: newThread.content,
+        author_name: newThread.author_name || "Redaktion",
+      });
+      toast({ title: "Thread erstellt!" });
+      setNewThread({ title: "", content: "", author_name: "Redaktion" });
+      setIsCreateOpen(false);
     } catch (error: any) {
       toast({ title: "Fehler", description: error.message, variant: "destructive" });
     }
@@ -126,9 +150,14 @@ export default function AdminForum() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Forum-Moderation</h1>
-        <p className="text-muted-foreground text-sm">Threads und Antworten verwalten</p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-display font-bold text-foreground">Forum-Moderation</h1>
+          <p className="text-muted-foreground text-sm">Threads und Antworten verwalten</p>
+        </div>
+        <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+          <Plus className="w-4 h-4" /> Neuer Thread
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -388,9 +417,55 @@ export default function AdminForum() {
             <Button 
               variant="destructive" 
               onClick={handleDelete}
-              disabled={deleteThread.isPending || deleteReply.isPending}
+              disabled={deleteThreadMutation.isPending || deleteReplyMutation.isPending}
             >
               Endgültig löschen
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Thread Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Neuer Forum-Thread</DialogTitle>
+            <DialogDescription>Erstelle einen neuen Beitrag als Redaktion</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="thread-title">Titel *</Label>
+              <Input 
+                id="thread-title"
+                value={newThread.title}
+                onChange={(e) => setNewThread({ ...newThread, title: e.target.value })}
+                placeholder="Frage oder Diskussionsthema..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="thread-content">Inhalt *</Label>
+              <Textarea 
+                id="thread-content"
+                value={newThread.content}
+                onChange={(e) => setNewThread({ ...newThread, content: e.target.value })}
+                placeholder="Dein ausführlicher Beitrag..."
+                rows={6}
+              />
+            </div>
+            <div>
+              <Label htmlFor="thread-author">Autor</Label>
+              <Input 
+                id="thread-author"
+                value={newThread.author_name}
+                onChange={(e) => setNewThread({ ...newThread, author_name: e.target.value })}
+                placeholder="Redaktion"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Abbrechen</Button>
+            <Button onClick={handleCreateThread} disabled={createThread.isPending}>
+              Thread erstellen
             </Button>
           </DialogFooter>
         </DialogContent>
