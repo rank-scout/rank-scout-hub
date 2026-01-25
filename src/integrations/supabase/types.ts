@@ -298,6 +298,36 @@ export type Database = {
           },
         ]
       }
+      forum_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       forum_replies: {
         Row: {
           author_name: string
@@ -343,12 +373,17 @@ export type Database = {
           category_id: string | null
           content: string
           created_at: string | null
+          featured_image_url: string | null
           id: string
           is_active: boolean | null
           is_answered: boolean | null
           is_locked: boolean | null
           is_pinned: boolean | null
+          raw_html_content: string | null
+          seo_description: string | null
+          seo_title: string | null
           slug: string
+          status: string
           title: string
           updated_at: string | null
           view_count: number | null
@@ -359,12 +394,17 @@ export type Database = {
           category_id?: string | null
           content: string
           created_at?: string | null
+          featured_image_url?: string | null
           id?: string
           is_active?: boolean | null
           is_answered?: boolean | null
           is_locked?: boolean | null
           is_pinned?: boolean | null
+          raw_html_content?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug: string
+          status?: string
           title: string
           updated_at?: string | null
           view_count?: number | null
@@ -375,12 +415,17 @@ export type Database = {
           category_id?: string | null
           content?: string
           created_at?: string | null
+          featured_image_url?: string | null
           id?: string
           is_active?: boolean | null
           is_answered?: boolean | null
           is_locked?: boolean | null
           is_pinned?: boolean | null
+          raw_html_content?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           slug?: string
+          status?: string
           title?: string
           updated_at?: string | null
           view_count?: number | null
