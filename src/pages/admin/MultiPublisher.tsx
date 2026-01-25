@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { renderToStaticMarkup } from "react-dom/server"; // WICHTIG: Das macht aus React -> HTML String
+import { renderToStaticMarkup } from "react-dom/server";
 import { ExportTemplate } from "@/components/templates/ExportTemplate";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,19 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Globe, Link as LinkIcon, FileText, LayoutList } from "lucide-react";
+import { Loader2, UploadCloud, FileText, LayoutList, AlertTriangle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 // Typen
 type DeploymentTarget = { id: string; name: string; bridge_url: string; api_key: string; };
-type Project = { id: string; name: string; logo_url: string; rating: number; affiliate_link: string; features: any; badge_text: string; };
+type Project = { id: string; name: string; logo_url: string; rating: number; affiliate_link: string; features: unknown; badge_text: string; };
 
 export default function AdminPublisher() {
   const [targets, setTargets] = useState<DeploymentTarget[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
   // State
   const [selectedTargetId, setSelectedTargetId] = useState<string>("");
@@ -34,13 +34,17 @@ export default function AdminPublisher() {
 
   useEffect(() => {
     async function loadData() {
-      // Load Targets
-      const { data: tData } = await supabase.from("deployment_targets").select("*");
-      if (tData) setTargets(tData);
+      try {
+        // Load Projects for Selection (always available)
+        const { data: pData } = await supabase.from("projects").select("*").order('rating', { ascending: false });
+        if (pData) setProjects(pData as Project[]);
 
-      // Load Projects for Selection
-      const { data: pData } = await supabase.from("projects").select("*").order('rating', { ascending: false });
-      if (pData) setProjects(pData);
+        // Note: deployment_targets table may not exist - this is expected
+        // The publisher feature requires manual setup of this table
+        setLoadError("Deployment Targets Tabelle nicht konfiguriert. Bitte erstelle die Tabelle 'deployment_targets' mit den Feldern: id, name, bridge_url, api_key");
+      } catch (error) {
+        console.error("Load error:", error);
+      }
     }
     loadData();
   }, []);
@@ -52,13 +56,11 @@ export default function AdminPublisher() {
   };
 
   async function handlePublish() {
-    // KYRA UPDATE: Root Protection
-    // Verhindert, dass die Startseite (App) überschrieben wird.
     if (!slug || slug.trim() === "" || slug === "/") {
         toast({ 
           variant: "destructive", 
           title: "STOPP! Hauptseite geschützt.", 
-          description: "Du darfst die Startseite nicht überschreiben, da hier die App läuft. Bitte gib einen Slug ein (z.B. 'vergleich')." 
+          description: "Du darfst die Startseite nicht überschreiben. Bitte gib einen Slug ein." 
         });
         return;
     }
@@ -74,13 +76,9 @@ export default function AdminPublisher() {
     setIsLoading(true);
 
     try {
-      // 1. Daten vorbereiten
       const selectedProjectsData = projects.filter(p => selectedProjectIds.includes(p.id));
-      
-      // Sortiere Projekte so, wie sie ausgewählt wurden (hier simpel nach Rating, später Drag&Drop)
       const sortedProjects = selectedProjectsData.sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
-      // 2. HTML Generieren via React Server Rendering (im Client)
       const htmlString = renderToStaticMarkup(
         <ExportTemplate
           title={pageTitle}
@@ -88,15 +86,13 @@ export default function AdminPublisher() {
           content={pageContent}
           type={templateType}
           projects={sortedProjects}
-          siteName={target.name} // Nimmt den Namen des Ziels als Site Name
+          siteName={target.name}
           year={new Date().getFullYear()}
         />
       );
 
-      // Füge DOCTYPE hinzu (renderToStaticMarkup macht das nicht)
       const finalHtml = `<!DOCTYPE html>${htmlString}`;
 
-      // 3. Senden an Bridge
       const response = await fetch(target.bridge_url, {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-Auth-Token": target.api_key },
@@ -136,6 +132,19 @@ export default function AdminPublisher() {
         </div>
       </div>
 
+      {/* Warning if no targets */}
+      {loadError && (
+        <Card className="border-amber-500/50 bg-amber-500/10">
+          <CardContent className="flex items-start gap-4 pt-6">
+            <AlertTriangle className="w-6 h-6 text-amber-500 flex-shrink-0" />
+            <div>
+              <p className="font-medium text-amber-200">Setup erforderlich</p>
+              <p className="text-sm text-amber-300/80 mt-1">{loadError}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <div className="grid lg:grid-cols-3 gap-8">
         
         {/* LEFT COLUMN: Configuration */}
@@ -150,8 +159,8 @@ export default function AdminPublisher() {
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label>Ziel-Domain</Label>
-                            <Select onValueChange={setSelectedTargetId} value={selectedTargetId}>
-                                <SelectTrigger><SelectValue placeholder="Domain wählen..." /></SelectTrigger>
+                            <Select onValueChange={setSelectedTargetId} value={selectedTargetId} disabled={targets.length === 0}>
+                                <SelectTrigger><SelectValue placeholder={targets.length === 0 ? "Keine Targets konfiguriert" : "Domain wählen..."} /></SelectTrigger>
                                 <SelectContent>
                                     {targets.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                                 </SelectContent>
@@ -192,7 +201,6 @@ export default function AdminPublisher() {
                             className="min-h-[200px] font-mono text-sm"
                             placeholder="<p>Dein Einleitungstext...</p>" 
                         />
-                        <p className="text-xs text-muted-foreground">Tipp: Du kannst hier HTML aus dem Editor oder KI einfügen.</p>
                     </div>
                 </CardContent>
             </Card>
@@ -202,7 +210,7 @@ export default function AdminPublisher() {
                     size="lg" 
                     className="w-full bg-secondary hover:bg-orange-600 text-white font-bold h-14 text-lg shadow-xl"
                     onClick={handlePublish}
-                    disabled={isLoading}
+                    disabled={isLoading || targets.length === 0}
                 >
                     {isLoading ? <Loader2 className="animate-spin mr-2" /> : <UploadCloud className="mr-2" />}
                     {isLoading ? "Wird veröffentlicht..." : "JETZT VERÖFFENTLICHEN"}
@@ -227,7 +235,7 @@ export default function AdminPublisher() {
                             <LayoutList className={templateType === 'COMPARISON' ? 'text-secondary' : 'text-slate-400'} />
                             <div>
                                 <div className="font-bold">Vergleichs-Tabelle</div>
-                                <div className="text-xs text-muted-foreground">Für "Beste X" Keywords. Hohe Conversion.</div>
+                                <div className="text-xs text-muted-foreground">Für "Beste X" Keywords.</div>
                             </div>
                         </div>
 
@@ -238,7 +246,7 @@ export default function AdminPublisher() {
                             <FileText className={templateType === 'ARTICLE' ? 'text-secondary' : 'text-slate-400'} />
                             <div>
                                 <div className="font-bold">Ratgeber / Artikel</div>
-                                <div className="text-xs text-muted-foreground">Nur Text & Bilder. Gut für Info-Keywords.</div>
+                                <div className="text-xs text-muted-foreground">Nur Text & Bilder.</div>
                             </div>
                         </div>
                     </div>
@@ -265,9 +273,7 @@ export default function AdminPublisher() {
                                             <Label htmlFor={`p-${project.id}`} className="font-medium cursor-pointer block">
                                                 {project.name}
                                             </Label>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] bg-slate-200 px-1.5 rounded text-slate-600">Rating: {project.rating}</span>
-                                            </div>
+                                            <span className="text-[10px] bg-slate-200 px-1.5 rounded text-slate-600">Rating: {project.rating}</span>
                                         </div>
                                         {project.logo_url && (
                                             <img src={project.logo_url} alt="" className="w-8 h-8 object-contain opacity-50" />

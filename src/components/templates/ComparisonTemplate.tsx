@@ -192,7 +192,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
             <a href={addSubId(settings.top_bar_link)} className="hover:underline">
               <span>{settings.top_bar_text || '🔥 Jetzt kostenlos anmelden!'}</span>
             </a>
-            <button onclick="closeTopBar()" className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white">
+            <button onClick={() => {}} className="absolute right-4 top-1/2 -translate-y-1/2 text-white/80 hover:text-white">
               <i className="fas fa-times"></i>
             </button>
           </div>
