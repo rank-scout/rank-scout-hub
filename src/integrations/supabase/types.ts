@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          author_name: string
+          category: string | null
+          content: string
+          created_at: string | null
+          excerpt: string | null
+          featured_image: string | null
+          id: string
+          is_featured: boolean | null
+          is_published: boolean | null
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          read_time: number | null
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_name?: string
+          category?: string | null
+          content: string
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          read_time?: number | null
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_name?: string
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          read_time?: number | null
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           analytics_code: string | null
@@ -248,6 +305,7 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          is_spam: boolean | null
           thread_id: string
         }
         Insert: {
@@ -256,6 +314,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_spam?: boolean | null
           thread_id: string
         }
         Update: {
@@ -264,6 +323,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_spam?: boolean | null
           thread_id?: string
         }
         Relationships: [
@@ -278,12 +338,15 @@ export type Database = {
       }
       forum_threads: {
         Row: {
+          admin_notes: string | null
           author_name: string
           category_id: string | null
           content: string
           created_at: string | null
           id: string
           is_active: boolean | null
+          is_answered: boolean | null
+          is_locked: boolean | null
           is_pinned: boolean | null
           slug: string
           title: string
@@ -291,12 +354,15 @@ export type Database = {
           view_count: number | null
         }
         Insert: {
+          admin_notes?: string | null
           author_name: string
           category_id?: string | null
           content: string
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_answered?: boolean | null
+          is_locked?: boolean | null
           is_pinned?: boolean | null
           slug: string
           title: string
@@ -304,12 +370,15 @@ export type Database = {
           view_count?: number | null
         }
         Update: {
+          admin_notes?: string | null
           author_name?: string
           category_id?: string | null
           content?: string
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_answered?: boolean | null
+          is_locked?: boolean | null
           is_pinned?: boolean | null
           slug?: string
           title?: string
