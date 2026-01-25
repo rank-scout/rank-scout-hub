@@ -1,36 +1,27 @@
-import { ArrowRight, Calendar, TrendingUp, Mail } from "lucide-react";
+import { ArrowRight, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useHomeContent } from "@/hooks/useSettings";
+import { useLatestBlogPosts } from "@/hooks/useBlog";
+import { Link } from "react-router-dom";
 
 export const NewsSection = () => {
   const { content } = useHomeContent();
+  const { data: posts = [] } = useLatestBlogPosts(3);
   
   if (!content) return null;
 
-  // Statische News-Beispiele (könnten später auch dynamisch werden, aber aktuell Fokus auf Layout-Texte)
-  const news = [
-    {
-      category: "Markt-Analyse",
-      title: "Die Top 10 CRM-Systeme für den Mittelstand 2026",
-      date: "Aktuell",
-      excerpt: "Warum Salesforce nicht immer die Antwort ist: Ein Deep-Dive in die effizientesten Lösungen für KMUs.",
-      readTime: "5 Min."
-    },
-    {
-      category: "SEO & Traffic",
-      title: "Google Core Update: Gewinner & Verlierer",
-      date: "Aktuell",
-      excerpt: "Unsere Daten zeigen massive Verschiebungen bei B2B-Keywords. Das müssen Marketing-Leads jetzt tun.",
-      readTime: "8 Min."
-    },
-    {
-      category: "KI-Trends",
-      title: "Agentur-Sterben durch KI? Ein Realitätscheck.",
-      date: "Aktuell",
-      excerpt: "Wie generative KI das Geschäftsmodell klassischer Content-Agenturen bedroht – und wer überlebt.",
-      readTime: "6 Min."
-    }
+  // Fallback-Daten falls keine Blog-Posts existieren
+  const displayPosts = posts.length > 0 ? posts.map(post => ({
+    category: post.category || "Allgemein",
+    title: post.title,
+    excerpt: post.excerpt || post.content.substring(0, 120) + "...",
+    readTime: `${post.read_time || 5} Min.`,
+    slug: post.slug
+  })) : [
+    { category: "Markt-Analyse", title: "Die Top 10 CRM-Systeme für den Mittelstand 2026", excerpt: "Warum Salesforce nicht immer die Antwort ist.", readTime: "5 Min.", slug: "" },
+    { category: "SEO & Traffic", title: "Google Core Update: Gewinner & Verlierer", excerpt: "Unsere Daten zeigen massive Verschiebungen.", readTime: "8 Min.", slug: "" },
+    { category: "KI-Trends", title: "Agentur-Sterben durch KI? Ein Realitätscheck.", excerpt: "Wie generative KI das Geschäftsmodell bedroht.", readTime: "6 Min.", slug: "" }
   ];
 
   return (
@@ -86,23 +77,39 @@ export const NewsSection = () => {
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {news.map((item, idx) => (
+          {displayPosts.map((item, idx) => (
             <article key={idx} className="group cursor-pointer">
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4 text-xs font-medium uppercase tracking-wider">
-                  <span className="text-secondary">{item.category}</span>
-                  <span className="text-slate-400">{item.readTime}</span>
+              {item.slug ? (
+                <Link to={`/blog/${item.slug}`}>
+                  <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-4 text-xs font-medium uppercase tracking-wider">
+                      <span className="text-secondary">{item.category}</span>
+                      <span className="text-slate-400">{item.readTime}</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-primary mb-3 group-hover:text-secondary transition-colors line-clamp-2">
+                      {item.title}
+                    </h3>
+                    <p className="text-slate-500 mb-6 line-clamp-3 flex-grow">{item.excerpt}</p>
+                    <div className="flex items-center text-sm font-bold text-primary group-hover:translate-x-1 transition-transform mt-auto">
+                      Artikel lesen <ArrowRight className="ml-2 w-4 h-4 text-secondary" />
+                    </div>
+                  </div>
+                </Link>
+              ) : (
+                <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
+                  <div className="flex items-center justify-between mb-4 text-xs font-medium uppercase tracking-wider">
+                    <span className="text-secondary">{item.category}</span>
+                    <span className="text-slate-400">{item.readTime}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-primary mb-3 group-hover:text-secondary transition-colors line-clamp-2">
+                    {item.title}
+                  </h3>
+                  <p className="text-slate-500 mb-6 line-clamp-3 flex-grow">{item.excerpt}</p>
+                  <div className="flex items-center text-sm font-bold text-primary group-hover:translate-x-1 transition-transform mt-auto">
+                    Artikel lesen <ArrowRight className="ml-2 w-4 h-4 text-secondary" />
+                  </div>
                 </div>
-                <h3 className="text-xl font-bold text-primary mb-3 group-hover:text-secondary transition-colors line-clamp-2">
-                  {item.title}
-                </h3>
-                <p className="text-slate-500 mb-6 line-clamp-3 flex-grow">
-                  {item.excerpt}
-                </p>
-                <div className="flex items-center text-sm font-bold text-primary group-hover:translate-x-1 transition-transform mt-auto">
-                  Artikel lesen <ArrowRight className="ml-2 w-4 h-4 text-secondary" />
-                </div>
-              </div>
+              )}
             </article>
           ))}
         </div>

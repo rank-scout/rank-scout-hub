@@ -17,7 +17,9 @@ import {
   UploadCloud,
   Layers,
   BarChart3,
-  Globe
+  Globe,
+  FileText,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -26,9 +28,11 @@ import { cn } from "@/lib/utils";
 // Navigation Items angepasst an das neue Design
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
+  { label: "Blog", icon: FileText, path: "/admin/blog" },
+  { label: "Forum", icon: MessageSquare, path: "/admin/forum" },
   { label: "Projekte", icon: Globe, path: "/admin/projects" },
   { label: "Kategorien", icon: Layers, path: "/admin/categories" },
-  { label: "Publisher", icon: UploadCloud, path: "/admin/publisher" }, // Dein Multi-Publisher
+  { label: "Publisher", icon: UploadCloud, path: "/admin/publisher" },
   { label: "Redirects", icon: BarChart3, path: "/admin/redirects" },
   { label: "Footer-Links", icon: Link2, path: "/admin/footer-links" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },
