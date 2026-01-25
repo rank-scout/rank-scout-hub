@@ -35,6 +35,8 @@ import AdminSettings from "./pages/admin/Settings";
 import AdminBlog from "./pages/admin/Blog";
 import AdminForum from "./pages/admin/Forum";
 import BlogPost from "./pages/BlogPost";
+import Forum from "./pages/Forum";
+import ForumThread from "./pages/ForumThread";
 
 // Components (NEU)
 import { CookieBanner } from "./components/layout/CookieBanner";
@@ -67,6 +69,8 @@ const App = () => (
                 <Route path="/agb" element={<AGB />} />
                 <Route path="/datenschutz" element={<Datenschutz />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/forum" element={<Forum />} />
+                <Route path="/forum/:slug" element={<ForumThread />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
