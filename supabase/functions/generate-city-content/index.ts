@@ -15,7 +15,7 @@ serve(async (req) => {
     let body;
     try {
       body = await req.json();
-    } catch (e) {
+    } catch {
       throw new Error("Request Body ist leer oder ungültiges JSON");
     }
 
@@ -77,8 +77,8 @@ serve(async (req) => {
     let jsonResponse;
     try {
       jsonResponse = JSON.parse(content);
-    } catch (e) {
-      console.error("JSON Parse Error:", e);
+    } catch {
+      console.error("JSON Parse Error");
       jsonResponse = { 
         contentTop: `<div class="text-center"><p>${content}</p></div>`, 
         contentBottom: "",
@@ -91,10 +91,11 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
-    console.error("Critical Function Error:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+    console.error("Critical Function Error:", errorMessage);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         status: 500, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 

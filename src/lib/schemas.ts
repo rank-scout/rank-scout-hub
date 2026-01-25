@@ -45,7 +45,7 @@ export const categorySchema = z.object({
   long_content_top: z.string().optional(),
   long_content_bottom: z.string().optional(),
   
-  // NEW: FAQ Data (JSON)
+  // FAQ Data (JSON)
   faq_data: z.array(z.object({ question: z.string(), answer: z.string() })).optional(),
 
   // Settings
@@ -73,11 +73,14 @@ export const categorySchema = z.object({
 
 export type CategoryInput = z.infer<typeof categorySchema>;
 
-// Project schemas
-const countryScopeEnum = z.enum(["DACH", "AT", "DE", "CH"]);
+// Project schemas - matches Supabase enum
+const countryScopeEnum = z.enum(["DACH", "AT", "DE", "EU"]);
 
 export const projectSchema = z.object({
+  category_id: z.string().nullable().optional(),
   name: z.string().min(1, "Projektname erforderlich"),
+  slug: z.string().min(1, "Slug erforderlich"),
+  url: z.string().url("Ungültige URL"),
   short_description: z.string().max(300).optional(),
   description: z.string().optional(),
   logo_url: z.string().url("Ungültige Logo-URL").optional().or(z.literal("")),
@@ -105,6 +108,9 @@ export const navLinkSchema = z.object({
   url: z.string().min(1),
 });
 
+export type TrendingLink = z.infer<typeof trendingLinkSchema>;
+export type NavLink = z.infer<typeof navLinkSchema>;
+
 export const siteSettingsSchema = z.object({
   site_title: z.string().min(1).max(100),
   site_description: z.string().max(300),
@@ -115,3 +121,21 @@ export const siteSettingsSchema = z.object({
 });
 
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;
+
+// Forum schemas
+export const forumThreadSchema = z.object({
+  title: z.string().min(3, "Mindestens 3 Zeichen").max(60, "Max 60 Zeichen"),
+  content: z.string().min(10, "Mindestens 10 Zeichen").max(5000),
+  author_name: z.string().min(2, "Mindestens 2 Zeichen").max(50),
+  category_id: z.string().uuid().nullable().optional(),
+});
+
+export type ForumThreadInput = z.infer<typeof forumThreadSchema>;
+
+export const forumReplySchema = z.object({
+  content: z.string().min(5, "Mindestens 5 Zeichen").max(2000),
+  author_name: z.string().min(2, "Mindestens 2 Zeichen").max(50),
+  thread_id: z.string().uuid(),
+});
+
+export type ForumReplyInput = z.infer<typeof forumReplySchema>;
