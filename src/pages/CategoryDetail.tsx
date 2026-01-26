@@ -328,7 +328,7 @@ export default function CategoryDetail() {
           </div>
         </section>
       </main>
-      <Footer category={category} />
+      <Footer />
     </div>
   );
 }

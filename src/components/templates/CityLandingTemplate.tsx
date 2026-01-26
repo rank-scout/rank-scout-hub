@@ -103,7 +103,7 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
 
   return (
     <div className="min-h-screen bg-background">
-      <Header siteName={siteName} />
+      <Header />
       <main className="pt-16">
         {/* Hero Section */}
         <section className="relative bg-gradient-to-br from-[#3d1515] via-[#5c1a1a] to-[#2d1010] py-16 md:py-24 overflow-hidden">
