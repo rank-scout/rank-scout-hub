@@ -204,7 +204,7 @@ export default function ForumThread() {
                     )}
                   </div>
 
-                  <h1 className="text-3xl md:text-4xl font-bold mb-4">{thread.title}</h1>
+                  <h1 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">{thread.title}</h1>
 
                   <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                     <span className="flex items-center gap-2">
@@ -224,22 +224,15 @@ export default function ForumThread() {
                   </div>
                 </div>
 
-                {/* Featured Image */}
-                {thread.featured_image_url && (
-                  <div className="mb-8 rounded-xl overflow-hidden">
-                    <img
-                      src={thread.featured_image_url}
-                      alt={thread.title}
-                      className="w-full h-auto max-h-[400px] object-cover"
-                    />
-                  </div>
-                )}
+                {/* HIER WURDE DAS FEATURED IMAGE ENTFERNT - Es erscheint nicht mehr im Beitrag! */}
 
                 {/* Content */}
-                <Card className="mb-12">
-                  <CardContent className="p-6 md:p-8">
+                <Card className="mb-12 border-none shadow-none md:shadow-sm">
+                  <CardContent className="p-0 md:p-8">
                     <div
-                      className="prose prose-slate dark:prose-invert max-w-none"
+                      className="prose prose-lg prose-slate dark:prose-invert max-w-none 
+                        prose-img:rounded-xl prose-img:shadow-md prose-img:w-full prose-img:h-auto prose-img:object-cover prose-img:my-8
+                        prose-headings:font-bold prose-a:text-primary prose-a:no-underline hover:prose-a:underline"
                       dangerouslySetInnerHTML={renderContent()}
                     />
                   </CardContent>
@@ -263,32 +256,38 @@ export default function ForumThread() {
                   ) : replies && replies.length > 0 ? (
                     <div className="space-y-4">
                       {replies.map((reply) => (
-                        <Card key={reply.id}>
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-3">
+                        <Card key={reply.id} className="border-l-4 border-l-transparent hover:border-l-primary/20 transition-colors">
+                          <CardContent className="p-5">
+                            <div className="flex items-start gap-4">
                               <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                                 <User className="w-5 h-5 text-muted-foreground" />
                               </div>
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="font-medium">{reply.author_name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    {formatDate(reply.created_at || "")}
-                                  </span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-semibold text-foreground">{reply.author_name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      • {formatDate(reply.created_at || "")}
+                                    </span>
+                                  </div>
                                 </div>
-                                <p className="text-muted-foreground mb-3">{reply.content}</p>
+                                <div className="text-foreground/90 leading-relaxed text-sm md:text-base">
+                                  {reply.content}
+                                </div>
                                 
                                 {/* Like Button */}
-                                <Button
-                                  variant={reply.user_has_liked ? "default" : "ghost"}
-                                  size="sm"
-                                  className="h-8 gap-1.5"
-                                  onClick={() => handleLikeClick(reply)}
-                                  disabled={toggleLike.isPending}
-                                >
-                                  <ThumbsUp className={`w-4 h-4 ${reply.user_has_liked ? "fill-current" : ""}`} />
-                                  <span>{reply.like_count}</span>
-                                </Button>
+                                <div className="mt-3">
+                                  <Button
+                                    variant={reply.user_has_liked ? "default" : "ghost"}
+                                    size="sm"
+                                    className="h-8 gap-1.5 px-3 rounded-full"
+                                    onClick={() => handleLikeClick(reply)}
+                                    disabled={toggleLike.isPending}
+                                  >
+                                    <ThumbsUp className={`w-3.5 h-3.5 ${reply.user_has_liked ? "fill-current" : ""}`} />
+                                    <span className="text-xs">{reply.like_count}</span>
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           </CardContent>
@@ -296,15 +295,18 @@ export default function ForumThread() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground text-center py-8">
-                      Noch keine Kommentare. Sei der Erste!
-                    </p>
+                    <div className="text-center py-12 bg-muted/30 rounded-xl border border-dashed">
+                      <MessageSquare className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+                      <p className="text-muted-foreground">
+                        Noch keine Kommentare. Sei der Erste!
+                      </p>
+                    </div>
                   )}
                 </div>
 
                 {/* Reply Form */}
                 {!thread.is_locked && (
-                  <Card>
+                  <Card className="border-t-4 border-t-primary/50">
                     <CardHeader>
                       <CardTitle className="text-lg">Kommentar schreiben</CardTitle>
                     </CardHeader>
@@ -316,20 +318,22 @@ export default function ForumThread() {
                           onChange={(e) => setReplyName(e.target.value)}
                           maxLength={50}
                           required
+                          className="bg-background"
                         />
                         <Textarea
                           placeholder="Dein Kommentar..."
                           value={replyContent}
                           onChange={(e) => setReplyContent(e.target.value)}
-                          rows={4}
+                          rows={5}
                           maxLength={1000}
                           required
+                          className="bg-background min-h-[120px]"
                         />
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs text-muted-foreground">
-                            Kommentare werden vor der Veröffentlichung geprüft
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                          <p className="text-xs text-muted-foreground order-2 sm:order-1">
+                            Kommentare werden vor der Veröffentlichung geprüft.
                           </p>
-                          <Button type="submit" disabled={createReply.isPending}>
+                          <Button type="submit" disabled={createReply.isPending} className="w-full sm:w-auto order-1 sm:order-2">
                             <Send className="w-4 h-4 mr-2" />
                             {createReply.isPending ? "Senden..." : "Absenden"}
                           </Button>
@@ -340,10 +344,10 @@ export default function ForumThread() {
                 )}
 
                 {thread.is_locked && (
-                  <Card className="bg-muted/50">
+                  <Card className="bg-muted/50 border-none">
                     <CardContent className="py-8 text-center">
                       <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
-                      <p className="text-muted-foreground">
+                      <p className="text-muted-foreground font-medium">
                         Dieser Beitrag ist geschlossen. Keine weiteren Kommentare möglich.
                       </p>
                     </CardContent>

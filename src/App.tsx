@@ -41,6 +41,8 @@ import AdminForum from "./pages/admin/Forum";
 
 // Components (NEU)
 import { CookieBanner } from "./components/layout/CookieBanner";
+// WICHTIG: Der Import für den Scroll-Reset (Stelle sicher, dass die Datei existiert!)
+import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +57,10 @@ const App = () => (
             <BrowserRouter>
               {/* Der Cookie-Banner ist jetzt global aktiv */}
               <CookieBanner /> 
+              
+              {/* NEU: Scroll-Reset bei jedem Seitenwechsel */}
+              {/* Zwingt den Browser nach oben, wenn sich die URL ändert */}
+              <ScrollToTopHandler />
               
               <Routes>
                 {/* Public Routes */}

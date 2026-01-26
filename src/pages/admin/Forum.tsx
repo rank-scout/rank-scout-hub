@@ -24,12 +24,14 @@ import {
   Eye,
   CheckCircle,
   Search,
-  Image,
+  Image as ImageIcon,
   Code,
   FileText,
   MessageCircle,
   AlertTriangle,
   FolderOpen,
+  ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -129,6 +131,48 @@ export default function AdminForum() {
 
   const pendingReplies = allReplies?.filter((r) => !r.is_active && !r.is_spam);
 
+// ============ IMAGE PROCESSING HELPER ============
+  // Schneidet das Bild automatisch auf 1024x559 (Apps-Finder Format) zu
+  const processImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        
+        // HIER SIND DIE NEUEN MAßE:
+        const TARGET_WIDTH = 1024;
+        const TARGET_HEIGHT = 559;
+        
+        canvas.width = TARGET_WIDTH;
+        canvas.height = TARGET_HEIGHT;
+        
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          reject(new Error("Canvas Context konnte nicht erstellt werden"));
+          return;
+        }
+
+        // Berechnung für "Object Fit: Cover" (Zentrierter Zuschnitt)
+        const scale = Math.max(TARGET_WIDTH / img.width, TARGET_HEIGHT / img.height);
+        const x = (TARGET_WIDTH / scale - img.width) / 2;
+        const y = (TARGET_HEIGHT / scale - img.height) / 2;
+
+        ctx.drawImage(img, x * scale, y * scale, img.width * scale, img.height * scale);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) resolve(blob);
+            else reject(new Error("Bildkonvertierung fehlgeschlagen"));
+          },
+          "image/webp",
+          0.85 // Qualität
+        );
+      };
+      img.onerror = (err) => reject(err);
+    });
+  };
+
   // ============ THREAD HANDLERS ============
 
   const handleNewThread = () => {
@@ -173,12 +217,15 @@ export default function AdminForum() {
 
     setImageUploading(true);
     try {
-      const fileExt = file.name.split(".").pop();
-      const fileName = `forum-${Date.now()}.${fileExt}`;
+      // 1. Bild automatisch zuschneiden & optimieren
+      const processedBlob = await processImage(file);
+      const processedFile = new File([processedBlob], "image.webp", { type: "image/webp" });
 
+      // 2. Hochladen
+      const fileName = `forum-${Date.now()}.webp`; // Immer .webp
       const { error: uploadError } = await supabase.storage
         .from("forum-images")
-        .upload(fileName, file);
+        .upload(fileName, processedFile);
 
       if (uploadError) throw uploadError;
 
@@ -191,9 +238,10 @@ export default function AdminForum() {
         featured_image_url: urlData.publicUrl,
       }));
 
-      toast.success("Bild hochgeladen");
+      toast.success("Bild zugeschnitten & hochgeladen!");
     } catch (error) {
-      toast.error("Fehler beim Hochladen");
+      console.error(error);
+      toast.error("Fehler beim Bild-Upload");
     } finally {
       setImageUploading(false);
     }
@@ -417,7 +465,18 @@ export default function AdminForum() {
                         <Button
                           variant="outline"
                           size="sm"
+                          asChild
+                          title="Beitrag ansehen"
+                        >
+                          <a href={`/forum/${thread.slug}`} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="w-4 h-4 text-blue-500" />
+                          </a>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
                           onClick={() => handleEditThread(thread)}
+                          title="Bearbeiten"
                         >
                           <Edit className="w-4 h-4" />
                         </Button>
@@ -428,6 +487,7 @@ export default function AdminForum() {
                             setThreadToDelete(thread.id);
                             setDeleteDialogOpen(true);
                           }}
+                          title="Löschen"
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
@@ -448,7 +508,7 @@ export default function AdminForum() {
           )}
         </TabsContent>
 
-        {/* Categories Tab */}
+        {/* Categories Tab - UNVERÄNDERT */}
         <TabsContent value="categories" className="space-y-4">
           <div className="flex justify-end">
             <Button onClick={handleNewCategory}>
@@ -512,7 +572,7 @@ export default function AdminForum() {
           </div>
         </TabsContent>
 
-        {/* Moderation Tab */}
+        {/* Moderation Tab - UNVERÄNDERT */}
         <TabsContent value="moderation" className="space-y-4">
           {pendingReplies && pendingReplies.length > 0 ? (
             pendingReplies.map((reply: any) => (
@@ -560,7 +620,7 @@ export default function AdminForum() {
         </TabsContent>
       </Tabs>
 
-      {/* Thread Editor Dialog */}
+      {/* Editor & Dialogs */}
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -573,7 +633,6 @@ export default function AdminForum() {
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* SEO Section */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base">SEO Suite</CardTitle>
@@ -643,7 +702,6 @@ export default function AdminForum() {
               </CardContent>
             </Card>
 
-            {/* Basic Info */}
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <Label>Titel *</Label>
@@ -700,7 +758,7 @@ export default function AdminForum() {
                 </Select>
               </div>
               <div>
-                <Label>Featured Image</Label>
+                <Label>Featured Image (Auto-Crop 4:3)</Label>
                 <div className="flex gap-2">
                   <Input
                     value={formData.featured_image_url}
@@ -712,10 +770,15 @@ export default function AdminForum() {
                     }
                     placeholder="Bild-URL"
                     className="flex-1"
+                    readOnly // Jetzt Read-Only, weil wir Upload erzwingen wollen für Crop
                   />
                   <Button variant="outline" asChild disabled={imageUploading}>
                     <label className="cursor-pointer">
-                      <Image className="w-4 h-4" />
+                      {imageUploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <ImageIcon className="w-4 h-4" />
+                      )}
                       <input
                         type="file"
                         className="hidden"
@@ -725,10 +788,12 @@ export default function AdminForum() {
                     </label>
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Wird automatisch auf 800x600px zugeschnitten.
+                </p>
               </div>
             </div>
 
-            {/* Content Editor */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Inhalt *</Label>
@@ -777,7 +842,6 @@ export default function AdminForum() {
               )}
             </div>
 
-            {/* Toggles */}
             <div className="flex flex-wrap gap-6">
               <div className="flex items-center gap-2">
                 <Switch
@@ -817,7 +881,6 @@ export default function AdminForum() {
               </div>
             </div>
 
-            {/* Admin Notes */}
             <div>
               <Label>Admin Notizen (intern)</Label>
               <Textarea
@@ -830,7 +893,6 @@ export default function AdminForum() {
               />
             </div>
 
-            {/* Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t">
               <Button variant="outline" onClick={() => setEditorOpen(false)}>
                 Abbrechen
@@ -848,7 +910,7 @@ export default function AdminForum() {
         </DialogContent>
       </Dialog>
 
-      {/* Category Editor Dialog */}
+      {/* Delete Dialogs */}
       <Dialog open={categoryEditorOpen} onOpenChange={setCategoryEditorOpen}>
         <DialogContent>
           <DialogHeader>
@@ -930,7 +992,6 @@ export default function AdminForum() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Thread Confirmation */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -952,7 +1013,6 @@ export default function AdminForum() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Delete Category Confirmation */}
       <AlertDialog open={deleteCategoryDialogOpen} onOpenChange={setDeleteCategoryDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

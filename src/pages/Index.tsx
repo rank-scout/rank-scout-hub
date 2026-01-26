@@ -6,7 +6,7 @@ import { TrustSection } from "@/components/home/TrustSection";
 import { BigThreeSection } from "@/components/home/BigThreeSection";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
-import { ForumSection } from "@/components/home/ForumSection";
+import { ForumSection } from "@/components/home/ForumSection"; // <--- WICHTIG: Der Import
 import { MascotWidget } from "@/components/layout/MascotWidget";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
@@ -19,10 +19,11 @@ const Index = () => {
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   
-  // Layout laden
+  // Layout-Einstellungen aus der Datenbank laden
   const { layout } = useHomeLayout();
 
   useEffect(() => {
+    // Seitentitel und Meta-Description setzen
     document.title = siteTitle;
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute("content", siteDescription);
@@ -30,7 +31,7 @@ const Index = () => {
 
   useEffect(() => {
     if (!analyticsCode) return;
-    // ... Analytics Code Logik ...
+    // Hier könnte Analytics-Logik stehen
   }, [analyticsCode]);
 
   return (
@@ -38,28 +39,35 @@ const Index = () => {
       <Header />
       
       <main className="flex-grow">
+        {/* 1. Hero Bereich */}
         {layout.hero && <HeroSection />}
         
-        {/* Strategische Werbung: Amazon oben */}
+        {/* 2. Amazon Werbung (Top) */}
         {layout.amazon_top && <AmazonBanner format="horizontal" />}
         
+        {/* 3. Trust Elemente (Siegel etc.) */}
         {layout.trust && <TrustSection />}
+
+        {/* 4. Die großen Drei (Top Features) */}
         {layout.big_three && <BigThreeSection />}
         
-        {/* Strategische Werbung: Google Mitte */}
+        {/* 5. Google AdSense (Mitte) */}
         {layout.adsense_middle && <AdSenseBanner slotId="placeholder-1" />}
         
+        {/* 6. Kategorien-Übersicht */}
         {layout.categories && <CategoriesSection />}
         
-        {/* Forum Teaser */}
+        {/* 7. NEU: Forum Teaser (Community Beiträge) */}
+        {/* Wird angezeigt, wenn 'Forum' im Layout-Admin aktiv ist */}
         {layout.forum && <ForumSection />}
         
+        {/* 8. SEO News & Text */}
         {layout.news && <NewsSection />}
       </main>
 
       <Footer />
       
-      {/* Floating Elements */}
+      {/* Schwebende Elemente */}
       <ScrollToTop />
       {layout.mascot && <MascotWidget />}
     </div>

@@ -1,108 +1,160 @@
-import { ArrowRight, Calendar, TrendingUp, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useHomeContent } from "@/hooks/useSettings";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+import { ArrowRight, Loader2, Clock } from "lucide-react";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-export const NewsSection = () => {
-  const { content } = useHomeContent();
-  
-  if (!content) return null;
+export function NewsSection() {
+  // Wir holen die neuesten 6 veröffentlichten Beiträge für das Grid
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ["latest-news-posts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("forum_threads")
+        .select(`
+          id,
+          title,
+          slug,
+          content,
+          seo_description,
+          created_at,
+          author_name,
+          featured_image_url,
+          view_count,
+          forum_categories ( name, slug )
+        `)
+        .eq("status", "published")
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(6);
 
-  // Statische News-Beispiele (könnten später auch dynamisch werden, aber aktuell Fokus auf Layout-Texte)
-  const news = [
-    {
-      category: "Markt-Analyse",
-      title: "Die Top 10 CRM-Systeme für den Mittelstand 2026",
-      date: "Aktuell",
-      excerpt: "Warum Salesforce nicht immer die Antwort ist: Ein Deep-Dive in die effizientesten Lösungen für KMUs.",
-      readTime: "5 Min."
+      if (error) throw error;
+      return data;
     },
-    {
-      category: "SEO & Traffic",
-      title: "Google Core Update: Gewinner & Verlierer",
-      date: "Aktuell",
-      excerpt: "Unsere Daten zeigen massive Verschiebungen bei B2B-Keywords. Das müssen Marketing-Leads jetzt tun.",
-      readTime: "8 Min."
-    },
-    {
-      category: "KI-Trends",
-      title: "Agentur-Sterben durch KI? Ein Realitätscheck.",
-      date: "Aktuell",
-      excerpt: "Wie generative KI das Geschäftsmodell klassischer Content-Agenturen bedroht – und wer überlebt.",
-      readTime: "6 Min."
-    }
-  ];
+  });
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("de-DE", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // Hilfsfunktion: HTML-Tags entfernen für sauberen Vorschau-Text
+  const stripHtml = (html: string) => {
+    const tmp = document.createElement("DIV");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
+
+  if (isLoading) {
+    return (
+      <div className="py-20 flex justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!posts || posts.length === 0) {
+    return null;
+  }
 
   return (
-    <section className="py-24 relative overflow-hidden border-t border-slate-100">
-      <div className="container px-4 mx-auto">
+    <section className="py-20 bg-gray-50/50">
+      <div className="container mx-auto px-4 max-w-7xl">
         
-        {/* Newsletter Box - DYNAMIC */}
-        <div className="bg-[#0A0F1C] rounded-3xl p-8 md:p-12 relative overflow-hidden mb-24 shadow-2xl">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-secondary/20 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
-          
-          <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-12">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-3 mb-6">
-                <span className="p-2 bg-white/10 rounded-lg backdrop-blur-md">
-                  <Mail className="w-5 h-5 text-secondary" />
-                </span>
-                <span className="text-secondary font-bold tracking-wider text-sm uppercase">Newsletter</span>
-              </div>
-              <h3 className="text-2xl md:text-4xl font-display font-bold text-white">
-                {content.news.headline}
-              </h3>
-              <p className="text-slate-300 text-lg max-w-xl leading-relaxed mt-4">
-                {content.news.subheadline}
-              </p>
-            </div>
-
-            <div className="w-full lg:w-auto min-w-[380px]">
-              <div className="bg-white/5 backdrop-blur-lg p-3 rounded-2xl border border-white/10 shadow-2xl flex flex-col gap-3">
-                <div className="relative">
-                  <Input 
-                    placeholder={content.news.placeholder} 
-                    className="bg-black/20 border-white/10 text-white placeholder:text-white/40 h-14 pl-4 rounded-xl focus-visible:ring-secondary focus-visible:border-secondary/50 transition-all"
-                  />
-                </div>
-                <Button className="w-full bg-secondary hover:bg-orange-600 text-white font-bold h-12 rounded-xl shadow-lg shadow-secondary/20 transition-all hover:scale-[1.02]">
-                  {content.news.button_text}
-                </Button>
-                <p className="text-center text-[11px] text-white/30">
-                  Join 10.000+ Founders & CEOs. Unsubscribe anytime.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* News Grid (Static for now, can be removed via Layout Switch if needed) */}
-        <div className="flex items-end justify-between mb-12">
+        {/* Header-Bereich mit Apps-Finder Style (Rote Linie) */}
+        <div className="mb-12 flex flex-col md:flex-row justify-between items-end gap-4 border-b border-gray-200 pb-4 relative">
           <div>
-            <h2 className="text-3xl font-display font-bold text-primary">Latest Insights</h2>
-            <p className="text-muted-foreground mt-2">Analysen, Trends & Tacheles.</p>
+            <h2 className="text-3xl font-bold uppercase tracking-tight text-foreground mb-2">
+              Neueste Artikel
+            </h2>
+            {/* Die rote Zierlinie unten links */}
+            <div className="absolute bottom-0 left-0 h-[3px] w-[60px] bg-[#f55a4a]"></div>
           </div>
-          <Button variant="outline" className="hidden sm:flex">Alle Artikel</Button>
+          
+          <Link 
+            to="/forum" 
+            className="text-sm font-medium text-muted-foreground hover:text-[#f55a4a] transition-colors flex items-center gap-1 mb-1"
+          >
+            Alle News anzeigen <ArrowRight className="w-4 h-4" />
+          </Link>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {news.map((item, idx) => (
-            <article key={idx} className="group cursor-pointer">
-              <div className="bg-white rounded-2xl p-6 border border-slate-100 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4 text-xs font-medium uppercase tracking-wider">
-                  <span className="text-secondary">{item.category}</span>
-                  <span className="text-slate-400">{item.readTime}</span>
+        {/* Grid Layout: 1 Spalte Mobil, 2 Tablet, 3 Desktop */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {posts.map((post) => (
+            <article key={post.id} className="group flex flex-col h-full">
+              <Card className="h-full border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden flex flex-col">
+                
+                {/* Bild-Bereich: Format 1024/559 erzwungen */}
+                <div className="relative overflow-hidden w-full aspect-[1024/559]">
+                  <Link to={`/forum/${post.slug}`}>
+                    {post.featured_image_url ? (
+                      <img 
+                        src={post.featured_image_url} 
+                        alt={post.title}
+                        className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      // Fallback, falls kein Bild da ist
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
+                        <span className="text-sm font-medium">Kein Bild</span>
+                      </div>
+                    )}
+                    
+                    {/* Kategorie Badge oben links im Bild */}
+                    {post.forum_categories && (
+                      <Badge className="absolute top-4 left-4 bg-[#f55a4a] hover:bg-[#d14030] text-white border-none shadow-sm text-xs font-semibold px-3 py-1">
+                        {post.forum_categories.name}
+                      </Badge>
+                    )}
+                  </Link>
                 </div>
-                <h3 className="text-xl font-bold text-primary mb-3 group-hover:text-secondary transition-colors line-clamp-2">
-                  {item.title}
-                </h3>
-                <p className="text-slate-500 mb-6 line-clamp-3 flex-grow">
-                  {item.excerpt}
-                </p>
-                <div className="flex items-center text-sm font-bold text-primary group-hover:translate-x-1 transition-transform mt-auto">
-                  Artikel lesen <ArrowRight className="ml-2 w-4 h-4 text-secondary" />
-                </div>
-              </div>
+
+                {/* Karten-Inhalt */}
+                <CardHeader className="p-6 pb-2 space-y-3">
+                  {/* Meta-Daten: Datum und Autor */}
+                  <div className="flex items-center text-xs text-muted-foreground gap-3">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatDate(post.created_at)}
+                    </span>
+                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                    <span className="flex items-center gap-1">
+                       <span className="font-medium text-[#f55a4a]">{post.author_name}</span>
+                    </span>
+                  </div>
+
+                  {/* Titel */}
+                  <h3 className="text-xl font-bold leading-snug line-clamp-2 group-hover:text-[#f55a4a] transition-colors">
+                    <Link to={`/forum/${post.slug}`}>
+                      {post.title}
+                    </Link>
+                  </h3>
+                </CardHeader>
+
+                {/* Text-Vorschau */}
+                <CardContent className="p-6 pt-2 flex-grow">
+                  <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
+                    {post.seo_description || stripHtml(post.content).substring(0, 120) + "..."}
+                  </p>
+                </CardContent>
+
+                {/* Footer mit Weiterlesen-Button */}
+                <CardFooter className="p-6 pt-0 mt-auto border-t border-gray-50 bg-gray-50/30">
+                  <Link 
+                    to={`/forum/${post.slug}`} 
+                    className="w-full flex items-center justify-between text-sm font-semibold text-foreground group-hover:text-[#f55a4a] transition-colors py-3"
+                  >
+                    Weiterlesen
+                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                  </Link>
+                </CardFooter>
+              </Card>
             </article>
           ))}
         </div>
@@ -110,4 +162,4 @@ export const NewsSection = () => {
       </div>
     </section>
   );
-};
+}
