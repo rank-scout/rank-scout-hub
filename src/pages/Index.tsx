@@ -19,8 +19,8 @@ const Index = () => {
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   
-  // HIER DER NEUE TEIL: Layout laden & Loading Check
-  const { layout, isLoading } = useHomeLayout();
+  // Layout laden
+  const { layout } = useHomeLayout();
 
   useEffect(() => {
     document.title = siteTitle;
@@ -32,11 +32,6 @@ const Index = () => {
     if (!analyticsCode) return;
     // ... Analytics Code Logik ...
   }, [analyticsCode]);
-
-  // ANTI-FLICKER: Zeige Ladescreen solange Settings nicht da sind
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#000414]"><Loader2 className="w-10 h-10 text-primary animate-spin" /></div>;
-  }
 
   return (
     <div className="min-h-screen flex flex-col relative bg-transparent">

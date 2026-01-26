@@ -208,14 +208,11 @@ export default function AdminCategories() {
 
   function openEditDialog(category: Category) {
     setEditingCategory(category);
-    // Parse FAQ if it's a string, otherwise use directly
-    let parsedFaqs = [];
-    if (Array.isArray(category.faq_data)) parsedFaqs = category.faq_data;
     
     reset({
       slug: category.slug, name: category.name, description: category.description || "", icon: category.icon || "📍", theme: category.theme, template: category.template || "comparison", color_theme: category.color_theme || "dark", site_name: category.site_name || "", hero_headline: category.hero_headline || "", hero_pretitle: category.hero_pretitle || "", hero_cta_text: category.hero_cta_text || "", hero_badge_text: category.hero_badge_text || "", meta_title: category.meta_title || "", meta_description: category.meta_description || "", h1_title: category.h1_title || "", long_content_top: category.long_content_top || "", long_content_bottom: category.long_content_bottom || "", analytics_code: category.analytics_code || "", banner_override: category.banner_override || "", custom_html_override: category.custom_html_override || "", footer_site_name: category.footer_site_name || "", footer_copyright_text: category.footer_copyright_text || "", footer_designer_name: category.footer_designer_name || "", footer_designer_url: category.footer_designer_url || "",
       navigation_settings: category.navigation_settings || { show_top3_dating_apps: true }, is_active: category.is_active, sort_order: category.sort_order,
-      faq_data: parsedFaqs
+      faq_data: []
     });
     setIsDialogOpen(true);
   }

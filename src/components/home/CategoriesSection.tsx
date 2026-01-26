@@ -21,7 +21,7 @@ export const CategoriesSection = () => {
 
   if (!content) return null; // Warten auf Settings
 
-  const mainCategories = categories?.filter(cat => !cat.parent_id) || [];
+  const mainCategories = categories || [];
 
   return (
     <section className="bg-white py-24">
