@@ -14,6 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          author_name: string
+          category: string | null
+          content: string
+          created_at: string | null
+          excerpt: string | null
+          featured_image: string | null
+          id: string
+          is_featured: boolean | null
+          is_published: boolean | null
+          meta_description: string | null
+          meta_title: string | null
+          published_at: string | null
+          read_time: number | null
+          slug: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          author_name?: string
+          category?: string | null
+          content: string
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          read_time?: number | null
+          slug: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          author_name?: string
+          category?: string | null
+          content?: string
+          created_at?: string | null
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          meta_description?: string | null
+          meta_title?: string | null
+          published_at?: string | null
+          read_time?: number | null
+          slug?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           analytics_code: string | null
@@ -234,6 +291,148 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "footer_links_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      forum_replies: {
+        Row: {
+          author_name: string
+          content: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          is_spam: boolean | null
+          thread_id: string
+        }
+        Insert: {
+          author_name: string
+          content: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_spam?: boolean | null
+          thread_id: string
+        }
+        Update: {
+          author_name?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_spam?: boolean | null
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_replies_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "forum_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forum_threads: {
+        Row: {
+          admin_notes: string | null
+          author_name: string
+          category_id: string | null
+          content: string
+          created_at: string | null
+          featured_image_url: string | null
+          id: string
+          is_active: boolean | null
+          is_answered: boolean | null
+          is_locked: boolean | null
+          is_pinned: boolean | null
+          raw_html_content: string | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string | null
+          view_count: number | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          author_name: string
+          category_id?: string | null
+          content: string
+          created_at?: string | null
+          featured_image_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_answered?: boolean | null
+          is_locked?: boolean | null
+          is_pinned?: boolean | null
+          raw_html_content?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          admin_notes?: string | null
+          author_name?: string
+          category_id?: string | null
+          content?: string
+          created_at?: string | null
+          featured_image_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_answered?: boolean | null
+          is_locked?: boolean | null
+          is_pinned?: boolean | null
+          raw_html_content?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string | null
+          view_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forum_threads_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
