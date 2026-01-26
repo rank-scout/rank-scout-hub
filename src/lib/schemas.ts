@@ -121,4 +121,7 @@ export const siteSettingsSchema = z.object({
   custom_css: z.string().optional(),
 });
 
+// Export types for settings (AFTER schema definitions)
+export type TrendingLink = z.infer<typeof trendingLinkSchema>;
+export type NavLink = z.infer<typeof navLinkSchema>;
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;

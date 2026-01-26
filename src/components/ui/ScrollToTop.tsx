@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { ArrowUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const ScrollToTop = () => {
+export const ScrollToTop = forwardRef<HTMLDivElement>((_, ref) => {
   const [show, setShow] = useState(false);
 
   useEffect(() => {
@@ -20,6 +20,7 @@ export const ScrollToTop = () => {
 
   return (
     <div 
+      ref={ref}
       // ÄNDERUNG: Von right-6 auf left-6 verschoben
       className={`fixed bottom-6 left-6 z-40 transition-all duration-500 ${show ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0"}`}
     >
@@ -33,4 +34,6 @@ export const ScrollToTop = () => {
       </Button>
     </div>
   );
-};
+});
+
+ScrollToTop.displayName = "ScrollToTop";
