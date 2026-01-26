@@ -138,25 +138,27 @@ export function useUpdateProject() {
 
   return useMutation({
     mutationFn: async ({ id, input }: { id: string; input: Partial<ProjectInput> }) => {
+      const updateData: Record<string, unknown> = {};
+      
+      if (input.category_id !== undefined) updateData.category_id = input.category_id;
+      if (input.name !== undefined) updateData.name = input.name;
+      if (input.slug !== undefined) updateData.slug = input.slug;
+      if (input.url !== undefined) updateData.url = input.url;
+      if (input.short_description !== undefined) updateData.short_description = input.short_description;
+      if (input.description !== undefined) updateData.description = input.description;
+      if (input.logo_url !== undefined) updateData.logo_url = input.logo_url;
+      if (input.affiliate_link !== undefined) updateData.affiliate_link = input.affiliate_link;
+      if (input.rating !== undefined) updateData.rating = input.rating;
+      if (input.badge_text !== undefined) updateData.badge_text = input.badge_text;
+      if (input.features !== undefined) updateData.features = input.features;
+      if (input.country_scope !== undefined) updateData.country_scope = input.country_scope;
+      if (input.tags !== undefined) updateData.tags = input.tags;
+      if (input.is_active !== undefined) updateData.is_active = input.is_active;
+      if (input.sort_order !== undefined) updateData.sort_order = input.sort_order;
+
       const { data, error } = await supabase
         .from("projects")
-        .update({
-          ...(input.category_id !== undefined && { category_id: input.category_id }),
-          ...(input.name !== undefined && { name: input.name }),
-          ...(input.slug !== undefined && { slug: input.slug }),
-          ...(input.url !== undefined && { url: input.url }),
-          ...(input.short_description !== undefined && { short_description: input.short_description }),
-          ...(input.description !== undefined && { description: input.description }),
-          ...(input.logo_url !== undefined && { logo_url: input.logo_url }),
-          ...(input.affiliate_link !== undefined && { affiliate_link: input.affiliate_link }),
-          ...(input.rating !== undefined && { rating: input.rating }),
-          ...(input.badge_text !== undefined && { badge_text: input.badge_text }),
-          ...(input.features !== undefined && { features: input.features }),
-          ...(input.country_scope !== undefined && { country_scope: input.country_scope }),
-          ...(input.tags !== undefined && { tags: input.tags }),
-          ...(input.is_active !== undefined && { is_active: input.is_active }),
-          ...(input.sort_order !== undefined && { sort_order: input.sort_order }),
-        })
+        .update(updateData)
         .eq("id", id)
         .select()
         .single();

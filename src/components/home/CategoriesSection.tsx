@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, LayoutGrid, MapPin, Building2, Wrench, GraduationCap, TrendingUp, Newspaper } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
-import { useHomeContent } from "@/hooks/useSettings"; // NEW
+import { useHomeContent } from "@/hooks/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
@@ -17,11 +17,12 @@ const getIconForCategory = (slug: string) => {
 
 export const CategoriesSection = () => {
   const { data: categories, isLoading: isCatsLoading } = useCategories();
-  const { content } = useHomeContent(); // Settings laden
+  const { content } = useHomeContent();
 
-  if (!content) return null; // Warten auf Settings
+  if (!content) return null;
 
-  const mainCategories = categories?.filter(cat => !cat.parent_id) || [];
+  // Filter main categories (all categories since parent_id doesn't exist in schema)
+  const mainCategories = categories || [];
 
   return (
     <section className="bg-white py-24">

@@ -6,6 +6,7 @@ import { TrustSection } from "@/components/home/TrustSection";
 import { BigThreeSection } from "@/components/home/BigThreeSection";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
+import { ForumSection } from "@/components/home/ForumSection";
 import { MascotWidget } from "@/components/layout/MascotWidget";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
@@ -56,6 +57,7 @@ const Index = () => {
         
         {layout.categories && <CategoriesSection />}
         {layout.news && <NewsSection />}
+        {layout.forum && <ForumSection />}
       </main>
 
       <Footer />

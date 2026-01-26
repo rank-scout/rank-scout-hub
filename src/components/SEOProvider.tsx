@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { useSettings } from "@/hooks/useSettings";
 
 /**
@@ -8,6 +9,7 @@ import { useSettings } from "@/hooks/useSettings";
  * to automatically sync document.title and meta tags with database settings.
  * 
  * Works for external hosting - no environment variables required.
+ * Includes HelmetProvider for react-helmet-async support.
  */
 export function SEOProvider({ children }: { children: React.ReactNode }) {
   const { data: settings, isLoading } = useSettings();
@@ -36,7 +38,7 @@ export function SEOProvider({ children }: { children: React.ReactNode }) {
     }
   }, [settings, isLoading]);
 
-  return <>{children}</>;
+  return <HelmetProvider>{children}</HelmetProvider>;
 }
 
 /**

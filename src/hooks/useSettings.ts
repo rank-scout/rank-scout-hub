@@ -84,7 +84,8 @@ export const defaultHomeLayout = {
   adsense_middle: true,
   categories: true,
   news: true,
-  mascot: true
+  mascot: true,
+  forum: true, // NEU: Forum Section
 };
 
 export const defaultHomeContent = {
@@ -138,9 +139,9 @@ export const defaultHomeContent = {
 // --- HOOKS ---
 
 export function useHomeLayout() {
-  const { data: settings } = useSettings();
+  const { data: settings, isLoading } = useSettings();
   const layout = (settings?.home_layout as typeof defaultHomeLayout) || defaultHomeLayout;
-  return { layout };
+  return { layout, isLoading };
 }
 
 export function useHomeContent() {

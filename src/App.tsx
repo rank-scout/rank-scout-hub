@@ -32,6 +32,11 @@ import AdminRedirects from "./pages/admin/Redirects";
 import AdminFooterLinks from "./pages/admin/FooterLinks";
 import AdminLeads from "./pages/admin/Leads";
 import AdminSettings from "./pages/admin/Settings";
+import AdminBlog from "./pages/admin/Blog";
+import AdminForum from "./pages/admin/Forum";
+import BlogPost from "./pages/BlogPost";
+import Forum from "./pages/Forum";
+import ForumThread from "./pages/ForumThread";
 
 // Components (NEU)
 import { CookieBanner } from "./components/layout/CookieBanner";
@@ -59,10 +64,13 @@ const App = () => (
                 <Route path="/welcome" element={<Welcome />} />
                 <Route path="/test-register" element={<C4FRegistration />} />
                 
-                {/* Legal Routes (Eingefügt auf Basis deiner Footer-Struktur) */}
+                {/* Legal Routes */}
                 <Route path="/impressum" element={<Impressum />} />
                 <Route path="/agb" element={<AGB />} />
                 <Route path="/datenschutz" element={<Datenschutz />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
+                <Route path="/forum" element={<Forum />} />
+                <Route path="/forum/:slug" element={<ForumThread />} />
                 
                 {/* Admin Routes */}
                 <Route path="/admin/login" element={<AdminLogin />} />
@@ -70,11 +78,14 @@ const App = () => (
                   <Route index element={<AdminDashboard />} />
                   <Route path="categories" element={<AdminCategories />} />
                   <Route path="projects" element={<AdminProjects />} />
+                  <Route path="projects" element={<AdminProjects />} />
+                  <Route path="blog" element={<AdminBlog />} />
+                  <Route path="forum" element={<AdminForum />} />
                   <Route path="redirects" element={<AdminRedirects />} />
                   <Route path="footer-links" element={<AdminFooterLinks />} />
                   <Route path="leads" element={<AdminLeads />} />
                   <Route path="settings" element={<AdminSettings />} />
-                  <Route path="/admin/publisher" element={<AdminPublisher />} />
+                  <Route path="publisher" element={<AdminPublisher />} />
                 </Route>
                 
                 {/* Catch-all */}
