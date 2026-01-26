@@ -17,7 +17,8 @@ import {
   UploadCloud,
   Layers,
   BarChart3,
-  Globe
+  Globe,
+  BookOpen
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -28,7 +29,8 @@ const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Projekte", icon: Globe, path: "/admin/projects" },
   { label: "Kategorien", icon: Layers, path: "/admin/categories" },
-  { label: "Publisher", icon: UploadCloud, path: "/admin/publisher" }, // Dein Multi-Publisher
+  { label: "Magazin", icon: BookOpen, path: "/admin/forum" },
+  { label: "Publisher", icon: UploadCloud, path: "/admin/publisher" },
   { label: "Redirects", icon: BarChart3, path: "/admin/redirects" },
   { label: "Footer-Links", icon: Link2, path: "/admin/footer-links" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },

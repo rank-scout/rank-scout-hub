@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef } from "react";
 import { X, Search, ExternalLink, Send, Binoculars, ArrowRight, ChevronLeft, ChevronRight, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ interface Message {
   timestamp: number;
 }
 
-export const MascotWidget = () => {
+export const MascotWidget = forwardRef<HTMLDivElement>((_, ref) => {
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -240,6 +240,7 @@ export const MascotWidget = () => {
 
   return (
     <div 
+      ref={ref}
       className={`fixed bottom-20 sm:bottom-24 z-[999] flex flex-col items-end gap-4 transition-all duration-500 ease-in-out font-sans ${
         isMinimized ? "right-[-30px] sm:right-[-35px]" : "right-4 sm:right-6"
       }`}
@@ -411,16 +412,10 @@ export const MascotWidget = () => {
                </div>
              )}
           </Button>
-          
-          {/* SPRECHBLASE (Immer die letzte Bot-Nachricht anzeigen, wenn zu) */}
-          {!isOpen && !isMinimized && isVisible && messages.length > 0 && (
-            <div className="absolute bottom-full right-0 mb-3 whitespace-nowrap bg-[#030E3E] text-white text-[11px] font-bold px-3 py-2 rounded-xl shadow-xl animate-bounce origin-bottom-right border border-[#FF9900] max-w-[200px] truncate">
-              {messages[messages.length - 1].sender === 'bot' ? messages[messages.length - 1].text : "Ich antworte..."}
-              <div className="absolute bottom-0 right-5 translate-y-1/2 rotate-45 w-2.5 h-2.5 bg-[#030E3E] border-b border-r border-[#FF9900]" />
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
-};
+});
+
+MascotWidget.displayName = "MascotWidget";

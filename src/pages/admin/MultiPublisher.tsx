@@ -34,13 +34,9 @@ export default function AdminPublisher() {
 
   useEffect(() => {
     async function loadData() {
-      // Load Targets
-      const { data: tData } = await supabase.from("deployment_targets").select("*");
-      if (tData) setTargets(tData);
-
       // Load Projects for Selection
       const { data: pData } = await supabase.from("projects").select("*").order('rating', { ascending: false });
-      if (pData) setProjects(pData);
+      if (pData) setProjects(pData as Project[]);
     }
     loadData();
   }, []);

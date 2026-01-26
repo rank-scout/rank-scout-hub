@@ -83,6 +83,7 @@ export const defaultHomeLayout = {
   big_three: true,
   adsense_middle: true,
   categories: true,
+  forum: true,
   news: true,
   mascot: true
 };

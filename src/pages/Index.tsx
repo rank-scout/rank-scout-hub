@@ -6,21 +6,21 @@ import { TrustSection } from "@/components/home/TrustSection";
 import { BigThreeSection } from "@/components/home/BigThreeSection";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
+import { ForumSection } from "@/components/home/ForumSection";
 import { MascotWidget } from "@/components/layout/MascotWidget";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 import { AmazonBanner } from "@/components/ads/AmazonBanner";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
-import { useSiteTitle, useSiteDescription, useHomeLayout } from "@/hooks/useSettings"; // Layout Hook
-import { Loader2 } from "lucide-react"; // Lade-Icon
+import { useSiteTitle, useSiteDescription, useHomeLayout } from "@/hooks/useSettings";
 
 const Index = () => {
   const analyticsCode = useGlobalAnalyticsCode();
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   
-  // HIER DER NEUE TEIL: Layout laden & Loading Check
-  const { layout, isLoading } = useHomeLayout();
+  // Layout laden
+  const { layout } = useHomeLayout();
 
   useEffect(() => {
     document.title = siteTitle;
@@ -32,11 +32,6 @@ const Index = () => {
     if (!analyticsCode) return;
     // ... Analytics Code Logik ...
   }, [analyticsCode]);
-
-  // ANTI-FLICKER: Zeige Ladescreen solange Settings nicht da sind
-  if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-[#000414]"><Loader2 className="w-10 h-10 text-primary animate-spin" /></div>;
-  }
 
   return (
     <div className="min-h-screen flex flex-col relative bg-transparent">
@@ -55,6 +50,10 @@ const Index = () => {
         {layout.adsense_middle && <AdSenseBanner slotId="placeholder-1" />}
         
         {layout.categories && <CategoriesSection />}
+        
+        {/* Forum Teaser */}
+        {layout.forum && <ForumSection />}
+        
         {layout.news && <NewsSection />}
       </main>
 

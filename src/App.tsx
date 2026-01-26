@@ -1,3 +1,4 @@
+// Sync trigger - 2026-01-26
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,6 +18,10 @@ import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
 import C4FRegistration from "./components/external/C4FRegistration";
 
+// Forum Pages
+import Forum from "./pages/Forum";
+import ForumThread from "./pages/ForumThread";
+
 // Legal Pages (NEU)
 import Impressum from "./pages/Impressum";
 import AGB from "./pages/AGB";
@@ -32,6 +37,7 @@ import AdminRedirects from "./pages/admin/Redirects";
 import AdminFooterLinks from "./pages/admin/FooterLinks";
 import AdminLeads from "./pages/admin/Leads";
 import AdminSettings from "./pages/admin/Settings";
+import AdminForum from "./pages/admin/Forum";
 
 // Components (NEU)
 import { CookieBanner } from "./components/layout/CookieBanner";
@@ -59,6 +65,10 @@ const App = () => (
                 <Route path="/welcome" element={<Welcome />} />
                 <Route path="/test-register" element={<C4FRegistration />} />
                 
+                {/* Forum Routes */}
+                <Route path="/forum" element={<Forum />} />
+                <Route path="/forum/:slug" element={<ForumThread />} />
+                
                 {/* Legal Routes (Eingefügt auf Basis deiner Footer-Struktur) */}
                 <Route path="/impressum" element={<Impressum />} />
                 <Route path="/agb" element={<AGB />} />
@@ -74,6 +84,7 @@ const App = () => (
                   <Route path="footer-links" element={<AdminFooterLinks />} />
                   <Route path="leads" element={<AdminLeads />} />
                   <Route path="settings" element={<AdminSettings />} />
+                  <Route path="forum" element={<AdminForum />} />
                   <Route path="/admin/publisher" element={<AdminPublisher />} />
                 </Route>
                 

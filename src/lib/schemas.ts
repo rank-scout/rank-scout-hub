@@ -74,10 +74,13 @@ export const categorySchema = z.object({
 export type CategoryInput = z.infer<typeof categorySchema>;
 
 // Project schemas
-const countryScopeEnum = z.enum(["DACH", "AT", "DE", "CH"]);
+const countryScopeEnum = z.enum(["DACH", "AT", "DE", "EU"]);
 
 export const projectSchema = z.object({
+  category_id: z.string().uuid().nullable().optional(),
   name: z.string().min(1, "Projektname erforderlich"),
+  slug: z.string().min(1, "Slug erforderlich"),
+  url: z.string().url("Ungültige URL"),
   short_description: z.string().max(300).optional(),
   description: z.string().optional(),
   logo_url: z.string().url("Ungültige Logo-URL").optional().or(z.literal("")),
@@ -114,4 +117,7 @@ export const siteSettingsSchema = z.object({
   custom_css: z.string().optional(),
 });
 
+// Export types for settings (AFTER schema definitions)
+export type TrendingLink = z.infer<typeof trendingLinkSchema>;
+export type NavLink = z.infer<typeof navLinkSchema>;
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;
