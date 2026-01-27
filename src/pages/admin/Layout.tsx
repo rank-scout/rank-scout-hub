@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Link, useLocation } from "react-router-dom";
+import { Navigate, Outlet, NavLink, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,13 +24,13 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Navigation Items angepasst an das neue Design
+// Navigation Items - Pfade korrigiert (besonders Publisher!)
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Projekte", icon: Globe, path: "/admin/projects" },
   { label: "Kategorien", icon: Layers, path: "/admin/categories" },
   { label: "Magazin", icon: BookOpen, path: "/admin/forum" },
-  { label: "Publisher", icon: UploadCloud, path: "/admin/publisher" },
+  { label: "Publisher", icon: UploadCloud, path: "/admin/multi-publisher" }, // FIX: Pfad korrigiert
   { label: "Redirects", icon: BarChart3, path: "/admin/redirects" },
   { label: "Footer-Links", icon: Link2, path: "/admin/footer-links" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },
@@ -73,6 +73,13 @@ export default function AdminLayout() {
     return <Navigate to="/" replace />;
   }
 
+  // Helper um den aktuellen Titel zu finden
+  const currentTitle = navItems.find((item) => 
+    item.path === "/admin" 
+      ? location.pathname === "/admin" 
+      : location.pathname.startsWith(item.path)
+  )?.label || "Dashboard";
+
   return (
     <div className="min-h-screen flex bg-background font-body">
       {/* Mobile sidebar backdrop */}
@@ -112,35 +119,37 @@ export default function AdminLayout() {
             </button>
           </div>
 
-          {/* Navigation */}
+          {/* Navigation - FIX: Umbau auf NavLink für sauberes Routing */}
           <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto custom-scrollbar">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.path || (item.path !== "/admin" && location.pathname.startsWith(item.path));
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={cn(
-                    "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group relative overflow-hidden",
-                    isActive
-                      ? "bg-secondary text-white shadow-md translate-x-1"
-                      : "text-slate-300 hover:bg-white/10 hover:text-white hover:translate-x-1"
-                  )}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <item.icon className={cn(
-                    "w-5 h-5 transition-colors",
-                    isActive ? "text-white" : "text-slate-400 group-hover:text-white"
-                  )} />
-                  <span className="relative z-10">{item.label}</span>
-                  
-                  {/* Active Indicator Glow */}
-                  {isActive && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  )}
-                </Link>
-              );
-            })}
+            {navItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                end={item.path === "/admin"} // Wichtig für Dashboard Home
+                onClick={() => setSidebarOpen(false)}
+                className={({ isActive }) => cn(
+                  "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group relative overflow-hidden",
+                  isActive
+                    ? "bg-secondary text-white shadow-md translate-x-1"
+                    : "text-slate-300 hover:bg-white/10 hover:text-white hover:translate-x-1"
+                )}
+              >
+                {({ isActive }) => (
+                  <>
+                    <item.icon className={cn(
+                      "w-5 h-5 transition-colors",
+                      isActive ? "text-white" : "text-slate-400 group-hover:text-white"
+                    )} />
+                    <span className="relative z-10">{item.label}</span>
+                    
+                    {/* Active Indicator Glow */}
+                    {isActive && (
+                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    )}
+                  </>
+                )}
+              </NavLink>
+            ))}
           </nav>
 
           {/* User Profile & Logout */}
@@ -207,13 +216,13 @@ export default function AdminLayout() {
              <span className="text-muted-foreground font-medium">Admin</span>
              <span className="text-slate-300">/</span>
              <h1 className="text-primary font-bold text-lg capitalize">
-               {navItems.find((item) => item.path === location.pathname || (item.path !== "/admin" && location.pathname.startsWith(item.path)))?.label || "Dashboard"}
+               {currentTitle}
              </h1>
           </div>
           <div className="flex items-center gap-4">
-             {/* Hier könnten später Notifications stehen */}
+             {/* Notifications area placeholder */}
              <div className="text-xs font-mono text-muted-foreground bg-slate-100 px-2 py-1 rounded">
-               v2.0.0
+               v2.0.1
              </div>
           </div>
         </div>

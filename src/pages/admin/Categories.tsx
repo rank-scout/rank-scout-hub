@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useDuplicateCategory, type Category } from "@/hooks/useCategories";
 import { useCategoryProjects, useUpdateCategoryProjects } from "@/hooks/useCategoryProjects";
 import { useGenerateCityContent } from "@/hooks/useGenerateCityContent";
@@ -21,7 +21,7 @@ import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
 import { CategoryLegalLinksEditor } from "@/components/admin/CategoryLegalLinksEditor";
-import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor"; // NEU
+import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor";
 import { supabase } from "@/integrations/supabase/client";
 
 // --- Generator Importe ---
@@ -70,15 +70,29 @@ export default function AdminCategories() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isDeploying, setIsDeploying] = useState<string | null>(null);
 
-  const { data: categoryProjects = [] } = useCategoryProjects(editingCategory?.id);
+  // FIX: Destructuring mit Fallback verhinderte Stable Reference. 
+  // Wir nutzen useCategoryProjects und sichern den Zugriff ab.
+  const { data: categoryProjectsRaw } = useCategoryProjects(editingCategory?.id);
+  
+  // FIX: Stabile Referenz für categoryProjects durch useMemo, damit der Effect nicht looped
+  const categoryProjects = useMemo(() => categoryProjectsRaw || [], [categoryProjectsRaw]);
 
+  // FIX: Render-Loop gestoppt durch State-Check
   useEffect(() => {
-    if (categoryProjects.length > 0) {
+    let targetIds: string[] = [];
+    
+    if (editingCategory && categoryProjects.length > 0) {
       const sorted = [...categoryProjects].sort((a, b) => a.sort_order - b.sort_order);
-      setSelectedProjectIds(sorted.map((cp) => cp.project_id));
+      targetIds = sorted.map((cp) => cp.project_id);
     } else if (!editingCategory) {
-      setSelectedProjectIds([]);
+      targetIds = [];
     }
+
+    // Nur updaten, wenn sich wirklich was geändert hat!
+    setSelectedProjectIds(prev => {
+      const isSame = prev.length === targetIds.length && prev.every((id, i) => id === targetIds[i]);
+      return isSame ? prev : targetIds;
+    });
   }, [categoryProjects, editingCategory]);
 
   const form = useForm<CategoryInput>({

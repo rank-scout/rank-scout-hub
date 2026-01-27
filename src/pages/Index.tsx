@@ -7,6 +7,7 @@ import { BigThreeSection } from "@/components/home/BigThreeSection";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
 import { ForumSection } from "@/components/home/ForumSection";
+import { ArcadeSection } from "@/components/home/ArcadeSection";
 import { MascotWidget } from "@/components/layout/MascotWidget";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
@@ -19,7 +20,7 @@ const Index = () => {
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   
-  // Layout laden
+  // Layout-Einstellungen
   const { layout } = useHomeLayout();
 
   useEffect(() => {
@@ -30,7 +31,6 @@ const Index = () => {
 
   useEffect(() => {
     if (!analyticsCode) return;
-    // ... Analytics Code Logik ...
   }, [analyticsCode]);
 
   return (
@@ -38,28 +38,36 @@ const Index = () => {
       <Header />
       
       <main className="flex-grow">
+        {/* 1. HERO: Conversion Start */}
         {layout.hero && <HeroSection />}
         
-        {/* Strategische Werbung: Amazon oben */}
-        {layout.amazon_top && <AmazonBanner format="horizontal" />}
-        
-        {layout.trust && <TrustSection />}
+        {/* 2. MONEY TILES: Sofortiger Revenue-Fokus (Dating, KI, Apps) - Overlaps Hero */}
         {layout.big_three && <BigThreeSection />}
         
-        {/* Strategische Werbung: Google Mitte */}
-        {layout.adsense_middle && <AdSenseBanner slotId="placeholder-1" />}
+        {/* 3. TRUST: Social Proof */}
+        {layout.trust && <TrustSection />}
+
+        {/* 4. ARCADE LOUNGE: Retention & Stickiness */}
+        <ArcadeSection />
         
+        {/* 5. AMAZON: Monetarisierung */}
+        {layout.amazon_top && <AmazonBanner format="horizontal" />}
+        
+        {/* 6. KATEGORIEN: SEO Verteiler */}
         {layout.categories && <CategoriesSection />}
         
-        {/* Forum Teaser */}
-        {layout.forum && <ForumSection />}
+        {/* 7. LIVE PULSE: Erst Content (News), dann Interaktion (Forum) */}
+        <div className="bg-slate-50 border-t border-slate-200">
+             {layout.news && <NewsSection />}
+             {layout.forum && <ForumSection />}
+        </div>
         
-        {layout.news && <NewsSection />}
+        {/* 8. ADSENSE: Rest-Monetarisierung */}
+        {layout.adsense_middle && <AdSenseBanner slotId="placeholder-1" />}
       </main>
 
       <Footer />
       
-      {/* Floating Elements */}
       <ScrollToTop />
       {layout.mascot && <MascotWidget />}
     </div>
