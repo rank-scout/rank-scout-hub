@@ -3,13 +3,23 @@ import { supabase } from "@/integrations/supabase/client";
 import type { TrendingLink, NavLink } from "@/lib/schemas";
 import type { Json } from "@/integrations/supabase/types";
 
+// --- TYPES ---
+export interface ForumBannerConfig {
+  imageUrl: string;
+  linkUrl: string;
+  isActive: boolean;
+  title?: string;
+  description?: string;
+  ctaText?: string;
+}
+
 type SettingsRecord = {
   id: string;
   key: string;
   value: Json;
-  updated_at: string;
 };
 
+// --- FETCHING ---
 async function fetchSettings(): Promise<Record<string, Json>> {
   const { data, error } = await supabase
     .from("settings")
@@ -29,7 +39,7 @@ export function useSettings() {
   return useQuery({
     queryKey: ["settings"],
     queryFn: fetchSettings,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes Cache
   });
 }
 
@@ -43,30 +53,12 @@ export function useUpdateSetting() {
 
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: Json }) => {
-      const { data: existing } = await supabase
+      // WICHTIG: Kein 'updated_at', da Spalte in DB fehlt
+      const { error } = await supabase
         .from("settings")
-        .select("id")
-        .eq("key", key)
-        .single();
+        .upsert({ key, value }, { onConflict: "key" });
 
-      let result;
-      if (existing) {
-        result = await supabase
-          .from("settings")
-          .update({ value })
-          .eq("key", key)
-          .select()
-          .single();
-      } else {
-        result = await supabase
-          .from("settings")
-          .insert({ key, value })
-          .select()
-          .single();
-      }
-
-      if (result.error) throw result.error;
-      return result.data;
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
@@ -74,114 +66,96 @@ export function useUpdateSetting() {
   });
 }
 
-// --- STANDARD VALUES FÜR HOME LAYOUT & CONTENT ---
+// --- SPECIFIC HOOKS ---
 
-export const defaultHomeLayout = {
-  hero: true,
-  amazon_top: true,
-  trust: true,
-  big_three: true,
-  adsense_middle: true,
-  categories: true,
-  forum: true,
-  news: true,
-  mascot: true
-};
-
-export const defaultHomeContent = {
-  hero: {
-    badge: "NEU: Rank-Scout 2.0 ist live",
-    title: "Entdecke die besten Vergleiche",
-    subtitle: "Wir vergleichen, damit du die richtige Wahl triffst. Unabhängig. Datengestützt. Kompromisslos ehrlich.",
-    search_placeholder: "Was möchtest du vergleichen?",
-    search_label: "AI-Live-Search"
-  },
-  trust: {
-    headline: "Markt-Transparenz statt Dschungel.",
-    subheadline: "Wir filtern das Signal aus dem Rauschen. Rank-Scout ist Ihre Intelligence-Plattform für validierte Dienstleister und Software.",
-    card1_title: "Daten statt Meinung",
-    card1_text: "Unsere Algorithmen analysieren tausende Datenpunkte. Keine gekauften Platzierungen, nur harte Fakten.",
-    card2_title: "Echtzeit-Scouting",
-    card2_text: "Der Markt schläft nie. Unsere Datenbank wird täglich aktualisiert, damit Sie keinen Trend verpassen.",
-    card3_title: "Verifizierte Experten",
-    card3_text: "Nur Dienstleister mit nachgewiesenem Track-Record schaffen es in unsere Rankings.",
-    box_title: "Ihr unfairer Wettbewerbsvorteil",
-    box_text: "Während andere noch suchen, haben Sie bereits entschieden. Rank-Scout liefert Ihnen die Marktdaten, die Sie für technologische Führung brauchen."
-  },
-  big_three: {
-    headline: "Wählen Sie Ihren Bereich",
-    finance_title: "Finanzen & Krypto",
-    finance_desc: "Broker, Kredite & Geschäftskonten im Härtetest.",
-    software_title: "Software & SaaS",
-    software_desc: "Die besten Tools für Marketing, HR und Vertrieb.",
-    services_title: "Dienstleistungen",
-    services_desc: "Agenturen, Berater und Services auf dem Prüfstand."
-  },
-  categories: {
-    headline: "Alle Kategorien im Überblick"
-  },
-  news: {
-    headline: "Der \"Unfair Advantage\" Newsletter",
-    subheadline: "Erhalten Sie kuratierte Top-Tools und geheime Markt-Daten, bevor Ihre Konkurrenz davon erfährt. Keine Theorie, nur validiertes Wachstum.",
-    button_text: "Kostenlos anmelden",
-    placeholder: "ihre@firmen-email.de"
-  },
-  seo: {
-    headline: "Rank-Scout: Die Instanz für digitale Markttransparenz",
-    intro: "Wir bringen Licht in den undurchsichtigen Markt digitaler Dienstleistungen und Technologien. Unabhängig. Datengestützt. Kompromisslos ehrlich.",
-    block1_title: "Warum Rank-Scout?",
-    block1_text: "In einer Welt voller Fake-Bewertungen und intransparenter Affiliate-Modelle setzen wir einen neuen Standard. Wir analysieren nicht nur Features, sondern prüfen echte Business-Impacts.",
-    block2_title: "Zukunftssicherheit",
-    block2_text: "Unsere Scouts scannen den globalen Markt permanent nach neuen Trends. Ob Generative AI oder Blockchain – wir übersetzen Trends in Business-Cases."
-  }
-};
-
-// --- HOOKS ---
-
-export function useHomeLayout() {
-  const { data: settings } = useSettings();
-  const layout = (settings?.home_layout as typeof defaultHomeLayout) || defaultHomeLayout;
-  return { layout };
-}
-
-export function useHomeContent() {
-  const { data: settings } = useSettings();
-  const content = (settings?.home_content as typeof defaultHomeContent) || defaultHomeContent;
-  return { content };
-}
-
-// Ads Config Hooks
-export function useAdSenseConfig() {
-  const { data: settings } = useSettings();
-  return {
-    clientId: (settings?.ads_sense_client_id as string) || "",
-    defaultSlotId: (settings?.ads_sense_slot_id as string) || ""
-  };
-}
-
-// KYRA UPDATE: NATIVE AMAZON CONFIG
-export function useAmazonConfig() {
-  const { data: settings } = useSettings();
-  return {
-    headline: (settings?.ads_amazon_headline as string) || "",
-    text: (settings?.ads_amazon_text as string) || "",
-    buttonText: (settings?.ads_amazon_button_text as string) || "Zum Angebot",
-    link: (settings?.ads_amazon_link as string) || ""
-  };
-}
-
-// Legacy / Simple Getter Hooks
 export function useSiteTitle() { return useSetting<string>("site_title", "Rank-Scout"); }
 export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
 export function useSiteDescription() { return useSetting<string>("site_description", "Dein Vergleichsportal"); }
+
 export function useHeroTitle() { return useSetting<string>("hero_title", "Entdecke die besten Vergleiche"); }
 export function useHeroSubtitle() { return useSetting<string>("hero_subtitle", "Wir vergleichen, damit du die richtige Wahl triffst"); }
+
 export function useTrendingLinks() { return useSetting<TrendingLink[]>("trending_links", []); }
 export function useNavLinks() { return useSetting<NavLink[]>("nav_links", []); }
 export function useFooterLinks() { return useSetting<NavLink[]>("footer_links", []); }
+
 export function useFooterSiteName() { return useSetting<string>("footer_site_name", "Rank-Scout"); }
 export function useFooterCopyright() { return useSetting<string>("footer_copyright", `© ${new Date().getFullYear()} Rank-Scout. Alle Rechte vorbehalten.`); }
 export function useFooterDesignerName() { return useSetting<string>("footer_designer_name", "Digital-Perfect"); }
 export function useFooterDesignerUrl() { return useSetting<string>("footer_designer_url", "https://digital-perfect.com"); }
+
 export function useAdsEnabled() { return useSetting<boolean>("ads_enabled", false); }
 export function useGlobalAnalyticsCode() { return useSetting<string>("global_analytics_code", ""); }
+
+// --- LAYOUT & CONTENT ---
+
+// Definitive Liste aller Sektionen (Array für Sortierung im Admin)
+export const defaultHomeLayout = [
+  { id: "hero", type: "hero", is_active: true, sort_order: 0 },
+  { id: "amazon_top", type: "ad", is_active: false, sort_order: 1 },
+  { id: "trust", type: "trust", is_active: true, sort_order: 2 },
+  { id: "big_three", type: "features", is_active: true, sort_order: 3 }, // Alias 'stats'
+  { id: "adsense_middle", type: "ad", is_active: false, sort_order: 4 },
+  { id: "categories", type: "categories", is_active: true, sort_order: 5 },
+  { id: "forum", type: "forum", is_active: true, sort_order: 6 },
+  { id: "news", type: "news", is_active: true, sort_order: 7 },
+  { id: "seo", type: "seo", is_active: true, sort_order: 8 },
+  { id: "mascot", type: "widget", is_active: true, sort_order: 99 }
+];
+
+export const defaultHomeContent = {
+  hero: { badge: "NEU: Rank-Scout 2.0 ist live", title: "Entdecke die besten Vergleiche", subtitle: "Wir vergleichen, damit du die richtige Wahl triffst.", search_placeholder: "Was suchst du?", search_label: "AI-Suche" },
+  trust: { headline: "Markt-Transparenz", subheadline: "Wir filtern das Signal aus dem Rauschen.", card1_title: "Daten", card1_text: "Fakten statt Meinung.", card2_title: "Echtzeit", card2_text: "Täglich aktuell.", card3_title: "Experten", card3_text: "Geprüfte Qualität.", box_title: "Vorteil", box_text: "Entscheiden Sie besser." },
+  big_three: { headline: "Wählen Sie Ihren Bereich", finance_title: "Finanzen", finance_desc: "Broker & Krypto", software_title: "Software", software_desc: "Tools & SaaS", services_title: "Services", services_desc: "Agenturen" },
+  categories: { headline: "Alle Kategorien" },
+  news: { headline: "Aktuelles", subheadline: "News & Trends.", button_text: "Zum Magazin" },
+  seo: { headline: "Über uns", intro: "Willkommen bei Rank-Scout." }
+};
+
+// FIX: Gibt Array zurück (für Admin)
+export function useHomeLayout() {
+  const { data } = useSettings();
+  const dbLayout = data?.['home_layout'];
+  
+  if (!Array.isArray(dbLayout) || dbLayout.length === 0) {
+    return defaultHomeLayout;
+  }
+  return dbLayout;
+}
+
+// FIX: Gibt { content: ... } zurück (für Komponenten) & führt Deep Merge durch
+export function useHomeContent() {
+  const { data } = useSettings();
+  const dbContent = data?.['home_content'] as any;
+
+  // Merge Logik: Default + DB
+  const mergedContent = dbContent ? {
+    ...defaultHomeContent,
+    ...dbContent,
+    hero: { ...defaultHomeContent.hero, ...(dbContent.hero || {}) },
+    trust: { ...defaultHomeContent.trust, ...(dbContent.trust || {}) },
+    big_three: { ...defaultHomeContent.big_three, ...(dbContent.big_three || {}) },
+    news: { ...defaultHomeContent.news, ...(dbContent.news || {}) },
+    seo: { ...defaultHomeContent.seo, ...(dbContent.seo || {}) }
+  } : defaultHomeContent;
+
+  // WICHTIG: Als { content } wrappen, da Komponenten "const { content } = useHomeContent()" nutzen
+  return { content: mergedContent };
+}
+
+export function useAdSenseConfig() { return useSetting("adsense_config", { client_id: "", slot_id: "", is_active: false }); }
+export function useAmazonConfig() { return useSetting("amazon_config", { tracking_id: "", is_active: false }); }
+
+export function useForumBannerConfig() {
+  const { data } = useSettings();
+  const dbConfig = data?.['forum_banner_config'] as any;
+  const defaultConfig = {
+    imageUrl: "https://placehold.co/500x300/e2e8f0/1e293b?text=Dein+Banner+Hier",
+    linkUrl: "#",
+    isActive: true,
+    title: "Spezialangebot",
+    description: "Klicke hier für mehr Infos.",
+    ctaText: "Jetzt ansehen"
+  };
+  return { ...defaultConfig, ...(dbConfig || {}) };
+}

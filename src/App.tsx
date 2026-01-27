@@ -2,106 +2,101 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider, useAuth } from "@/hooks/useAuth";
-import SEOProvider from "@/components/SEOProvider";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/hooks/useAuth";
+import { SEOProvider } from "@/components/SEOProvider";
+import { ThemeProvider } from "@/hooks/useTheme";
+import AdminPublisher from "./pages/admin/MultiPublisher";
+
+// Pages
+import Index from "./pages/Index";
+import Categories from "./pages/Categories";
+import CategoryDetail from "./pages/CategoryDetail";
+import GoRedirect from "./pages/GoRedirect";
+import NotFound from "./pages/NotFound";
+import Welcome from "./pages/Welcome";
+import C4FRegistration from "./components/external/C4FRegistration";
+
+// Forum Pages
+import Forum from "./pages/Forum";
+import ForumThread from "./pages/ForumThread";
+
+// Legal Pages
+import Impressum from "./pages/Impressum";
+import AGB from "./pages/AGB";
+import Datenschutz from "./pages/Datenschutz";
+
+// Admin Pages
+import AdminLogin from "./pages/admin/Login";
+import AdminLayout from "./pages/admin/Layout";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminCategories from "./pages/admin/Categories";
+import AdminProjects from "./pages/admin/Projects";
+import AdminRedirects from "./pages/admin/Redirects";
+import AdminFooterLinks from "./pages/admin/FooterLinks";
+import AdminLeads from "./pages/admin/Leads";
+import AdminSettings from "./pages/admin/Settings";
+import AdminForum from "./pages/admin/Forum";
+
+// Components
+import { CookieBanner } from "./components/layout/CookieBanner";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
 
-// Pages Imports - Basierend auf Git-Struktur
-import Index from "@/pages/Index";
-import Forum from "@/pages/Forum";
-import ForumThread from "@/pages/ForumThread";
-import Categories from "@/pages/Categories";
-import CategoryDetail from "@/pages/CategoryDetail";
-import AGB from "@/pages/AGB";
-import Impressum from "@/pages/Impressum";
-import Datenschutz from "@/pages/Datenschutz";
-import GoRedirect from "@/pages/GoRedirect";
-import Welcome from "@/pages/Welcome";
-import AdminLogin from "@/pages/admin/Login";
-import AdminDashboard from "@/pages/admin/Dashboard";
-import AdminProjects from "@/pages/admin/Projects";
-import AdminCategories from "@/pages/admin/Categories";
-import AdminFooterLinks from "@/pages/admin/FooterLinks";
-import AdminRedirects from "@/pages/admin/Redirects";
-import AdminSettings from "@/pages/admin/Settings";
-import AdminLayout from "@/pages/admin/Layout";
-import AdminLeads from "@/pages/admin/Leads";
-import AdminMultiPublisher from "@/pages/admin/MultiPublisher";
-import AdminForum from "@/pages/admin/Forum";
-import NotFound from "@/pages/NotFound";
-
 const queryClient = new QueryClient();
-
-// Authentifizierungsschutz
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { session, loading } = useAuth();
-
-  if (loading) {
-    return <div className="flex items-center justify-center h-screen">Laden...</div>;
-  }
-
-  if (!session) {
-    return <Navigate to="/admin/login" replace />;
-  }
-
-  return <>{children}</>;
-};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
-      <SEOProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter 
-            future={{ 
-              v7_startTransition: true, 
-              v7_relativeSplatPath: true 
-            }}
-          >
-            <ScrollToTopHandler />
-            <Routes>
-              {/* Public Area */}
-              <Route path="/" element={<Index />} />
-              <Route path="/forum" element={<Forum />} />
-              <Route path="/forum/:slug" element={<ForumThread />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/category/:slug" element={<CategoryDetail />} />
-              <Route path="/agb" element={<AGB />} />
-              <Route path="/impressum" element={<Impressum />} />
-              <Route path="/datenschutz" element={<Datenschutz />} />
-              <Route path="/go/:slug" element={<GoRedirect />} />
-              <Route path="/welcome" element={<Welcome />} />
+      <ThemeProvider defaultTheme="dark">
+        <SEOProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              {/* Globale Komponenten */}
+              <CookieBanner /> 
+              <ScrollToTopHandler />
               
-              {/* Admin Area */}
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute>
-                    <AdminLayout />
-                  </ProtectedRoute>
-                }
-              >
-                <Route index element={<AdminDashboard />} />
-                <Route path="projects" element={<AdminProjects />} />
-                <Route path="categories" element={<AdminCategories />} />
-                <Route path="footer-links" element={<AdminFooterLinks />} />
-                <Route path="redirects" element={<AdminRedirects />} />
-                <Route path="settings" element={<AdminSettings />} />
-                <Route path="leads" element={<AdminLeads />} />
-                <Route path="multi-publisher" element={<AdminMultiPublisher />} />
-                <Route path="forum" element={<AdminForum />} />
-              </Route>
-
-              {/* Fallback */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </SEOProvider>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/kategorien" element={<Categories />} />
+                <Route path="/kategorien/:slug" element={<CategoryDetail />} />
+                <Route path="/go/:slug" element={<GoRedirect />} />
+                <Route path="/welcome" element={<Welcome />} />
+                <Route path="/test-register" element={<C4FRegistration />} />
+                
+                {/* Forum Routes - UPDATE */}
+                <Route path="/forum" element={<Forum />} />
+                <Route path="/forum/kategorie/:categorySlug" element={<Forum />} /> {/* NEU: Kategorie-Filter */}
+                <Route path="/forum/:slug" element={<ForumThread />} />
+                
+                {/* Legal Routes */}
+                <Route path="/impressum" element={<Impressum />} />
+                <Route path="/agb" element={<AGB />} />
+                <Route path="/datenschutz" element={<Datenschutz />} />
+                
+                {/* Admin Routes */}
+                <Route path="/admin/login" element={<AdminLogin />} />
+                <Route path="/admin" element={<AdminLayout />}>
+                  <Route index element={<AdminDashboard />} />
+                  <Route path="categories" element={<AdminCategories />} />
+                  <Route path="projects" element={<AdminProjects />} />
+                  <Route path="redirects" element={<AdminRedirects />} />
+                  <Route path="footer-links" element={<AdminFooterLinks />} />
+                  <Route path="leads" element={<AdminLeads />} />
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route path="forum" element={<AdminForum />} />
+                  <Route path="multi-publisher" element={<AdminPublisher />} /> {/* FIX: Matcht Layout.tsx */}
+                </Route>
+                
+                {/* Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </SEOProvider>
+      </ThemeProvider>
     </AuthProvider>
   </QueryClientProvider>
 );
