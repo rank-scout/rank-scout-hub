@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { 
   useSettings, useUpdateSetting, useHomeLayout, useHomeContent, 
   useHeaderConfig, useFooterConfig, useScoutyConfig, useHomeForumTeaser,
-  useForumBannerConfig, useForumAdConfig, // Importiert
-  defaultHomeContent
+  useForumBannerConfig, useForumAds, // NEU: useForumAds
+  defaultHomeContent, ForumAd // NEU: Type import
 } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,14 +14,19 @@ import { toast } from "@/hooks/use-toast";
 import { 
   Loader2, Save, Globe, Layout, Sparkles, DollarSign, 
   Image as ImageIcon, Upload, Users, MessageSquare,
-  ArrowUp, ArrowDown, Eye, EyeOff, GripVertical, Menu, Bot, Plus, Trash2, Link as LinkIcon
+  ArrowUp, ArrowDown, Eye, EyeOff, GripVertical, Menu, Bot, Plus, Trash2, Link as LinkIcon,
+  Code, Edit, CheckCircle2, XCircle
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Slider } from "@/components/ui/slider";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+
+// Helper für IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export default function AdminSettings() {
   const { data: settings, isLoading } = useSettings();
@@ -35,7 +40,7 @@ export default function AdminSettings() {
   const scoutyConfig = useScoutyConfig();
   const homeForumTeaser = useHomeForumTeaser();
   const forumBannerConfig = useForumBannerConfig(); 
-  const forumAdConfig = useForumAdConfig(); // NEU
+  const dbAds = useForumAds(); // Lade Ads aus DB
 
   // Local States Global
   const [siteLogoUrl, setSiteLogoUrl] = useState("");
@@ -46,16 +51,27 @@ export default function AdminSettings() {
   const [forumSubheadline, setForumSubheadline] = useState("");
   const [forumBadge, setForumBadge] = useState("");
 
+  // AD MANAGER STATE
+  const [ads, setAds] = useState<ForumAd[]>([]);
+  const [isAdDialogOpen, setIsAdDialogOpen] = useState(false);
+  const [currentAd, setCurrentAd] = useState<ForumAd | null>(null); // Für Edit/New
+
   // Sync Init
   useEffect(() => {
     if (settings) {
        setSiteLogoUrl((settings.site_logo_url as string) || "");
-       // Forum Init
        setForumHeadline((settings.forum_banner_headline as string) || "Diskussionen & Erfahrungen");
        setForumSubheadline((settings.forum_banner_subheadline as string) || "Tausche dich mit anderen aus...");
        setForumBadge((settings.forum_banner_badge as string) || "Community Forum");
     }
   }, [settings]);
+
+  // Sync Ads
+  useEffect(() => {
+    if (dbAds) {
+        setAds(dbAds);
+    }
+  }, [dbAds]);
 
   // Generic Save Helpers
   async function saveSetting(key: string, value: Json) {
@@ -93,17 +109,66 @@ export default function AdminSettings() {
     saveSetting("home_forum_teaser", newConfig);
   };
 
-  // NEU: Forum Ad Update
-  const updateForumAd = (field: string, value: any) => {
-    const newConfig = { ...forumAdConfig, [field]: value };
-    saveSetting("forum_ad_config", newConfig);
-  };
-
-  // Helper für Forum Tab
   const saveForumPageConfig = () => {
       saveSetting("forum_banner_headline", forumHeadline);
       saveSetting("forum_banner_subheadline", forumSubheadline);
       saveSetting("forum_banner_badge", forumBadge);
+  };
+
+  // --- AD MANAGER FUNCTIONS ---
+  const openNewAdDialog = () => {
+      setCurrentAd({
+          id: generateId(),
+          name: "Neuer Banner",
+          type: "image",
+          enabled: true,
+          image_url: "",
+          link_url: "",
+          headline: "",
+          subheadline: "",
+          cta_text: "Zum Angebot",
+          html_code: ""
+      });
+      setIsAdDialogOpen(true);
+  };
+
+  const openEditAdDialog = (ad: ForumAd) => {
+      setCurrentAd({ ...ad });
+      setIsAdDialogOpen(true);
+  };
+
+  const saveAd = () => {
+      if (!currentAd) return;
+      
+      let newAds = [...ads];
+      const index = newAds.findIndex(a => a.id === currentAd.id);
+      
+      if (index >= 0) {
+          newAds[index] = currentAd; // Update
+      } else {
+          newAds.push(currentAd); // Create
+      }
+      
+      setAds(newAds);
+      // @ts-ignore
+      saveSetting("forum_ads_list", newAds);
+      setIsAdDialogOpen(false);
+  };
+
+  const deleteAd = (id: string) => {
+      if(!confirm("Wirklich löschen?")) return;
+      const newAds = ads.filter(a => a.id !== id);
+      setAds(newAds);
+      // @ts-ignore
+      saveSetting("forum_ads_list", newAds);
+  };
+
+  const toggleAd = (index: number) => {
+      const newAds = [...ads];
+      newAds[index].enabled = !newAds[index].enabled;
+      setAds(newAds);
+      // @ts-ignore
+      saveSetting("forum_ads_list", newAds);
   };
 
   // CMS Ordering
@@ -307,8 +372,7 @@ export default function AdminSettings() {
 
         {/* TAB 2: GLOBAL */}
         <TabsContent value="global" className="space-y-6 mt-6">
-            
-            {/* HEADER */}
+            {/* Header, Footer & Branding bleiben unverändert */}
             <Card>
                 <CardHeader><CardTitle className="flex gap-2"><Menu className="w-5 h-5"/> Header & Navigation</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
@@ -316,17 +380,10 @@ export default function AdminSettings() {
                         <div className="space-y-2"><Label>Button Text</Label><Input value={headerConfig.button_text} onChange={(e)=>updateHeader('button_text',e.target.value)}/></div>
                         <div className="space-y-2"><Label>Button Link</Label><Input value={headerConfig.button_url} onChange={(e)=>updateHeader('button_url',e.target.value)}/></div>
                     </div>
-                    
-                    {/* VISUAL EDITOR */}
-                    <LinkListEditor 
-                        label="Haupt-Navigation (Menüpunkte)" 
-                        links={headerConfig.nav_links || []} 
-                        onChange={(v) => updateHeader('nav_links', v)} 
-                    />
+                    <LinkListEditor label="Haupt-Navigation (Menüpunkte)" links={headerConfig.nav_links || []} onChange={(v) => updateHeader('nav_links', v)} />
                 </CardContent>
             </Card>
 
-            {/* FOOTER */}
             <Card>
                 <CardHeader><CardTitle>Footer & Rechtliches</CardTitle></CardHeader>
                 <CardContent className="space-y-6">
@@ -338,22 +395,11 @@ export default function AdminSettings() {
                     </div>
                     <div className="space-y-2"><Label>Beschreibung</Label><Textarea value={footerConfig.text_description} onChange={(e)=>updateFooter('text_description',e.target.value)}/></div>
                     <div className="space-y-2"><Label className="text-red-500 font-bold">Werbehinweis (Disclaimer)</Label><Textarea value={footerConfig.disclaimer} onChange={(e)=>updateFooter('disclaimer',e.target.value)} rows={3}/></div>
-                    
-                    <LinkListEditor 
-                        label="Rechtliche Links (Impressum etc.)" 
-                        links={footerConfig.legal_links || []} 
-                        onChange={(v) => updateFooter('legal_links', v)} 
-                    />
-                    
-                    <LinkListEditor 
-                        label="Beliebte Links (Spalte 2)" 
-                        links={footerConfig.popular_links || []} 
-                        onChange={(v) => updateFooter('popular_links', v)} 
-                    />
+                    <LinkListEditor label="Rechtliche Links (Impressum etc.)" links={footerConfig.legal_links || []} onChange={(v) => updateFooter('legal_links', v)} />
+                    <LinkListEditor label="Beliebte Links (Spalte 2)" links={footerConfig.popular_links || []} onChange={(v) => updateFooter('popular_links', v)} />
                 </CardContent>
             </Card>
 
-            {/* BRANDING */}
             <Card>
                  <CardHeader><CardTitle>Logo</CardTitle></CardHeader>
                  <CardContent>
@@ -371,10 +417,9 @@ export default function AdminSettings() {
                       </div>
                  </CardContent>
             </Card>
-
         </TabsContent>
 
-        {/* TAB 3: FORUM (NEUER REITER) */}
+        {/* TAB 3: FORUM (NEUER REITER MIT AD MANAGER) */}
         <TabsContent value="forum" className="space-y-6 mt-6">
             <Card className="bg-card border-border shadow-sm">
                 <CardHeader>
@@ -399,48 +444,116 @@ export default function AdminSettings() {
                 </CardContent>
             </Card>
 
-            {/* NEU: Sidebar Werbung Config */}
+            {/* NEU: INFINITE AD MANAGER */}
             <Card className="bg-card border-border shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-600" /> Sidebar Werbung (Rechts)</CardTitle>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-600" /> Sidebar Werbung (Globaler Pool)</CardTitle>
+                  <Button onClick={openNewAdDialog} size="sm" className="bg-green-600 hover:bg-green-700 text-white">
+                      <Plus className="w-4 h-4 mr-1"/> Banner erstellen
+                  </Button>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between border p-4 rounded-lg bg-slate-50">
-                        <Label>Werbung aktivieren</Label>
-                        <Switch 
-                            checked={forumAdConfig.enabled} 
-                            onCheckedChange={(c) => updateForumAd('enabled', c)} 
-                        />
-                    </div>
+                    <p className="text-sm text-muted-foreground">Diese Banner rotieren zufällig auf der Forum-Übersicht und in Threads (außer in Kategorien mit eigener Werbung).</p>
                     
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Bild URL</Label>
-                            <Input value={forumAdConfig.image_url} onChange={(e) => updateForumAd('image_url', e.target.value)} placeholder="https://..." />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Ziel Link</Label>
-                            <Input value={forumAdConfig.link_url} onChange={(e) => updateForumAd('link_url', e.target.value)} placeholder="/software oder https://..." />
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Überschrift (Overlay)</Label>
-                            <Input value={forumAdConfig.headline} onChange={(e) => updateForumAd('headline', e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Untertitel</Label>
-                            <Input value={forumAdConfig.subheadline} onChange={(e) => updateForumAd('subheadline', e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Button Text</Label>
-                        <Input value={forumAdConfig.cta_text} onChange={(e) => updateForumAd('cta_text', e.target.value)} />
+                    <div className="space-y-3">
+                        {ads.length === 0 && (
+                            <div className="text-center py-8 border-2 border-dashed rounded-xl text-muted-foreground">
+                                Noch keine Werbebanner angelegt.
+                            </div>
+                        )}
+                        {ads.map((ad, idx) => (
+                            <div key={ad.id} className="flex items-center justify-between p-4 bg-slate-50 border rounded-xl">
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 rounded-lg bg-white border flex items-center justify-center">
+                                        {ad.type === 'code' ? <Code className="w-5 h-5 text-blue-500"/> : <ImageIcon className="w-5 h-5 text-green-500"/>}
+                                    </div>
+                                    <div>
+                                        <div className="font-bold">{ad.name || "Unbenannt"}</div>
+                                        <div className="text-xs text-muted-foreground flex gap-2">
+                                            <span className="uppercase">{ad.type}</span> • {ad.enabled ? <span className="text-green-600 flex items-center gap-1"><CheckCircle2 className="w-3 h-3"/> Aktiv</span> : <span className="text-slate-400">Inaktiv</span>}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex gap-2">
+                                    <Switch checked={ad.enabled} onCheckedChange={() => toggleAd(idx)} />
+                                    <Button variant="ghost" size="icon" onClick={() => openEditAdDialog(ad)}><Edit className="w-4 h-4"/></Button>
+                                    <Button variant="ghost" size="icon" onClick={() => deleteAd(ad.id)}><Trash2 className="w-4 h-4 text-destructive"/></Button>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </CardContent>
             </Card>
         </TabsContent>
+
+        {/* DIALOG FÜR ADS */}
+        <Dialog open={isAdDialogOpen} onOpenChange={setIsAdDialogOpen}>
+            <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                    <DialogTitle>{currentAd?.id ? "Banner bearbeiten" : "Neuer Werbebanner"}</DialogTitle>
+                    <DialogDescription>Wähle zwischen Bild-Banner oder HTML-Code.</DialogDescription>
+                </DialogHeader>
+                
+                {currentAd && (
+                    <div className="space-y-6 py-4">
+                        <div className="space-y-2">
+                            <Label>Interner Name</Label>
+                            <Input value={currentAd.name} onChange={e => setCurrentAd({...currentAd, name: e.target.value})} placeholder="z.B. Krypto Affiliate" />
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label>Typ</Label>
+                            <RadioGroup value={currentAd.type} onValueChange={(v: any) => setCurrentAd({...currentAd, type: v})} className="flex gap-4">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="image" id="r1" />
+                                    <Label htmlFor="r1" className="cursor-pointer">Bild Banner</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="code" id="r2" />
+                                    <Label htmlFor="r2" className="cursor-pointer">HTML / JS Code</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+
+                        {currentAd.type === 'image' ? (
+                            <div className="space-y-4 animate-in fade-in">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label>Bild URL</Label><Input value={currentAd.image_url} onChange={e => setCurrentAd({...currentAd, image_url: e.target.value})} placeholder="https://..." /></div>
+                                    <div className="space-y-2"><Label>Link URL</Label><Input value={currentAd.link_url} onChange={e => setCurrentAd({...currentAd, link_url: e.target.value})} placeholder="https://..." /></div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2"><Label>Headline (Overlay)</Label><Input value={currentAd.headline} onChange={e => setCurrentAd({...currentAd, headline: e.target.value})} /></div>
+                                    <div className="space-y-2"><Label>Subheadline</Label><Input value={currentAd.subheadline} onChange={e => setCurrentAd({...currentAd, subheadline: e.target.value})} /></div>
+                                </div>
+                                <div className="space-y-2"><Label>Button Text</Label><Input value={currentAd.cta_text} onChange={e => setCurrentAd({...currentAd, cta_text: e.target.value})} /></div>
+                            </div>
+                        ) : (
+                            <div className="space-y-2 animate-in fade-in">
+                                <Label>HTML / Script Code</Label>
+                                <Textarea 
+                                    value={currentAd.html_code} 
+                                    onChange={e => setCurrentAd({...currentAd, html_code: e.target.value})} 
+                                    rows={8} 
+                                    placeholder="<script>...</script> oder <a href...>"
+                                    className="font-mono text-xs"
+                                />
+                                <p className="text-xs text-muted-foreground">Achtung: Code wird ungeprüft ausgeführt.</p>
+                            </div>
+                        )}
+
+                        <div className="flex items-center justify-between border p-3 rounded-lg">
+                            <Label>Aktiv geschaltet</Label>
+                            <Switch checked={currentAd.enabled} onCheckedChange={c => setCurrentAd({...currentAd, enabled: c})} />
+                        </div>
+                    </div>
+                )}
+
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => setIsAdDialogOpen(false)}>Abbrechen</Button>
+                    <Button onClick={saveAd}>Speichern</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
 
       </Tabs>
     </div>

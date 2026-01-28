@@ -24,11 +24,12 @@ export interface ForumThread {
   admin_notes?: string;
   status?: string;
   raw_html_content?: string;
-  reply_count?: number; // Anzahl der Kommentare
-  is_liked_by_user?: boolean; // Für Like-Status
-  likes_count?: number; // Anzahl Likes
+  reply_count?: number; 
+  is_liked_by_user?: boolean;
+  likes_count?: number;
 }
 
+// UPDATE: Ad Fields bereinigt & Code hinzugefügt
 export interface ForumCategory {
   id: string;
   name: string;
@@ -37,6 +38,17 @@ export interface ForumCategory {
   sort_order: number;
   is_active: boolean;
   created_at: string;
+  // Ad Fields
+  ad_enabled?: boolean;
+  assigned_ad_id?: string; // Verknüpfung zum Pool
+  // Manuelle Daten
+  ad_image_url?: string;
+  ad_link_url?: string;
+  ad_html_code?: string; // NEU: HTML Code Support
+  // Legacy fields (optional behalten oder ignorieren)
+  ad_headline?: string;
+  ad_subheadline?: string;
+  ad_cta_text?: string;
 }
 
 export interface ForumReply {
@@ -55,7 +67,6 @@ export const useForumThreads = () => {
   return useQuery({
     queryKey: ["forum-threads"],
     queryFn: async () => {
-      // Wir laden die Threads UND die Anzahl der Antworten (count)
       const { data, error } = await supabase
         .from("forum_threads")
         .select(`
@@ -67,7 +78,6 @@ export const useForumThreads = () => {
 
       if (error) throw error;
       
-      // Transformieren: Supabase gibt count als Array zurück, wir wollen eine Zahl.
       return data.map((thread: any) => ({
         ...thread,
         reply_count: thread.forum_replies?.[0]?.count || 0
@@ -92,12 +102,11 @@ export const useForumThread = (slug: string) => {
       if (error) throw error;
       if (!data) return null;
 
-      // Check if user liked this thread (optional, requires auth)
       let isLiked = false;
       const { data: session } = await supabase.auth.getSession();
       if (session?.session?.user) {
          const { data: likeData } = await supabase
-           .from("forum_likes") // Annahme: Tabelle heißt forum_likes
+           .from("forum_likes")
            .select("*")
            .eq("thread_id", data.id)
            .eq("user_id", session.session.user.id)
@@ -105,7 +114,6 @@ export const useForumThread = (slug: string) => {
          isLiked = !!likeData;
       }
 
-      // Count total likes
       const { count: likesCount } = await supabase
         .from("forum_likes")
         .select("*", { count: 'exact', head: true })
@@ -146,7 +154,6 @@ export const useForumCategories = (includeInactive = false) => {
 
 // --- REPLIES HOOKS ---
 
-// 1. Für den Admin (Alle Antworten)
 export const useAllReplies = () => {
   return useQuery({
     queryKey: ["forum-all-replies"],
@@ -165,7 +172,6 @@ export const useAllReplies = () => {
   });
 };
 
-// 2. Für den Besucher (Nur aktive Antworten eines Threads)
 export const useThreadReplies = (threadId: string) => {
   return useQuery({
     queryKey: ["forum-replies", threadId],
@@ -174,7 +180,7 @@ export const useThreadReplies = (threadId: string) => {
         .from("forum_replies")
         .select("*")
         .eq("thread_id", threadId)
-        .eq("is_active", true) // Nur freigegebene anzeigen
+        .eq("is_active", true)
         .order("created_at", { ascending: true });
 
       if (error) throw error;
@@ -184,16 +190,13 @@ export const useThreadReplies = (threadId: string) => {
   });
 };
 
-// --- INTERACTION HOOKS (VIEWS & LIKES) ---
+// --- INTERACTION HOOKS ---
 
 export const useIncrementViewCount = () => {
   return useMutation({
     mutationFn: async (threadId: string) => {
-      // Versucht RPC aufzurufen, Fallback auf manuelles Update wenn RPC fehlt
       const { error } = await supabase.rpc('increment_forum_view', { thread_id: threadId });
-      if (error) {
-         console.warn("RPC increment_forum_view missing, skipping view count update");
-      }
+      if (error) console.warn("RPC missing");
     }
   });
 };
@@ -203,11 +206,8 @@ export const useToggleLike = () => {
   return useMutation({
     mutationFn: async (threadId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error("Du musst eingeloggt sein, um Beiträge zu liken.");
-      }
+      if (!user) throw new Error("Login required");
 
-      // Check if already liked
       const { data: existing } = await supabase
         .from("forum_likes")
         .select("id")
@@ -216,26 +216,19 @@ export const useToggleLike = () => {
         .maybeSingle();
 
       if (existing) {
-        // Unlike
         await supabase.from("forum_likes").delete().eq("id", existing.id);
       } else {
-        // Like
-        await supabase.from("forum_likes").insert({ 
-          thread_id: threadId, 
-          user_id: user.id 
-        });
+        await supabase.from("forum_likes").insert({ thread_id: threadId, user_id: user.id });
       }
     },
-    onSuccess: (_, threadId) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["forum-thread"] });
     },
-    onError: (error) => {
-      toast.error(error.message);
-    }
+    onError: (error) => toast.error(error.message)
   });
 };
 
-// --- MUTATIONS (ADMIN) ---
+// --- MUTATIONS ---
 
 export const useCreateThread = () => {
   const queryClient = useQueryClient();
@@ -247,7 +240,6 @@ export const useCreateThread = () => {
         .insert([{ ...thread, slug }])
         .select()
         .single();
-
       if (error) throw error;
       return data;
     },
@@ -261,11 +253,7 @@ export const useUpdateThread = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ForumThread> & { id: string }) => {
-      const { error } = await supabase
-        .from("forum_threads")
-        .update(updates)
-        .eq("id", id);
-
+      const { error } = await supabase.from("forum_threads").update(updates).eq("id", id);
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
@@ -287,8 +275,6 @@ export const useDeleteThread = () => {
     },
   });
 };
-
-// --- CATEGORY MUTATIONS ---
 
 export const useCreateCategory = () => {
   const queryClient = useQueryClient();
@@ -313,10 +299,7 @@ export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<ForumCategory> & { id: string }) => {
-      const { error } = await supabase
-        .from("forum_categories")
-        .update(updates)
-        .eq("id", id);
+      const { error } = await supabase.from("forum_categories").update(updates).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -338,24 +321,15 @@ export const useDeleteCategory = () => {
   });
 };
 
-// --- REPLY MUTATIONS ---
-
-// 1. Neuer Kommentar (User)
 export const useCreateReply = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (reply: { thread_id: string; content: string; author_name: string }) => {
-      // Standardmäßig: Inaktiv (Muss moderiert werden)
       const { data, error } = await supabase
         .from("forum_replies")
-        .insert([{ 
-          ...reply, 
-          is_active: false, 
-          is_spam: false 
-        }])
+        .insert([{ ...reply, is_active: false, is_spam: false }])
         .select()
         .single();
-
       if (error) throw error;
       return data;
     },
@@ -365,7 +339,6 @@ export const useCreateReply = () => {
   });
 };
 
-// 2. Reply Update (Admin: Freigabe / Spam)
 export const useUpdateReply = () => {
   const queryClient = useQueryClient();
   return useMutation({
@@ -375,20 +348,12 @@ export const useUpdateReply = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["forum-all-replies"] });
-      // Auch die öffentlichen Replies neu laden
       queryClient.invalidateQueries({ queryKey: ["forum-replies"] });
-      queryClient.invalidateQueries({ queryKey: ["forum-threads"] }); // Für Count Update
+      queryClient.invalidateQueries({ queryKey: ["forum-threads"] }); 
     },
   });
 };
 
-// Helper
 export function generateSlug(text: string): string {
-  return text
-    .toString()
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-")
-    .replace(/[^\w\-]+/g, "")
-    .replace(/\-\-+/g, "-");
+  return text.toString().toLowerCase().trim().replace(/\s+/g, "-").replace(/[^\w\-]+/g, "").replace(/\-\-+/g, "-");
 }

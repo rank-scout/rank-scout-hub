@@ -10,45 +10,46 @@
     --background: 210 40% 98%;
     --foreground: 229 88% 13%;
     
-    /* Primary = Navy Blue (Brand) */
-    --primary: 229 88% 13%;
+    /* CUSTOM COLOR: C100 M100 Y40 K40 (Deep Midnight Blue) 🌑 */
+    /* HSL: 240 100% 18% */
+    --primary: 240 100% 18%;
     --primary-foreground: 0 0% 100%;
     
-    /* Secondary = Orange/Coral (CTA) */
-    --secondary: 10 100% 58%;
+    /* Secondary: Amber Gold (Bleibt als Kontrast) */
+    --secondary: 20 90% 55%;
     --secondary-foreground: 0 0% 100%;
     
     /* Card & Surfaces */
     --card: 0 0% 100%;
     --card-foreground: 229 88% 13%;
     
-    /* Popover (Dropdowns, Dialogs) */
+    /* Popover */
     --popover: 0 0% 100%;
     --popover-foreground: 229 88% 13%;
     
-    /* Muted (Subtle backgrounds & text) */
+    /* Muted */
     --muted: 210 40% 94%;
     --muted-foreground: 215 16% 47%;
     
-    /* Accent (Hover states) */
+    /* Accent */
     --accent: 210 40% 94%;
     --accent-foreground: 229 88% 13%;
     
-    /* Destructive (Errors) */
+    /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     
     /* Border & Input */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 229 88% 13%;
+    --ring: 240 100% 18%; /* Passend zur Primary */
     
     /* Radius */
     --radius: 0.75rem;
     
-    /* Chart colors */
-    --chart-1: 229 88% 13%;
-    --chart-2: 10 100% 58%;
+    /* Chart colors - Updated to fit new Primary */
+    --chart-1: 240 100% 18%;
+    --chart-2: 20 90% 55%;
     --chart-3: 142 76% 36%;
     --chart-4: 47 96% 53%;
     --chart-5: 262 83% 58%;
@@ -61,25 +62,26 @@
     --adult: 262 83% 58%;
     --adult-foreground: 0 0% 100%;
     
-    /* Sidebar variables (for admin) */
-    --sidebar-background: 229 88% 13%;
+    /* Sidebar variables (Admin) - Darker matching the new Primary */
+    --sidebar-background: 240 80% 12%; 
     --sidebar-foreground: 0 0% 100%;
-    --sidebar-primary: 10 100% 58%;
+    --sidebar-primary: 20 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 229 88% 20%;
+    --sidebar-accent: 240 80% 18%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 229 60% 25%;
-    --sidebar-ring: 10 100% 58%;
+    --sidebar-border: 240 60% 25%;
+    --sidebar-ring: 20 100% 55%;
   }
 
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     
-    --primary: 229 88% 60%;
+    /* Dark Mode Primary: Helleres Ultramarine für Lesbarkeit */
+    --primary: 240 100% 65%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 10 100% 58%;
+    --secondary: 20 90% 55%;
     --secondary-foreground: 0 0% 100%;
     
     --card: 222 47% 15%;
@@ -99,7 +101,7 @@
     
     --border: 217 33% 25%;
     --input: 217 33% 25%;
-    --ring: 229 88% 60%;
+    --ring: 240 100% 65%;
     
     /* Theme-specific colors (dark) */
     --dating: 340 82% 60%;
@@ -110,14 +112,14 @@
     --adult-foreground: 0 0% 100%;
     
     /* Sidebar (dark) */
-    --sidebar-background: 222 47% 8%;
+    --sidebar-background: 240 40% 10%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 10 100% 58%;
+    --sidebar-primary: 20 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 15%;
+    --sidebar-accent: 240 40% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 20%;
-    --sidebar-ring: 10 100% 58%;
+    --sidebar-border: 240 30% 20%;
+    --sidebar-ring: 20 100% 55%;
   }
 }
 
@@ -128,7 +130,7 @@
     @apply text-foreground font-body antialiased;
     background-color: hsl(var(--background));
     
-    /* KYRA UPGRADE: Sauberes, feines Punkt-Raster (Dunkle Punkte auf Hellem Grund) */
+    /* Neues Raster in der Primärfarbe */
     background-image: radial-gradient(hsl(var(--primary) / 0.08) 0.5px, transparent 0.5px);
     background-size: 24px 24px;
     background-position: 0 0;
@@ -140,13 +142,11 @@
 }
 
 @layer components {
-  /* Hilfsklasse für weiße Punkte auf dunklem Grund (für den Hero) */
   .dots-white {
     background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
     background-size: 30px 30px;
   }
   
-  /* Custom scrollbar for admin */
   .custom-scrollbar::-webkit-scrollbar {
     width: 6px;
   }

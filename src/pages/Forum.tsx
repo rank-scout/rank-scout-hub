@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
-import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom"; // WICHTIG: useSearchParams ergänzt
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useForumThreads, useForumCategories } from "@/hooks/useForum";
-import { useForumBannerConfig, useForumAdConfig } from "@/hooks/useSettings"; // NEU: Ad Config
+import { useForumBannerConfig, useForumAds } from "@/hooks/useSettings"; 
 import { 
   MessageCircle, 
   Pin, 
@@ -13,8 +13,8 @@ import {
   User, 
   X, 
   TrendingUp, 
-  Star, 
   HelpCircle,
+  Star, // WICHTIG: Star ist jetzt dabei!
   BarChart3,
   ArrowRight,
   ShieldCheck,
@@ -23,7 +23,8 @@ import {
   Heart,
   Bitcoin,
   Globe,
-  MessageSquare
+  MessageSquare,
+  ExternalLink
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,39 +55,107 @@ const getCategoryStyle = (slug: string) => {
   return { icon: LayoutGrid, color: "text-primary", bg: "bg-primary/10", gradient: "from-primary/10 to-background" };
 };
 
+// --- SCRIPT RENDERER (Iframe Sandbox) ---
+const ScriptAd = ({ code }: { code: string }) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe || !code) return;
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) return;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <base target="_blank">
+          <style>
+            body { 
+              margin: 0; 
+              padding: 0; 
+              display: flex; 
+              justify-content: center; 
+              align-items: center; 
+              font-family: sans-serif; 
+              background: transparent;
+            }
+            img { max-width: 100%; height: auto; display: block; }
+            a { text-decoration: none; }
+          </style>
+        </head>
+        <body>
+          ${code}
+        </body>
+      </html>
+    `;
+
+    try {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
+    } catch (e) {
+      console.error("Ad rendering failed", e);
+    }
+  }, [code]);
+
+  return (
+    <div className="w-full flex justify-center bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden p-4">
+      <iframe 
+        ref={iframeRef} 
+        title="Advertisement"
+        style={{ width: '100%', height: '100%', minHeight: '250px', border: 'none' }}
+        scrolling="no"
+      />
+    </div>
+  );
+};
+
 export default function Forum() {
   const { categorySlug } = useParams();
   const navigate = useNavigate();
-  
-  // URL Parameter auslesen (NEU: Damit der Link von der Startseite funktioniert)
   const [searchParams] = useSearchParams();
   const urlCategoryId = searchParams.get("category");
   
   const { data: threads, isLoading } = useForumThreads();
   const { data: categories } = useForumCategories();
   
-  const bannerConfig = useForumBannerConfig(); // Header Config
-  const adConfig = useForumAdConfig(); // NEU: Sidebar Ad Config
+  const bannerConfig = useForumBannerConfig(); 
+  const globalAds = useForumAds(); 
   
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [sortTab, setSortTab] = useState("newest");
+  
+  // State für zufälligen Global-Banner
+  const [randomGlobalAd, setRandomGlobalAd] = useState<any>(null);
 
-  // Effekt: Kategorie setzen (Entweder per Slug oder per ?category=ID Parameter)
   useEffect(() => {
     if (categories) {
       if (categorySlug) {
-        // Fall 1: URL ist /forum/kategorie/slug
         const activeCategory = categories.find(c => c.slug === categorySlug);
         if (activeCategory) setCategoryFilter(activeCategory.id);
       } else if (urlCategoryId) {
-        // Fall 2: URL ist /forum?category=ID (von der Startseite)
         setCategoryFilter(urlCategoryId);
       } else {
         setCategoryFilter("all");
       }
     }
   }, [categorySlug, urlCategoryId, categories]);
+
+  // ROTATION LOGIC
+  useEffect(() => {
+      if (globalAds && globalAds.length > 0) {
+          const activeAds = globalAds.filter(ad => ad.enabled);
+          if (activeAds.length > 0) {
+              const random = activeAds[Math.floor(Math.random() * activeAds.length)];
+              setRandomGlobalAd(random);
+          } else {
+              setRandomGlobalAd(null);
+          }
+      }
+  }, [globalAds]); 
 
   const handleCategoryChange = (value: string) => {
     setCategoryFilter(value);
@@ -134,13 +203,50 @@ export default function Forum() {
 
   const totalThreads = filteredThreads.length;
 
+  // --- WERBUNG-LOGIK ---
+  const currentAd = useMemo(() => {
+    if (activeCategoryData?.ad_enabled) {
+        
+        // A) Pool Zuweisung
+        if (activeCategoryData.assigned_ad_id) {
+            const assignedAd = globalAds.find(a => a.id === activeCategoryData.assigned_ad_id);
+            if (assignedAd && assignedAd.enabled) {
+                return assignedAd;
+            }
+        }
+
+        // B) Manuell Code
+        if (activeCategoryData.ad_html_code) {
+            return {
+                type: 'code',
+                enabled: true,
+                html_code: activeCategoryData.ad_html_code
+            };
+        } 
+        
+        // C) Manuell Bild
+        else if (activeCategoryData.ad_image_url) {
+            return {
+                type: 'image',
+                enabled: true,
+                image_url: activeCategoryData.ad_image_url,
+                link_url: activeCategoryData.ad_link_url,
+                headline: activeCategoryData.ad_headline,
+                subheadline: activeCategoryData.ad_subheadline,
+                cta_text: activeCategoryData.ad_cta_text
+            };
+        }
+    }
+
+    return randomGlobalAd;
+  }, [activeCategoryData, randomGlobalAd, globalAds]);
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50">
       <Header />
       <ScrollToTopHandler />
 
       <main className="flex-grow pt-20">
-        {/* HEADER SECTION */}
         <section className={`relative py-12 md:py-20 overflow-hidden`}>
           <div className={`absolute inset-0 bg-gradient-to-br ${style.gradient} opacity-50`} />
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.03]" />
@@ -182,7 +288,6 @@ export default function Forum() {
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* LINKER CONTENT (THREADS) */}
             <div className="lg:col-span-8 space-y-6">
               
               <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between sticky top-24 z-20 transition-all">
@@ -309,7 +414,6 @@ export default function Forum() {
               </Tabs>
             </div>
 
-            {/* RECHTE SIDEBAR */}
             <div className="lg:col-span-4 space-y-6">
               {activeCategoryData && (
                 <Card className="border-none shadow-lg bg-white overflow-hidden">
@@ -357,34 +461,70 @@ export default function Forum() {
                 </CardContent>
               </Card>
 
-              {/* WERBEBANNER MIT OVERLAY (DYNAMISCH) */}
-              {adConfig.enabled && adConfig.image_url && ( 
-                <a 
-                  href={adConfig.link_url || "#"} 
-                  target={adConfig.link_url?.startsWith("http") ? "_blank" : "_self"}
-                  rel="noopener noreferrer"
-                  className="block group relative rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                >
-                  <img 
-                    src={adConfig.image_url} 
-                    alt={adConfig.headline || "Anzeige"} 
-                    className="w-full h-auto object-cover aspect-[5/3]" 
-                    loading="lazy"
-                  />
-                  {/* Overlay Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 flex flex-col justify-end text-white">
-                      {adConfig.headline && <h4 className="font-bold text-lg leading-tight mb-1">{adConfig.headline}</h4>}
-                      {adConfig.subheadline && <p className="text-xs text-white/80 line-clamp-2 mb-3">{adConfig.subheadline}</p>}
-                      {adConfig.cta_text && (
-                        <span className="inline-flex items-center text-xs font-bold bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit transition-colors">
-                          {adConfig.cta_text} <ArrowRight className="ml-1 w-3 h-3"/>
-                        </span>
+              {/* DYNAMISCHE WERBUNG */}
+              {currentAd && currentAd.enabled && (
+                <div className="space-y-4">
+                  
+                  {/* FALL A: CODE (Via Iframe Safe-Renderer) */}
+                  {currentAd.type === 'code' && currentAd.html_code && (
+                    <ScriptAd code={currentAd.html_code} />
+                  )}
+
+                  {/* FALL B: BILD (Clean Widget Style) */}
+                  {currentAd.type === 'image' && currentAd.image_url && (
+                    <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                      
+                      {/* 1. Header (Titel & Text) */}
+                      {(currentAd.headline || currentAd.subheadline) && (
+                        <div className="mb-4">
+                          {currentAd.headline && (
+                            <h4 className="font-bold text-lg leading-tight text-slate-900 mb-1">
+                              {currentAd.headline}
+                            </h4>
+                          )}
+                          {currentAd.subheadline && (
+                            <p className="text-sm text-slate-500 leading-relaxed">
+                              {currentAd.subheadline}
+                            </p>
+                          )}
+                        </div>
                       )}
-                  </div>
-                  <div className="absolute top-2 right-2 bg-black/30 text-white text-[10px] px-1.5 py-0.5 rounded backdrop-blur-sm z-20">
-                    Anzeige
-                  </div>
-                </a>
+
+                      {/* 2. Bild (Klickbar, mit "Anzeige"-Badge OBEN RECHTS im Bild) */}
+                      <a 
+                        href={currentAd.link_url || "#"} 
+                        target={currentAd.link_url?.startsWith("http") ? "_blank" : "_self"}
+                        rel="noopener noreferrer"
+                        className="block group relative overflow-hidden rounded-lg mb-4 border border-slate-100"
+                      >
+                        <img 
+                          src={currentAd.image_url} 
+                          alt={currentAd.headline || "Anzeige"} 
+                          className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105" 
+                          loading="lazy"
+                        />
+                        {/* HIER: Anzeige Badge rechts oben im Bild */}
+                        <div className="absolute top-2 right-2 bg-black/40 text-white text-[10px] px-2 py-0.5 rounded backdrop-blur-sm z-20 font-medium">
+                          Anzeige
+                        </div>
+                      </a>
+
+                      {/* 3. Footer (CTA Button) */}
+                      {currentAd.cta_text && (
+                        <Button asChild className="w-full gap-2 group" variant="default">
+                          <a 
+                            href={currentAd.link_url || "#"} 
+                            target={currentAd.link_url?.startsWith("http") ? "_blank" : "_self"}
+                            rel="noopener noreferrer"
+                          >
+                            {currentAd.cta_text} 
+                            <ExternalLink className="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity" />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               )}
 
             </div>

@@ -11,6 +11,22 @@ export type HomeSection = {
   order: number;
 };
 
+// NEU: Definition für einen Werbebanner (Bild oder Code)
+export interface ForumAd {
+  id: string;
+  name: string; // Interner Name zur Verwaltung
+  type: 'image' | 'code';
+  enabled: boolean;
+  // Für Bild-Ads
+  image_url?: string;
+  link_url?: string;
+  headline?: string;
+  subheadline?: string;
+  cta_text?: string;
+  // Für Code-Ads
+  html_code?: string;
+}
+
 // --- CORE FETCHING ---
 async function fetchSettings(): Promise<Record<string, Json>> {
   const { data, error } = await supabase.from("settings").select("*");
@@ -170,16 +186,6 @@ export const defaultHomeForumTeaser = {
   mobile_button: "Zum Community Forum"
 };
 
-// --- NEU: Sidebar Ad Config ---
-export const defaultForumAdConfig = {
-  enabled: true,
-  image_url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&q=80",
-  link_url: "/software",
-  headline: "Software Deals",
-  subheadline: "Spare bis zu 50%",
-  cta_text: "Zum Deal"
-};
-
 // --- CONFIG HOOKS ---
 
 export function useHomeLayout() {
@@ -257,11 +263,11 @@ export function useForumBannerConfig() {
   };
 }
 
-// --- NEU: Sidebar Ad Hook ---
-export function useForumAdConfig() {
+// --- NEU: Sidebar Ads Hook (Liste) ---
+export function useForumAds() {
   const { data } = useSettings();
-  // @ts-ignore
-  return { ...defaultForumAdConfig, ...(data?.forum_ad_config || {}) };
+  // Wir speichern das Array unter 'forum_ads_list'
+  return (data?.forum_ads_list as ForumAd[]) || [];
 }
 
 // --- LEGACY / COMPATIBILITY EXPORTS ---
