@@ -28,6 +28,7 @@ export function useSettings() {
   });
 }
 
+// Basis Helper (Wichtig!)
 export function useSetting<T>(key: string, defaultValue: T): T {
   const { data: settings } = useSettings();
   return (settings?.[key] as T) ?? defaultValue;
@@ -46,7 +47,7 @@ export function useUpdateSetting() {
   });
 }
 
-// --- CMS DEFAULTS ---
+// --- CMS DEFAULTS (Startseite) ---
 
 export const defaultHomeSections: HomeSection[] = [
   { id: "hero", label: "Hero Sektion", enabled: true, order: 0 },
@@ -170,16 +171,6 @@ export const defaultHomeForumTeaser = {
   mobile_button: "Zum Community Forum"
 };
 
-// --- NEU: Sidebar Ad Config ---
-export const defaultForumAdConfig = {
-  enabled: true,
-  image_url: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&q=80",
-  link_url: "/software",
-  headline: "Software Deals",
-  subheadline: "Spare bis zu 50%",
-  cta_text: "Zum Deal"
-};
-
 // --- CONFIG HOOKS ---
 
 export function useHomeLayout() {
@@ -257,14 +248,10 @@ export function useForumBannerConfig() {
   };
 }
 
-// --- NEU: Sidebar Ad Hook ---
-export function useForumAdConfig() {
-  const { data } = useSettings();
-  // @ts-ignore
-  return { ...defaultForumAdConfig, ...(data?.forum_ad_config || {}) };
-}
+// ============================================================================
+// LEGACY / COMPATIBILITY EXPORTS (FIX für CityLandingFooter und alte Templates)
+// ============================================================================
 
-// --- LEGACY / COMPATIBILITY EXPORTS ---
 export function useSiteTitle() { return useSetting<string>("site_title", "Rank-Scout"); }
 export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
 export function useSiteDescription() { return useSetting<string>("site_description", "Dein Vergleichsportal"); }
@@ -272,7 +259,11 @@ export function useHeroTitle() { return useSetting<string>("hero_title", "Entdec
 export function useHeroSubtitle() { return useSetting<string>("hero_subtitle", "Wir vergleichen, damit du die richtige Wahl triffst"); }
 export function useAdsEnabled() { return useSetting<boolean>("ads_enabled", false); }
 export function useGlobalAnalyticsCode() { return useSetting<string>("global_analytics_code", ""); }
+
+// Header Legacy Mappings
 export function useNavLinks() { const c = useHeaderConfig(); return c.nav_links; }
+
+// Footer Legacy Mappings (Für CityLandingFooter etc.)
 export function useFooterLinks() { const c = useFooterConfig(); return c.popular_links; }
 export function useFooterSiteName() { const c = useFooterConfig(); return c.title; }
 export function useFooterCopyright() { const c = useFooterConfig(); return c.copyright_text; }

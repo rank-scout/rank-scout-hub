@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { 
   useSettings, useUpdateSetting, useHomeLayout, useHomeContent, 
   useHeaderConfig, useFooterConfig, useScoutyConfig, useHomeForumTeaser,
-  useForumBannerConfig, useForumAdConfig, // Importiert
+  useForumBannerConfig, // WICHTIG: Importiert
   defaultHomeContent
 } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
@@ -34,8 +34,7 @@ export default function AdminSettings() {
   const footerConfig = useFooterConfig();
   const scoutyConfig = useScoutyConfig();
   const homeForumTeaser = useHomeForumTeaser();
-  const forumBannerConfig = useForumBannerConfig(); 
-  const forumAdConfig = useForumAdConfig(); // NEU
+  const forumBannerConfig = useForumBannerConfig(); // Config für die Forum-Seite
 
   // Local States Global
   const [siteLogoUrl, setSiteLogoUrl] = useState("");
@@ -91,12 +90,6 @@ export default function AdminSettings() {
   const updateHomeForum = (field: string, value: any) => {
     const newConfig = { ...homeForumTeaser, [field]: value };
     saveSetting("home_forum_teaser", newConfig);
-  };
-
-  // NEU: Forum Ad Update
-  const updateForumAd = (field: string, value: any) => {
-    const newConfig = { ...forumAdConfig, [field]: value };
-    saveSetting("forum_ad_config", newConfig);
   };
 
   // Helper für Forum Tab
@@ -189,6 +182,7 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="home" className="w-full">
+        {/* HIER: Grid auf 3 erweitert und Tab hinzugefügt */}
         <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="home">Startseite & Inhalte</TabsTrigger>
             <TabsTrigger value="global">Menü & Footer</TabsTrigger>
@@ -396,48 +390,6 @@ export default function AdminSettings() {
                     <Button onClick={saveForumPageConfig} className="w-full md:w-auto">
                         <Save className="w-4 h-4 mr-2" /> Forum-Texte speichern
                     </Button>
-                </CardContent>
-            </Card>
-
-            {/* NEU: Sidebar Werbung Config */}
-            <Card className="bg-card border-border shadow-sm">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-600" /> Sidebar Werbung (Rechts)</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between border p-4 rounded-lg bg-slate-50">
-                        <Label>Werbung aktivieren</Label>
-                        <Switch 
-                            checked={forumAdConfig.enabled} 
-                            onCheckedChange={(c) => updateForumAd('enabled', c)} 
-                        />
-                    </div>
-                    
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Bild URL</Label>
-                            <Input value={forumAdConfig.image_url} onChange={(e) => updateForumAd('image_url', e.target.value)} placeholder="https://..." />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Ziel Link</Label>
-                            <Input value={forumAdConfig.link_url} onChange={(e) => updateForumAd('link_url', e.target.value)} placeholder="/software oder https://..." />
-                        </div>
-                    </div>
-
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Überschrift (Overlay)</Label>
-                            <Input value={forumAdConfig.headline} onChange={(e) => updateForumAd('headline', e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Untertitel</Label>
-                            <Input value={forumAdConfig.subheadline} onChange={(e) => updateForumAd('subheadline', e.target.value)} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Button Text</Label>
-                        <Input value={forumAdConfig.cta_text} onChange={(e) => updateForumAd('cta_text', e.target.value)} />
-                    </div>
                 </CardContent>
             </Card>
         </TabsContent>

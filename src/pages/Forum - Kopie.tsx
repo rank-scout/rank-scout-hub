@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom"
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useForumThreads, useForumCategories } from "@/hooks/useForum";
-import { useForumBannerConfig, useForumAdConfig } from "@/hooks/useSettings"; // NEU: Ad Config
+import { useForumBannerConfig } from "@/hooks/useSettings"; 
 import { 
   MessageCircle, 
   Pin, 
@@ -64,9 +64,7 @@ export default function Forum() {
   
   const { data: threads, isLoading } = useForumThreads();
   const { data: categories } = useForumCategories();
-  
-  const bannerConfig = useForumBannerConfig(); // Header Config
-  const adConfig = useForumAdConfig(); // NEU: Sidebar Ad Config
+  const bannerConfig = useForumBannerConfig(); 
   
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -139,8 +137,7 @@ export default function Forum() {
       <Header />
       <ScrollToTopHandler />
 
-      <main className="flex-grow pt-20">
-        {/* HEADER SECTION */}
+      <main className="flex-grow pt-20"> {/* PT-20 hinzugefügt wegen fixed Header */}
         <section className={`relative py-12 md:py-20 overflow-hidden`}>
           <div className={`absolute inset-0 bg-gradient-to-br ${style.gradient} opacity-50`} />
           <div className="absolute inset-0 bg-[url('/grid-pattern.svg')] opacity-[0.03]" />
@@ -182,7 +179,6 @@ export default function Forum() {
         <div className="container mx-auto px-4 py-8 md:py-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
             
-            {/* LINKER CONTENT (THREADS) */}
             <div className="lg:col-span-8 space-y-6">
               
               <div className="bg-white p-4 rounded-xl border shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between sticky top-24 z-20 transition-all">
@@ -309,7 +305,6 @@ export default function Forum() {
               </Tabs>
             </div>
 
-            {/* RECHTE SIDEBAR */}
             <div className="lg:col-span-4 space-y-6">
               {activeCategoryData && (
                 <Card className="border-none shadow-lg bg-white overflow-hidden">
@@ -357,34 +352,22 @@ export default function Forum() {
                 </CardContent>
               </Card>
 
-              {/* WERBEBANNER MIT OVERLAY (DYNAMISCH) */}
-              {adConfig.enabled && adConfig.image_url && ( 
-                <a 
-                  href={adConfig.link_url || "#"} 
-                  target={adConfig.link_url?.startsWith("http") ? "_blank" : "_self"}
-                  rel="noopener noreferrer"
-                  className="block group relative rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-                >
-                  <img 
-                    src={adConfig.image_url} 
-                    alt={adConfig.headline || "Anzeige"} 
-                    className="w-full h-auto object-cover aspect-[5/3]" 
-                    loading="lazy"
-                  />
-                  {/* Overlay Gradient */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent p-6 flex flex-col justify-end text-white">
-                      {adConfig.headline && <h4 className="font-bold text-lg leading-tight mb-1">{adConfig.headline}</h4>}
-                      {adConfig.subheadline && <p className="text-xs text-white/80 line-clamp-2 mb-3">{adConfig.subheadline}</p>}
-                      {adConfig.cta_text && (
-                        <span className="inline-flex items-center text-xs font-bold bg-white/20 hover:bg-white/30 backdrop-blur-sm px-3 py-1.5 rounded-full w-fit transition-colors">
-                          {adConfig.cta_text} <ArrowRight className="ml-1 w-3 h-3"/>
-                        </span>
-                      )}
-                  </div>
-                  <div className="absolute top-2 right-2 bg-black/30 text-white text-[10px] px-1.5 py-0.5 rounded backdrop-blur-sm z-20">
-                    Anzeige
-                  </div>
-                </a>
+              {/* WERBEBANNER MIT OVERLAY */}
+              {bannerConfig.enabled && ( // FIX: enabled property prüfen (oder wie im Hook definiert)
+                <div className="block group relative rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-gradient-to-br from-primary to-slate-900 text-white p-6">
+                   <div className="flex flex-col h-full justify-between min-h-[200px]">
+                      <div>
+                        <div className="text-xs font-bold bg-white/20 px-2 py-1 rounded w-fit mb-4">
+                           {bannerConfig.badge}
+                        </div>
+                        <h4 className="font-bold text-xl leading-tight mb-2">{bannerConfig.headline}</h4>
+                        <p className="text-sm opacity-90">{bannerConfig.subheadline}</p>
+                      </div>
+                      <Button size="sm" variant="secondary" className="mt-4 w-full">
+                         Mehr erfahren <ArrowRight className="ml-2 w-3 h-3"/>
+                      </Button>
+                   </div>
+                </div>
               )}
 
             </div>
