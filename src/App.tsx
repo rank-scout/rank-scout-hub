@@ -7,6 +7,8 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { SEOProvider } from "@/components/SEOProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
 import AdminPublisher from "./pages/admin/MultiPublisher";
+import { useSettings } from "@/hooks/useSettings"; // WICHTIG: useSettings statt useActiveTheme
+import { useEffect, useLayoutEffect } from "react"; // useLayoutEffect für sofortiges Update
 
 // Pages
 import Index from "./pages/Index";
@@ -44,16 +46,47 @@ import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
 
 const queryClient = new QueryClient();
 
+// --- THEME MANAGER COMPONENT (OPTIMIERT) ---
+// Verhindert Flackern durch Nutzung des LocalStorage
+const ThemeManager = () => {
+  const { data: settings, isLoading } = useSettings();
+  const activeTheme = settings?.active_theme as string;
+
+  // 1. SOFORTIGES LADEN (Vor dem Paint): 
+  // Holt die Farbe aus dem Speicher, bevor der User etwas sieht.
+  useLayoutEffect(() => {
+    const cachedTheme = localStorage.getItem("app-theme");
+    if (cachedTheme) {
+      document.documentElement.setAttribute("data-theme", cachedTheme);
+    }
+  }, []);
+
+  // 2. DATENBANK SYNC (Im Hintergrund):
+  // Wenn die echten Daten da sind, aktualisieren wir den Speicher.
+  useEffect(() => {
+    if (!isLoading && activeTheme) {
+      // Nur anwenden, wenn sich wirklich was geändert hat
+      document.documentElement.setAttribute("data-theme", activeTheme);
+      localStorage.setItem("app-theme", activeTheme);
+    }
+  }, [activeTheme, isLoading]);
+
+  return null;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ThemeProvider defaultTheme="dark">
+        {/* ThemeManager MUSS innerhalb der Provider stehen */}
+        <ThemeManager /> 
+        
         <SEOProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter>
-              {/* Globale Komponenten */}
+            {/* Flags für v7 aktivieren -> Entfernt Warnungen */}
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <CookieBanner /> 
               <ScrollToTopHandler />
               
@@ -66,9 +99,9 @@ const App = () => (
                 <Route path="/welcome" element={<Welcome />} />
                 <Route path="/test-register" element={<C4FRegistration />} />
                 
-                {/* Forum Routes - UPDATE */}
+                {/* Forum Routes */}
                 <Route path="/forum" element={<Forum />} />
-                <Route path="/forum/kategorie/:categorySlug" element={<Forum />} /> {/* NEU: Kategorie-Filter */}
+                <Route path="/forum/kategorie/:categorySlug" element={<Forum />} />
                 <Route path="/forum/:slug" element={<ForumThread />} />
                 
                 {/* Legal Routes */}
@@ -87,10 +120,9 @@ const App = () => (
                   <Route path="leads" element={<AdminLeads />} />
                   <Route path="settings" element={<AdminSettings />} />
                   <Route path="forum" element={<AdminForum />} />
-                  <Route path="multi-publisher" element={<AdminPublisher />} /> {/* FIX: Matcht Layout.tsx */}
+                  <Route path="multi-publisher" element={<AdminPublisher />} />
                 </Route>
                 
-                {/* Catch-all */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

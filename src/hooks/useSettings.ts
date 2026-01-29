@@ -11,19 +11,17 @@ export type HomeSection = {
   order: number;
 };
 
-// NEU: Definition für einen Werbebanner (Bild oder Code)
+// Definition für einen Werbebanner
 export interface ForumAd {
   id: string;
-  name: string; // Interner Name zur Verwaltung
+  name: string;
   type: 'image' | 'code';
   enabled: boolean;
-  // Für Bild-Ads
   image_url?: string;
   link_url?: string;
   headline?: string;
   subheadline?: string;
   cta_text?: string;
-  // Für Code-Ads
   html_code?: string;
 }
 
@@ -31,8 +29,12 @@ export interface ForumAd {
 async function fetchSettings(): Promise<Record<string, Json>> {
   const { data, error } = await supabase.from("settings").select("*");
   if (error) throw error;
+  
   const settings: Record<string, Json> = {};
-  data?.forEach((row) => { settings[row.key] = row.value; });
+  data?.forEach((row) => { 
+    settings[row.key] = row.value; 
+  });
+  
   return settings;
 }
 
@@ -44,17 +46,36 @@ export function useSettings() {
   });
 }
 
+// Generic Hook zum Lesen
 export function useSetting<T>(key: string, defaultValue: T): T {
   const { data: settings } = useSettings();
-  return (settings?.[key] as T) ?? defaultValue;
+  if (!settings || settings[key] === undefined) return defaultValue;
+  return settings[key] as T;
 }
 
+// Generic Hook zum Schreiben
 export function useUpdateSetting() {
   const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: Json }) => {
-      const { error } = await supabase.from("settings").upsert({ key, value, updated_at: new Date().toISOString() });
-      if (error) throw error;
+      console.log(`Saving ${key}:`, value);
+      
+      // FIX FÜR FEHLER 409:
+      // Wir sagen Supabase explizit: "Wenn 'key' schon existiert, update die Zeile!"
+      const { error } = await supabase.from("settings").upsert(
+        { 
+          key, 
+          value, 
+          updated_at: new Date().toISOString() 
+        },
+        { onConflict: 'key' } // <--- DAS IST DER SCHLÜSSEL
+      );
+      
+      if (error) {
+        console.error("Supabase Error:", error);
+        throw error;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["settings"] });
@@ -62,8 +83,12 @@ export function useUpdateSetting() {
   });
 }
 
-// --- CMS DEFAULTS ---
+// --- THEME HOOK ---
+export function useActiveTheme() {
+  return useSetting<string>("active_theme", "navy");
+}
 
+// --- CMS DEFAULTS ---
 export const defaultHomeSections: HomeSection[] = [
   { id: "hero", label: "Hero Sektion", enabled: true, order: 0 },
   { id: "amazon_top", label: "Amazon Banner (Top)", enabled: true, order: 1 },
@@ -85,192 +110,31 @@ export const defaultHomeContent = {
     search_placeholder: "Was suchst du heute? (z.B. 'KI Tools', 'Dating')",
     search_label: "Finden"
   },
-  trust: {
-    headline: "Warum Rank-Scout?",
-    subheadline: "Wir stehen für Transparenz und Qualität.",
-    card1_title: "Daten statt Meinung",
-    card1_text: "Unsere Algorithmen analysieren tausende Datenpunkte. Keine gekauften Platzierungen, nur harte Fakten.",
-    card2_title: "Echtzeit-Scouting",
-    card2_text: "Der Markt schläft nie. Unsere Datenbank wird täglich aktualisiert, damit Sie keinen Trend verpassen.",
-    card3_title: "Verifizierte Experten",
-    card3_text: "Nur Dienstleister mit nachgewiesenem Track-Record schaffen es in unsere Rankings.",
-    box_title: "Ihr unfairer Wettbewerbsvorteil",
-    box_text: "Während andere noch suchen, haben Sie bereits entschieden. Rank-Scout liefert Ihnen die Marktdaten, die Sie für technologische Führung brauchen.",
-    live_badge: "Live-System aktiv"
-  },
-  big_three: {
-    headline: "Wählen Sie Ihren Bereich",
-    finance_title: "Finanzen & Krypto",
-    finance_desc: "Broker, Kredite & Geschäftskonten im Härtetest.",
-    finance_link: "/finanzen",
-    finance_button: "Jetzt vergleichen",
-    software_title: "Software & SaaS",
-    software_desc: "Die besten Tools für Marketing, HR und Vertrieb.",
-    software_link: "/software",
-    software_button: "Tools finden",
-    services_title: "Dienstleistungen",
-    services_desc: "Agenturen, Berater und Services auf dem Prüfstand.",
-    services_link: "/dienstleistungen",
-    services_button: "Anbieter suchen"
-  },
-  categories: {
-    headline: "Alle Kategorien im Überblick",
-    count: 6,
-    button_more: "Alle Kategorien anzeigen",
-    button_card: "Bereich erkunden"
-  },
-  news: {
-    headline: "Aktuelles & Ratgeber",
-    count: 3,
-    button_text: "Zum Magazin",
-    read_more: "Artikel lesen"
-  },
-  seo: {
-    headline: "Über unser Vergleichsportal",
-    intro: "Willkommen bei Rank-Scout. Wir bringen Licht in den Dschungel digitaler Dienstleistungen.",
-    block1_title: "Warum Rank-Scout?",
-    block1_text: "In einer Welt voller Fake-Bewertungen und intransparenter Affiliate-Modelle setzen wir einen neuen Standard. Wir analysieren nicht nur Features, sondern prüfen echte Business-Impacts.",
-    block2_title: "Zukunftssicherheit",
-    block2_text: "Unsere Scouts scannen den globalen Markt permanent nach neuen Trends. Ob Generative AI oder Blockchain – wir übersetzen Trends in Business-Cases."
-  }
+  trust: { headline: "Warum Rank-Scout?", subheadline: "Wir stehen für Transparenz und Qualität.", card1_title: "Daten statt Meinung", card1_text: "Unsere Algorithmen analysieren tausende Datenpunkte. Keine gekauften Platzierungen, nur harte Fakten.", card2_title: "Echtzeit-Scouting", card2_text: "Der Markt schläft nie. Unsere Datenbank wird täglich aktualisiert, damit Sie keinen Trend verpassen.", card3_title: "Verifizierte Experten", card3_text: "Nur Dienstleister mit nachgewiesenem Track-Record schaffen es in unsere Rankings.", box_title: "Ihr unfairer Wettbewerbsvorteil", box_text: "Während andere noch suchen, haben Sie bereits entschieden. Rank-Scout liefert Ihnen die Marktdaten, die Sie für technologische Führung brauchen.", live_badge: "Live-System aktiv" },
+  big_three: { headline: "Wählen Sie Ihren Bereich", finance_title: "Finanzen & Krypto", finance_desc: "Broker, Kredite & Geschäftskonten im Härtetest.", finance_link: "/finanzen", finance_button: "Jetzt vergleichen", software_title: "Software & SaaS", software_desc: "Die besten Tools für Marketing, HR und Vertrieb.", software_link: "/software", software_button: "Tools finden", services_title: "Dienstleistungen", services_desc: "Agenturen, Berater und Services auf dem Prüfstand.", services_link: "/dienstleistungen", services_button: "Anbieter suchen" },
+  categories: { headline: "Alle Kategorien im Überblick", count: 6, button_more: "Alle Kategorien anzeigen", button_card: "Bereich erkunden" },
+  news: { headline: "Aktuelles & Ratgeber", count: 3, button_text: "Zum Magazin", read_more: "Artikel lesen" },
+  seo: { headline: "Über unser Vergleichsportal", intro: "Willkommen bei Rank-Scout. Wir bringen Licht in den Dschungel digitaler Dienstleistungen.", block1_title: "Warum Rank-Scout?", block1_text: "In einer Welt voller Fake-Bewertungen und intransparenter Affiliate-Modelle setzen wir einen neuen Standard. Wir analysieren nicht nur Features, sondern prüfen echte Business-Impacts.", block2_title: "Zukunftssicherheit", block2_text: "Unsere Scouts scannen den globalen Markt permanent nach neuen Trends. Ob Generative AI oder Blockchain – wir übersetzen Trends in Business-Cases." }
 };
 
-export const defaultHeaderConfig = {
-  button_text: "Jetzt vergleichen",
-  button_url: "/kategorien",
-  nav_links: [
-    { label: "Software Vergleich", url: "/software" },
-    { label: "Finanz-Tools", url: "/finanzen" },
-    { label: "Agentur Finder", url: "/dienstleistungen" }
-  ],
-  hub_links: [
-    { label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" },
-    { label: "Arcade", url: "/arcade", icon: "Gamepad2" },
-    { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" },
-    { label: "Community", url: "/forum", icon: "Users" }
-  ]
-};
-
-export const defaultFooterConfig = {
-  title: "Rank-Scout",
-  text_checked: "Redaktionell geprüft",
-  text_update: "Aktualisiert: 2026",
-  text_description: "Unsere Vergleiche basieren auf echten Daten, Nutzer-Feedback und Experten-Analysen.",
-  copyright_text: "© 2026 Rank-Scout. Alle Rechte vorbehalten.",
-  made_with_text: "Made with",
-  made_in_text: "in Germany",
-  disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn Sie über einen Link auf dieser Seite einkaufen, erhalten wir möglicherweise eine Provision. Der Preis für Sie ändert sich dabei nicht. Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.",
-  legal_links: [
-    { label: "Impressum", url: "/impressum" },
-    { label: "Datenschutz", url: "/datenschutz" },
-    { label: "AGB", url: "/agb" }
-  ],
-  popular_links: [
-    { label: "Software Vergleich", url: "/software" },
-    { label: "Finanz-Tools", url: "/finanzen" },
-    { label: "Agentur Finder", url: "/dienstleistungen" }
-  ]
-};
-
-export const defaultScoutyConfig = {
-  bubble_intro: "Hi, ich bin Scouty! Ich finde die besten Produkt-Deals für dich! 🔭",
-  bubble_exit: "Warte! 🛑 Bevor du gehst: Ich habe gerade einen neuen Testsieger gefunden. Willst du ihn sehen?",
-  bubble_newsletter: "Top 3 Deals per Mail?",
-  powered_by: "Powered By Rank-Scout AI"
-};
-
-export const defaultHomeForumTeaser = {
-  headline: "Community Hub",
-  subheadline: "Diskutiere mit den Besten. Tauche in unsere beliebtesten Themenbereiche ein und vernetze dich mit Experten.",
-  link_text: "Alle Foren anzeigen",
-  mobile_button: "Zum Community Forum"
-};
+export const defaultHeaderConfig = { button_text: "Jetzt vergleichen", button_url: "/kategorien", nav_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }], hub_links: [{ label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, { label: "Community", url: "/forum", icon: "Users" }] };
+export const defaultFooterConfig = { title: "Rank-Scout", text_checked: "Redaktionell geprüft", text_update: "Aktualisiert: 2026", text_description: "Unsere Vergleiche basieren auf echten Daten, Nutzer-Feedback und Experten-Analysen.", copyright_text: "© 2026 Rank-Scout. Alle Rechte vorbehalten.", made_with_text: "Made with", made_in_text: "in Germany", disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn Sie über einen Link auf dieser Seite einkaufen, erhalten wir möglicherweise eine Provision. Der Preis für Sie ändert sich dabei nicht. Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.", legal_links: [{ label: "Impressum", url: "/impressum" }, { label: "Datenschutz", url: "/datenschutz" }, { label: "AGB", url: "/agb" }], popular_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }] };
+export const defaultScoutyConfig = { bubble_intro: "Hi, ich bin Scouty! Ich finde die besten Produkt-Deals für dich! 🔭", bubble_exit: "Warte! 🛑 Bevor du gehst: Ich habe gerade einen neuen Testsieger gefunden. Willst du ihn sehen?", bubble_newsletter: "Top 3 Deals per Mail?", powered_by: "Powered By Rank-Scout AI" };
+export const defaultHomeForumTeaser = { headline: "Community Hub", subheadline: "Diskutiere mit den Besten. Tauche in unsere beliebtesten Themenbereiche ein und vernetze dich mit Experten.", link_text: "Alle Foren anzeigen", mobile_button: "Zum Community Forum" };
 
 // --- CONFIG HOOKS ---
+export function useHomeLayout() { const { data: settings } = useSettings(); let sections: HomeSection[] = (settings?.home_sections as HomeSection[]) || defaultHomeSections; if (!Array.isArray(sections)) sections = defaultHomeSections; const sortedSections = [...sections].sort((a, b) => a.order - b.order); return { sections: sortedSections }; }
+export function useHeaderConfig() { const { data } = useSettings(); return { ...defaultHeaderConfig, ...(data?.header_config as any || {}) }; }
+export function useFooterConfig() { const { data } = useSettings(); return { ...defaultFooterConfig, ...(data?.footer_config as any || {}) }; }
+export function useScoutyConfig() { const { data } = useSettings(); return { ...defaultScoutyConfig, ...(data?.scouty_config as any || {}) }; }
+export function useHomeForumTeaser() { const { data } = useSettings(); return { ...defaultHomeForumTeaser, ...(data?.home_forum_teaser as any || {}) }; }
+export function useHomeContent() { const { data: settings } = useSettings(); const content = { ...defaultHomeContent, ...(settings?.home_content as any || {}) }; content.big_three = { ...defaultHomeContent.big_three, ...content.big_three }; content.categories = { ...defaultHomeContent.categories, ...content.categories }; content.news = { ...defaultHomeContent.news, ...content.news }; content.trust = { ...defaultHomeContent.trust, ...content.trust }; content.hero = { ...defaultHomeContent.hero, ...content.hero }; content.seo = { ...defaultHomeContent.seo, ...content.seo }; return { content }; }
+export function useAdSenseConfig() { const { data: settings } = useSettings(); return { clientId: (settings?.ads_sense_client_id as string) || "", defaultSlotId: (settings?.ads_sense_slot_id as string) || "", enabled: (settings?.ads_enabled as boolean) || false }; }
+export function useAmazonConfig() { const { data: settings } = useSettings(); return { headline: (settings?.ads_amazon_headline as string) || "", text: (settings?.ads_amazon_text as string) || "", buttonText: (settings?.ads_amazon_button_text as string) || "Zum Angebot", link: (settings?.ads_amazon_link as string) || "", enabled: (settings?.ads_enabled as boolean) || false }; }
+export function useForumBannerConfig() { const { data: settings } = useSettings(); return { headline: (settings?.forum_banner_headline as string) || "Diskussionen & Erfahrungen", subheadline: (settings?.forum_banner_subheadline as string) || "Tausche dich mit anderen aus, stelle Fragen und teile deine Erfahrungen", badge: (settings?.forum_banner_badge as string) || "Community Forum", enabled: true }; }
+export function useForumAds() { const { data } = useSettings(); return (data?.forum_ads_list as ForumAd[]) || []; }
 
-export function useHomeLayout() {
-  const { data: settings } = useSettings();
-  let sections: HomeSection[] = (settings?.home_sections as HomeSection[]) || defaultHomeSections;
-  if (!Array.isArray(sections)) sections = defaultHomeSections;
-  const sortedSections = [...sections].sort((a, b) => a.order - b.order);
-  return { sections: sortedSections };
-}
-
-export function useHeaderConfig() {
-  const { data } = useSettings();
-  // @ts-ignore
-  return { ...defaultHeaderConfig, ...(data?.header_config || {}) };
-}
-
-export function useFooterConfig() {
-  const { data } = useSettings();
-  // @ts-ignore
-  return { ...defaultFooterConfig, ...(data?.footer_config || {}) };
-}
-
-export function useScoutyConfig() {
-  const { data } = useSettings();
-  // @ts-ignore
-  return { ...defaultScoutyConfig, ...(data?.scouty_config || {}) };
-}
-
-export function useHomeForumTeaser() {
-  const { data } = useSettings();
-  // @ts-ignore
-  return { ...defaultHomeForumTeaser, ...(data?.home_forum_teaser || {}) };
-}
-
-export function useHomeContent() {
-  const { data: settings } = useSettings();
-  // @ts-ignore
-  const content = { ...defaultHomeContent, ...(settings?.home_content || {}) };
-  content.big_three = { ...defaultHomeContent.big_three, ...content.big_three };
-  content.categories = { ...defaultHomeContent.categories, ...content.categories };
-  content.news = { ...defaultHomeContent.news, ...content.news };
-  content.trust = { ...defaultHomeContent.trust, ...content.trust };
-  content.hero = { ...defaultHomeContent.hero, ...content.hero };
-  content.seo = { ...defaultHomeContent.seo, ...content.seo };
-  return { content };
-}
-
-export function useAdSenseConfig() {
-  const { data: settings } = useSettings();
-  return {
-    clientId: (settings?.ads_sense_client_id as string) || "",
-    defaultSlotId: (settings?.ads_sense_slot_id as string) || "",
-    enabled: (settings?.ads_enabled as boolean) || false
-  };
-}
-
-export function useAmazonConfig() {
-  const { data: settings } = useSettings();
-  return {
-    headline: (settings?.ads_amazon_headline as string) || "",
-    text: (settings?.ads_amazon_text as string) || "",
-    buttonText: (settings?.ads_amazon_button_text as string) || "Zum Angebot",
-    link: (settings?.ads_amazon_link as string) || "",
-    enabled: (settings?.ads_enabled as boolean) || false
-  };
-}
-
-export function useForumBannerConfig() {
-  const { data: settings } = useSettings();
-  return {
-    headline: (settings?.forum_banner_headline as string) || "Diskussionen & Erfahrungen",
-    subheadline: (settings?.forum_banner_subheadline as string) || "Tausche dich mit anderen aus, stelle Fragen und teile deine Erfahrungen",
-    badge: (settings?.forum_banner_badge as string) || "Community Forum",
-    enabled: true
-  };
-}
-
-// --- NEU: Sidebar Ads Hook (Liste) ---
-export function useForumAds() {
-  const { data } = useSettings();
-  // Wir speichern das Array unter 'forum_ads_list'
-  return (data?.forum_ads_list as ForumAd[]) || [];
-}
-
-// --- LEGACY / COMPATIBILITY EXPORTS ---
+// --- LEGACY / COMPATIBILITY EXPORTS (ALLES WICHTIGE DRIN) ---
 export function useSiteTitle() { return useSetting<string>("site_title", "Rank-Scout"); }
 export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
 export function useSiteDescription() { return useSetting<string>("site_description", "Dein Vergleichsportal"); }

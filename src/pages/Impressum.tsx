@@ -6,11 +6,25 @@ const Impressum = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900">
       <Header />
-      <main className="flex-grow container mx-auto px-4 pt-40 pb-20">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-5xl font-display font-bold text-primary mb-4 tracking-tight">Impressum</h1>
-          <p className="text-lg text-slate-500 mb-12 border-b border-slate-100 pb-4">Offenlegung gemäß § 25 Mediengesetz & E-Commerce-Gesetz.</p>
 
+      {/* --- HEADER BEREICH (ZENTRIERT) --- */}
+      <div className="bg-primary pt-32 pb-20 md:pt-40 md:pb-24 relative overflow-hidden">
+         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[length:30px_30px]" />
+         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/90" />
+         
+         <div className="container mx-auto px-4 relative z-10 text-center">
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4 tracking-tight">
+              Impressum
+            </h1>
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+              Offenlegung gemäß § 25 Mediengesetz & E-Commerce-Gesetz.
+            </p>
+         </div>
+      </div>
+
+      <main className="flex-grow container mx-auto px-4 -mt-12 relative z-20 pb-20">
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-slate-100">
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
             <div className="p-8 rounded-2xl border border-slate-100 bg-slate-50 shadow-sm">
               <h2 className="text-xl font-bold text-secondary mb-6 flex items-center gap-3">
@@ -45,7 +59,7 @@ const Impressum = () => {
             </section>
 
             <section className="bg-primary text-white p-8 rounded-2xl shadow-xl">
-              <h3 className="font-display font-bold text-xl mb-4">Streitbeilegung</h3>
+              <h3 className="font-display font-bold text-xl mb-4 text-white">Streitbeilegung</h3>
               <p className="text-slate-300">Verbraucher haben die Möglichkeit, Beschwerden an die Online-Streitbeilegungsplattform der EU zu richten: <a href="http://ec.europa.eu/odr" target="_blank" rel="noopener noreferrer" className="text-secondary hover:underline font-bold">http://ec.europa.eu/odr</a>.</p>
             </section>
           </div>

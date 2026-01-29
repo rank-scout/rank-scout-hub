@@ -7,106 +7,79 @@ const AGB = () => {
     <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 pt-40 pb-20">
-        <div className="max-w-4xl mx-auto">
-          {/* Header Section */}
-          <div className="mb-12 border-b border-slate-100 pb-8 text-center md:text-left">
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-primary mb-4 tracking-tight">
+      {/* --- HEADER BEREICH (ZENTRIERT) --- */}
+      <div className="bg-primary pt-32 pb-20 md:pt-40 md:pb-24 relative overflow-hidden">
+         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[length:30px_30px]" />
+         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/90" />
+
+         <div className="container mx-auto px-4 relative z-10 text-center">
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4 tracking-tight">
               Allgemeine Geschäftsbedingungen
             </h1>
-            <p className="text-lg text-slate-600 max-w-2xl">
+            <p className="text-lg text-slate-300 max-w-2xl mx-auto">
               Nutzungsbedingungen für das Online-Angebot von Rank-Scout.
             </p>
-            <p className="text-sm text-secondary font-medium mt-4 flex items-center justify-center md:justify-start gap-2">
+            <p className="text-sm text-secondary font-medium mt-4 flex items-center justify-center gap-2">
               <Info className="w-4 h-4" /> Stand: 25.01.2026
             </p>
-          </div>
+         </div>
+      </div>
+      
+      <main className="flex-grow container mx-auto px-4 -mt-12 relative z-20 pb-20">
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-slate-100">
 
           <div className="space-y-16">
             
-            {/* Geltungsbereich Intro */}
-            <section className="bg-slate-50 p-8 rounded-2xl border border-slate-100">
-              <h2 className="text-xl font-bold text-primary mb-4">Geltungsbereich</h2>
-              <p className="text-slate-800 leading-relaxed">
-                Diese Allgemeinen Geschäfts- und Nutzungsbedingungen gelten für die Nutzung des Online-Angebots 
-                <strong> „Rank-Scout“</strong> inklusive aller Unterseiten, Subdomains und Verzeichnisse. 
-                Der Anbieter dieser Website ist im Impressum genannt.
-              </p>
-            </section>
-
-            {/* 1. Begriffsbestimmungen */}
+            {/* 1. Geltungsbereich */}
             <section>
               <h2 className="text-2xl font-display font-bold text-primary mb-6 flex items-center gap-3">
                 <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><Scale className="w-6 h-6" /></div>
-                1. Geltungsbereich und Begriffsbestimmungen
+                1. Geltungsbereich
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
-                <div className="p-6 rounded-xl border border-slate-200 bg-white shadow-sm">
-                  <p className="m-0 text-slate-900"><strong>Nutzer:</strong> Jede Person, die die Website aufruft oder Inhalte nutzt.</p>
-                </div>
-                <div className="p-6 rounded-xl border border-slate-200 bg-white shadow-sm">
-                  <p className="m-0 text-slate-900"><strong>Drittanbieter:</strong> Externe Unternehmen (Software-Hersteller, Banken, Shops), auf die verlinkt wird.</p>
-                </div>
-              </div>
-            </section>
-
-            {/* 2. Kein Beratungsvertrag (HELL mit Navy-2) */}
-            <section className="bg-slate-50 text-slate-900 p-8 md:p-12 rounded-3xl border border-slate-200 shadow-sm relative overflow-hidden">
-              <h2 className="text-2xl font-display font-bold mb-6 relative z-10 flex items-center gap-4 text-primary">
-                {/* Die weiße 2 im Navy-Kreis */}
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-lg shrink-0">2</div>
-                Leistungsbeschreibung & Kein Beratungsvertrag
-              </h2>
-              <div className="prose prose-slate max-w-none text-slate-700 relative z-10">
-                <p>Die Website stellt redaktionelle Inhalte (Vergleiche, Ratgeber, Bestenlisten) bereit. Wir agieren als Informationsmittler.</p>
-                
-                {/* WICHTIG BOX: Navy für harten Kontrast */}
-                <div className="bg-primary text-white border-l-4 border-secondary p-8 mt-8 shadow-xl rounded-r-xl">
-                  <h3 className="text-secondary font-bold uppercase tracking-wider text-sm mb-3 font-display">WICHTIG: Keine Finanz- oder Rechtsberatung</h3>
-                  <p className="m-0 leading-relaxed font-medium text-slate-100">
-                    Rank-Scout erbringt keine Anlageberatung, Rechtsberatung oder Steuerberatung. Unsere Vergleiche im Finanzbereich dienen ausschließlich 
-                    der selbstständigen Information des Nutzers und ersetzen keine professionelle Beratung. Wir vermitteln keine 
-                    Verträge selbst, sondern leiten lediglich technisch weiter.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            {/* 3 & 4. Affiliate & Dritte */}
-            <section className="grid grid-cols-1 md:grid-cols-2 gap-12 border-y border-slate-100 py-12">
-              <div>
-                <h3 className="text-xl font-display font-bold text-primary mb-4">3. Affiliate & Transparenz</h3>
-                <p className="text-slate-800 text-sm leading-relaxed">
-                  Teile der Website enthalten Affiliate-Links. Wenn Nutzer diese nutzen, kann der Anbieter eine Provision erhalten. 
-                  Für Nutzer entstehen dadurch <strong>keine Mehrkosten</strong>.
+              <div className="prose prose-slate max-w-none text-slate-700">
+                <p>
+                  Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für alle Geschäftsbeziehungen zwischen der <strong>Media-Bro</strong> (nachfolgend „Anbieter“) und den Nutzern der Plattform Rank-Scout.
                 </p>
-              </div>
-              <div>
-                <h3 className="text-xl font-display font-bold text-primary mb-4">4. Vertragsverhältnisse</h3>
-                <p className="text-slate-800 text-sm leading-relaxed">
-                  Verträge kommen ausschließlich zwischen Nutzer und Drittanbieter zustande. Der Drittanbieter ist allein verantwortlich 
-                  für Preise, AGB und die Leistungserbringung.
+                <p>
+                  Maßgeblich ist die zum Zeitpunkt des Vertragsschlusses gültige Fassung. Abweichende Bedingungen des Nutzers werden nicht anerkannt, es sei denn, der Anbieter stimmt ihrer Geltung ausdrücklich zu.
                 </p>
               </div>
             </section>
 
-            {/* 5. Inhalte & Ranking */}
+            {/* 2. Leistungsgegenstand */}
             <section>
               <h2 className="text-2xl font-display font-bold text-primary mb-6 flex items-center gap-3">
                 <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><CheckCircle2 className="w-6 h-6" /></div>
-                5. Inhalte & Ranking-Methodik
+                2. Leistungsgegenstand
               </h2>
-              <p className="text-slate-800 leading-relaxed">
-                Unsere Rankings basieren auf objektiven Kriterien, Nutzerfeedback und Expertenanalysen. Da sich Konditionen täglich ändern können, 
-                übernehmen wir keine Gewähr für die ständige Aktualität der Preise und Zinsen. Maßgeblich ist immer die Angabe auf der Seite des Anbieters.
-              </p>
+              <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 text-slate-700 space-y-3">
+                <p>Rank-Scout stellt eine unabhängige Vergleichsplattform für Software, digitale Dienstleistungen und Finanzprodukte bereit.</p>
+                <p>Wir treten dabei lediglich als Vermittler auf. Verträge über den Erwerb von Produkten oder Dienstleistungen kommen ausschließlich zwischen dem Nutzer und dem jeweiligen Drittanbieter zustande.</p>
+              </div>
             </section>
 
-            {/* 11. Schlussbestimmungen (HELL) */}
-            <section className="bg-slate-50 text-slate-900 p-8 md:p-12 rounded-3xl border border-slate-200 shadow-sm">
-              <h2 className="text-2xl font-display font-bold mb-8 flex items-center gap-3 border-b border-slate-200 pb-4 text-primary">
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white text-lg shrink-0">11</div>
-                Schlussbestimmungen
+            {/* 3. Haftungsausschluss */}
+            <section>
+              <h2 className="text-2xl font-display font-bold text-primary mb-6 flex items-center gap-3">
+                <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><AlertTriangle className="w-6 h-6" /></div>
+                3. Haftung & Gewährleistung
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="p-6 rounded-xl border border-red-100 bg-red-50/50">
+                  <h3 className="font-bold text-red-900 mb-2">Inhaltliche Richtigkeit</h3>
+                  <p className="text-sm text-red-800">Wir bemühen uns um Aktualität, übernehmen jedoch keine Gewähr für die Richtigkeit, Vollständigkeit und Aktualität der bereitgestellten Informationen Dritter.</p>
+                </div>
+                <div className="p-6 rounded-xl border border-slate-100 bg-slate-50">
+                  <h3 className="font-bold text-primary mb-2">Technische Verfügbarkeit</h3>
+                  <p className="text-sm text-slate-600">Wir gewährleisten keine unterbrechungsfreie Verfügbarkeit der Webseite. Wartungsarbeiten oder Störungen können den Zugriff vorübergehend einschränken.</p>
+                </div>
+              </div>
+            </section>
+
+            {/* 4. Schlussbestimmungen */}
+            <section className="bg-primary/5 p-8 rounded-2xl border border-primary/10">
+              <h2 className="text-xl font-display font-bold text-primary mb-6 flex items-center gap-3">
+                <ShieldCheck className="w-5 h-5" /> 4. Schlussbestimmungen
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm">
                 <div>
@@ -129,7 +102,6 @@ const AGB = () => {
           </div>
         </div>
       </main>
-
       <Footer />
     </div>
   );

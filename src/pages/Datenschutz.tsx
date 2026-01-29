@@ -7,19 +7,25 @@ const Datenschutz = () => {
     <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900">
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 pt-40 pb-20">
-        <div className="max-w-4xl mx-auto">
-          {/* Header Section */}
-          <div className="mb-12 border-b border-slate-100 pb-8">
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-primary mb-4 tracking-tight">
+      {/* --- HEADER BEREICH (ZENTRIERT) --- */}
+      <div className="bg-primary pt-32 pb-20 md:pt-40 md:pb-24 relative overflow-hidden">
+         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[length:30px_30px]" />
+         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/90" />
+
+         <div className="container mx-auto px-4 relative z-10 text-center">
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4 tracking-tight">
               Datenschutzerklärung
             </h1>
-            <p className="text-lg text-slate-500">
+            <p className="text-lg text-slate-300 mx-auto max-w-2xl">
               Transparenz ist uns wichtig. Hier erfahren Sie, wie wir Ihre Daten schützen.
             </p>
             <p className="text-sm text-secondary font-medium mt-2">Stand: 25.01.2026</p>
-          </div>
+         </div>
+      </div>
 
+      <main className="flex-grow container mx-auto px-4 -mt-12 relative z-20 pb-20">
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-slate-100">
+          
           <div className="space-y-16">
             
             {/* 1. Datenschutz auf einen Blick */}
@@ -54,7 +60,7 @@ const Datenschutz = () => {
                <div className="absolute top-0 right-0 p-8 opacity-5">
                 <ShieldCheck className="w-32 h-32" />
               </div>
-              <h2 className="text-2xl font-display font-bold mb-6 relative z-10">2. Ihre Rechte & Widerruf</h2>
+              <h2 className="text-2xl font-display font-bold mb-6 relative z-10 text-white">2. Ihre Rechte & Widerruf</h2>
               <p className="text-slate-300 mb-8 relative z-10">
                 Sie haben jederzeit das Recht auf unentgeltliche Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten sowie ein Recht auf Berichtigung, Sperrung oder Löschung.
               </p>
@@ -97,7 +103,7 @@ const Datenschutz = () => {
               </div>
             </section>
 
-            {/* 5. Analyse & Werbung */}
+            {/* 5. Analyse */}
             <section>
               <h2 className="text-2xl font-display font-bold text-primary mb-6 flex items-center gap-3">
                 <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><BarChart3 className="w-6 h-6" /></div>

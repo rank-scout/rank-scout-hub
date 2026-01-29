@@ -6,136 +6,176 @@
 
 @layer base {
   :root {
-    /* Core Colors - HSL values only (no hsl() wrapper) */
+    /* --- BASIS FARBEN (DEFAULT: DEEP NAVY #0E1F53) --- */
     --background: 210 40% 98%;
     --foreground: 229 88% 13%;
     
-    /* CUSTOM COLOR: C100 M100 Y40 K40 (Deep Midnight Blue) 🌑 */
-    /* HSL: 240 100% 18% */
-    --primary: 240 100% 18%;
+    --primary: 225 71% 19%; /* Deep Navy */
     --primary-foreground: 0 0% 100%;
     
-    /* Secondary: Amber Gold (Bleibt als Kontrast) */
-    --secondary: 20 90% 55%;
+    --secondary: 20 90% 55%; /* Amber Gold */
     --secondary-foreground: 0 0% 100%;
     
-    /* Card & Surfaces */
     --card: 0 0% 100%;
     --card-foreground: 229 88% 13%;
-    
-    /* Popover */
     --popover: 0 0% 100%;
     --popover-foreground: 229 88% 13%;
-    
-    /* Muted */
     --muted: 210 40% 94%;
     --muted-foreground: 215 16% 47%;
-    
-    /* Accent */
     --accent: 210 40% 94%;
     --accent-foreground: 229 88% 13%;
-    
-    /* Destructive */
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    
-    /* Border & Input */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 240 100% 18%; /* Passend zur Primary */
-    
-    /* Radius */
+    --ring: 225 71% 19%;
     --radius: 0.75rem;
-    
-    /* Chart colors - Updated to fit new Primary */
-    --chart-1: 240 100% 18%;
-    --chart-2: 20 90% 55%;
-    --chart-3: 142 76% 36%;
-    --chart-4: 47 96% 53%;
-    --chart-5: 262 83% 58%;
-    
-    /* Theme-specific colors */
-    --dating: 340 82% 52%;
-    --dating-foreground: 0 0% 100%;
-    --casino: 142 76% 36%;
-    --casino-foreground: 0 0% 100%;
-    --adult: 262 83% 58%;
-    --adult-foreground: 0 0% 100%;
-    
-    /* Sidebar variables (Admin) - Darker matching the new Primary */
-    --sidebar-background: 240 80% 12%; 
+
+    /* Admin Sidebar (Default) */
+    --sidebar-background: 225 71% 13%;
     --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 20 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 80% 18%;
+    --sidebar-accent: 225 71% 17%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 240 60% 25%;
+    --sidebar-border: 225 50% 25%;
     --sidebar-ring: 20 100% 55%;
   }
 
+  /* --- THEME PRESETS --- */
+
+  /* 1. ROYAL BLUE */
+  [data-theme="royal"] {
+    --primary: 224 76% 28%;
+    --ring: 224 76% 28%;
+    --sidebar-background: 224 76% 20%;
+    --sidebar-border: 224 60% 30%;
+    --sidebar-accent: 224 76% 25%;
+  }
+
+  /* 2. ELECTRIC INDIGO */
+  [data-theme="electric"] {
+    --primary: 237 95% 23%;
+    --ring: 237 95% 23%;
+    --sidebar-background: 237 95% 15%;
+    --sidebar-border: 237 60% 30%;
+    --sidebar-accent: 237 95% 20%;
+  }
+
+  /* 3. MIDNIGHT */
+  [data-theme="midnight"] {
+    --primary: 240 100% 18%;
+    --ring: 240 100% 18%;
+    --sidebar-background: 240 80% 12%;
+    --sidebar-border: 240 60% 25%;
+    --sidebar-accent: 240 80% 18%;
+  }
+
+  /* 4. OBSIDIAN ORANGE */
+  [data-theme="obsidian"] {
+    --primary: 0 0% 9%;
+    --secondary: 25 95% 53%;
+    --ring: 25 95% 53%;
+    --sidebar-background: 0 0% 5%;
+    --sidebar-border: 0 0% 20%;
+    --sidebar-accent: 0 0% 15%;
+    --sidebar-primary: 25 95% 53%;
+  }
+
+  /* 5. CRIMSON BLACK */
+  [data-theme="crimson"] {
+    --primary: 0 0% 0%;
+    --secondary: 346 84% 61%;
+    --ring: 346 84% 61%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-border: 346 84% 30%;
+    --sidebar-accent: 346 84% 10%;
+    --sidebar-primary: 346 84% 61%;
+  }
+
+  /* 6. CYBER EMERALD */
+  [data-theme="emerald"] {
+    --primary: 160 100% 15%;
+    --secondary: 160 60% 45%;
+    --ring: 160 60% 45%;
+    --sidebar-background: 160 100% 5%;
+    --sidebar-border: 160 60% 20%;
+    --sidebar-accent: 160 60% 10%;
+    --sidebar-primary: 160 60% 45%;
+  }
+
+  /* 7. SLATE MINIMAL */
+  [data-theme="slate"] {
+    --primary: 215 25% 27%;
+    --secondary: 215 16% 47%;
+    --ring: 215 25% 27%;
+    --sidebar-background: 215 25% 20%;
+    --sidebar-border: 215 16% 30%;
+    --sidebar-accent: 215 25% 25%;
+    --sidebar-primary: 210 40% 98%;
+  }
+
+  /* 8. LUXURY GOLD */
+  [data-theme="gold"] {
+    --primary: 0 0% 5%;
+    --secondary: 43 74% 49%;
+    --ring: 43 74% 49%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-border: 43 74% 25%;
+    --sidebar-accent: 43 74% 10%;
+    --sidebar-primary: 43 74% 49%;
+  }
+
+  /* DARK MODE */
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
-    
-    /* Dark Mode Primary: Helleres Ultramarine für Lesbarkeit */
-    --primary: 240 100% 65%;
-    --primary-foreground: 0 0% 100%;
-    
+    --primary: 225 71% 60%;
     --secondary: 20 90% 55%;
     --secondary-foreground: 0 0% 100%;
-    
     --card: 222 47% 15%;
     --card-foreground: 210 40% 98%;
-    
     --popover: 222 47% 15%;
     --popover-foreground: 210 40% 98%;
-    
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
-    
     --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
-    
     --destructive: 0 63% 31%;
     --destructive-foreground: 0 0% 100%;
-    
     --border: 217 33% 25%;
     --input: 217 33% 25%;
-    --ring: 240 100% 65%;
-    
-    /* Theme-specific colors (dark) */
-    --dating: 340 82% 60%;
-    --dating-foreground: 0 0% 100%;
-    --casino: 142 76% 45%;
-    --casino-foreground: 0 0% 100%;
-    --adult: 262 83% 65%;
-    --adult-foreground: 0 0% 100%;
-    
-    /* Sidebar (dark) */
-    --sidebar-background: 240 40% 10%;
+    --ring: 225 71% 60%;
+    --sidebar-background: 225 40% 10%;
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 20 90% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 40% 15%;
+    --sidebar-accent: 225 40% 15%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 240 30% 20%;
+    --sidebar-border: 225 30% 20%;
     --sidebar-ring: 20 100% 55%;
   }
+
+  /* Dark Mode Overrides */
+  .dark[data-theme="royal"] { --primary: 224 76% 60%; --ring: 224 76% 60%; }
+  .dark[data-theme="electric"] { --primary: 237 95% 65%; --ring: 237 95% 65%; }
+  .dark[data-theme="midnight"] { --primary: 240 100% 65%; --ring: 240 100% 65%; }
+  .dark[data-theme="obsidian"] { --primary: 0 0% 80%; --ring: 25 95% 53%; }
+  .dark[data-theme="crimson"] { --primary: 346 84% 61%; --ring: 346 84% 61%; }
+  .dark[data-theme="emerald"] { --primary: 160 60% 45%; --ring: 160 60% 45%; }
+  .dark[data-theme="slate"] { --primary: 215 20% 65%; --ring: 215 20% 65%; }
+  .dark[data-theme="gold"] { --primary: 43 74% 49%; --ring: 43 74% 49%; }
 }
 
 @layer base {
   * { @apply border-border; }
-  
   body {
     @apply text-foreground font-body antialiased;
     background-color: hsl(var(--background));
-    
-    /* Neues Raster in der Primärfarbe */
     background-image: radial-gradient(hsl(var(--primary) / 0.08) 0.5px, transparent 0.5px);
     background-size: 24px 24px;
     background-position: 0 0;
   }
-
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-bold tracking-tight text-foreground;
   }
@@ -146,31 +186,21 @@
     background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
     background-size: 30px 30px;
   }
-  
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 3px;
-  }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
-  }
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 3px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
 }
 
-/* Animation utilities */
+/* --- ANIMATIONEN --- */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+.animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
 
-.animate-fade-in {
-  animation: fade-in 0.3s ease-out;
-}
+/* Stagger Delays für nacheinander einblendende Elemente */
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-500 { animation-delay: 500ms; }
