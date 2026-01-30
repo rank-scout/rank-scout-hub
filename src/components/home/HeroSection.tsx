@@ -56,7 +56,8 @@ export const HeroSection = () => {
             <span className="text-sm font-medium text-slate-100 tracking-wide group-hover:text-white transition-colors">{content.hero.badge}</span>
           </div>
 
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white mb-6 tracking-tight leading-[1.1] animate-fade-in animation-delay-100 drop-shadow-2xl">
+          {/* KYRA UPDATE: Font Size reduziert (3xl/5xl/6xl) */}
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight leading-[1.1] animate-fade-in animation-delay-100 drop-shadow-2xl">
             {content.hero.title}
           </h1>
           

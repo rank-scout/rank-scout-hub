@@ -1,4 +1,4 @@
-import { useEffect, Fragment } from "react";
+import { useEffect, Fragment, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "@/components/home/HeroSection";
@@ -8,15 +8,16 @@ import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
 import { ForumSection } from "@/components/home/ForumSection";
 import { SEOContentSection } from "@/components/home/SEOContentSection";
-import { MascotWidget } from "@/components/layout/MascotWidget";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 import { AmazonBanner } from "@/components/ads/AmazonBanner";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { 
   useSiteTitle, 
   useSiteDescription, 
-  useHomeLayout 
+  useHomeLayout,
+  useHomeContent 
 } from "@/hooks/useSettings";
 
 const Index = () => {
@@ -24,8 +25,10 @@ const Index = () => {
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   
-  // Holt das CMS Layout (WICHTIG: Das bleibt erhalten!)
   const { sections } = useHomeLayout();
+  const { content } = useHomeContent();
+  
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     document.title = siteTitle;
@@ -34,10 +37,21 @@ const Index = () => {
   }, [siteTitle, siteDescription]);
 
   useEffect(() => {
+    if (sections.length > 0 && content) {
+        const timer = setTimeout(() => setIsReady(true), 300);
+        return () => clearTimeout(timer);
+    }
+  }, [sections, content]);
+
+  useEffect(() => {
     if (!analyticsCode) return;
   }, [analyticsCode]);
 
-  // Mapping: ID -> Komponente
+  if (!isReady) {
+      return <LoadingScreen />;
+  }
+
+  // Mapping: ID -> Komponente (MascotWidget entfernt, da jetzt global in App.tsx)
   const sectionComponents: Record<string, React.ReactNode> = {
     hero: <HeroSection />,
     amazon_top: <AmazonBanner format="horizontal" />,
@@ -47,19 +61,17 @@ const Index = () => {
     categories: <CategoriesSection />,
     forum: <ForumSection />,
     news: <NewsSection />,
-    seo: <SEOContentSection />,
-    mascot: <MascotWidget />
+    seo: <SEOContentSection />
   };
 
   return (
-    // KYRA UPDATE: bg-white statt bg-transparent für cleaneren Look
-    <div className="min-h-screen flex flex-col relative bg-white">
+    <div className="min-h-screen flex flex-col relative bg-white animate-in fade-in duration-500">
       <Header />
       
       <main className="flex-grow">
-        {/* Dynamische CMS Rendering Schleife - Bleibt erhalten! */}
+        {/* Dynamische CMS Rendering Schleife */}
         {sections
-          .filter(section => section.enabled) // Nur aktive anzeigen
+          .filter(section => section.enabled && section.id !== 'mascot')
           .map(section => (
             <Fragment key={section.id}>
               {sectionComponents[section.id]}
@@ -71,9 +83,6 @@ const Index = () => {
       <Footer />
       
       <ScrollToTop />
-      {/* Mascot wird auch dynamisch über CMS gesteuert, aber falls enabled -> Widget */}
-      {/* Wir prüfen hier zusätzlich ob "mascot" im Layout enabled ist */}
-      {sections.find(s => s.id === 'mascot' && s.enabled) && <MascotWidget />}
     </div>
   );
 };

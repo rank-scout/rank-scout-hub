@@ -34,9 +34,13 @@ export default function AdminSettings() {
   
   // Hooks für Home-Steuerung & Ads
   const { layout } = useHomeLayout();
-  const { content } = useHomeContent();
+  const { content: serverContent } = useHomeContent(); // Umbenannt zu serverContent für manuelles Speichern
   const { data: forumAds } = useForumAds();
   
+  // NEU: Lokaler State für manuelles Speichern (Verhindert Auto-Save)
+  const [localContent, setLocalContent] = useState<typeof defaultHomeContent | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
   // Bestehende States
   const [siteTitle, setSiteTitle] = useState("");
   const [siteLogoUrl, setSiteLogoUrl] = useState("");
@@ -99,6 +103,13 @@ export default function AdminSettings() {
     setInitialized(true);
   }
 
+  // NEU: Initialisierung Local Content (Einmalig beim Laden der Daten)
+  useEffect(() => {
+    if (serverContent && !localContent) {
+      setLocalContent(JSON.parse(JSON.stringify(serverContent))); // Deep Copy verhindert Referenz-Probleme
+    }
+  }, [serverContent]);
+
   // Fetch Scouty Leads Count (Live from Subscribers)
   useEffect(() => {
     const fetchLeads = async () => {
@@ -126,29 +137,41 @@ export default function AdminSettings() {
     saveSetting("scouty_config", { high_ticket_url: scoutyHighTicketUrl });
   };
 
-  // Funktionen für Home-Layout & Content
+  // Funktionen für Home-Layout (Layout bleibt direkt, das ist okay)
   const toggleSection = (key: keyof typeof defaultHomeLayout) => {
-    // @ts-ignore - layout ist hier das Objekt aus useSettings return { layout }
+    // @ts-ignore
     const newLayout = { ...layout, [key]: !layout[key] };
     saveSetting("home_layout_v2", newLayout); 
   };
 
+  // --- NEU: LOKALES UPDATE (Kein sofortiges Speichern) ---
   const updateContent = (section: string, field: string, value: any) => {
+    if (!localContent) return;
+    
     const newContent = { 
-      ...content, 
+      ...localContent, 
       [section]: { 
         //@ts-ignore
-        ...(content[section] || {}), 
+        ...(localContent[section] || {}), 
         [field]: value 
       } 
     };
-    saveSetting("home_content", newContent);
+    setLocalContent(newContent);
+    setHasUnsavedChanges(true); // Button aktivieren
   };
 
-  // --- NEUE HELPER: BIG THREE DYNAMISCH ---
+  // --- NEU: MANUELLES SPEICHERN ---
+  const saveContentManually = () => {
+    if (!localContent) return;
+    saveSetting("home_content", localContent);
+    setHasUnsavedChanges(false);
+  };
+
+  // --- BIG THREE DYNAMISCH (LOKAL) ---
   const addBigThreeItem = () => {
+    if (!localContent) return;
     // @ts-ignore
-    const currentItems = content.big_three?.items || [];
+    const currentItems = localContent.big_three?.items || [];
     const newItem = {
       id: crypto.randomUUID(),
       title: "Neuer Bereich",
@@ -163,23 +186,26 @@ export default function AdminSettings() {
   };
 
   const removeBigThreeItem = (index: number) => {
+    if (!localContent) return;
     // @ts-ignore
-    const newItems = [...(content.big_three?.items || [])];
+    const newItems = [...(localContent.big_three?.items || [])];
     newItems.splice(index, 1);
     updateContent("big_three", "items", newItems);
   };
 
   const updateBigThreeItem = (index: number, field: string, value: any) => {
+    if (!localContent) return;
     // @ts-ignore
-    const newItems = [...(content.big_three?.items || [])];
+    const newItems = [...(localContent.big_three?.items || [])];
     newItems[index] = { ...newItems[index], [field]: value };
     updateContent("big_three", "items", newItems);
   };
 
-  // --- NEUE HELPER: WHY US / SEO DYNAMISCH ---
+  // --- WHY US / SEO DYNAMISCH (LOKAL) ---
   const updateFeature = (index: number, field: string, value: any) => {
+    if (!localContent) return;
     // @ts-ignore
-    const currentFeatures = content.why_us?.features || [];
+    const currentFeatures = localContent.why_us?.features || [];
     while(currentFeatures.length < 4) {
         currentFeatures.push({ title: "Feature", text: "Beschreibung", icon: "zap" });
     }
@@ -282,15 +308,16 @@ export default function AdminSettings() {
     }
   };
 
-  if (isLoading) {
+  // WICHTIG: Loading State darf nicht rendern bevor localContent da ist!
+  if (isLoading || !localContent) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
 
-  // Safe Accessor für Arrays (Crash Prevention)
+  // Safe Accessor für Arrays (Lokal)
   // @ts-ignore
-  const safeBigThreeItems = content?.big_three?.items || [];
+  const safeBigThreeItems = localContent?.big_three?.items || [];
   // @ts-ignore
-  const safeFeatures = content?.why_us?.features || [];
+  const safeFeatures = localContent?.why_us?.features || [];
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -311,7 +338,7 @@ export default function AdminSettings() {
             value="home" 
             className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium text-slate-600 dark:text-slate-400"
           >
-            Startseite & Content
+            Startseite & Content {hasUnsavedChanges && <span className="ml-2 w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>}
           </TabsTrigger>
         </TabsList>
 
@@ -592,11 +619,27 @@ export default function AdminSettings() {
         {/* TAB 2: STARTSEITE & CONTENT */}
         <TabsContent value="home" className="space-y-6 mt-6">
           
+          {/* HAUPT-SPEICHER-BUTTON (NEU) */}
+          <div className="sticky top-2 z-50 bg-background/95 backdrop-blur py-2 border-b border-border/50 flex justify-between items-center mb-6">
+            <div>
+              <h3 className="font-bold text-lg">Startseiten Editor</h3>
+              <p className="text-xs text-muted-foreground">Änderungen werden erst beim Klick auf "Speichern" wirksam.</p>
+            </div>
+            <Button 
+              onClick={saveContentManually} 
+              size="lg"
+              className={`transition-all ${hasUnsavedChanges ? 'bg-orange-600 hover:bg-orange-700 animate-pulse' : 'bg-primary'}`}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {hasUnsavedChanges ? "Änderungen speichern *" : "Speichern"}
+            </Button>
+          </div>
+
           {/* LAYOUT STEUERUNG */}
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5 text-primary" /> Layout Steuerung</CardTitle>
-              <CardDescription>Aktiviere oder deaktiviere Sektionen auf der Startseite.</CardDescription>
+              <CardDescription>Aktiviere oder deaktiviere Sektionen auf der Startseite (Sofort-Effekt).</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                {Object.keys(defaultHomeLayout).map((key) => (
@@ -615,7 +658,7 @@ export default function AdminSettings() {
             </CardContent>
           </Card>
 
-          {/* CONTENT STEUERUNG (TEILS DYNAMISCH) */}
+          {/* CONTENT STEUERUNG (LOKALER STATE) */}
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-secondary" /> Texte & Inhalte</CardTitle>
@@ -627,21 +670,25 @@ export default function AdminSettings() {
                 <AccordionItem value="hero">
                   <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Hero Section</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4 px-4">
-                    <div className="space-y-2"><Label>Titel</Label><Input value={content.hero.headline} onChange={(e) => updateContent('hero', 'headline', e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Untertitel</Label><Textarea value={content.hero.subheadline} onChange={(e) => updateContent('hero', 'subheadline', e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Badge Text</Label><Input value={content.hero.badge} onChange={(e) => updateContent('hero', 'badge', e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Such-Platzhalter</Label><Input value={content.hero.search_placeholder} onChange={(e) => updateContent('hero', 'search_placeholder', e.target.value)} /></div>
+                    {/* WICHTIG: Hier sind die neuen Felder für H1 und Search (LOKAL) */}
+                    <div className="space-y-2"><Label>H1 Titel (Wichtig für SEO)</Label><Input value={localContent.hero.title} onChange={(e) => updateContent('hero', 'title', e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Untertitel</Label><Textarea value={localContent.hero.subtitle} onChange={(e) => updateContent('hero', 'subtitle', e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Badge Text</Label><Input value={localContent.hero.badge} onChange={(e) => updateContent('hero', 'badge', e.target.value)} /></div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Such-Label (über Suchleiste)</Label><Input value={localContent.hero.search_label} onChange={(e) => updateContent('hero', 'search_label', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Such-Platzhalter</Label><Input value={localContent.hero.search_placeholder} onChange={(e) => updateContent('hero', 'search_placeholder', e.target.value)} /></div>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
 
                 <AccordionItem value="trust">
                   <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Trust / Vorteile</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4 px-4">
-                    <div className="space-y-2"><Label>Überschrift</Label><Input value={content.trust.headline} onChange={(e) => updateContent('trust', 'headline', e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Untertext</Label><Textarea value={content.trust.subheadline} onChange={(e) => updateContent('trust', 'subheadline', e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Überschrift</Label><Input value={localContent.trust.headline} onChange={(e) => updateContent('trust', 'headline', e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Untertext</Label><Textarea value={localContent.trust.subheadline} onChange={(e) => updateContent('trust', 'subheadline', e.target.value)} /></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Box Titel</Label><Input value={content.trust.box_title} onChange={(e) => updateContent('trust', 'box_title', e.target.value)} /></div>
-                        <div className="space-y-2"><Label>Box Text</Label><Textarea rows={4} value={content.trust.box_text} onChange={(e) => updateContent('trust', 'box_text', e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Box Titel</Label><Input value={localContent.trust.box_title} onChange={(e) => updateContent('trust', 'box_title', e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Box Text</Label><Textarea rows={4} value={localContent.trust.box_text} onChange={(e) => updateContent('trust', 'box_text', e.target.value)} /></div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -652,7 +699,7 @@ export default function AdminSettings() {
                   <AccordionContent className="space-y-6 pt-4 px-4">
                       <div className="space-y-2">
                         <Label>Sektions-Überschrift</Label>
-                        <Input value={content.big_three.headline} onChange={(e) => updateContent('big_three', 'headline', e.target.value)} />
+                        <Input value={localContent.big_three.headline} onChange={(e) => updateContent('big_three', 'headline', e.target.value)} />
                       </div>
                       
                       {/* Dynamische Karten Liste */}
@@ -700,9 +747,9 @@ export default function AdminSettings() {
                 <AccordionItem value="news">
                   <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Newsletter Bereich</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4 px-4">
-                      <div className="space-y-2"><Label>Überschrift</Label><Input value={content.news.headline} onChange={(e) => updateContent('news', 'headline', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Text</Label><Textarea value={content.news.subheadline} onChange={(e) => updateContent('news', 'subheadline', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Button Text</Label><Input value={content.news.button_text} onChange={(e) => updateContent('news', 'button_text', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Überschrift</Label><Input value={localContent.news.headline} onChange={(e) => updateContent('news', 'headline', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Text</Label><Textarea value={localContent.news.subheadline} onChange={(e) => updateContent('news', 'subheadline', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Button Text</Label><Input value={localContent.news.button_text} onChange={(e) => updateContent('news', 'button_text', e.target.value)} /></div>
                   </AccordionContent>
                 </AccordionItem>
 
@@ -710,8 +757,8 @@ export default function AdminSettings() {
                 <AccordionItem value="seo">
                   <AccordionTrigger className="hover:no-underline hover:bg-slate-50 px-4 rounded-lg">Why Rank-Scout (SEO)</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4 px-4">
-                      <div className="space-y-2"><Label>Überschrift</Label><Input value={content.why_us?.headline} onChange={(e) => updateContent('why_us', 'headline', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Intro</Label><Textarea value={content.why_us?.subheadline} onChange={(e) => updateContent('why_us', 'subheadline', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Überschrift</Label><Input value={localContent.why_us?.headline} onChange={(e) => updateContent('why_us', 'headline', e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Intro</Label><Textarea value={localContent.why_us?.subheadline} onChange={(e) => updateContent('why_us', 'subheadline', e.target.value)} /></div>
                       
                       <div className="border-t pt-4">
                           <Label className="mb-2 block font-bold text-xs uppercase text-muted-foreground">Die 4 Feature Karten</Label>

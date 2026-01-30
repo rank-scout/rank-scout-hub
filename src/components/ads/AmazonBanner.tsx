@@ -1,16 +1,40 @@
+import { useState, useEffect } from "react";
 import { useAdsEnabled, useAmazonConfig } from "@/hooks/useSettings";
-import { ArrowRight, ShoppingCart, Star } from "lucide-react";
+import { ArrowRight, ShoppingCart } from "lucide-react";
 
 export const AmazonBanner = ({ format = "horizontal" }: { format?: "horizontal" | "rectangle" | "vertical" }) => {
   const adsEnabled = useAdsEnabled();
   const { headline, text, buttonText, link } = useAmazonConfig();
 
+  // Consent State
+  const [marketingConsent, setMarketingConsent] = useState(false);
+
+  useEffect(() => {
+    const checkConsent = () => {
+        const stored = localStorage.getItem("cookie-consent");
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                // Amazon ist "marketing"
+                setMarketingConsent(!!parsed.marketing);
+            } catch(e) {}
+        } else {
+            setMarketingConsent(false);
+        }
+    };
+    checkConsent();
+    window.addEventListener("cookie-consent-update", checkConsent);
+    return () => window.removeEventListener("cookie-consent-update", checkConsent);
+  }, []);
+
   if (!adsEnabled) {
     return null;
   }
+  
+  // RECHTSKONFORMITÄT: Wenn User "Nein" zu Marketing sagt, blenden wir den Banner aus.
+  if (!marketingConsent) return null;
 
   // Wenn keine Daten da sind (und man nicht im Admin-Mode ist), nichts anzeigen
-  // Ausnahme: Admin sieht den Placeholder, um zu wissen, wo er ist.
   const hasContent = headline && link;
 
   return (
@@ -61,12 +85,11 @@ export const AmazonBanner = ({ format = "horizontal" }: { format?: "horizontal" 
           </div>
         </a>
       ) : (
-        // Placeholder für Admin, wenn noch nichts eingetragen ist
+        // Placeholder für Admin
         <div className="w-full max-w-5xl rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-center">
            <div className="flex flex-col items-center gap-2 text-slate-400">
               <ShoppingCart className="h-8 w-8 opacity-50" />
               <p className="font-medium text-sm">Native Amazon Banner (Leer)</p>
-              {/* KYRA FIX: Syntaxfehler behoben (-> zu &rarr; geändert) */}
               <p className="text-xs">Bitte Headline und Link im Admin-Bereich (Global &rarr; Monetarisierung) hinterlegen.</p>
            </div>
         </div>
