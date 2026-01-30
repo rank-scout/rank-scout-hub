@@ -1,45 +1,111 @@
-import { ShieldCheck, Zap } from "lucide-react";
+import { ShieldCheck, Zap, BarChart, Globe, Lock } from "lucide-react";
 import { useHomeContent } from "@/hooks/useSettings";
 
 export const SEOContentSection = () => {
   const { content } = useHomeContent();
+  
   if (!content) return null;
 
+  // Defaults falls noch nichts in DB ist
+  const features = content.why_us?.features || [
+    { title: "Extreme Performance", text: "Keine Ladezeiten, nur Fakten.", icon: "zap" },
+    { title: "100% Unabhängig", text: "Maximale Neutralität.", icon: "shield" },
+    { title: "Global & Lokal", text: "Von International bis Regional.", icon: "globe" },
+    { title: "Echtzeit Updates", text: "Täglich frische Daten.", icon: "chart" }
+  ];
+
   return (
-    <section className="bg-white py-24 border-t border-slate-100">
-      <div className="container mx-auto px-4 max-w-6xl">
-        
-        <div className="mb-16 text-center max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-blue-950 mb-6 sm:text-4xl">
-            {content.seo.headline}
+    <section className="py-32 bg-slate-50 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      <div className="absolute bottom-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
+      
+      <div className="container px-4 mx-auto relative z-10">
+        <div className="max-w-3xl mx-auto text-center mb-20">
+          <h2 className="text-3xl md:text-4xl font-display font-bold text-primary mb-6">
+            {content.why_us?.headline || "Warum Rank-Scout?"}
           </h2>
-          <p className="text-lg text-slate-600 leading-relaxed">
-            {content.seo.intro}
+          <p className="text-lg text-slate-500 leading-relaxed">
+            {content.why_us?.subheadline || "Wir sind deine intelligente Entscheidungshilfe."}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-12 mb-20">
-          <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100">
-            <h3 className="text-xl font-bold text-blue-950 mb-4 flex items-center gap-2">
-              <span className="h-8 w-8 bg-rose-100 text-rose-700 rounded-lg flex items-center justify-center"><ShieldCheck className="w-5 h-5" /></span>
-              {content.seo.block1_title}
-            </h3>
-            <p className="text-slate-600 leading-relaxed">
-              {content.seo.block1_text}
-            </p>
+        {/* THE BENTO GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+          
+          {/* Card 1: Large Feature (Span 2) */}
+          <div className="md:col-span-2 group relative overflow-hidden rounded-3xl bg-white p-10 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-500">
+            <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
+              <Zap className="w-64 h-64 text-secondary" />
+            </div>
+            <div className="relative z-10 h-full flex flex-col justify-between">
+              <div className="p-3 w-fit rounded-xl bg-amber-50 text-amber-600 mb-4">
+                <Zap className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-primary mb-3">{features[0]?.title}</h3>
+                <p className="text-slate-500 max-w-md">{features[0]?.text}</p>
+              </div>
+            </div>
           </div>
 
-          <div className="bg-slate-50 p-8 rounded-3xl border border-slate-100">
-            <h3 className="text-xl font-bold text-blue-950 mb-4 flex items-center gap-2">
-              <span className="h-8 w-8 bg-blue-100 text-blue-700 rounded-lg flex items-center justify-center"><Zap className="w-5 h-5" /></span>
-              {content.seo.block2_title}
-            </h3>
-            <p className="text-slate-600 leading-relaxed">
-              {content.seo.block2_text}
-            </p>
+          {/* --- CARD 2: PHOTO STOCK INTEGRATION (The Vault) --- */}
+          <div className="md:row-span-2 group relative overflow-hidden rounded-3xl bg-primary p-10 shadow-lg border border-primary/50 flex flex-col justify-between">
+            
+            {/* 1. Das Stockfoto (Cyber Security / Network) */}
+            <div className="absolute inset-0 z-0">
+                <img 
+                    src="https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&q=80&w=1000" 
+                    alt="Secure Technology Background" 
+                    className="w-full h-full object-cover opacity-40 group-hover:scale-110 group-hover:opacity-50 transition-all duration-[3s]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary via-primary/60 to-transparent" />
+            </div>
+
+            <div className="relative z-10">
+               <div className="p-3 w-fit rounded-xl bg-white/10 text-white mb-6 border border-white/10 backdrop-blur-md">
+                <Lock className="w-6 h-6" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">{features[1]?.title}</h3>
+              <p className="text-slate-300 leading-relaxed text-sm drop-shadow-md font-medium">
+                {features[1]?.text}
+              </p>
+            </div>
+
+            {/* VISUAL: LASER SCANNER */}
+            <div className="relative mt-8 h-48 w-full bg-white/5 rounded-2xl border border-white/10 overflow-hidden backdrop-blur-sm flex items-center justify-center group-hover:border-secondary/30 transition-colors shadow-2xl">
+               <div className="absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-green-400 to-transparent shadow-[0_0_20px_#4ade80] z-20" 
+                    style={{ animation: 'scan 3s ease-in-out infinite' }} />
+               <div className="absolute bottom-4 z-30 flex items-center gap-2 px-3 py-1 bg-black/60 rounded-full border border-green-500/30 backdrop-blur-xl shadow-lg">
+                 <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                 <span className="text-[10px] font-bold text-green-300 tracking-wider">VERIFIED_SECURE</span>
+               </div>
+            </div>
+          </div>
+
+          {/* Card 3 */}
+          <div className="group relative overflow-hidden rounded-3xl bg-white p-8 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-500 flex flex-col">
+             <div className="p-3 w-fit rounded-xl bg-blue-50 text-blue-600 mb-4"><Globe className="w-6 h-6" /></div>
+             <h3 className="text-xl font-bold text-primary mb-2">{features[2]?.title}</h3>
+             <p className="text-slate-500 text-sm leading-relaxed">{features[2]?.text}</p>
+          </div>
+
+          {/* Card 4 */}
+          <div className="group relative overflow-hidden rounded-3xl bg-white p-8 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-500 flex flex-col">
+             <div className="p-3 w-fit rounded-xl bg-purple-50 text-purple-600 mb-4"><BarChart className="w-6 h-6" /></div>
+             <h3 className="text-xl font-bold text-primary mb-2">{features[3]?.title}</h3>
+             <p className="text-slate-500 text-sm leading-relaxed">{features[3]?.text}</p>
           </div>
         </div>
       </div>
+      
+      <style>{`
+        @keyframes scan {
+          0%, 100% { top: 0%; opacity: 0; }
+          10%, 90% { opacity: 1; }
+          50% { top: 100%; }
+        }
+      `}</style>
     </section>
   );
 };

@@ -24,7 +24,7 @@ const Index = () => {
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   
-  // Holt das CMS Layout
+  // Holt das CMS Layout (WICHTIG: Das bleibt erhalten!)
   const { sections } = useHomeLayout();
 
   useEffect(() => {
@@ -52,23 +52,28 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col relative bg-transparent">
+    // KYRA UPDATE: bg-white statt bg-transparent für cleaneren Look
+    <div className="min-h-screen flex flex-col relative bg-white">
       <Header />
       
       <main className="flex-grow">
-        {/* Dynamische CMS Rendering Schleife */}
+        {/* Dynamische CMS Rendering Schleife - Bleibt erhalten! */}
         {sections
           .filter(section => section.enabled) // Nur aktive anzeigen
           .map(section => (
             <Fragment key={section.id}>
-              {sectionComponents[section.id] || null}
+              {sectionComponents[section.id]}
             </Fragment>
           ))
         }
       </main>
 
       <Footer />
+      
       <ScrollToTop />
+      {/* Mascot wird auch dynamisch über CMS gesteuert, aber falls enabled -> Widget */}
+      {/* Wir prüfen hier zusätzlich ob "mascot" im Layout enabled ist */}
+      {sections.find(s => s.id === 'mascot' && s.enabled) && <MascotWidget />}
     </div>
   );
 };

@@ -1,17 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2, Clock } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Calendar, Clock, Tag, Loader2 } from "lucide-react";
 import { useHomeContent } from "@/hooks/useSettings";
+import { Button } from "@/components/ui/button";
 
 export function NewsSection() {
   const { content } = useHomeContent();
-  const limit = content?.news?.count || 3; // Dynamischer Limit
+  const limit = content?.news?.count || 3; // Dynamisches Limit aus Settings
 
+  // 1. Echte Daten laden (Behalten wir bei!)
   const { data: posts, isLoading } = useQuery({
-    queryKey: ["latest-news-posts", limit], // Limit im Key für Refresh
+    queryKey: ["latest-news-posts", limit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("forum_threads")
@@ -22,123 +22,127 @@ export function NewsSection() {
         .eq("status", "published")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
-        .limit(limit); // Dynamischer Limit
+        .limit(limit);
 
       if (error) throw error;
       return data;
     },
-    enabled: !!content // Erst laden wenn Settings da sind
+    enabled: !!content
   });
 
   if (!content) return null;
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("de-DE", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
-
+  // Loading State (Modernisiert)
   if (isLoading) {
     return (
-      <div className="py-20 flex justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
+      <section className="py-24 bg-white">
+        <div className="container px-4 mx-auto flex justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </section>
     );
   }
 
-  if (!posts || posts.length === 0) {
-    return null;
-  }
+  // Fallback, falls keine News da sind
+  if (!posts || posts.length === 0) return null;
 
   return (
-    <section className="py-20 bg-gray-50/50">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <section className="py-24 bg-white border-t border-slate-100">
+      <div className="container px-4 mx-auto">
         
-        <div className="mb-12 flex flex-col md:flex-row justify-between items-end gap-4 border-b border-gray-200 pb-4 relative">
-          <div>
-            <h2 className="text-3xl font-bold uppercase tracking-tight text-foreground mb-2">
-              {content.news.headline}
+        {/* Header Area */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+          <div className="max-w-2xl">
+            <span className="text-secondary font-bold uppercase tracking-widest text-sm">
+              Wissen & News
+            </span>
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-primary mt-3">
+              {content.news?.headline || "Aktuelles & Ratgeber"}
             </h2>
-            <div className="absolute bottom-0 left-0 h-[3px] w-[60px] bg-[#f55a4a]"></div>
+            <p className="text-slate-500 mt-4 text-lg leading-relaxed">
+              {content.news?.subheadline || "Expertenwissen für deinen digitalen Erfolg. Strategien, Updates und Insights."}
+            </p>
           </div>
-          
-          <Link 
-            to="/forum" 
-            className="text-sm font-medium text-muted-foreground hover:text-[#f55a4a] transition-colors flex items-center gap-1 mb-1"
-          >
-            {content.news.button_text} <ArrowRight className="w-4 h-4" />
-          </Link>
+          <Button variant="outline" className="hidden md:flex border-slate-200 text-primary hover:bg-slate-50 hover:text-secondary transition-colors" asChild>
+            <Link to="/forum">Alle Beiträge <ArrowRight className="ml-2 w-4 h-4" /></Link>
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post) => (
-            <article key={post.id} className="group flex flex-col h-full">
-              <Card className="h-full border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden flex flex-col">
-                
-                <div className="relative overflow-hidden w-full aspect-[1024/559]">
-                  <Link to={`/forum/${post.slug}`}>
-                    {post.featured_image_url ? (
-                      <img 
-                        src={post.featured_image_url} 
-                        alt={post.title}
-                        className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                        <span className="text-sm font-medium">Kein Bild</span>
-                      </div>
-                    )}
-                    
-                    {post.forum_categories && (
-                      <Badge className="absolute top-4 left-4 bg-[#f55a4a] hover:bg-[#d14030] text-white border-none shadow-sm text-xs font-semibold px-3 py-1">
-                        {post.forum_categories.name}
-                      </Badge>
-                    )}
-                  </Link>
-                </div>
+        {/* 2. Das neue Layout: Mobile Snap-Slider / Desktop Grid */}
+        <div className="flex overflow-x-auto pb-8 -mx-4 px-4 md:grid md:grid-cols-3 md:gap-8 md:overflow-visible md:p-0 snap-x snap-mandatory scrollbar-hide">
+          
+          {posts.map((post) => {
+            // Helper Values für das Design
+            const date = new Date(post.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' });
+            const readTime = Math.max(1, Math.ceil((post.content?.length || 0) / 1000)) + " Min";
+            // @ts-ignore - Supabase Typen-Handling für Joins kann tricky sein
+            const categoryName = post.forum_categories?.name || "Allgemein";
+            const imageUrl = post.featured_image_url || "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&q=80&w=800"; // Fallback Bild
 
-                <CardHeader className="p-6 pb-2 space-y-3">
-                  <div className="flex items-center text-xs text-muted-foreground gap-3">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatDate(post.created_at)}
+            return (
+              <Link 
+                key={post.id} 
+                to={`/forum/${post.slug}`}
+                className="group flex-shrink-0 w-[85vw] md:w-auto snap-center relative flex flex-col bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-lg hover:shadow-xl transition-all duration-500 hover:-translate-y-1"
+              >
+                {/* Image Container (Frameless) */}
+                <div className="relative h-64 overflow-hidden">
+                  <img 
+                    src={imageUrl} 
+                    alt={post.title} 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />
+                  
+                  {/* Category Badge top-left */}
+                  <div className="absolute top-4 left-4">
+                    <span className="inline-flex items-center px-3 py-1 rounded-full bg-white/90 backdrop-blur-sm text-xs font-bold text-primary shadow-sm">
+                      <Tag className="w-3 h-3 mr-1.5 text-secondary" />
+                      {categoryName}
                     </span>
                   </div>
+                </div>
 
-                  <h3 className="text-xl font-bold leading-snug line-clamp-2 group-hover:text-[#f55a4a] transition-colors">
-                    <Link to={`/forum/${post.slug}`}>
-                      {post.title}
-                    </Link>
+                {/* Content Area */}
+                <div className="flex flex-col flex-grow p-8">
+                  {/* Meta Data Row */}
+                  <div className="flex items-center gap-4 text-xs font-medium text-slate-400 mb-4 uppercase tracking-wider">
+                    <div className="flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {date}
+                    </div>
+                    <div className="w-1 h-1 rounded-full bg-slate-300" />
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      {readTime}
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-xl font-bold text-primary mb-3 leading-tight group-hover:text-secondary transition-colors line-clamp-2">
+                    {post.title}
                   </h3>
-                </CardHeader>
-
-                <CardContent className="p-6 pt-2 flex-grow">
-                  <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
-                    {post.seo_description || stripHtml(post.content).substring(0, 120) + "..."}
+                  
+                  {/* Excerpt */}
+                  <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-6 flex-grow">
+                    {post.seo_description || "Klicke hier, um den ganzen Artikel zu lesen und mehr zu erfahren..."}
                   </p>
-                </CardContent>
 
-                <CardFooter className="p-6 pt-0 mt-auto border-t border-gray-50 bg-gray-50/30">
-                  <Link 
-                    to={`/forum/${post.slug}`} 
-                    className="w-full flex items-center justify-between text-sm font-semibold text-foreground group-hover:text-[#f55a4a] transition-colors py-3"
-                  >
-                    {content.news.read_more || "Weiterlesen"}
-                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </CardFooter>
-              </Card>
-            </article>
-          ))}
+                  {/* Action Link */}
+                  <div className="flex items-center text-sm font-bold text-primary group-hover:text-secondary transition-colors mt-auto">
+                    {content.news?.read_more || "Artikel lesen"} <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+
+        {/* Mobile Button Bottom */}
+        <div className="mt-8 text-center md:hidden">
+            <Button className="w-full bg-primary text-white" asChild>
+                <Link to="/forum">Zum Ratgeber</Link>
+            </Button>
         </div>
 
       </div>

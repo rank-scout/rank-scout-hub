@@ -13,7 +13,7 @@ export const categoryThemeEnum = z.enum(["DATING", "ADULT", "CASINO", "GENERIC"]
 export const categoryTemplateEnum = z.enum(["comparison", "review"]);
 export const colorThemeEnum = z.enum(["dark", "light", "neon"]);
 
-// Navigation settings schema for quick navigation toggles
+// Navigation settings
 export const navigationSettingsSchema = z.object({
   show_top3_dating_apps: z.boolean().default(true),
   show_singles_in_der_naehe: z.boolean().default(true),
@@ -26,62 +26,41 @@ export const navigationSettingsSchema = z.object({
 export type NavigationSettings = z.infer<typeof navigationSettingsSchema>;
 
 export const categorySchema = z.object({
-  slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche erlaubt"),
+  slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
   name: z.string().min(1, "Name erforderlich"),
   description: z.string().optional(),
   icon: z.string().optional(),
-  
-  // SEO & Content
-  meta_title: z.string().max(60, "Max. 60 Zeichen").optional(),
-  meta_description: z.string().max(160, "Max. 160 Zeichen").optional(),
-  h1_title: z.string().optional(),
-  hero_pretitle: z.string().optional(),
-  hero_headline: z.string().optional(),
-  hero_cta_text: z.string().optional(),
-  hero_badge_text: z.string().optional(),
-  intro_title: z.string().optional(),
-  
-  // HTML Content
-  long_content_top: z.string().optional(),
-  long_content_bottom: z.string().optional(),
-  
-  // NEW: FAQ Data (JSON)
-  faq_data: z.array(z.object({ question: z.string(), answer: z.string() })).optional(),
-
-  // Settings
-  theme: categoryThemeEnum.default("DATING"),
+  theme: categoryThemeEnum.default("GENERIC"),
+  color_theme: colorThemeEnum.default("light"),
   template: categoryTemplateEnum.default("comparison"),
-  color_theme: colorThemeEnum.default("dark"),
   is_active: z.boolean().default(true),
-  sort_order: z.number().default(0),
-  
-  // Navigation
-  navigation_settings: navigationSettingsSchema.optional(),
-  
-  // Footer & Branding
-  site_name: z.string().optional(),
-  footer_site_name: z.string().optional(),
-  footer_copyright_text: z.string().optional(),
-  footer_designer_name: z.string().optional(),
-  footer_designer_url: z.string().optional(),
-  
-  // Advanced
-  analytics_code: z.string().optional(),
-  banner_override: z.string().optional(),
-  custom_html_override: z.string().optional(),
+  hero_title: z.string().optional(),
+  hero_subtitle: z.string().optional(),
+  meta_title: z.string().optional(),
+  meta_description: z.string().optional(),
+  faq_section: z.array(z.object({
+    question: z.string(),
+    answer: z.string()
+  })).default([]),
+  footer_links: z.array(z.object({
+    label: z.string(),
+    url: z.string()
+  })).default([]),
+  legal_links: z.array(z.object({
+    label: z.string(),
+    url: z.string()
+  })).default([])
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;
 
 // Project schemas
-const countryScopeEnum = z.enum(["DACH", "AT", "DE", "EU"]);
+export const countryScopeEnum = z.enum(["DACH", "DE", "AT", "CH"]);
 
 export const projectSchema = z.object({
-  category_id: z.string().uuid().nullable().optional(),
-  name: z.string().min(1, "Projektname erforderlich"),
+  name: z.string().min(1, "Name erforderlich"),
   slug: z.string().min(1, "Slug erforderlich"),
-  url: z.string().url("Ungültige URL"),
-  short_description: z.string().max(300).optional(),
+  short_description: z.string().max(150, "Kurzbeschreibung max 150 Zeichen").optional(),
   description: z.string().optional(),
   logo_url: z.string().url("Ungültige Logo-URL").optional().or(z.literal("")),
   affiliate_link: z.string().url("Ungültiger Affiliate-Link").optional().or(z.literal("")),
@@ -95,10 +74,6 @@ export const projectSchema = z.object({
 });
 
 export type ProjectInput = z.infer<typeof projectSchema>;
-
-// Export types for settings
-export type TrendingLink = z.infer<typeof trendingLinkSchema>;
-export type NavLink = z.infer<typeof navLinkSchema>;
 
 // Settings schemas
 export const trendingLinkSchema = z.object({
@@ -115,13 +90,99 @@ export const navLinkSchema = z.object({
 export const siteSettingsSchema = z.object({
   site_title: z.string().min(1).max(100),
   site_description: z.string().max(300),
-  contact_email: z.string().email(),
+  contact_email: z.string().email().optional().or(z.literal("")),
+  social_links: z.object({
+    facebook: z.string().url().optional().or(z.literal("")),
+    twitter: z.string().url().optional().or(z.literal("")),
+    instagram: z.string().url().optional().or(z.literal("")),
+    linkedin: z.string().url().optional().or(z.literal("")),
+  }).optional(),
   trending_links: z.array(trendingLinkSchema).default([]),
-  header_nav_links: z.array(navLinkSchema).default([]),
-  custom_css: z.string().optional(),
+  header_nav: z.array(navLinkSchema).default([]),
+  footer_nav: z.array(navLinkSchema).default([]),
+  legal_nav: z.array(navLinkSchema).default([]),
 });
 
-// Export types for settings (AFTER schema definitions)
-export type TrendingLink = z.infer<typeof trendingLinkSchema>;
-export type NavLink = z.infer<typeof navLinkSchema>;
+// NEUE SCHEMAS FÜR DYNAMISCHE SEKTIONEN
+
+const bigThreeItemSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  desc: z.string(),
+  link: z.string(),
+  button_text: z.string().default("Vergleichen"),
+  image_url: z.string().optional(),
+  theme: z.enum(["blue", "gold", "dark"]).default("blue"), // Farb-Thema pro Karte
+  icon: z.string().default("trending"), // icon slug
+});
+
+const featureItemSchema = z.object({
+  title: z.string(),
+  text: z.string(),
+  icon: z.string().default("zap"),
+});
+
+export const homeContentSchema = z.object({
+  hero: z.object({
+    headline: z.string(),
+    subheadline: z.string(),
+    badge: z.string().optional(),
+    search_placeholder: z.string().optional(),
+  }),
+  trust: z.object({
+    headline: z.string(),
+    subheadline: z.string(),
+    card1_title: z.string(),
+    card1_text: z.string(),
+    card2_title: z.string(),
+    card2_text: z.string(),
+    card3_title: z.string(),
+    card3_text: z.string(),
+    box_title: z.string(),
+    box_text: z.string(),
+    live_badge: z.string().optional(),
+  }),
+  big_three: z.object({
+    headline: z.string(),
+    // Legacy Fields (kept for safety, but we move to 'items')
+    finance_title: z.string().optional(),
+    finance_desc: z.string().optional(),
+    finance_link: z.string().optional(),
+    software_title: z.string().optional(),
+    software_desc: z.string().optional(),
+    software_link: z.string().optional(),
+    services_title: z.string().optional(),
+    services_desc: z.string().optional(),
+    services_link: z.string().optional(),
+    // NEW DYNAMIC ARRAY
+    items: z.array(bigThreeItemSchema).default([]),
+  }),
+  why_us: z.object({
+    headline: z.string().default("Warum Rank-Scout?"),
+    subheadline: z.string().default("Wir sind nicht nur ein weiteres Vergleichsportal."),
+    features: z.array(featureItemSchema).default([
+      { title: "Extreme Performance", text: "Keine Ladezeiten, nur Fakten.", icon: "zap" },
+      { title: "100% Unabhängig", text: "Wir lassen uns nicht kaufen.", icon: "shield" },
+      { title: "Global & Lokal", text: "Von International bis Regional.", icon: "globe" },
+      { title: "Echtzeit Updates", text: "Täglich frische Daten.", icon: "chart" }
+    ])
+  }).default({}), // Default object to prevent crashes
+  categories: z.object({
+    headline: z.string(),
+    count: z.number().default(6),
+    button_card: z.string().default("Bereich erkunden"),
+  }),
+  news: z.object({
+    headline: z.string().default("Aktuelles & Ratgeber"),
+    subheadline: z.string().default("Expertenwissen für deinen Erfolg."),
+    count: z.number().default(3),
+    read_more: z.string().default("Artikel lesen")
+  }).default({}),
+  forum_teaser: z.object({
+    headline: z.string(),
+    subheadline: z.string(),
+  }),
+});
+
+export type HomeContent = z.infer<typeof homeContentSchema>;
 export type SiteSettings = z.infer<typeof siteSettingsSchema>;
