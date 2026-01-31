@@ -17,31 +17,44 @@ export const Header = () => {
   const navLinks = config.nav_links || [];
   const hubLinks = config.hub_links || [];
 
-  // Scroll-Erkennung
+  // Scroll-Erkennung für Transparenz-Effekte
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
     window.addEventListener("scroll", handleScroll);
-    // Initiale Prüfung
     handleScroll();
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // LOGIK ÄNDERUNG:
-  // Wir machen den Header jetzt IMMER transparent oben, egal auf welcher Seite.
-  // Damit das gut aussieht, müssen alle Seiten oben einen dunklen Bereich haben (wie ForumThread jetzt).
-  const isSolid = isScrolled; 
+  // WICHTIG: Body Scroll Lock
+  // Verhindert das Scrollen im Hintergrund, wenn das Menü offen ist.
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isMobileMenuOpen]);
+
+  // Menü schließen bei Seitenwechsel
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  // Header wird solide (Weiß), wenn gescrollt oder Menü offen
+  const isSolid = isScrolled || isMobileMenuOpen; 
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 py-3 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 py-3 transition-all duration-300 h-[65px] flex items-center ${
         isSolid 
-          ? "bg-white/90 backdrop-blur-xl border-b border-primary/10 shadow-sm" 
+          ? "bg-white/95 backdrop-blur-xl border-b border-primary/10 shadow-sm" 
           : "bg-transparent border-b border-white/5"
       }`}
     >
-      <div className="container mx-auto px-4 relative z-10">
+      <div className="container mx-auto px-4 relative z-10 w-full">
         <div className="flex items-center justify-between">
           
           {/* --- LOGO --- */}
@@ -87,16 +100,24 @@ export const Header = () => {
             }`} 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? <X /> : <Menu />}
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
         </div>
       </div>
 
-      {/* MOBILE MENU */}
+      {/* MOBILE MENU - ANIMATION VON RECHTS */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 top-[65px] bg-white/98 backdrop-blur-xl z-40 md:hidden overflow-y-auto pb-20 animate-in slide-in-from-top-5 border-t border-slate-100">
-          <nav className="container mx-auto px-4 py-6 flex flex-col gap-6">
-            <div className="grid grid-cols-2 gap-4 mb-4">
+        <div 
+            // HIER IST DER FIX:
+            // 1. slide-in-from-right-10 (kommt von rechts rein)
+            // 2. calc(100dvh - 65px) (Nutzt die echte mobile Höhe ohne Adressleisten-Probleme)
+            className="fixed left-0 right-0 bottom-0 top-[65px] bg-white z-40 md:hidden overflow-y-auto border-t border-slate-100 animate-in slide-in-from-right-10 fade-in duration-300"
+            style={{ height: 'calc(100dvh - 65px)' }}
+        >
+          <nav className="container mx-auto px-4 py-6 flex flex-col gap-6 pb-24">
+            
+            {/* Hub Links (Kacheln) */}
+            <div className="grid grid-cols-2 gap-4 mb-2">
                 {hubLinks.map((link: any) => {
                   const Icon = iconMap[link.icon] || LayoutGrid;
                   return (
@@ -104,28 +125,35 @@ export const Header = () => {
                         key={link.label}
                         to={link.url}
                         onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-secondary/50 hover:bg-white transition-all group shadow-sm"
+                        className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-secondary/50 hover:bg-white transition-all group shadow-sm active:scale-95 duration-200"
                     >
                         <div className="mb-2 text-secondary group-hover:scale-110 transition-transform">
-                           <Icon className="w-5 h-5" />
+                           <Icon className="w-6 h-6" />
                         </div>
-                        <span className="text-sm font-bold text-slate-700 uppercase tracking-wide">{link.label}</span>
+                        <span className="text-xs font-bold text-slate-700 uppercase tracking-wide text-center">{link.label}</span>
                     </Link>
                   );
                 })}
             </div>
-            {navLinks.map((link: any) => (
-              <Link
-                key={link.label}
-                to={link.url}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="text-lg font-medium text-slate-600 hover:text-primary py-3 border-b border-slate-100 transition-all"
-              >
-                {link.label}
-              </Link>
-            ))}
+
+            {/* Haupt Links (Liste) */}
+            <div className="flex flex-col space-y-2">
+                {navLinks.map((link: any) => (
+                  <Link
+                    key={link.label}
+                    to={link.url}
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="text-lg font-bold text-slate-800 hover:text-primary py-4 border-b border-slate-100 flex justify-between items-center group"
+                  >
+                    {link.label}
+                    <span className="text-slate-300 group-hover:text-secondary group-hover:translate-x-1 transition-all">→</span>
+                  </Link>
+                ))}
+            </div>
+
+            {/* Button */}
             <Link to={config.button_url} onClick={() => setIsMobileMenuOpen(false)} className="mt-4">
-              <Button className="w-full bg-secondary text-white font-bold h-12 text-lg rounded-xl shadow-xl shadow-secondary/20">
+              <Button className="w-full bg-secondary hover:bg-secondary/90 text-white font-bold h-14 text-lg rounded-xl shadow-xl shadow-secondary/20">
                 {config.button_text}
               </Button>
             </Link>
