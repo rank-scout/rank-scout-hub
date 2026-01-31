@@ -24,13 +24,13 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Navigation Items - Pfade korrigiert (besonders Publisher!)
+// Navigation Items
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Projekte", icon: Globe, path: "/admin/projects" },
   { label: "Kategorien", icon: Layers, path: "/admin/categories" },
   { label: "Magazin", icon: BookOpen, path: "/admin/forum" },
-  { label: "Publisher", icon: UploadCloud, path: "/admin/multi-publisher" }, // FIX: Pfad korrigiert
+  { label: "Publisher", icon: UploadCloud, path: "/admin/multi-publisher" },
   { label: "Redirects", icon: BarChart3, path: "/admin/redirects" },
   { label: "Footer-Links", icon: Link2, path: "/admin/footer-links" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },
@@ -42,7 +42,6 @@ export default function AdminLayout() {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Server-side admin verification - critical for security
   const { data: isServerAdmin, isLoading: isVerifyingAdmin } = useQuery({
     queryKey: ['verify-admin', user?.id],
     queryFn: async () => {
@@ -54,7 +53,7 @@ export default function AdminLayout() {
       return data === true;
     },
     enabled: !!user,
-    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    staleTime: 1000 * 60 * 5,
   });
 
   if (isLoading || isVerifyingAdmin) {
@@ -73,7 +72,6 @@ export default function AdminLayout() {
     return <Navigate to="/" replace />;
   }
 
-  // Helper um den aktuellen Titel zu finden
   const currentTitle = navItems.find((item) => 
     item.path === "/admin" 
       ? location.pathname === "/admin" 
@@ -82,7 +80,6 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen flex bg-background font-body">
-      {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
           className="fixed inset-0 bg-primary/80 backdrop-blur-sm z-40 lg:hidden"
@@ -90,13 +87,11 @@ export default function AdminLayout() {
         />
       )}
 
-      {/* SIDEBAR - Corporate Design (Navy Blue) */}
       <aside className={cn(
         "fixed inset-y-0 left-0 z-50 w-64 bg-primary text-primary-foreground border-r border-white/10 shadow-xl transition-transform lg:translate-x-0 lg:static lg:z-auto",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex flex-col h-full">
-          {/* Logo Area */}
           <div className="h-20 flex items-center justify-between px-6 border-b border-white/10">
             <Link to="/admin" className="flex items-center gap-3">
               <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center shadow-lg shadow-secondary/20">
@@ -119,13 +114,12 @@ export default function AdminLayout() {
             </button>
           </div>
 
-          {/* Navigation - FIX: Umbau auf NavLink für sauberes Routing */}
           <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto custom-scrollbar">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
-                end={item.path === "/admin"} // Wichtig für Dashboard Home
+                end={item.path === "/admin"}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) => cn(
                   "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group relative overflow-hidden",
@@ -141,8 +135,6 @@ export default function AdminLayout() {
                       isActive ? "text-white" : "text-slate-400 group-hover:text-white"
                     )} />
                     <span className="relative z-10">{item.label}</span>
-                    
-                    {/* Active Indicator Glow */}
                     {isActive && (
                       <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     )}
@@ -152,7 +144,6 @@ export default function AdminLayout() {
             ))}
           </nav>
 
-          {/* User Profile & Logout */}
           <div className="p-4 border-t border-white/10 bg-black/20">
             <div className="flex items-center gap-3 mb-4 px-2">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-600 flex items-center justify-center shadow-inner">
@@ -166,9 +157,7 @@ export default function AdminLayout() {
                 </p>
                 <div className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  <p className="text-xs text-slate-400">
-                    Online
-                  </p>
+                  <p className="text-xs text-slate-400">Online</p>
                 </div>
               </div>
             </div>
@@ -180,7 +169,6 @@ export default function AdminLayout() {
                   Zur Website
                 </Button>
               </Link>
-              
               <Button
                 variant="ghost"
                 size="sm"
@@ -195,39 +183,25 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col min-h-screen transition-all duration-300">
-        {/* Top Header (Mobile Only) */}
         <header className="lg:hidden h-16 bg-primary border-b border-white/10 flex items-center px-4 sticky top-0 z-30 shadow-md">
-          <button
-            className="p-2 -ml-2 text-white"
-            onClick={() => setSidebarOpen(true)}
-          >
+          <button className="p-2 -ml-2 text-white" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-6 h-6" />
           </button>
-          <span className="ml-3 font-display font-bold text-white text-lg">
-            Rank-Scout
-          </span>
+          <span className="ml-3 font-display font-bold text-white text-lg">Rank-Scout</span>
         </header>
 
-        {/* Desktop Header / Breadcrumb Bar */}
         <div className="hidden lg:flex h-16 bg-white/80 backdrop-blur-md border-b border-border sticky top-0 z-20 px-8 items-center justify-between">
           <div className="flex items-center gap-2 text-sm">
              <span className="text-muted-foreground font-medium">Admin</span>
              <span className="text-slate-300">/</span>
-             <h1 className="text-primary font-bold text-lg capitalize">
-               {currentTitle}
-             </h1>
+             <h1 className="text-primary font-bold text-lg capitalize">{currentTitle}</h1>
           </div>
           <div className="flex items-center gap-4">
-             {/* Notifications area placeholder */}
-             <div className="text-xs font-mono text-muted-foreground bg-slate-100 px-2 py-1 rounded">
-               v2.0.1
-             </div>
+             <div className="text-xs font-mono text-muted-foreground bg-slate-100 px-2 py-1 rounded">v2.0.1</div>
           </div>
         </div>
 
-        {/* Page Content Container */}
         <div className="flex-1 p-4 lg:p-8 overflow-x-hidden">
           <div className="max-w-7xl mx-auto animate-fade-in">
              <Outlet />

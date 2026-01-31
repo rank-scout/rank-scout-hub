@@ -43,17 +43,15 @@ import AdminForum from "./pages/admin/Forum";
 // Components
 import { CookieBanner } from "./components/layout/CookieBanner";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
+import { MascotWidget } from "@/components/layout/MascotWidget"; // NEU: Scouty importiert
 
 const queryClient = new QueryClient();
 
 // --- THEME MANAGER COMPONENT (OPTIMIERT) ---
-// Verhindert Flackern durch Nutzung des LocalStorage
 const ThemeManager = () => {
   const { data: settings, isLoading } = useSettings();
   const activeTheme = settings?.active_theme as string;
 
-  // 1. SOFORTIGES LADEN (Vor dem Paint): 
-  // Holt die Farbe aus dem Speicher, bevor der User etwas sieht.
   useLayoutEffect(() => {
     const cachedTheme = localStorage.getItem("app-theme");
     if (cachedTheme) {
@@ -61,17 +59,26 @@ const ThemeManager = () => {
     }
   }, []);
 
-  // 2. DATENBANK SYNC (Im Hintergrund):
-  // Wenn die echten Daten da sind, aktualisieren wir den Speicher.
   useEffect(() => {
     if (!isLoading && activeTheme) {
-      // Nur anwenden, wenn sich wirklich was geändert hat
       document.documentElement.setAttribute("data-theme", activeTheme);
       localStorage.setItem("app-theme", activeTheme);
     }
   }, [activeTheme, isLoading]);
 
   return null;
+};
+
+// --- SCOUTY WRAPPER ---
+// Prüft die Settings, bevor Scouty gerendert wird
+const ScoutyWrapper = () => {
+  const { data: settings } = useSettings();
+  const config = settings?.scouty_config as any || {};
+  // Standardmäßig AN, wenn nicht explizit ausgeschaltet
+  const isEnabled = config.enabled !== false;
+
+  if (!isEnabled) return null;
+  return <MascotWidget />;
 };
 
 const App = () => (
@@ -88,6 +95,7 @@ const App = () => (
             {/* Flags für v7 aktivieren -> Entfernt Warnungen */}
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <CookieBanner /> 
+              <ScoutyWrapper /> {/* NEU: Hier ist Scouty eingebunden */}
               <ScrollToTopHandler />
               
               <Routes>
