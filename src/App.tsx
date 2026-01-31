@@ -6,9 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import { SEOProvider } from "@/components/SEOProvider";
 import { ThemeProvider } from "@/hooks/useTheme";
-import AdminPublisher from "./pages/admin/MultiPublisher";
-import { useSettings } from "@/hooks/useSettings"; // WICHTIG: useSettings statt useActiveTheme
-import { useEffect, useLayoutEffect } from "react"; // useLayoutEffect für sofortiges Update
+import { useSettings } from "@/hooks/useSettings"; 
+import { useEffect, useLayoutEffect } from "react"; 
 
 // Pages
 import Index from "./pages/Index";
@@ -39,15 +38,17 @@ import AdminFooterLinks from "./pages/admin/FooterLinks";
 import AdminLeads from "./pages/admin/Leads";
 import AdminSettings from "./pages/admin/Settings";
 import AdminForum from "./pages/admin/Forum";
+import AdminPublisher from "./pages/admin/MultiPublisher";
 
 // Components
 import { CookieBanner } from "./components/layout/CookieBanner";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
-import { MascotWidget } from "@/components/layout/MascotWidget"; // NEU: Scouty importiert
+import { MascotWidget } from "@/components/layout/MascotWidget"; 
+import { ScrollToAnchor } from "@/components/ScrollToAnchor"; // Scroll-Logik
 
 const queryClient = new QueryClient();
 
-// --- THEME MANAGER COMPONENT (OPTIMIERT) ---
+// --- THEME MANAGER COMPONENT ---
 const ThemeManager = () => {
   const { data: settings, isLoading } = useSettings();
   const activeTheme = settings?.active_theme as string;
@@ -70,33 +71,34 @@ const ThemeManager = () => {
 };
 
 // --- SCOUTY WRAPPER ---
-// Prüft die Settings, bevor Scouty gerendert wird
 const ScoutyWrapper = () => {
   const { data: settings } = useSettings();
   const config = settings?.scouty_config as any || {};
-  // Standardmäßig AN, wenn nicht explizit ausgeschaltet
   const isEnabled = config.enabled !== false;
 
   if (!isEnabled) return null;
   return <MascotWidget />;
 };
 
+// --- MAIN APP ---
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <ThemeProvider defaultTheme="dark">
-        {/* ThemeManager MUSS innerhalb der Provider stehen */}
         <ThemeManager /> 
         
         <SEOProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            {/* Flags für v7 aktivieren -> Entfernt Warnungen */}
+            
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <CookieBanner /> 
-              <ScoutyWrapper /> {/* NEU: Hier ist Scouty eingebunden */}
-              <ScrollToTopHandler />
+              <ScoutyWrapper /> 
+              
+              {/* Scroll Handler */}
+              <ScrollToTopHandler /> 
+              <ScrollToAnchor /> 
               
               <Routes>
                 {/* Public Routes */}

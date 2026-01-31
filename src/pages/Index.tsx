@@ -72,10 +72,13 @@ const Index = () => {
         {/* Dynamische CMS Rendering Schleife */}
         {sections
           .filter(section => section.enabled && section.id !== 'mascot')
-          .map(section => (
-            <Fragment key={section.id}>
+          .map((section) => (
+            // WICHTIG: Hier Fragment durch div ersetzt, damit IDs funktionieren!
+            // 'id' ermöglicht das Anker-Scrollen (z.B. #forum)
+            // 'scroll-mt-28' sorgt für Abstand zum fixierten Header beim Scrollen
+            <div id={section.id} key={section.id} className="scroll-mt-28">
               {sectionComponents[section.id]}
-            </Fragment>
+            </div>
           ))
         }
       </main>
