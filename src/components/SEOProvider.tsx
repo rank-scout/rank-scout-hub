@@ -1,57 +1,47 @@
-import { useEffect } from "react";
-import { useSettings } from "@/hooks/useSettings";
+import { HelmetProvider, Helmet } from 'react-helmet-async';
+import { useSettings } from '@/hooks/useSettings';
+import React from 'react';
 
 /**
- * SEOProvider Component
- * 
- * Place this component at the root of your app (inside QueryClientProvider)
- * to automatically sync document.title and meta tags with database settings.
- * 
- * Works for external hosting - no environment variables required.
+ * SEOProvider Component (FINAL)
+ * Automatisiert:
+ * 1. Titel & Beschreibung (aus DB)
+ * 2. Open Graph (für Social Media)
+ * 3. Canonical URL (Schutz vor Duplicate Content) - NEU!
  */
 export function SEOProvider({ children }: { children: React.ReactNode }) {
   const { data: settings, isLoading } = useSettings();
 
-  useEffect(() => {
-    if (isLoading || !settings) return;
-
-    // Update document title from database
-    const siteTitle = settings.site_title as string;
-    if (siteTitle) {
-      document.title = siteTitle;
-    }
-
-    // Update meta description from database
-    const siteDescription = settings.site_description as string;
-    if (siteDescription) {
-      updateMetaTag("description", siteDescription);
-    }
-
-    // Update OG tags if present
-    if (siteTitle) {
-      updateMetaTag("og:title", siteTitle, "property");
-    }
-    if (siteDescription) {
-      updateMetaTag("og:description", siteDescription, "property");
-    }
-  }, [settings, isLoading]);
-
-  return <>{children}</>;
-}
-
-/**
- * Helper to update or create meta tags
- */
-function updateMetaTag(name: string, content: string, attribute: "name" | "property" = "name") {
-  let meta = document.querySelector(`meta[${attribute}="${name}"]`);
+  // Globale Fallback-Werte aus der Datenbank
+  const siteTitle = settings?.site_title as string || 'Rank-Scout';
+  const siteDescription = settings?.site_description as string || '';
   
-  if (!meta) {
-    meta = document.createElement("meta");
-    meta.setAttribute(attribute, name);
-    document.head.appendChild(meta);
-  }
-  
-  meta.setAttribute("content", content);
-}
+  // Die aktuelle URL für den Canonical Tag
+  const currentUrl = window.location.href;
 
-export default SEOProvider;
+  return (
+    <HelmetProvider>
+      {!isLoading && (
+        <Helmet>
+          {/* 1. Basis-Tags */}
+          <title defaultTitle={siteTitle} titleTemplate={`%s | ${siteTitle}`}>
+            {siteTitle}
+          </title>
+
+          {siteDescription && <meta name="description" content={siteDescription} />}
+
+          {/* 2. Canonical Tag - WICHTIG: Setzt automatisch die aktuelle URL als "Original" */}
+          <link rel="canonical" href={currentUrl} />
+
+          {/* 3. Globale Open Graph Tags */}
+          <meta property="og:title" content={siteTitle} />
+          {siteDescription && <meta property="og:description" content={siteDescription} />}
+          <meta property="og:type" content="website" />
+          <meta property="og:url" content={currentUrl} />
+        </Helmet>
+      )}
+      
+      {children}
+    </HelmetProvider>
+  );
+}

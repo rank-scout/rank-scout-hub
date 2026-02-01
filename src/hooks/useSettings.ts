@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { TrendingLink, NavLink } from "@/lib/schemas";
+import type { TrendingLink } from "@/lib/schemas";
 
 // --- TYPES ---
 export type HomeSection = {
@@ -11,7 +11,6 @@ export type HomeSection = {
   order: number;
 };
 
-// Definition für einen Werbebanner
 export interface ForumAd {
   id: string;
   name: string;
@@ -60,8 +59,6 @@ export function useUpdateSetting() {
   
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: Json }) => {
-      // console.log(`Saving ${key}:`, value);
-      
       const { error } = await supabase.from("settings").upsert(
         { 
           key, 
@@ -102,20 +99,23 @@ export const defaultHomeSections: HomeSection[] = [
   { id: "mascot", label: "Scouty Maskottchen", enabled: true, order: 9 },
 ];
 
-// MAPPING OBJEKT (Für Admin Panel)
 export const defaultHomeLayout = {
   hero: true,
   trust: true,
   big_three: true,
-  why_us: true, // Alias für seo
+  why_us: true, 
   categories: true,
   news: true,
   forum_teaser: true,
   ads: false
 };
 
-// CONTENT DEFAULTS (Erweitert um dynamische Listen)
+// CONTENT DEFAULTS (Erweitert um SEO Fields für Home)
 export const defaultHomeContent = {
+  // NEU: SEO Fields direkt im Content-Objekt
+  seo_title: "",
+  seo_description: "",
+  
   hero: {
     badge: "NEU: Rank-Scout 2.0 ist live",
     headline: "Der ultimative Vergleichs-Hub",
@@ -141,7 +141,6 @@ export const defaultHomeContent = {
         { id: "2", title: "Software & SaaS", desc: "Die besten Tools für Marketing, HR und Vertrieb.", link: "/software", button_text: "Tools finden", theme: "gold", image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b" },
         { id: "3", title: "Dienstleistungen", desc: "Agenturen, Berater und Services auf dem Prüfstand.", link: "/dienstleistungen", button_text: "Suchen", theme: "dark", image_url: "https://images.unsplash.com/photo-1497366216548-37526070297c" }
     ],
-    // Legacy Fallbacks
     finance_title: "Finanzen & Krypto", finance_desc: "Broker, Kredite & Geschäftskonten im Härtetest.", finance_link: "/finanzen", finance_button: "Jetzt vergleichen", 
     software_title: "Software & SaaS", software_desc: "Die besten Tools für Marketing, HR und Vertrieb.", software_link: "/software", software_button: "Tools finden", 
     services_title: "Dienstleistungen", services_desc: "Agenturen, Berater und Services auf dem Prüfstand.", services_link: "/dienstleistungen", services_button: "Anbieter suchen" 
@@ -167,26 +166,52 @@ export const defaultHomeContent = {
   forum_teaser: { headline: "Community Hub", subheadline: "Diskutiere mit den Besten.", link_text: "Alle Foren anzeigen", mobile_button: "Zum Community Forum" }
 };
 
-export const defaultHeaderConfig = { button_text: "Jetzt vergleichen", button_url: "/kategorien", nav_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }], hub_links: [{ label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, { label: "Community", url: "/forum", icon: "Users" }] };
-export const defaultFooterConfig = { title: "Rank-Scout", text_checked: "Redaktionell geprüft", text_update: "Aktualisiert: 2026", text_description: "Unsere Vergleiche basieren auf echten Daten, Nutzer-Feedback und Experten-Analysen.", copyright_text: "© 2026 Rank-Scout. Alle Rechte vorbehalten.", made_with_text: "Made with", made_in_text: "in Germany", disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn Sie über einen Link auf dieser Seite einkaufen, erhalten wir möglicherweise eine Provision. Der Preis für Sie ändert sich dabei nicht. Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.", legal_links: [{ label: "Impressum", url: "/impressum" }, { label: "Datenschutz", url: "/datenschutz" }, { label: "AGB", url: "/agb" }], popular_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }] };
-export const defaultScoutyConfig = { bubble_intro: "Hi, ich bin Scouty! Ich finde die besten Produkt-Deals für dich! 🔭", bubble_exit: "Warte! 🛑 Bevor du gehst: Ich habe gerade einen neuen Testsieger gefunden. Willst du ihn sehen?", bubble_newsletter: "Top 3 Deals per Mail?", powered_by: "Powered By Rank-Scout AI" };
-export const defaultHomeForumTeaser = { headline: "Community Hub", subheadline: "Diskutiere mit den Besten. Tauche in unsere beliebtesten Themenbereiche ein und vernetze dich mit Experten.", link_text: "Alle Foren anzeigen", mobile_button: "Zum Community Forum" };
+export const defaultHeaderConfig = { 
+  button_text: "Jetzt vergleichen", 
+  button_url: "/kategorien", 
+  nav_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }], 
+  hub_links: [{ label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, { label: "Community", url: "/forum", icon: "Users" }] 
+};
+
+export const defaultFooterConfig = { 
+  title: "Rank-Scout", 
+  text_checked: "Redaktionell geprüft", 
+  text_update: "Aktualisiert: 2026", 
+  text_description: "Unsere Vergleiche basieren auf echten Daten, Nutzer-Feedback und Experten-Analysen.", 
+  copyright_text: "© 2026 Rank-Scout. Alle Rechte vorbehalten.", 
+  made_with_text: "Made with", 
+  made_in_text: "in Germany", 
+  disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn Sie über einen Link auf dieser Seite einkaufen, erhalten wir möglicherweise eine Provision. Der Preis für Sie ändert sich dabei nicht. Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.", 
+  legal_links: [{ label: "Impressum", url: "/impressum" }, { label: "Datenschutz", url: "/datenschutz" }, { label: "AGB", url: "/agb" }], 
+  popular_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }] 
+};
+
+export const defaultScoutyConfig = { 
+  bubble_intro: "Hi, ich bin Scouty! Ich finde die besten Produkt-Deals für dich! 🔭", 
+  bubble_exit: "Warte! 🛑 Bevor du gehst: Ich habe gerade einen neuen Testsieger gefunden. Willst du ihn sehen?", 
+  bubble_newsletter: "Top 3 Deals per Mail?", 
+  powered_by: "Powered By Rank-Scout AI" 
+};
+
+export const defaultHomeForumTeaser = { 
+  headline: "Community Hub", 
+  subheadline: "Diskutiere mit den Besten. Tauche in unsere beliebtesten Themenbereiche ein und vernetze dich mit Experten.", 
+  link_text: "Alle Foren anzeigen", 
+  mobile_button: "Zum Community Forum" 
+};
 
 // --- CONFIG HOOKS ---
 
 export function useHomeLayout() { 
   const { data: settings } = useSettings(); 
   
-  // 1. Objekt-Layout (V2)
   const layoutV2 = settings?.home_layout_v2 as typeof defaultHomeLayout | undefined;
   const layout = { ...defaultHomeLayout, ...(layoutV2 || {}) };
 
-  // 2. Array-Layout (V1 - Mapping)
   let sections: HomeSection[] = (settings?.home_sections as HomeSection[]) || defaultHomeSections;
   if (!Array.isArray(sections)) sections = defaultHomeSections;
   const sortedSections = [...sections].sort((a, b) => a.order - b.order);
 
-  // Mapping: V1 basierend auf V2
   const mappedSections = sortedSections.map(s => {
       let isEnabled = true;
       if (s.id === 'hero') isEnabled = layout.hero;
@@ -216,7 +241,7 @@ export function useHomeContent() {
   const { data: settings } = useSettings(); 
   const content = { ...defaultHomeContent, ...(settings?.home_content as any || {}) }; 
   
-  // Deep Merge
+  // Deep Merge sicherstellen
   content.big_three = { ...defaultHomeContent.big_three, ...(content.big_three || {}) };
   content.big_three.items = content.big_three.items || defaultHomeContent.big_three.items;
   
@@ -233,16 +258,18 @@ export function useHomeContent() {
 export function useAdSenseConfig() { const { data: settings } = useSettings(); return { clientId: (settings?.ads_sense_client_id as string) || "", defaultSlotId: (settings?.ads_sense_slot_id as string) || "", enabled: (settings?.ads_enabled as boolean) || false }; }
 export function useAmazonConfig() { const { data: settings } = useSettings(); return { headline: (settings?.ads_amazon_headline as string) || "", text: (settings?.ads_amazon_text as string) || "", buttonText: (settings?.ads_amazon_button_text as string) || "Zum Angebot", link: (settings?.ads_amazon_link as string) || "", enabled: (settings?.ads_enabled as boolean) || false }; }
 export function useForumBannerConfig() { const { data: settings } = useSettings(); return { headline: (settings?.forum_banner_headline as string) || "Diskussionen & Erfahrungen", subheadline: (settings?.forum_banner_subheadline as string) || "Tausche dich mit anderen aus, stelle Fragen und teile deine Erfahrungen", badge: (settings?.forum_banner_badge as string) || "Community Forum", enabled: true }; }
+
 export function useForumAds() { 
     const { data } = useSettings(); 
     const ads = (data?.forum_ads as ForumAd[]) || []; 
-    return { data: ads }; 
+    return ads; 
 }
 
-// --- EXPORTS ---
-export function useSiteTitle() { return useSetting<string>("site_title", "Rank-Scout"); }
+// --- EXPORTS MIT FIX ---
+// HIER WURDE GEÄNDERT: Defaults auf leeren String gesetzt, keine "Demo-Texte" mehr!
+export function useSiteTitle() { return useSetting<string>("site_title", ""); }
 export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
-export function useSiteDescription() { return useSetting<string>("site_description", "Dein Vergleichsportal"); }
+export function useSiteDescription() { return useSetting<string>("site_description", ""); }
 export function useHeroTitle() { return useSetting<string>("hero_title", "Entdecke die besten Vergleiche"); }
 export function useHeroSubtitle() { return useSetting<string>("hero_subtitle", "Wir vergleichen, damit du die richtige Wahl triffst"); }
 export function useAdsEnabled() { return useSetting<boolean>("ads_enabled", false); }

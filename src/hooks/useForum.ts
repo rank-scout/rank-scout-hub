@@ -27,9 +27,15 @@ export interface ForumThread {
   reply_count?: number; 
   is_liked_by_user?: boolean;
   likes_count?: number;
+  // Ad Fields (Thread specific)
+  show_ad?: boolean;
+  ad_type?: string;
+  ad_image_url?: string;
+  ad_link_url?: string;
+  ad_html_code?: string;
+  ad_cta_text?: string;
 }
 
-// UPDATE: Ad Fields bereinigt & Code hinzugefügt
 export interface ForumCategory {
   id: string;
   name: string;
@@ -38,14 +44,15 @@ export interface ForumCategory {
   sort_order: number;
   is_active: boolean;
   created_at: string;
+  // --- NEU: SEO FIELDS ---
+  seo_title?: string;
+  seo_description?: string;
   // Ad Fields
   ad_enabled?: boolean;
-  assigned_ad_id?: string; // Verknüpfung zum Pool
-  // Manuelle Daten
+  assigned_ad_id?: string;
   ad_image_url?: string;
   ad_link_url?: string;
-  ad_html_code?: string; // NEU: HTML Code Support
-  // Legacy fields (optional behalten oder ignorieren)
+  ad_html_code?: string; 
   ad_headline?: string;
   ad_subheadline?: string;
   ad_cta_text?: string;
@@ -138,7 +145,7 @@ export const useForumCategories = (includeInactive = false) => {
     queryFn: async () => {
       let query = supabase
         .from("forum_categories")
-        .select("*")
+        .select("*") // WICHTIG: * lädt automatisch auch die neuen SEO Spalten
         .order("sort_order", { ascending: true });
 
       if (!includeInactive) {

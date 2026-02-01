@@ -6,7 +6,7 @@ import { useCategoryBySlug } from "@/hooks/useCategories";
 import { useProjects } from "@/hooks/useProjects";
 import { useCategoryProjects } from "@/hooks/useCategoryProjects";
 import { useTheme, useCategoryTheme } from "@/hooks/useTheme";
-import { usePageSEO } from "@/hooks/useSEO";
+import { SEO } from "@/components/SEO";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,24 +24,17 @@ export default function CategoryDetail() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
-  // Apply SEO meta tags from category
-  usePageSEO(category?.meta_title || category?.name, category?.meta_description || category?.description || undefined);
-
-  // Apply category theme when it loads
   useEffect(() => {
     if (category) {
       setTheme(categoryColorTheme);
     }
-    // Reset to dark theme when leaving the page
     return () => {
       setTheme("dark");
     };
   }, [category, categoryColorTheme, setTheme]);
 
-  // Get projects for this category, sorted by category_projects sort_order
   const projects = useMemo(() => {
     if (categoryProjects.length > 0) {
-      // Use category_projects ordering
       const sortedProjectIds = [...categoryProjects]
         .sort((a, b) => a.sort_order - b.sort_order)
         .map(cp => cp.project_id);
@@ -50,18 +43,15 @@ export default function CategoryDetail() {
         .map(id => allProjects.find(p => p.id === id && p.is_active))
         .filter(Boolean) as typeof allProjects;
     }
-    // Fallback to direct category_id match
     return allProjects.filter((p) => p.category_id === category?.id && p.is_active);
   }, [allProjects, category?.id, categoryProjects]);
 
-  // Get all unique tags from projects
   const allTags = useMemo(() => {
     const tags = new Set<string>();
     projects.forEach((p) => p.tags?.forEach((t) => tags.add(t)));
     return Array.from(tags);
   }, [projects]);
 
-  // Filter projects by search and tags
   const filteredProjects = useMemo(() => {
     return projects.filter((project) => {
       const matchesSearch = 
@@ -109,8 +99,6 @@ export default function CategoryDetail() {
 
   const isLoading = categoryLoading || projectsLoading;
 
-  // CRITICAL: Show minimal loading state to prevent template flash
-  // Don't render ANY template content until we know if custom HTML is set
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -122,6 +110,8 @@ export default function CategoryDetail() {
   if (!category) {
     return (
       <div className="min-h-screen bg-background">
+        <SEO title="Kategorie nicht gefunden | Rank-Scout" noindex={true} />
+        
         <Header />
         <main className="pt-16">
           <section className="py-20">
@@ -146,18 +136,19 @@ export default function CategoryDetail() {
     );
   }
 
-  // Check if custom HTML override is set - FULL BYPASS MODE
-  // No standard layout (Header/Footer), no margins, completely custom
   if (category.custom_html_override && category.custom_html_override.trim()) {
-    // Clean HTML: Remove <html>, <head>, <body> wrapper tags that cause React errors
     const cleanHtml = category.custom_html_override
       .replace(/<\/?html[^>]*>/gi, '')
       .replace(/<\/?body[^>]*>/gi, '')
-      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '') // Remove entire head section
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
       .replace(/<!DOCTYPE[^>]*>/gi, '');
 
     return (
       <div className="w-full min-h-screen m-0 p-0">
+        <SEO 
+          title={category.meta_title || category.name} 
+          description={category.meta_description || category.description} 
+        />
         <CustomHtmlRenderer 
           category={category} 
           projects={projects}
@@ -167,22 +158,31 @@ export default function CategoryDetail() {
     );
   }
 
-  // Check if template is "review" - use CityLandingTemplate
   if (category.template === "review") {
-    return <CityLandingTemplate category={category} projects={projects} />;
+    return (
+      <>
+        <SEO 
+          title={category.meta_title || category.name} 
+          description={category.meta_description || category.description} 
+        />
+        <CityLandingTemplate category={category} projects={projects} />
+      </>
+    );
   }
 
-  // Default comparison template
   const theme = getThemeClasses(category.theme);
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO 
+        title={category.meta_title || category.name} 
+        description={category.meta_description || category.description} 
+      />
+
       <Header />
       <main className="pt-16">
-        {/* Hero */}
         <section className="bg-hero-gradient py-16 md:py-20">
           <div className="container mx-auto px-4">
-            {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
               <Link to="/" className="hover:text-foreground transition-colors">Startseite</Link>
               <ChevronRight className="w-4 h-4" />
@@ -212,11 +212,9 @@ export default function CategoryDetail() {
           </div>
         </section>
 
-        {/* Filters */}
         <section className="py-8 border-b border-border">
           <div className="container mx-auto px-4">
             <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
-              {/* Search */}
               <div className="relative flex-1 max-w-md">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -228,7 +226,6 @@ export default function CategoryDetail() {
                 />
               </div>
 
-              {/* Tag Chips */}
               {allTags.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {allTags.slice(0, 8).map((tag) => (
@@ -258,7 +255,6 @@ export default function CategoryDetail() {
           </div>
         </section>
 
-        {/* Projects Grid */}
         <section className="py-12">
           <div className="container mx-auto px-4">
             {filteredProjects.length === 0 ? (
@@ -318,7 +314,6 @@ export default function CategoryDetail() {
           </div>
         </section>
 
-        {/* Back Link */}
         <section className="pb-16">
           <div className="container mx-auto px-4 text-center">
             <Link to="/kategorien" className="inline-flex items-center gap-2 text-primary hover:underline">

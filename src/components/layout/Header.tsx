@@ -8,7 +8,11 @@ const iconMap: Record<string, any> = {
   LayoutGrid, Gamepad2, BrainCircuit, Users
 };
 
-export const Header = () => {
+interface HeaderProps {
+  transparent?: boolean;
+}
+
+export const Header = ({ transparent = false }: HeaderProps) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
@@ -17,7 +21,6 @@ export const Header = () => {
   const navLinks = config.nav_links || [];
   const hubLinks = config.hub_links || [];
 
-  // Scroll-Erkennung
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -27,7 +30,6 @@ export const Header = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Body Scroll Lock
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -37,25 +39,21 @@ export const Header = () => {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isMobileMenuOpen]);
 
-  // Menü schließen bei Wechsel
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
-  // --- STYLE LOGIK ---
   const getHeaderStyle = () => {
-    // 1. ZUSTAND: Mobile Menü OFFEN -> Hero Blau (Primary)
     if (isMobileMenuOpen) {
       return {
-        wrapper: "bg-primary border-b border-white/10 shadow-md", // Blau
+        wrapper: "bg-primary border-b border-white/10 shadow-md",
         rankText: "text-white",        
         scoutText: "text-secondary",   
         toggleBtn: "text-white hover:bg-white/10",
-        navLink: "text-slate-200" // (Desktop hidden)
+        navLink: "text-slate-200"
       };
     }
 
-    // 2. ZUSTAND: Gescrollt -> Weiß
     if (isScrolled) {
       return {
         wrapper: "bg-white/95 backdrop-blur-xl border-b border-primary/10 shadow-sm",
@@ -66,13 +64,24 @@ export const Header = () => {
       };
     }
 
-    // 3. ZUSTAND: Transparent (Ganz oben)
+    const isTransparentPage = location.pathname === "/" || transparent;
+
+    if (isTransparentPage) {
+      return {
+        wrapper: "bg-transparent border-b border-white/5",
+        rankText: "text-white",        
+        scoutText: "text-secondary",   
+        toggleBtn: "text-white hover:bg-white/10",
+        navLink: "text-slate-200 hover:text-white"
+      };
+    }
+
     return {
-      wrapper: "bg-transparent border-b border-white/5",
-      rankText: "text-white",        
+      wrapper: "bg-white border-b border-slate-100",
+      rankText: "text-primary",      
       scoutText: "text-secondary",   
-      toggleBtn: "text-white hover:bg-white/10",
-      navLink: "text-slate-200 hover:text-white"
+      toggleBtn: "text-slate-900 hover:bg-slate-100",
+      navLink: "text-slate-600 hover:text-primary"
     };
   };
 
@@ -82,16 +91,12 @@ export const Header = () => {
     <header 
       className={`fixed top-0 left-0 right-0 z-50 py-3 transition-all duration-300 h-[65px] flex items-center overflow-hidden ${style.wrapper}`}
     >
-      {/* HIER SIND DIE PUNKTE (DOTS) 
-          Sie werden NUR angezeigt, wenn das Menü offen ist (isMobileMenuOpen).
-          Sie liegen NUR im Header-Bereich.
-      */}
       {isMobileMenuOpen && (
         <div 
           className="absolute inset-0 z-0 pointer-events-none opacity-20"
           style={{
               backgroundImage: 'radial-gradient(circle, #ffffff 1px, transparent 1px)',
-              backgroundSize: '16px 16px' // Feineres Raster für den Header
+              backgroundSize: '16px 16px'
           }}
         />
       )}
@@ -99,7 +104,6 @@ export const Header = () => {
       <div className="container mx-auto px-4 relative z-10 w-full">
         <div className="flex items-center justify-between">
           
-          {/* --- LOGO --- */}
           <Link to="/" className="flex items-center gap-2 group" onClick={() => setIsMobileMenuOpen(false)}>
             <span className={`text-2xl md:text-3xl font-display font-extrabold tracking-tight transition-colors ${style.rankText}`}>
               Rank
@@ -108,7 +112,6 @@ export const Header = () => {
             </span>
           </Link>
 
-          {/* DESKTOP NAV */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link: any) => (
               <Link
@@ -128,7 +131,6 @@ export const Header = () => {
             </Link>
           </nav>
 
-          {/* MOBILE TOGGLE BUTTON */}
           <button 
             className={`md:hidden p-2 rounded-lg transition-colors ${style.toggleBtn}`} 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -138,7 +140,6 @@ export const Header = () => {
         </div>
       </div>
 
-      {/* MOBILE MENU (Drawer von Rechts) - INHALT WIEDER WEISS/CLEAN */}
       {isMobileMenuOpen && (
         <div 
             className="fixed left-0 right-0 bottom-0 top-[65px] bg-white z-40 md:hidden overflow-y-auto border-t border-slate-100 animate-in slide-in-from-right-10 fade-in duration-300"
@@ -146,7 +147,6 @@ export const Header = () => {
         >
           <nav className="container mx-auto px-4 py-6 flex flex-col gap-6 pb-24">
             
-            {/* Hub Links Grid */}
             <div className="grid grid-cols-2 gap-4 mb-2">
                 {hubLinks.map((link: any) => {
                   const Icon = iconMap[link.icon] || LayoutGrid;
@@ -166,7 +166,6 @@ export const Header = () => {
                 })}
             </div>
 
-            {/* Main Links List (Wieder dunkel für Lesbarkeit auf Weiß) */}
             <div className="flex flex-col space-y-2">
                 {navLinks.map((link: any) => (
                   <Link
@@ -181,7 +180,6 @@ export const Header = () => {
                 ))}
             </div>
 
-            {/* CTA Button */}
             <Link to={config.button_url} onClick={() => setIsMobileMenuOpen(false)} className="mt-4">
               <Button className="w-full bg-secondary hover:bg-secondary/90 text-white font-bold h-14 text-lg rounded-xl shadow-xl shadow-secondary/20">
                 {config.button_text}
