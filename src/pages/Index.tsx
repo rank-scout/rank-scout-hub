@@ -14,7 +14,8 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
 import { Helmet } from "react-helmet-async"; 
-import { useForceSEO } from "@/hooks/useForceSEO"; // <--- UNSER VOLLSTRECKER
+import { useForceSEO } from "@/hooks/useForceSEO"; 
+import { AppTicker } from "@/components/home/AppTicker"; // <--- NEU
 
 const Index = () => {
   const analyticsCode = useGlobalAnalyticsCode();
@@ -54,7 +55,7 @@ const Index = () => {
   const sectionComponents: Record<string, React.ReactNode> = {
     hero: <HeroSection />,
     amazon_top: <AmazonBanner format="horizontal" />,
-    trust: <TrustSection />,
+    trust: <AppTicker />, // <--- HIER GEÄNDERT: AppTicker ersetzt TrustSection (Firmen Slider)
     big_three: <BigThreeSection />,
     adsense_middle: <AdSenseBanner slotId="placeholder-1" />,
     categories: <CategoriesSection />,

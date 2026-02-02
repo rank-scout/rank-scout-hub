@@ -280,4 +280,14 @@ export function useFooterSiteName() { const c = useFooterConfig(); return c.titl
 export function useFooterCopyright() { const c = useFooterConfig(); return c.copyright_text; }
 export function useFooterDesignerName() { return useSetting<string>("footer_designer_name", "Digital-Perfect"); }
 export function useFooterDesignerUrl() { return useSetting<string>("footer_designer_url", "https://digital-perfect.com"); }
+
+// --- TICKER SETTINGS ---
+export function useTickerConfig() {
+  const { data: settings } = useSettings();
+  return {
+    badge: (settings?.ticker_badge_text as string) || "Live Trends (24h)",
+    headline: (settings?.ticker_headline as string) || "Top Apps & Deals",
+    linkText: (settings?.ticker_link_text as string) || "Alle Top 100 ansehen →"
+  };
+}
 export function useTrendingLinks() { return useSetting<TrendingLink[]>("trending_links", []); }

@@ -752,6 +752,45 @@ export default function AdminSettings() {
                    />
                  </div>
                ))}
+
+               {/* --- NEU: TICKER SETTINGS BLOCK --- */}
+               <div className="space-y-4 pt-6 border-t mt-4">
+                  <h3 className="text-sm font-bold uppercase text-muted-foreground">App-Ticker (Slider)</h3>
+                  <div className="grid gap-4 md:grid-cols-2 p-4 bg-slate-50 rounded-lg">
+                    <div className="space-y-2">
+                      <Label htmlFor="ticker_headline">Ticker Überschrift</Label>
+                      <Input 
+                        id="ticker_headline" 
+                        name="ticker_headline" 
+                        placeholder="Top Apps & Deals"
+                        defaultValue={settings?.ticker_headline as string || "Top Apps & Deals"} 
+                        onChange={(e) => saveSetting("ticker_headline", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="ticker_badge_text">Badge Text (rot)</Label>
+                      <Input 
+                        id="ticker_badge_text" 
+                        name="ticker_badge_text" 
+                        placeholder="Live Trends (24h)"
+                        defaultValue={settings?.ticker_badge_text as string || "Live Trends (24h)"} 
+                        onChange={(e) => saveSetting("ticker_badge_text", e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2 md:col-span-2">
+                      <Label htmlFor="ticker_link_text">Button Text (Link zur Topliste)</Label>
+                      <Input 
+                        id="ticker_link_text" 
+                        name="ticker_link_text" 
+                        placeholder="Alle Top 100 ansehen →"
+                        defaultValue={settings?.ticker_link_text as string || "Alle Top 100 ansehen →"} 
+                        onChange={(e) => saveSetting("ticker_link_text", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+               {/* ----------------------------- */}
+
             </CardContent>
           </Card>
 

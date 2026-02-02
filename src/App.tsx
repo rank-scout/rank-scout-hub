@@ -4,10 +4,11 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { HelmetProvider } from "react-helmet-async"; // <--- DIREKT IMPORTIERT (Kein eigener Provider mehr)
+import { HelmetProvider } from "react-helmet-async"; 
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useSettings } from "@/hooks/useSettings"; 
 import { useEffect, useLayoutEffect } from "react"; 
+import TopApps from "./pages/TopApps"; // <--- Importiert
 
 // Pages
 import Index from "./pages/Index";
@@ -39,6 +40,7 @@ import AdminLeads from "./pages/admin/Leads";
 import AdminSettings from "./pages/admin/Settings";
 import AdminForum from "./pages/admin/Forum";
 import AdminPublisher from "./pages/admin/MultiPublisher";
+import AdminApps from "./pages/admin/Apps"; // <--- Importiert für Admin
 
 // Components
 import { CookieBanner } from "./components/layout/CookieBanner";
@@ -111,6 +113,9 @@ const App = () => (
                 <Route path="/welcome" element={<Welcome />} />
                 <Route path="/test-register" element={<C4FRegistration />} />
                 
+                {/* NEUE PUBLIC ROUTE: Top Apps (Hierher verschoben!) */}
+                <Route path="/top-apps" element={<TopApps />} />
+                
                 {/* Forum Routes */}
                 <Route path="/forum" element={<Forum />} />
                 <Route path="/forum/kategorie/:categorySlug" element={<Forum />} />
@@ -133,6 +138,8 @@ const App = () => (
                   <Route path="settings" element={<AdminSettings />} />
                   <Route path="forum" element={<AdminForum />} />
                   <Route path="multi-publisher" element={<AdminPublisher />} />
+                  {/* NEU: Admin Route für Apps Verwaltung */}
+                  <Route path="apps" element={<AdminApps />} />
                 </Route>
                 
                 <Route path="*" element={<NotFound />} />

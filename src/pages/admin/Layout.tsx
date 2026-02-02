@@ -5,20 +5,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { 
   LayoutDashboard, 
   FolderTree, 
-  FileBox,
-  Link2,
-  Mail,
+  FileBox, 
+  Link2, 
+  Mail, 
   Settings, 
   LogOut, 
-  Search,
-  Loader2,
-  Menu,
-  X,
-  UploadCloud,
-  Layers,
-  BarChart3,
-  Globe,
-  BookOpen
+  Search, 
+  Loader2, 
+  Menu, 
+  X, 
+  UploadCloud, 
+  Layers, 
+  BarChart3, 
+  Globe, 
+  BookOpen,
+  Smartphone // <--- NEU
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -28,6 +29,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
   { label: "Projekte", icon: Globe, path: "/admin/projects" },
+  { label: "Apps & Deals", icon: Smartphone, path: "/admin/apps" }, // <--- NEU EINGEFÜGT
   { label: "Kategorien", icon: Layers, path: "/admin/categories" },
   { label: "Magazin", icon: BookOpen, path: "/admin/forum" },
   { label: "Publisher", icon: UploadCloud, path: "/admin/multi-publisher" },
