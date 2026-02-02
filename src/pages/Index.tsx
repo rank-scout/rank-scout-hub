@@ -7,33 +7,24 @@ import { BigThreeSection } from "@/components/home/BigThreeSection";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
 import { ForumSection } from "@/components/home/ForumSection";
-// import { SEOContentSection } from "@/components/home/SEOContentSection"; // VORSICHT: Hier könnte der Casino-Text im Body stehen!
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 import { AmazonBanner } from "@/components/ads/AmazonBanner";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
-import { 
-  useSettings, 
-  useSiteTitle, 
-  useSiteDescription, 
-  useHomeLayout,
-  // useHomeContent // Brauchen wir nicht für SEO, das verseucht nur!
-} from "@/hooks/useSettings";
-import { SEO } from "@/components/SEO";
+import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
+import { Helmet } from "react-helmet-async"; 
+import { useForceSEO } from "@/hooks/useForceSEO"; // <--- UNSER VOLLSTRECKER
 
 const Index = () => {
   const analyticsCode = useGlobalAnalyticsCode();
   
+  // DATEN AUS DER DATENBANK LADEN
   const { isLoading: isLoadingSettings } = useSettings();
-  
-  // 1. HOL DIR NUR DIE SAUBEREN DATEN VOM ADMIN PANEL
-  const globalSiteTitle = useSiteTitle();
-  const globalSiteDescription = useSiteDescription();
+  const globalSiteTitle = useSiteTitle(); // Zieht 'site_title' aus DB
+  const globalSiteDescription = useSiteDescription(); // Zieht 'site_description' aus DB
   
   const { sections } = useHomeLayout();
-  // const { content } = useHomeContent(); // Deaktiviert, damit keine alten Daten reinspucken
-  
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   useEffect(() => {
@@ -45,6 +36,17 @@ const Index = () => {
     if (!analyticsCode) return;
   }, [analyticsCode]);
 
+  // --- SEO LOGIK STARTSEITE ---
+  const finalTitle = globalSiteTitle || "Rank-Scout";
+  const finalDescription = globalSiteDescription && globalSiteDescription.trim() !== "" 
+    ? globalSiteDescription 
+    : "Rank-Scout - Dein Vergleichsportal für Software, Finanzen und Dienstleistungen.";
+
+  // BRECHSTANGE:
+  useForceSEO(finalDescription);
+  // ---------------------------
+
+  // Loading-Check erst HIER (wegen Hooks Rule)
   if (!minTimeElapsed || isLoadingSettings) {
       return <LoadingScreen />;
   }
@@ -58,24 +60,24 @@ const Index = () => {
     categories: <CategoriesSection />,
     forum: <ForumSection />,
     news: <NewsSection />,
-    // seo: <SEOContentSection /> // Deaktiviert, falls der Text unten auf der Seite steht
   };
 
-  // --- DER ECHTE FIX ---
-  // Wir ignorieren ALLES, was von der "Page Content" Logik kommt.
-  // Wir zwingen React, NUR das zu nehmen, was du im Admin unter "Einstellungen" eingetippt hast.
-  
-  const finalTitle = globalSiteTitle || "Rank-Scout";
-  const finalDescription = globalSiteDescription || "Dein unabhängiges Vergleichsportal.";
+  const canonicalUrl = window.location.origin;
 
   return (
     <div className="min-h-screen flex flex-col relative bg-white animate-in fade-in duration-500">
-      {/* Hier wird hart überschrieben */}
-      <SEO 
-        title={finalTitle} 
-        description={finalDescription} 
-        canonical={window.location.origin}
-      />
+      
+      {/* Basis Helmet */}
+      <Helmet>
+        <title>{finalTitle}</title>
+        <link rel="canonical" href={canonicalUrl} />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content={finalTitle} />
+        <meta property="og:description" content={finalDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="website" />
+      </Helmet>
       
       <Header />
       
@@ -84,7 +86,6 @@ const Index = () => {
           .filter(section => section.enabled && section.id !== 'mascot')
           .map((section) => (
             <div id={section.id} key={section.id} className="scroll-mt-28">
-               {/* Sicherstellen, dass die SEO Section nicht gerendert wird, wenn sie auskommentiert ist */}
                {section.id !== 'seo' && sectionComponents[section.id]}
             </div>
           ))}

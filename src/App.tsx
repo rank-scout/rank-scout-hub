@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { SEOProvider } from "@/components/SEOProvider";
+import { HelmetProvider } from "react-helmet-async"; // <--- DIREKT IMPORTIERT (Kein eigener Provider mehr)
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useSettings } from "@/hooks/useSettings"; 
 import { useEffect, useLayoutEffect } from "react"; 
@@ -44,7 +44,7 @@ import AdminPublisher from "./pages/admin/MultiPublisher";
 import { CookieBanner } from "./components/layout/CookieBanner";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
 import { MascotWidget } from "@/components/layout/MascotWidget"; 
-import { ScrollToAnchor } from "@/components/ScrollToAnchor"; // Scroll-Logik
+import { ScrollToAnchor } from "@/components/ScrollToAnchor";
 
 const queryClient = new QueryClient();
 
@@ -87,7 +87,10 @@ const App = () => (
       <ThemeProvider defaultTheme="dark">
         <ThemeManager /> 
         
-        <SEOProvider>
+        {/* WICHTIG: Hier nutzen wir den originalen HelmetProvider. 
+            Er macht nichts außer die Funktion für die Unterseiten bereitzustellen. 
+            Keine Magie, keine globalen Tags. */}
+        <HelmetProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -96,7 +99,6 @@ const App = () => (
               <CookieBanner /> 
               <ScoutyWrapper /> 
               
-              {/* Scroll Handler */}
               <ScrollToTopHandler /> 
               <ScrollToAnchor /> 
               
@@ -137,7 +139,7 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
-        </SEOProvider>
+        </HelmetProvider>
       </ThemeProvider>
     </AuthProvider>
   </QueryClientProvider>

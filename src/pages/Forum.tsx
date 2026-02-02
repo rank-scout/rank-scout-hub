@@ -1,50 +1,24 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { Link, useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { Link, useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useForumThreads, useForumCategories } from "@/hooks/useForum";
 import { useForumBannerConfig, useForumAds } from "@/hooks/useSettings"; 
-import { SEO } from "@/components/SEO"; 
-import { LoadingScreen } from "@/components/ui/LoadingScreen"; // Importieren!
+import { Helmet } from "react-helmet-async"; 
+import { useForceSEO } from "@/hooks/useForceSEO"; 
+import { LoadingScreen } from "@/components/ui/LoadingScreen"; 
 import { 
-  MessageCircle, 
-  Pin, 
-  Clock, 
-  Search, 
-  Filter, 
-  User, 
-  X, 
-  TrendingUp, 
-  HelpCircle,
-  Star,
-  BarChart3,
-  ArrowRight,
-  ShieldCheck,
-  Zap,
-  LayoutGrid,
-  Heart,
-  Bitcoin,
-  Globe,
-  MessageSquare,
-  ExternalLink
+  MessageCircle, Pin, Clock, Search, Filter, User, X, TrendingUp, HelpCircle, 
+  Star, BarChart3, ArrowRight, ShieldCheck, Zap, LayoutGrid, Heart, Bitcoin, 
+  Globe, MessageSquare, ExternalLink
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
-
-// ... [getCategoryStyle und ScriptAd bleiben unverändert, hier der Übersicht halber gekürzt] ...
-// FÜGE HIER DEINE ScriptAd UND getCategoryStyle FUNKTIONEN WIEDER EIN FALLS DU SIE NICHT IN EINER EXTERNEN DATEI HAST
 
 // --- HELPER ---
 const getCategoryStyle = (slug: string) => {
@@ -76,11 +50,11 @@ const ScriptAd = ({ code }: { code: string }) => {
 export default function Forum() {
   const { categorySlug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation(); 
   const [searchParams] = useSearchParams();
   const urlCategoryId = searchParams.get("category");
   
   const { data: threads, isLoading } = useForumThreads();
-  // WICHTIG: Hier holen wir uns auch den Lade-Status der Kategorien!
   const { data: categories, isLoading: categoriesLoading } = useForumCategories();
   
   const bannerConfig = useForumBannerConfig(); 
@@ -92,7 +66,7 @@ export default function Forum() {
   const [randomGlobalAd, setRandomGlobalAd] = useState<any>(null);
 
   useEffect(() => {
-    if (categories && !categoriesLoading) { // Nur ausführen wenn fertig geladen
+    if (categories && !categoriesLoading) {
       if (categorySlug) {
         const activeCategory = categories.find(c => c.slug === categorySlug);
         if (activeCategory) setCategoryFilter(activeCategory.id);
@@ -120,11 +94,8 @@ export default function Forum() {
       }
   }, [globalAds]); 
 
-  // FIX: Wenn Daten noch laden, zeigen wir nichts (oder Spinner), 
-  // damit SEO keine falschen Daten (Startseite) zieht.
-  if (isLoading || categoriesLoading) {
-    return <LoadingScreen />;
-  }
+  // ACHTUNG: Hier war der Fehler! Der Loading-Check wurde ENTFERNT.
+  // Er steht jetzt ganz unten vor dem Return.
 
   const handleCategoryChange = (value: string) => {
     setCategoryFilter(value);
@@ -143,7 +114,7 @@ export default function Forum() {
       return matchesSearch && matchesCategory && thread.is_active;
   }).sort((a, b) => {
     if (sortTab === "popular") return (b.reply_count || 0) - (a.reply_count || 0);
-    if (sortTab === "unanswered") return 0; // Filterung passiert im Render
+    if (sortTab === "unanswered") return 0; 
     return new Date(b.created_at || "").getTime() - new Date(a.created_at || "").getTime();
   });
   
@@ -166,22 +137,67 @@ export default function Forum() {
     return randomGlobalAd;
   })();
 
-  // SEO LOGIC
-  const seoTitle = activeCategoryData 
-    ? ((activeCategoryData as any).seo_title || `${activeCategoryData.name} Forum | RankScout`)
-    : (bannerConfig.headline ? `${bannerConfig.headline} | RankScout Forum` : "Community Forum | RankScout");
-    
-  const seoDescription = activeCategoryData 
-    ? ((activeCategoryData as any).seo_description || (activeCategoryData.description ? activeCategoryData.description.substring(0, 160) : "Diskutiere im Forum"))
-    : "Diskutiere mit Experten und finde Antworten im RankScout Forum.";
+  // --- HARTE SEO LOGIK ---
+  
+  const seoCategory = categorySlug && categories 
+    ? categories.find(c => c.slug === categorySlug) 
+    : null;
 
-  const canonicalUrl = activeCategoryData
-    ? `${window.location.origin}/forum/kategorie/${activeCategoryData.slug}`
+  // 1. TITEL
+  let seoTitle = "Community Forum | Rank-Scout";
+  if (seoCategory) {
+    if (seoCategory.seo_title && seoCategory.seo_title.trim() !== "") {
+      seoTitle = seoCategory.seo_title;
+    } else {
+      seoTitle = `${seoCategory.name} Forum - Erfahrungen & Diskussionen | Rank-Scout`;
+    }
+  } else if (bannerConfig?.headline) {
+    seoTitle = `${bannerConfig.headline} | Rank-Scout`;
+  }
+
+  // 2. BESCHREIBUNG
+  let seoDescription = "Das große Vergleichsportal Forum. Diskutiere mit Experten über Software, Finanzen und mehr.";
+  
+  if (seoCategory) {
+    if (seoCategory.seo_description && seoCategory.seo_description.trim() !== "") {
+      seoDescription = seoCategory.seo_description;
+    } else if ((seoCategory as any).meta_description && (seoCategory as any).meta_description.trim() !== "") {
+       seoDescription = (seoCategory as any).meta_description;
+    } else if (seoCategory.description && seoCategory.description.trim() !== "") {
+      seoDescription = seoCategory.description.substring(0, 155);
+    } else {
+      seoDescription = `Diskutiere jetzt im Bereich ${seoCategory.name} auf Rank-Scout.`;
+    }
+  } else if (bannerConfig?.subheadline) {
+    seoDescription = bannerConfig.subheadline;
+  }
+
+  // --- FORCE UPDATE (MUSS VOR DEM RETURN STEHEN!) ---
+  useForceSEO(seoDescription);
+  // ------------------------------------------------
+
+  const canonicalUrl = seoCategory
+    ? `${window.location.origin}/forum/kategorie/${seoCategory.slug}`
     : `${window.location.origin}/forum`;
+
+  // WICHTIG: Der Loading-Check kommt erst HIER, NACHDEM alle Hooks initialisiert wurden.
+  // Das verhindert den "Rendered fewer hooks than expected" Fehler.
+  if (isLoading || categoriesLoading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50">
-      <SEO title={seoTitle} description={seoDescription} canonical={canonicalUrl} />
+      
+      {/* Helmet für Title und OpenGraph */}
+      <Helmet key={location.pathname}>
+        <title>{seoTitle}</title>
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:title" content={seoTitle} />
+        <meta property="og:description" content={seoDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="website" />
+      </Helmet>
 
       <Header />
       <ScrollToTopHandler />
