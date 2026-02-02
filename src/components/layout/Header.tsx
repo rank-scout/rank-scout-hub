@@ -131,9 +131,11 @@ export const Header = ({ transparent = false }: HeaderProps) => {
             </Link>
           </nav>
 
+          {/* FIX: Aria-Label hinzugefügt für Accessibility Score */}
           <button 
             className={`md:hidden p-2 rounded-lg transition-colors ${style.toggleBtn}`} 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Menü schließen" : "Menü öffnen"}
           >
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>

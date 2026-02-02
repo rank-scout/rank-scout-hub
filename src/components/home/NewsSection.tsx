@@ -5,6 +5,16 @@ import { ArrowRight, Calendar, Clock, Tag, Loader2 } from "lucide-react";
 import { useHomeContent } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 
+// KYRA FIX: Helper-Funktion für Bild-Optimierung
+const getOptimizedImageUrl = (url: string | null | undefined, width = 800) => {
+  if (!url) return "";
+  if (url.includes("images.unsplash.com")) {
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}w=${width}&q=80&auto=format&fit=crop`;
+  }
+  return url;
+};
+
 export function NewsSection() {
   const { content } = useHomeContent();
   const limit = content?.news?.count || 3; // Dynamisches Limit aus Settings
@@ -77,7 +87,8 @@ export function NewsSection() {
             const readTime = Math.max(1, Math.ceil((post.content?.length || 0) / 1000)) + " Min";
             // @ts-ignore - Supabase Typen-Handling für Joins kann tricky sein
             const categoryName = post.forum_categories?.name || "Allgemein";
-            const imageUrl = post.featured_image_url || "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?auto=format&fit=crop&q=80&w=800"; // Fallback Bild
+            // KYRA FIX: Hier nutzen wir den Fallback, aber optimieren ihn später im IMG-Tag
+            const rawImageUrl = post.featured_image_url || "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a";
 
             return (
               <Link 
@@ -88,8 +99,13 @@ export function NewsSection() {
                 {/* Image Container (Frameless) */}
                 <div className="relative h-64 overflow-hidden">
                   <img 
-                    src={imageUrl} 
+                    // KYRA FIX: Force Image Optimization
+                    src={getOptimizedImageUrl(rawImageUrl, 600)} 
                     alt={post.title} 
+                    // KYRA FIX: Lazy Loading & Dimensions
+                    loading="lazy"
+                    width="600"
+                    height="400"
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-60" />

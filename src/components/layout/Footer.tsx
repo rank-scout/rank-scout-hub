@@ -113,10 +113,10 @@ export const Footer = () => {
           </div>
         </div>
         
-        {/* Disclaimer */}
+        {/* Disclaimer - FIX: Kontrast leicht erhöht (slate-400 -> slate-300) für Accessibility Score */}
         {config.disclaimer && (
             <div className="mt-8 pt-6 border-t border-white/5">
-                <p className="text-xs text-slate-400 text-center max-w-4xl mx-auto leading-relaxed">
+                <p className="text-xs text-slate-300 text-center max-w-4xl mx-auto leading-relaxed">
                     {config.disclaimer}
                 </p>
             </div>

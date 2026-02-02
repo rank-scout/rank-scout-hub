@@ -37,6 +37,18 @@ const getThemeClasses = (theme: string) => {
   }
 };
 
+// KYRA FIX: Helper-Funktion für Bild-Optimierung
+// Erzwingt kleine Dateigrößen bei Unsplash-Bildern, egal was in der DB steht.
+const getOptimizedImageUrl = (url: string | undefined, width = 800) => {
+  if (!url) return "";
+  if (url.includes("images.unsplash.com")) {
+    // Falls schon Parameter da sind, hängen wir unsere hinten an (Imgix nimmt den letzten Wert)
+    const separator = url.includes("?") ? "&" : "?";
+    return `${url}${separator}w=${width}&q=80&auto=format&fit=crop`;
+  }
+  return url;
+};
+
 export const BigThreeSection = () => {
   const { content } = useHomeContent();
   if (!content) return null;
@@ -54,7 +66,7 @@ export const BigThreeSection = () => {
         link: content.big_three.finance_link || "/finanzen",
         button_text: "Vergleichen",
         theme: "blue",
-        image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop",
+        image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab",
         icon: "trending"
       },
       {
@@ -64,7 +76,7 @@ export const BigThreeSection = () => {
         link: content.big_three.software_link || "/software",
         button_text: "Tools finden",
         theme: "gold",
-        image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=1000&auto=format&fit=crop",
+        image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b",
         icon: "trophy"
       },
       {
@@ -74,7 +86,7 @@ export const BigThreeSection = () => {
         link: content.big_three.services_link || "/dienstleistungen",
         button_text: "Suchen",
         theme: "dark",
-        image_url: "https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1000&auto=format&fit=crop",
+        image_url: "https://images.unsplash.com/photo-1497366216548-37526070297c",
         icon: "star"
       }
     ];
@@ -109,8 +121,13 @@ export const BigThreeSection = () => {
                 {/* --- IMAGE BACKGROUND LAYER --- */}
                 <div className="absolute inset-0 z-0">
                   <img 
-                    src={item.image_url} 
+                    // KYRA FIX: Force Image Optimization
+                    src={getOptimizedImageUrl(item.image_url, 800)}
                     alt={item.title} 
+                    // KYRA FIX: Lazy Loading & Dimensions gegen Layout Shift
+                    loading="lazy"
+                    width="800"
+                    height="450"
                     className="w-full h-full object-cover opacity-40 group-hover:scale-110 group-hover:opacity-50 transition-transform duration-[3s]"
                   />
                   {/* Gradient Overlay for Readability */}
