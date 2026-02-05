@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "@/components/home/HeroSection";
-import { TrustSection } from "@/components/home/TrustSection";
+// TrustSection brauchen wir nicht mehr importieren, da AppTicker das übernimmt
 import { BigThreeSection } from "@/components/home/BigThreeSection";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
@@ -15,15 +15,16 @@ import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
 import { Helmet } from "react-helmet-async"; 
 import { useForceSEO } from "@/hooks/useForceSEO"; 
-import { AppTicker } from "@/components/home/AppTicker"; // <--- NEU
+import { AppTicker } from "@/components/home/AppTicker"; 
+import { HowItWorksSection } from "@/components/home/HowItWorksSection"; // <--- NEU IMPORTIERT
 
 const Index = () => {
   const analyticsCode = useGlobalAnalyticsCode();
   
   // DATEN AUS DER DATENBANK LADEN
   const { isLoading: isLoadingSettings } = useSettings();
-  const globalSiteTitle = useSiteTitle(); // Zieht 'site_title' aus DB
-  const globalSiteDescription = useSiteDescription(); // Zieht 'site_description' aus DB
+  const globalSiteTitle = useSiteTitle(); 
+  const globalSiteDescription = useSiteDescription(); 
   
   const { sections } = useHomeLayout();
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
@@ -47,7 +48,6 @@ const Index = () => {
   useForceSEO(finalDescription);
   // ---------------------------
 
-  // Loading-Check erst HIER (wegen Hooks Rule)
   if (!minTimeElapsed || isLoadingSettings) {
       return <LoadingScreen />;
   }
@@ -55,7 +55,8 @@ const Index = () => {
   const sectionComponents: Record<string, React.ReactNode> = {
     hero: <HeroSection />,
     amazon_top: <AmazonBanner format="horizontal" />,
-    trust: <AppTicker />, // <--- HIER GEÄNDERT: AppTicker ersetzt TrustSection (Firmen Slider)
+    trust: <AppTicker />,
+    how_it_works: <HowItWorksSection />, // <--- Registriert für alle Fälle
     big_three: <BigThreeSection />,
     adsense_middle: <AdSenseBanner slotId="placeholder-1" />,
     categories: <CategoriesSection />,
@@ -83,8 +84,20 @@ const Index = () => {
       <Header />
       
       <main className="flex-grow">
+        {/* --- TEIL 1: FESTE STRUKTUR (Die Premium-Führung) --- */}
+        {/* Wir erzwingen diese Reihenfolge für maximalen Impact, unabhängig von der DB-Sortierung */}
+        <HeroSection />
+        <AppTicker />
+        <HowItWorksSection /> 
+
+        {/* --- TEIL 2: DYNAMISCHE SEKTIONEN --- */}
         {sections
-          .filter(section => section.enabled && section.id !== 'mascot')
+          .filter(section => 
+            section.enabled && 
+            section.id !== 'mascot' && 
+            section.id !== 'hero' && // Rausfiltern, da oben schon fest eingebaut
+            section.id !== 'trust'   // Rausfiltern (ist der AppTicker oben)
+          )
           .map((section) => (
             <div id={section.id} key={section.id} className="scroll-mt-28">
                {section.id !== 'seo' && sectionComponents[section.id]}

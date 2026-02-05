@@ -1,4 +1,5 @@
-import { ShieldCheck, Zap, BarChart, Globe, Lock } from "lucide-react";
+// HIER: Neue Solar Icons Importe
+import { ShieldCheck, Bolt, ChartSquare, Globe, LockKeyhole } from '@solar-icons/react';
 import { useHomeContent } from "@/hooks/useSettings";
 
 export const SEOContentSection = () => {
@@ -33,14 +34,15 @@ export const SEOContentSection = () => {
         {/* THE BENTO GRID */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
           
-          {/* Card 1: Large Feature (Span 2) */}
+          {/* Card 1: Large Feature (Span 2) -> PERFORMANCE (GELB) */}
           <div className="md:col-span-2 group relative overflow-hidden rounded-3xl bg-white p-10 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-500">
             <div className="absolute top-0 right-0 p-10 opacity-5 group-hover:opacity-10 transition-opacity duration-500">
-              <Zap className="w-64 h-64 text-secondary" />
+              <Bolt weight="Bold" className="w-64 h-64 text-secondary" />
             </div>
             <div className="relative z-10 h-full flex flex-col justify-between">
-              <div className="p-3 w-fit rounded-xl bg-amber-50 text-amber-600 mb-4">
-                <Zap className="w-6 h-6" />
+              {/* Icon Container: Amber/Gelb */}
+              <div className="p-3 w-fit rounded-xl bg-amber-50 text-amber-500 mb-4">
+                <Bolt weight="Bold" className="w-6 h-6" />
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-primary mb-3">{features[0]?.title}</h3>
@@ -64,7 +66,8 @@ export const SEOContentSection = () => {
 
             <div className="relative z-10">
                <div className="p-3 w-fit rounded-xl bg-white/10 text-white mb-6 border border-white/10 backdrop-blur-md">
-                <Lock className="w-6 h-6" />
+                {/* Lock Icon */}
+                <LockKeyhole weight="Bold" className="w-6 h-6" />
               </div>
               <h3 className="text-2xl font-bold text-white mb-3">{features[1]?.title}</h3>
               <p className="text-slate-300 leading-relaxed text-sm drop-shadow-md font-medium">
@@ -83,16 +86,21 @@ export const SEOContentSection = () => {
             </div>
           </div>
 
-          {/* Card 3 */}
+          {/* Card 3 -> GLOBAL (BLAU) */}
           <div className="group relative overflow-hidden rounded-3xl bg-white p-8 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-500 flex flex-col">
-             <div className="p-3 w-fit rounded-xl bg-blue-50 text-blue-600 mb-4"><Globe className="w-6 h-6" /></div>
+             <div className="p-3 w-fit rounded-xl bg-blue-50 text-blue-600 mb-4">
+                 <Globe weight="Bold" className="w-6 h-6" />
+             </div>
              <h3 className="text-xl font-bold text-primary mb-2">{features[2]?.title}</h3>
              <p className="text-slate-500 text-sm leading-relaxed">{features[2]?.text}</p>
           </div>
 
-          {/* Card 4 */}
+          {/* Card 4 -> ECHTZEIT (BLAU) */}
           <div className="group relative overflow-hidden rounded-3xl bg-white p-8 shadow-lg border border-slate-100 hover:shadow-xl transition-all duration-500 flex flex-col">
-             <div className="p-3 w-fit rounded-xl bg-purple-50 text-purple-600 mb-4"><BarChart className="w-6 h-6" /></div>
+             {/* ChartSquare für Daten */}
+             <div className="p-3 w-fit rounded-xl bg-blue-50 text-blue-600 mb-4">
+                 <ChartSquare weight="Bold" className="w-6 h-6" />
+             </div>
              <h3 className="text-xl font-bold text-primary mb-2">{features[3]?.title}</h3>
              <p className="text-slate-500 text-sm leading-relaxed">{features[3]?.text}</p>
           </div>

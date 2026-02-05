@@ -1,31 +1,29 @@
 import { useEffect } from 'react';
 
 /**
- * useForceSEO - Die "Brechstange"
- * Zwingt den Browser, die Meta-Description zu aktualisieren,
- * indem es direkt auf das DOM zugreift (Vanilla JS).
- * Umgeht React-Helmet Caching-Probleme.
+ * useForceSEO - Standard Version
+ * Setzt die Meta-Description auf jeder Seite, die diesen Hook aufruft.
+ * Keine Einschränkung auf die Startseite mehr.
  */
 export const useForceSEO = (description: string | undefined) => {
   useEffect(() => {
-    // Sicherheitspuffer: Nur ausführen, wenn wir wirklich einen Text haben
+    // 1. Sicherheitspuffer: Nur ausführen, wenn wir Text haben
     if (!description || description.trim() === "") return;
 
-    // 1. Suche das existierende Tag
+    // 2. Suche das existierende Tag
     let metaTag = document.querySelector("meta[name='description']");
 
-    // 2. Wenn es nicht existiert, erstelle es neu
+    // 3. Wenn Tag fehlt, erstellen
     if (!metaTag) {
       metaTag = document.createElement('meta');
       metaTag.setAttribute('name', 'description');
       document.head.appendChild(metaTag);
     }
 
-    // 3. HARTES ÜBERSCHREIBEN DES INHALTS
+    // 4. HARTES ÜBERSCHREIBEN (Damit es auch wirklich greift)
+    // Wir prüfen nicht mehr auf die URL, sondern vertrauen darauf, 
+    // dass die Komponente, die diesen Hook ruft, den richtigen Text liefert.
     metaTag.setAttribute('content', description);
-    
-    // Debugging (damit du siehst, dass es feuert)
-    console.log("🔥 FORCE SEO UPDATE: Description gesetzt auf:", description);
 
-  }, [description]); // Feuert jedes Mal neu, wenn sich die Beschreibung ändert
+  }, [description]); // Feuert neu, wenn sich die Beschreibung ändert
 };

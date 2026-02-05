@@ -1,13 +1,14 @@
 import { useWeightedApps } from "@/hooks/usePromotedApps";
-import { useTickerConfig } from "@/hooks/useSettings"; // <--- NEU
+import { useTickerConfig } from "@/hooks/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, Star, TrendingUp } from "lucide-react";
+// HIER KORRIGIERT: 'GraphUp' statt 'TrendingUp'
+import { AltArrowRight, Star, GraphUp } from '@solar-icons/react';
 import { Link } from "react-router-dom";
 
 export const AppTicker = () => {
   const { data: apps, isLoading } = useWeightedApps(15); 
-  const { badge, headline, linkText } = useTickerConfig(); // <--- Texte laden
+  const { badge, headline, linkText } = useTickerConfig();
 
   if (isLoading) return <div className="py-8 container"><Skeleton className="h-20 w-full rounded-xl" /></div>;
   if (!apps || apps.length === 0) return null;
@@ -25,15 +26,16 @@ export const AppTicker = () => {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
                 </span>
-                {badge} {/* <--- DYNAMISCH */}
+                {badge}
             </div>
             <h2 className="text-xl md:text-2xl font-bold text-slate-900 flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-primary" /> 
-              {headline} {/* <--- DYNAMISCH */}
+              {/* HIER KORRIGIERT: GraphUp verwendet */}
+              <GraphUp weight="Bold" className="w-6 h-6 text-primary" /> 
+              {headline}
             </h2>
          </div>
          <Link to="/top-apps" className="text-sm font-medium text-primary hover:text-secondary transition-colors hidden sm:block">
-           {linkText} {/* <--- DYNAMISCH */}
+           {linkText}
          </Link>
       </div>
 
@@ -57,7 +59,7 @@ export const AppTicker = () => {
                     <h3 className="font-bold text-slate-900 truncate group-hover:text-primary transition-colors">{app.name}</h3>
                     <div className="flex items-center gap-2 text-xs text-slate-500">
                         <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-current" /> {app.rating?.toFixed(1) || "5.0"}
+                          <Star weight="Bold" className="w-3 h-3 fill-current text-secondary" /> {app.rating?.toFixed(1) || "5.0"}
                         </span>
                         <span className="truncate max-w-[80px]">{app.category || "App"}</span>
                     </div>
@@ -65,7 +67,7 @@ export const AppTicker = () => {
 
                 <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 text-slate-400 group-hover:text-primary group-hover:bg-primary/5 rounded-full" asChild>
                     <a href={app.affiliate_link || "#"} target="_blank" rel="noopener noreferrer" title="Zum Anbieter">
-                        <ExternalLink className="w-4 h-4" />
+                        <AltArrowRight weight="Bold" className="w-4 h-4" />
                     </a>
                 </Button>
             </div>
@@ -76,7 +78,7 @@ export const AppTicker = () => {
       {/* Mobile Link */}
       <div className="container mx-auto px-4 mt-4 sm:hidden text-center">
         <Link to="/top-apps" className="text-sm font-bold text-primary border border-primary/20 py-2 px-4 rounded-full inline-block w-full">
-          {linkText} {/* <--- DYNAMISCH */}
+          {linkText}
         </Link>
       </div>
     </div>

@@ -8,7 +8,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useSettings } from "@/hooks/useSettings"; 
 import { useEffect, useLayoutEffect } from "react"; 
-import TopApps from "./pages/TopApps"; // <--- Importiert
+import TopApps from "./pages/TopApps"; 
 
 // Pages
 import Index from "./pages/Index";
@@ -40,7 +40,7 @@ import AdminLeads from "./pages/admin/Leads";
 import AdminSettings from "./pages/admin/Settings";
 import AdminForum from "./pages/admin/Forum";
 import AdminPublisher from "./pages/admin/MultiPublisher";
-import AdminApps from "./pages/admin/Apps"; // <--- Importiert für Admin
+import AdminApps from "./pages/admin/Apps"; 
 
 // Components
 import { CookieBanner } from "./components/layout/CookieBanner";
@@ -89,9 +89,7 @@ const App = () => (
       <ThemeProvider defaultTheme="dark">
         <ThemeManager /> 
         
-        {/* WICHTIG: Hier nutzen wir den originalen HelmetProvider. 
-            Er macht nichts außer die Funktion für die Unterseiten bereitzustellen. 
-            Keine Magie, keine globalen Tags. */}
+        {/* WICHTIG: Hier nutzen wir den originalen HelmetProvider. */}
         <HelmetProvider>
           <TooltipProvider>
             <Toaster />
@@ -113,7 +111,7 @@ const App = () => (
                 <Route path="/welcome" element={<Welcome />} />
                 <Route path="/test-register" element={<C4FRegistration />} />
                 
-                {/* NEUE PUBLIC ROUTE: Top Apps (Hierher verschoben!) */}
+                {/* NEUE PUBLIC ROUTE: Top Apps */}
                 <Route path="/top-apps" element={<TopApps />} />
                 
                 {/* Forum Routes */}
@@ -138,10 +136,17 @@ const App = () => (
                   <Route path="settings" element={<AdminSettings />} />
                   <Route path="forum" element={<AdminForum />} />
                   <Route path="multi-publisher" element={<AdminPublisher />} />
-                  {/* NEU: Admin Route für Apps Verwaltung */}
                   <Route path="apps" element={<AdminApps />} />
                 </Route>
                 
+                {/* WICHTIG: Catch-All für Interne Seiten (Root-Level Slugs) 
+                    Dies muss VOR dem 404 stehen. Es fängt alles ab, was oben nicht definiert ist (z.B. /krypto-vergleich)
+                    und versucht es als Kategorie/Interne Seite zu laden. */}
+                <Route path="/:slug" element={<CategoryDetail />} />
+
+                {/* 404 Not Found - Wenn auch CategoryDetail nichts findet (oder es kein Slug ist), 
+                    wird dort ggf. Fehler angezeigt oder wir landen hier, falls Route nicht matcht. 
+                    Da /:slug fast alles matcht, regelt CategoryDetail.tsx jetzt oft den 404er Inhalt für ungültige Slugs. */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TrendingUp, ShieldCheck, Users, Search } from "lucide-react";
+// HIER: Neue Solar Icons
+import { Magnifer, GraphUp, ShieldCheck, UsersGroupTwoRounded, Star } from '@solar-icons/react';
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -22,14 +23,17 @@ export const HeroSection = () => {
     }
   };
 
+  // --- NEUE TEXTE (Hardcoded Override für Authority) ---
+  const newTitle = "Software & Services: Transparent. Unabhängig. Geprüft.";
+  const newSubtitle = "Wir analysieren hunderte Anbieter, damit du in Sekunden die richtige Wahl triffst. Spare Zeit, Geld und Nerven.";
+
   return (
-    // KYRA UPDATE: Padding unten massiv reduziert (pb-20 / md:pb-28) für weniger "leeren Raum"
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-10 overflow-hidden bg-primary selection:bg-secondary/30">
       
       {/* 1. Base Gradient */}
       <div className="absolute inset-0 bg-gradient-to-b from-primary via-primary to-primary z-0" />
 
-      {/* 2. Cyber Dot Grid - HOHE SICHTBARKEIT */}
+      {/* 2. Cyber Dot Grid */}
       <div 
         className="absolute inset-0 z-0 opacity-[0.35]" 
         style={{
@@ -49,27 +53,28 @@ export const HeroSection = () => {
         <div className="max-w-4xl mx-auto text-center">
           
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/80 border border-white/20 backdrop-blur-md mb-8 shadow-lg animate-fade-in hover:bg-white/5 transition-colors cursor-default group">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-secondary"></span>
+            {/* Badge Icon: Star in Gold */}
+            <span className="relative flex items-center justify-center">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+                <Star weight="Bold" className="relative w-3.5 h-3.5 text-secondary" />
             </span>
             <span className="text-sm font-medium text-slate-100 tracking-wide group-hover:text-white transition-colors">{content.hero.badge}</span>
           </div>
 
-          {/* KYRA UPDATE: Font Size reduziert (3xl/5xl/6xl) */}
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight leading-[1.1] animate-fade-in animation-delay-100 drop-shadow-2xl">
-            {content.hero.title}
+            {newTitle}
           </h1>
           
           <p className="text-lg md:text-xl text-slate-200 mb-12 max-w-2xl mx-auto leading-relaxed animate-fade-in animation-delay-200 font-light">
-            {content.hero.subtitle}
+            {newSubtitle}
           </p>
 
           <form onSubmit={handleSearch} className="relative group max-w-2xl mx-auto animate-fade-in animation-delay-300">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-secondary/40 to-blue-500/40 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
             <div className="relative flex flex-col sm:flex-row gap-2 p-2 bg-primary/95 border border-white/20 backdrop-blur-xl rounded-2xl sm:rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 focus-within:border-white/40 hover:border-white/30">
               <div className="flex-grow flex items-center px-4 h-14">
-                <Search className="w-5 h-5 text-slate-300 mr-3 shrink-0" />
+                {/* Search Icon: Magnifer */}
+                <Magnifer weight="Bold" className="w-5 h-5 text-slate-300 mr-3 shrink-0" />
                 <Input 
                   type="text" 
                   placeholder={content.hero.search_placeholder} 
@@ -84,25 +89,38 @@ export const HeroSection = () => {
             </div>
           </form>
 
-          {/* KYRA UPDATE: mt-12 statt mt-16 für kompakteren Look */}
+          {/* STATS BAR */}
           <div className="mt-12 flex flex-wrap justify-center gap-8 md:gap-16 animate-fade-in animation-delay-500">
+             
+             {/* 50+ Kategorien */}
              <div className="flex items-center gap-3 group select-none">
-                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm"><TrendingUp className="w-5 h-5 text-secondary" /></div>
+                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
+                    <GraphUp weight="Bold" className="w-5 h-5 text-blue-200" />
+                </div>
                 <div className="text-left"><div className="text-white font-bold leading-none">50+</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Kategorien</div></div>
              </div>
+
+             {/* 10k Community */}
              <div className="flex items-center gap-3 group select-none">
-                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm"><Users className="w-5 h-5 text-secondary" /></div>
+                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
+                    <UsersGroupTwoRounded weight="Bold" className="w-5 h-5 text-blue-200" />
+                </div>
                 <div className="text-left"><div className="text-white font-bold leading-none">10k+</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Community</div></div>
              </div>
+
+             {/* 100% Geprüft */}
              <div className="flex items-center gap-3 group select-none">
-                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm"><ShieldCheck className="w-5 h-5 text-secondary" /></div>
+                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
+                    <ShieldCheck weight="Bold" className="w-5 h-5 text-green-400" />
+                </div>
                 <div className="text-left"><div className="text-white font-bold leading-none">100%</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Geprüft</div></div>
              </div>
+
           </div>
         </div>
       </div>
 
-      {/* --- THE ARROW (PFEIL) --- */}
+      {/* --- THE ARROW --- */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] transform translate-y-[1px] z-20">
           <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-[calc(100%+1.3px)] h-[60px]">
               <path d="M600,112.77C268.63,112.77,0,65.52,0,7.23V120H1200V7.23C1200,65.52,931.37,112.77,600,112.77Z" className="fill-background"></path>

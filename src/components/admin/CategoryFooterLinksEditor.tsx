@@ -23,43 +23,46 @@ export function CategoryFooterLinksEditor({ categoryId }: { categoryId: string |
     setLoading(true);
     
     try {
-      // 1. Lade KATEGORIE-Links
+      // 1. Versuche Links mit category_id zu laden
       const { data: catLinks, error: catError } = await supabase
         .from('popular_footer_links')
         .select('*')
         .eq('category_id', categoryId)
         .order('sort_order', { ascending: true });
 
-      if (catError) throw catError;
+      // Wenn die Spalte fehlt (DB noch nicht migriert), werfen wir keinen harten Fehler
+      if (catError) {
+         if (catError.code === '42703' || catError.message?.includes('column')) {
+             console.warn("[Fix Required] Bitte SQL ausführen: ALTER TABLE popular_footer_links ADD COLUMN category_id UUID...");
+             return; 
+         }
+         throw catError;
+      }
 
-      // 2. Wenn vorhanden, nutzen
+      // 2. Wenn Links existieren, anzeigen
       if (catLinks && catLinks.length > 0) {
         setLinks(catLinks);
       } else {
         // 3. Wenn LEER -> Lade GLOBALE Links als Vorschlag (Pre-Fill)
-        const { data: globalLinks } = await supabase
-          .from('popular_footer_links')
-          .select('*')
-          .is('category_id', null)
-          .order('sort_order', { ascending: true });
-        
-        if (globalLinks) {
-          const prefilled = globalLinks.map((l, idx) => ({
-            ...l,
-            id: `temp-${idx}`,
-            category_id: categoryId
-          }));
-          setLinks(prefilled);
-          toast({
-              title: "Standard-Links geladen",
-              description: "Da noch keine eigenen Links existieren, haben wir die globalen als Vorlage geladen.",
-              duration: 3000
-          });
-        }
+        try {
+            const { data: globalLinks } = await supabase
+            .from('popular_footer_links')
+            .select('*')
+            .is('category_id', null)
+            .order('sort_order', { ascending: true });
+            
+            if (globalLinks && globalLinks.length > 0) {
+                const prefilled = globalLinks.map((l, idx) => ({
+                    ...l,
+                    id: `temp-${idx}`, // Temporäre ID damit React nicht meckert
+                    category_id: categoryId
+                }));
+                setLinks(prefilled);
+            }
+        } catch (e) { /* Fallback fail silent */ }
       }
     } catch (error) {
-      console.error(error);
-      toast({ title: "Fehler beim Laden", variant: "destructive" });
+      console.error("Fehler beim Laden der Links:", error);
     } finally {
       setLoading(false);
     }
@@ -74,8 +77,28 @@ export function CategoryFooterLinksEditor({ categoryId }: { categoryId: string |
     setLoading(true);
 
     try {
-      await supabase.from('popular_footer_links').delete().eq('category_id', categoryId);
+      // 1. Löschen alter Einträge für diese Kategorie
+      try {
+        const { error: deleteError } = await supabase
+            .from('popular_footer_links')
+            .delete()
+            .eq('category_id', categoryId);
+        
+        if (deleteError) throw deleteError;
+      } catch (delErr: any) {
+         if (delErr.code === '42703' || delErr.message?.includes('column')) {
+            toast({
+                title: "Datenbank-Update nötig",
+                description: "Bitte führe den SQL-Befehl im Supabase Dashboard aus (Spalte category_id fehlt).",
+                variant: "destructive"
+            });
+            setLoading(false);
+            return; // Abbruch
+         }
+         throw delErr;
+      }
 
+      // 2. Neue Einträge vorbereiten
       const linksToSave = links.map((l, idx) => ({
         category_id: categoryId,
         label: l.label,
@@ -84,16 +107,22 @@ export function CategoryFooterLinksEditor({ categoryId }: { categoryId: string |
         is_active: true
       }));
 
+      // 3. Insert
       if (linksToSave.length > 0) {
-        const { error } = await supabase.from('popular_footer_links').insert(linksToSave);
-        if (error) throw error;
+        const { error: insertError } = await supabase.from('popular_footer_links').insert(linksToSave);
+        if (insertError) throw insertError;
       }
 
-      toast({ title: "Gespeichert", description: "Footer Links aktualisiert." });
+      toast({ title: "Gespeichert", description: "Footer Links erfolgreich aktualisiert." });
       fetchLinks(); 
-    } catch (e) {
-      console.error(e);
-      toast({ title: "Fehler beim Speichern", variant: "destructive" });
+      
+    } catch (e: any) {
+      console.error("Save Error:", e);
+      toast({ 
+          title: "Fehler beim Speichern", 
+          description: e.message || "Unbekannter Fehler", 
+          variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }

@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useDuplicateCategory, type Category } from "@/hooks/useCategories";
 import { useCategoryProjects, useUpdateCategoryProjects } from "@/hooks/useCategoryProjects";
-import { useGenerateCityContent } from "@/hooks/useGenerateCityContent";
-import { useForm } from "react-hook-form";
+import { useGenerateCategoryContent } from "@/hooks/useGenerateCategoryContent";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { categorySchema, type CategoryInput } from "@/lib/schemas";
 import { Button } from "@/components/ui/button";
@@ -16,138 +16,206 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, Copy, Download, LayoutTemplate, FileCheck, Sparkles, Wand2, UploadCloud, Clock, Zap, MessageSquare } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, UploadCloud, LayoutTemplate, FileCheck, Sparkles, Bot, Database, Eye, Megaphone } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
-import CityExportDialog from "@/components/admin/CityExportDialog";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
 import { CategoryLegalLinksEditor } from "@/components/admin/CategoryLegalLinksEditor";
-import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor";
+import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor"; 
 import { supabase } from "@/integrations/supabase/client";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 
-// --- Generator Importe ---
+// Router & Helmet für Deploy-Fix
+import { MemoryRouter } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
 import { renderToStaticMarkup } from "react-dom/server";
 import { NewComparisonTemplate } from "@/components/templates/NewComparisonTemplate";
 import { ReviewTemplate } from "@/components/templates/ReviewTemplate";
 
-// Helper: Datum formatieren
-const formatDate = (dateString: string | null) => {
-  if (!dateString) return "-";
-  return new Date(dateString).toLocaleString('de-DE', {
-    day: '2-digit', month: '2-digit', year: 'numeric',
-    hour: '2-digit', minute: '2-digit'
-  });
-};
+// --- HELPER: BILD UPLOAD ---
+async function uploadImageToSupabase(file: File): Promise<string | null> {
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+    const filePath = `uploads/${fileName}`;
 
+    const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file);
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage.from('images').getPublicUrl(filePath);
+    return data.publicUrl;
+  } catch (error: any) {
+    toast({ title: "Upload Fehler", description: error.message, variant: "destructive" });
+    return null;
+  }
+}
+
+// Helper
 function generateSlug(name: string): string {
-  return name.toLowerCase()
-    .replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  return name.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
-function extractMetaFromHtml(html: string): { title: string | null; metaDescription: string | null; h1Title: string | null } {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  return {
-    title: doc.querySelector('title')?.textContent?.trim() || null,
-    metaDescription: doc.querySelector('meta[name="description"]')?.getAttribute('content') || null,
-    h1Title: doc.querySelector('h1')?.textContent?.trim() || null,
-  };
-}
-
-export default function AdminCategories() {
+export default function Categories() {
   const { data: categories = [], isLoading } = useCategories(true);
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const duplicateCategory = useDuplicateCategory();
   const updateCategoryProjects = useUpdateCategoryProjects();
-  const { generateContent } = useGenerateCityContent();
-  
+   
+  const { generateCategoryContent, isGenerating: isGenContent } = useGenerateCategoryContent();
+    
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
-  const [exportCategory, setExportCategory] = useState<Category | null>(null);
-  const [isExportOpen, setIsExportOpen] = useState(false);
   const [isDeploying, setIsDeploying] = useState<string | null>(null);
-
-  // FIX: Destructuring mit Fallback verhinderte Stable Reference. 
-  // Wir nutzen useCategoryProjects und sichern den Zugriff ab.
-  const { data: categoryProjectsRaw } = useCategoryProjects(editingCategory?.id);
+  const [isUploading, setIsUploading] = useState(false);
   
-  // FIX: Stabile Referenz für categoryProjects durch useMemo, damit der Effect nicht looped
-  const categoryProjects = useMemo(() => categoryProjectsRaw || [], [categoryProjectsRaw]);
+  // MODUS: "landing" (Classic) oder "internal" (Ratgeber/AI)
+  const [pageMode, setPageMode] = useState<"landing" | "internal">("landing");
+  const [topicPrompt, setTopicPrompt] = useState("");
 
-  // FIX: Render-Loop gestoppt durch State-Check
+  const { data: categoryProjects = [] } = useCategoryProjects(editingCategory?.id);
+
+  // Sync Projects
   useEffect(() => {
-    let targetIds: string[] = [];
-    
-    if (editingCategory && categoryProjects.length > 0) {
-      const sorted = [...categoryProjects].sort((a, b) => a.sort_order - b.sort_order);
-      targetIds = sorted.map((cp) => cp.project_id);
-    } else if (!editingCategory) {
-      targetIds = [];
+    let newIds: string[] = [];
+    if (categoryProjects && categoryProjects.length > 0) {
+      newIds = [...categoryProjects].sort((a, b) => a.sort_order - b.sort_order).map((cp) => cp.project_id);
     }
-
-    // Nur updaten, wenn sich wirklich was geändert hat!
-    setSelectedProjectIds(prev => {
-      const isSame = prev.length === targetIds.length && prev.every((id, i) => id === targetIds[i]);
-      return isSame ? prev : targetIds;
-    });
-  }, [categoryProjects, editingCategory]);
+    setSelectedProjectIds(prev => JSON.stringify(prev) !== JSON.stringify(newIds) ? newIds : prev);
+  }, [categoryProjects]); 
 
   const form = useForm<CategoryInput>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { theme: "DATING", template: "comparison", is_active: true, sort_order: 0, faq_data: [] },
+    defaultValues: { theme: "DATING", template: "comparison", is_active: true, sort_order: 0, faq_data: [], meta_title: "", meta_description: "" },
   });
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors }, control, getValues } = form;
+  const { register, handleSubmit, reset, setValue, watch, control } = form;
 
-  const theme = watch("theme");
-  const template = watch("template");
-  const isActive = watch("is_active");
-  const nameValue = watch("name");
-  const customHtmlOverride = watch("custom_html_override");
+  // Initiale Daten laden
+  useEffect(() => {
+    if (editingCategory) {
+      const isInternal = (editingCategory as any).is_internal_generated === true;
+      setPageMode(isInternal ? "internal" : "landing");
 
-  // --- LIVE SEO COUNTER ---
-  const currentMetaTitle = watch("meta_title") || "";
-  const currentMetaDesc = watch("meta_description") || "";
+      form.reset({
+        name: editingCategory.name,
+        slug: editingCategory.slug,
+        description: editingCategory.description || "",
+        theme: editingCategory.theme || "GENERIC",
+        icon: editingCategory.icon || "",
+        color_theme: editingCategory.color_theme || "slate",
+        is_active: editingCategory.is_active,
+        is_city: editingCategory.is_city || false,
+        template: editingCategory.template || "comparison",
+        meta_title: editingCategory.meta_title || "",
+        meta_description: editingCategory.meta_description || "",
+        h1_title: editingCategory.h1_title || "",
+        custom_html: editingCategory.custom_html || "",
+        custom_css: (editingCategory as any).custom_css || "",
+        custom_html_override: editingCategory.custom_html_override || "",
+        long_content_top: editingCategory.long_content_top || "",
+        long_content_bottom: editingCategory.long_content_bottom || "",
+        faq_data: editingCategory.faq_data || [],
+        
+        // NEU: Sidebar Ads
+        sidebar_ad_html: (editingCategory as any).sidebar_ad_html || "",
+        sidebar_ad_image: (editingCategory as any).sidebar_ad_image || "",
 
-  // --- ERROR HANDLER ---
-  const onInvalid = (errors: any) => {
-    console.error("Form Errors:", errors);
-    toast({
-      title: "Speichern nicht möglich ❌",
-      description: "Bitte überprüfe rote Felder in allen Tabs.",
-      variant: "destructive",
-    });
+        // Legacy Fields
+        site_name: editingCategory.site_name || "",
+        hero_headline: editingCategory.hero_headline || "",
+        hero_pretitle: editingCategory.hero_pretitle || "",
+        hero_cta_text: editingCategory.hero_cta_text || "",
+        hero_badge_text: editingCategory.hero_badge_text || "",
+        analytics_code: editingCategory.analytics_code || "",
+        banner_override: editingCategory.banner_override || "",
+        footer_site_name: editingCategory.footer_site_name || "",
+        footer_copyright_text: editingCategory.footer_copyright_text || "",
+        navigation_settings: editingCategory.navigation_settings || { show_top3_dating_apps: true },
+      } as any);
+      setTopicPrompt(`Vergleich und Ratgeber für ${editingCategory.name}`);
+    } else {
+      setPageMode("landing");
+      form.reset({ 
+          name: "", slug: "", theme: "DATING", template: "comparison", is_active: true, 
+          faq_data: [], meta_title: "", meta_description: "", sidebar_ad_html: '', sidebar_ad_image: '' 
+      });
+      setSelectedProjectIds([]);
+      setTopicPrompt("");
+    }
+  }, [editingCategory, form]);
+
+  // --- SAVE ---
+  async function onSubmit(data: CategoryInput) {
+    try {
+      const now = new Date().toISOString();
+      const isInternal = pageMode === "internal";
+      const rawData = { ...data } as any;
+
+      // Cleanup
+      delete rawData.faq_section; delete rawData.footer_links; delete rawData.popular_footer_links; delete rawData.legal_links; delete rawData.projects; delete rawData.category_projects; delete rawData.reviews; delete rawData.testimonials;
+
+      const payload = { ...rawData, updated_at: now, is_internal_generated: isInternal };
+      
+      let catId = editingCategory?.id;
+      if (editingCategory) {
+        await updateCategory.mutateAsync({ id: editingCategory.id, ...payload });
+        toast({ title: "Gespeichert", description: isInternal ? "Ratgeber aktualisiert." : "Daten gespeichert." });
+      } else {
+        const result = await createCategory.mutateAsync(payload);
+        catId = result.id;
+        toast({ title: "Erstellt", description: "Neue Kategorie angelegt." });
+      }
+
+      if (catId) {
+          await updateCategoryProjects.mutateAsync({ categoryId: catId, projectIds: selectedProjectIds });
+      }
+      setIsDialogOpen(false);
+    } catch (error: any) { 
+        toast({ title: "Fehler", description: error.message, variant: "destructive" }); 
+    }
+  }
+
+  // --- TOOLS ---
+  const handleGenerateContent = async () => {
+    const catName = form.getValues("name");
+    if (!catName) return toast({ title: "Fehler", description: "Name fehlt.", variant: "destructive" });
+    const result = await generateCategoryContent(catName, topicPrompt || catName);
+    if (result) {
+      form.setValue("long_content_top", result.contentTop, { shouldDirty: true });
+      form.setValue("long_content_bottom", result.contentBottom, { shouldDirty: true });
+      toast({ title: "Generiert", description: "Content eingefügt." });
+    }
   };
 
-  // --- AUTO-FILL ---
   const handleAutoFill = () => {
-    const kw = (document.getElementById('keyword-input') as HTMLInputElement).value;
-    if (!kw) return toast({ title: "Fehler", description: "Bitte Keyword eingeben.", variant: "destructive" });
-
-    if (!nameValue) setValue("name", kw, { shouldValidate: true });
-    setValue("slug", generateSlug(kw), { shouldValidate: true });
-    setValue("site_name", `Vergleich: ${kw}`, { shouldValidate: true });
-    setValue("hero_pretitle", "Die besten Anbieter für", { shouldValidate: true });
-    setValue("hero_headline", kw, { shouldValidate: true });
-    setValue("description", `Du suchst nach ${kw}? Wir haben die besten Plattformen getestet. Erfahre hier, wo sich eine Anmeldung wirklich lohnt.`, { shouldValidate: true });
-    setValue("hero_cta_text", "Jetzt vergleichen", { shouldValidate: true });
-    setValue("hero_badge_text", "Geprüft & Seriös 2026", { shouldValidate: true });
-    setValue("h1_title", `${kw} im großen Vergleich`, { shouldValidate: true });
-    setValue("meta_title", `${kw} 2026: Die besten Anbieter im Test & Vergleich`, { shouldValidate: true });
-    setValue("meta_description", `Unser großer Testbericht für ${kw} 2026. Wir haben Preise, Mitgliederzahlen und Erfolgschancen verglichen. Hier sind die aktuellen Testsieger.`, { shouldValidate: true });
-
-    toast({ title: "✨ Alles ausgefüllt!", className: "bg-blue-600 text-white" });
+    const kw = form.watch("name");
+    if(!kw) return;
+    form.setValue("slug", generateSlug(kw), { shouldDirty: true });
+    form.setValue("h1_title", kw, { shouldDirty: true });
+    form.setValue("meta_title", `${kw} im Vergleich & Test 2026`, { shouldDirty: true });
+    form.setValue("meta_description", `Alles über ${kw}. Wir haben die besten Anbieter getestet.`, { shouldDirty: true });
+    toast({ title: "SEO Data Auto-Filled" });
   };
 
-  // --- DEPLOY ---
+  // --- IMAGE UPLOAD HANDLER ---
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    setIsUploading(true);
+    const url = await uploadImageToSupabase(e.target.files[0]);
+    if (url) {
+        form.setValue("sidebar_ad_image", url, { shouldDirty: true });
+        toast({ title: "Bild hochgeladen", description: "URL wurde eingefügt." });
+    }
+    setIsUploading(false);
+  };
+
+  // --- DEPLOY (Legacy) ---
   async function handleDeploy(category: Category) {
     setIsDeploying(category.id);
     const BRIDGE_URL = "https://dating.rank-scout.com/bridge.php"; 
     const API_KEY = "4382180593Rank-Scout"; 
-
     try {
       let finalHtml = "";
       if (category.custom_html_override && category.custom_html_override.trim() !== "") {
@@ -160,223 +228,251 @@ export default function AdminCategories() {
             const { data: pData } = await supabase.from('projects').select('*').in('id', ids).eq('is_active', true);
             if (pData) projects = pData.sort((a, b) => (catProjs.find(cp => cp.project_id === a.id)?.sort_order || 0) - (catProjs.find(cp => cp.project_id === b.id)?.sort_order || 0));
         }
-        
         const { data: settingsData } = await supabase.from('settings').select('*');
         const settings: any = {};
         settingsData?.forEach(s => settings[s.key] = s.value);
-
         let { data: legalLinks } = await supabase.from('footer_links').select('*').eq('category_id', category.id).eq('is_active', true).order('sort_order', { ascending: true });
-        if (!legalLinks || legalLinks.length === 0) {
-             const { data: globalLegal } = await supabase.from('footer_links').select('*').is('category_id', null).eq('is_active', true).order('sort_order', { ascending: true });
-             legalLinks = globalLegal || [];
-        }
-
+        if (!legalLinks?.length) { const { data: g } = await supabase.from('footer_links').select('*').is('category_id', null).eq('is_active', true).order('sort_order', { ascending: true }); legalLinks = g || []; }
         let { data: popularLinks } = await supabase.from('popular_footer_links').select('*').eq('category_id', category.id).eq('is_active', true).order('sort_order', { ascending: true });
-        if (!popularLinks || popularLinks.length === 0) {
-             const { data: globalPop } = await supabase.from('popular_footer_links').select('*').is('category_id', null).eq('is_active', true).order('sort_order', { ascending: true });
-             popularLinks = globalPop || [];
-        }
+        if (!popularLinks?.length) { const { data: g } = await supabase.from('popular_footer_links').select('*').is('category_id', null).eq('is_active', true).order('sort_order', { ascending: true }); popularLinks = g || []; }
 
-        let staticHtml = "";
-        if (category.template === 'review') {
-            staticHtml = renderToStaticMarkup(<ReviewTemplate category={category as any} topProject={projects[0] || null} settings={settings} legalLinks={legalLinks || []} popularLinks={popularLinks || []} />);
-        } else {
-            staticHtml = renderToStaticMarkup(<NewComparisonTemplate category={category as any} projects={projects} settings={settings} legalLinks={legalLinks || []} popularLinks={popularLinks || []} />);
-        }
+        const helmetContext = {};
+        const Comp = category.template === 'review' ? ReviewTemplate : NewComparisonTemplate;
+        const staticHtml = renderToStaticMarkup(
+            <HelmetProvider context={helmetContext}>
+                <MemoryRouter>
+                    <Comp category={category as any} topProject={projects[0] || null} projects={projects} settings={settings} legalLinks={legalLinks || []} popularLinks={popularLinks || []} />
+                </MemoryRouter>
+            </HelmetProvider>
+        );
         finalHtml = `<!DOCTYPE html>${staticHtml}`;
       }
-
-      const response = await fetch(BRIDGE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Auth-Token": API_KEY },
-        body: JSON.stringify({ html: finalHtml, slug: category.slug })
-      });
+      const response = await fetch(BRIDGE_URL, { method: "POST", headers: { "Content-Type": "application/json", "X-Auth-Token": API_KEY }, body: JSON.stringify({ html: finalHtml, slug: category.slug }) });
       const result = await response.json();
-      if (response.ok && result.status === "success") {
-        toast({ title: "🚀 Update erfolgreich!", description: `Online: ${result.url}`, className: "bg-green-600 text-white border-green-700" });
-      } else { throw new Error(result.message || "Fehler"); }
+      if (response.ok && result.status === "success") toast({ title: "🚀 Update erfolgreich!", description: `Online: ${result.url}`, className: "bg-green-600 text-white" });
+      else throw new Error(result.message || "Fehler");
     } catch (error) { toast({ title: "Deploy Fehler", description: String(error), variant: "destructive" }); } 
     finally { setIsDeploying(null); }
   }
 
-  function handleExtractFromHtml() {
-    const html = customHtmlOverride;
-    if (!html?.trim()) return toast({ title: "Kein HTML", variant: "destructive" });
-    const extracted = extractMetaFromHtml(html);
-    if (extracted.title) setValue("meta_title", extracted.title, { shouldValidate: true });
-    if (extracted.metaDescription) setValue("meta_description", extracted.metaDescription, { shouldValidate: true });
-    if (extracted.h1Title) setValue("h1_title", extracted.h1Title, { shouldValidate: true });
-    toast({ title: "Extrahiert!" });
+  // --- DELETE / MOVE / DUPLICATE ---
+  async function handleDelete(id: string) { if(confirm("Löschen?")) await deleteCategory.mutateAsync(id); }
+  async function handleDuplicate(category: Category) { if(confirm("Duplizieren?")) await duplicateCategory.mutateAsync(category); }
+  async function handleToggleActive(category: Category) { await updateCategory.mutateAsync({ id: category.id, is_active: !category.is_active }); }
+  async function handleMoveOrder(category: Category, direction: "up" | "down") { 
+      const idx = categories.findIndex((c) => c.id === category.id); 
+      const newIdx = direction === "up" ? idx - 1 : idx + 1; 
+      if (newIdx < 0 || newIdx >= categories.length) return; 
+      const other = categories[newIdx]; 
+      await Promise.all([ updateCategory.mutateAsync({ id: category.id, sort_order: other.sort_order }), updateCategory.mutateAsync({ id: other.id, sort_order: category.sort_order }) ]); 
   }
-
-  useEffect(() => { if (!editingCategory && nameValue) setValue("slug", generateSlug(nameValue)); }, [nameValue, editingCategory, setValue]);
-
-  function openCreateDialog() {
-    setEditingCategory(null); setSelectedProjectIds([]);
-    reset({
-      slug: "", name: "", description: "", icon: "📍", theme: "DATING", template: "comparison", color_theme: "dark", site_name: "", hero_headline: "", hero_pretitle: "Finde Singles in", hero_cta_text: "", hero_badge_text: "", meta_title: "", meta_description: "", h1_title: "", long_content_top: "", long_content_bottom: "", analytics_code: "", banner_override: "", custom_html_override: "", footer_site_name: "", footer_copyright_text: "", footer_designer_name: "Digital-Perfect", footer_designer_url: "https://digital-perfect.at",
-      navigation_settings: { show_top3_dating_apps: true, show_singles_in_der_naehe: true, show_chat_mit_einer_frau: true, show_online_dating_cafe: true, show_bildkontakte_login: true, show_18plus_hint_box: true, }, is_active: true, sort_order: categories.length, faq_data: []
-    });
-    setIsDialogOpen(true);
-  }
-
-  function openEditDialog(category: Category) {
-    setEditingCategory(category);
-    
-    reset({
-      slug: category.slug, name: category.name, description: category.description || "", icon: category.icon || "📍", theme: category.theme, template: category.template || "comparison", color_theme: category.color_theme || "dark", site_name: category.site_name || "", hero_headline: category.hero_headline || "", hero_pretitle: category.hero_pretitle || "", hero_cta_text: category.hero_cta_text || "", hero_badge_text: category.hero_badge_text || "", meta_title: category.meta_title || "", meta_description: category.meta_description || "", h1_title: category.h1_title || "", long_content_top: category.long_content_top || "", long_content_bottom: category.long_content_bottom || "", analytics_code: category.analytics_code || "", banner_override: category.banner_override || "", custom_html_override: category.custom_html_override || "", footer_site_name: category.footer_site_name || "", footer_copyright_text: category.footer_copyright_text || "", footer_designer_name: category.footer_designer_name || "", footer_designer_url: category.footer_designer_url || "",
-      navigation_settings: category.navigation_settings || { show_top3_dating_apps: true }, is_active: category.is_active, sort_order: category.sort_order,
-      faq_data: []
-    });
-    setIsDialogOpen(true);
-  }
-
-  async function onSubmit(data: CategoryInput) {
-    try {
-      const now = new Date().toISOString();
-      let categoryForDeploy: Category;
-      if (editingCategory) {
-        await updateCategory.mutateAsync({ id: editingCategory.id, input: { ...data, updated_at: now } as any });
-        categoryForDeploy = { ...editingCategory, ...data, updated_at: now } as Category;
-        toast({ title: "Gespeichert... Starte Deployment 🚀" });
-      } else {
-        const result = await createCategory.mutateAsync(data);
-        categoryForDeploy = { id: result.id, created_at: now, updated_at: now, user_id: 'system', ...data } as Category;
-        toast({ title: "Erstellt... Starte Deployment 🚀" });
-      }
-      await updateCategoryProjects.mutateAsync({ categoryId: categoryForDeploy.id, projectIds: selectedProjectIds });
-      await handleDeploy(categoryForDeploy);
-      setIsDialogOpen(false);
-    } catch (error) { toast({ title: "Fehler", description: String(error), variant: "destructive" }); }
-  }
-
-  async function handleDelete(id: string) { if (!confirm("Löschen?")) return; try { await deleteCategory.mutateAsync(id); toast({ title: "Gelöscht" }); } catch { toast({ title: "Fehler", variant: "destructive" }); } }
-  async function handleDuplicate(category: Category) { try { await duplicateCategory.mutateAsync(category); toast({ title: "Dupliziert" }); } catch { toast({ title: "Fehler", variant: "destructive" }); } }
-  async function handleToggleActive(category: Category) { try { await updateCategory.mutateAsync({ id: category.id, input: { is_active: !category.is_active } }); } catch { toast({ title: "Fehler", variant: "destructive" }); } }
-  async function handleMoveOrder(category: Category, direction: "up" | "down") { const currentIndex = categories.findIndex((c) => c.id === category.id); const newIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1; if (newIndex < 0 || newIndex >= categories.length) return; const otherCategory = categories[newIndex]; try { await Promise.all([ updateCategory.mutateAsync({ id: category.id, input: { sort_order: otherCategory.sort_order } }), updateCategory.mutateAsync({ id: otherCategory.id, input: { sort_order: category.sort_order } }), ]); } catch { toast({ title: "Fehler", variant: "destructive" }); } }
-  function handleExport(category: Category) { setExportCategory(category); setIsExportOpen(true); }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div><h2 className="font-display text-2xl font-bold flex items-center gap-2"><LayoutTemplate className="w-6 h-6 text-primary" />Landingpages</h2><p className="text-muted-foreground">Verwalte deine Affiliate-Landingpages.</p></div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild><Button onClick={openCreateDialog} className="gap-2"><Plus className="w-4 h-4" />Neue Landingpage</Button></DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-                <DialogTitle>{editingCategory ? "Bearbeiten" : "Neu anlegen"}</DialogTitle>
-                <DialogDescription>Erstelle oder bearbeite eine Landingpage für das Portal.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
-              <Tabs defaultValue="seo" className="w-full">
-                <TabsList className="grid w-full grid-cols-8">
-                    <TabsTrigger value="basic">Grunddaten</TabsTrigger>
-                    <TabsTrigger value="seo">SEO & AI</TabsTrigger>
-                    <TabsTrigger value="content">Content</TabsTrigger>
-                    <TabsTrigger value="faq" className="text-blue-600 font-bold bg-blue-50">FAQ</TabsTrigger>
-                    <TabsTrigger value="navigation">Navi</TabsTrigger>
-                    <TabsTrigger value="footer">Footer</TabsTrigger>
-                    <TabsTrigger value="projects">Apps</TabsTrigger>
-                    <TabsTrigger value="override"><Wand2 className="w-3 h-3" /></TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="seo" className="space-y-4 pt-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm">
-                    <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-500 fill-yellow-500" /> Turbo-Generator</h4>
-                    <p className="text-sm text-blue-700 mb-4">Gib dein Keyword ein und wir füllen ALLE Felder automatisch aus.</p>
-                    <div className="flex gap-3">
-                        <Input id="keyword-input" placeholder="z.B. Singles ab 50" className="flex-1 bg-white text-black" defaultValue={nameValue || ""} />
-                        <Button type="button" onClick={handleAutoFill} className="bg-blue-600 hover:bg-blue-700 text-white shadow-md font-bold">✨ Alles ausfüllen</Button>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><Label>Seitenname Header</Label><Input {...register("site_name")} className={errors.site_name ? "border-red-500" : ""} /></div>
-                    <div><Label>Hero Pretitle</Label><Input {...register("hero_pretitle")} className={errors.hero_pretitle ? "border-red-500" : ""} /></div>
-                  </div>
-                  <div><Label>Hero Headline</Label><Input {...register("hero_headline")} className={errors.hero_headline ? "border-red-500" : ""} /></div>
-                  <div><Label>Hero Beschreibung</Label><Textarea {...register("description")} rows={2} className={errors.description ? "border-red-500" : ""} /></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><Label>CTA Text</Label><Input {...register("hero_cta_text")} className={errors.hero_cta_text ? "border-red-500" : ""} /></div>
-                    <div><Label>Badge Text</Label><Input {...register("hero_badge_text")} className={errors.hero_badge_text ? "border-red-500" : ""} /></div>
-                  </div>
-                  <div><Label>H1 Titel <span className="text-red-500">*</span></Label><Input {...register("h1_title")} className={errors.h1_title ? "border-red-500" : ""} /></div>
-                  
-                  {/* META TITLE MIT COUNTER */}
-                  <div>
-                    <Label>Meta Title <span className="text-red-500">*</span></Label>
-                    <Input {...register("meta_title")} className={errors.meta_title ? "border-red-500" : ""} />
-                    <div className="flex justify-between text-xs mt-1">
-                        <span className="text-muted-foreground">SEO-Empfehlung: max. 60 Zeichen</span>
-                        <span className={currentMetaTitle.length > 60 ? "text-red-500 font-bold" : "text-green-600"}>
-                            {currentMetaTitle.length} / 60
-                        </span>
-                    </div>
-                  </div>
-
-                  {/* META DESCRIPTION MIT COUNTER */}
-                  <div>
-                    <Label>Meta Description <span className="text-red-500">*</span></Label>
-                    <Textarea {...register("meta_description")} className={errors.meta_description ? "border-red-500" : ""} />
-                    <div className="flex justify-between text-xs mt-1">
-                        <span className="text-muted-foreground">SEO-Empfehlung: max. 155 Zeichen</span>
-                        <span className={currentMetaDesc.length > 155 ? "text-orange-500 font-bold" : "text-green-600"}>
-                            {currentMetaDesc.length} / 155
-                        </span>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                <TabsContent value="basic" className="space-y-4 pt-4">
-                  <div className="grid grid-cols-4 gap-4"><div className="col-span-1"><Label>Icon</Label><Input {...register("icon")} className="text-center text-2xl" /></div><div className="col-span-3"><Label>Interner Name <span className="text-red-500">*</span></Label><Input {...register("name")} className={errors.name ? "border-red-500" : ""} /></div></div>
-                  <div><Label>Slug <span className="text-red-500">*</span></Label><Input {...register("slug")} className={errors.slug ? "border-red-500" : ""} /></div>
-                  <div className="grid grid-cols-2 gap-4"><div><Label>Theme</Label><Select value={theme} onValueChange={v=>setValue("theme",v as any)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="DATING">Dating</SelectItem><SelectItem value="GENERIC">Generisch</SelectItem><SelectItem value="CASINO">Casino</SelectItem><SelectItem value="ADULT">Adult</SelectItem></SelectContent></Select></div><div><Label>Template</Label><Select value={template} onValueChange={v=>setValue("template",v as any)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="comparison">Vergleich (Neu)</SelectItem><SelectItem value="review">Review</SelectItem></SelectContent></Select></div></div>
-                  <div className="flex items-center justify-between pt-6"><Label>Aktiv</Label><Switch checked={isActive} onCheckedChange={c=>setValue("is_active",c)} /></div>
-                </TabsContent>
-
-                <TabsContent value="content" className="space-y-4 pt-4">
-                  <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 flex gap-4 items-end">
-                    <div className="flex-1"><Label className="text-orange-900">Keyword (für AI)</Label><Input id="ck" defaultValue={nameValue||"Dating"} className="bg-white text-black font-medium" /></div>
-                    <div className="flex-1"><Label className="text-orange-900">Ort/Thema</Label><Input id="cl" defaultValue={nameValue||""} className="bg-white text-black font-medium" /></div>
-                    <Button type="button" onClick={async()=>{ 
-                        const k=(document.getElementById('ck')as any).value;
-                        const l=(document.getElementById('cl')as any).value;
-                        if(l){
-                            toast({title:"🤖 Generiere Text + FAQs...", description:"Bitte warten (ca. 45s)..."});
-                            const r=await generateContent(l,k,5000);
-                            if(r){
-                                setValue("long_content_top",r.contentTop, { shouldValidate: true });
-                                setValue("long_content_bottom",r.contentBottom, { shouldValidate: true });
-                                if (r.faqs && r.faqs.length > 0) {
-                                    setValue("faq_data", r.faqs, { shouldValidate: true });
-                                    toast({title:"✅ Fertig!", description:"Text und FAQs wurden generiert. Check den FAQ-Tab!", className:"bg-green-600 text-white"});
-                                } else {
-                                    toast({title:"✅ Fertig!", description:"Text generiert (ohne FAQs).", className:"bg-green-600 text-white"});
-                                }
-                            }
-                        } 
-                    }} className="bg-orange-600 hover:bg-orange-700 text-white font-bold"><Sparkles className="w-4 h-4 mr-2"/>Text & FAQ (5k)</Button>
-                  </div>
-                  <div><Label>Content Oben</Label><Textarea {...register("long_content_top")} rows={8} className="font-mono text-sm" /></div>
-                  <div><Label>Content Unten</Label><Textarea {...register("long_content_bottom")} rows={8} className="font-mono text-sm" /></div>
-                  <div><Label>Banner Override</Label><Textarea {...register("banner_override")} rows={4} className="font-mono text-sm" /></div>
-                </TabsContent>
-
-                <TabsContent value="faq" className="space-y-4 pt-4">
-                    <CategoryFAQEditor form={form} />
-                </TabsContent>
-
-                <TabsContent value="navigation" className="space-y-4 pt-4"><div className="space-y-3 border rounded-lg p-4">{["show_top3_dating_apps", "show_singles_in_der_naehe", "show_chat_mit_einer_frau", "show_online_dating_cafe", "show_bildkontakte_login", "show_18plus_hint_box"].map(k => (<div key={k} className="flex items-center justify-between py-2 border-b"><Label>{k}</Label><Switch checked={watch(`navigation_settings.${k}` as any)??true} onCheckedChange={c=>setValue(`navigation_settings.${k}` as any,c)}/></div>))}</div></TabsContent>
-                <TabsContent value="footer" className="space-y-4 pt-4"><div className="grid grid-cols-2 gap-4"><div><Label>Footer Logo</Label><Input {...register("footer_site_name")} /></div><div><Label>Copyright</Label><Input {...register("footer_copyright_text")} /></div></div><CategoryFooterLinksEditor categoryId={editingCategory?.id || null} /><CategoryLegalLinksEditor categoryId={editingCategory?.id || null} /></TabsContent>
-                <TabsContent value="projects" className="space-y-4 pt-4"><ProjectCheckboxList selectedIds={selectedProjectIds} onChange={setSelectedProjectIds} /></TabsContent>
-                <TabsContent value="tracking" className="space-y-4 pt-4"><Label>Analytics Code</Label><Textarea {...register("analytics_code")} rows={10} /></TabsContent>
-                <TabsContent value="override" className="space-y-4 pt-4"><div className="flex justify-between mb-2"><Label>HTML Override</Label><Button type="button" size="sm" variant="outline" onClick={handleExtractFromHtml}>Extrahieren</Button></div><Textarea {...register("custom_html_override")} rows={20} /></TabsContent>
-              </Tabs>
-              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold h-12 text-lg" disabled={isDeploying===editingCategory?.id}>{isDeploying ? <Loader2 className="animate-spin" /> : (editingCategory ? "Speichern & Deployen" : "Seite Erstellen")}</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div><h2 className="text-2xl font-bold flex items-center gap-2"><LayoutTemplate className="w-6 h-6 text-blue-600" />Kategorien & Seiten</h2><p className="text-muted-foreground">Verwalte Landingpages und Ratgeber.</p></div>
+        <Button onClick={() => { setEditingCategory(null); setIsDialogOpen(true); }}><Plus className="w-4 h-4 mr-2" />Neue Seite</Button>
       </div>
-      <Card className="bg-card border-border"><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Pos</TableHead><TableHead>Name</TableHead><TableHead>Slug</TableHead><TableHead>Update</TableHead><TableHead>Aktiv</TableHead><TableHead className="text-right">Aktionen</TableHead></TableRow></TableHeader><TableBody>{categories.map((cat, idx) => (<TableRow key={cat.id}><TableCell><div className="flex flex-col gap-1"><button onClick={()=>handleMoveOrder(cat,"up")}><ArrowUp className="w-3 h-3"/></button><button onClick={()=>handleMoveOrder(cat,"down")}><ArrowDown className="w-3 h-3"/></button></div></TableCell><TableCell><div className="font-medium">{cat.name}</div></TableCell><TableCell><code className="text-xs bg-muted px-2 py-1 rounded">/{cat.slug}</code></TableCell><TableCell>{formatDate(cat.updated_at)}</TableCell><TableCell><Switch checked={cat.is_active} onCheckedChange={()=>handleToggleActive(cat)} /></TableCell><TableCell className="text-right"><div className="flex justify-end gap-1"><Button size="sm" onClick={()=>handleDeploy(cat)} disabled={isDeploying===cat.id} className="bg-green-600 hover:bg-green-700 text-white gap-2 mr-2">{isDeploying===cat.id?<Loader2 className="w-4 h-4 animate-spin"/>:<UploadCloud className="w-4 h-4"/>}{isDeploying===cat.id?"...":"Live"}</Button><Button variant="ghost" size="icon" onClick={()=>openEditDialog(cat)}><Pencil className="w-4 h-4"/></Button><Button variant="ghost" size="icon" onClick={()=>handleDelete(cat.id)}><Trash2 className="w-4 h-4"/></Button></div></TableCell></TableRow>))}</TableBody></Table></CardContent></Card><CityExportDialog open={isExportOpen} onOpenChange={setIsExportOpen} category={exportCategory} />
+
+      <Card className="border shadow-sm"><CardContent className="p-0"><Table><TableHeader><TableRow><TableHead>Pos</TableHead><TableHead>Name</TableHead><TableHead>Typ</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Aktionen</TableHead></TableRow></TableHeader><TableBody>{categories.map((cat) => (
+        <TableRow key={cat.id}>
+            <TableCell><div className="flex flex-col gap-1"><button onClick={()=>handleMoveOrder(cat,"up")} className="hover:text-blue-600"><ArrowUp className="w-3 h-3"/></button><button onClick={()=>handleMoveOrder(cat,"down")} className="hover:text-blue-600"><ArrowDown className="w-3 h-3"/></button></div></TableCell>
+            <TableCell>
+                <div className="font-medium">{cat.name}</div>
+                <div className="text-xs text-muted-foreground">/{cat.slug}</div>
+            </TableCell>
+            <TableCell>
+                {(cat as any).is_internal_generated 
+                    ? <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800"><Bot className="w-3 h-3 mr-1"/> Ratgeber (AI)</span>
+                    : <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800"><LayoutTemplate className="w-3 h-3 mr-1"/> Landingpage</span>
+                }
+            </TableCell>
+            <TableCell><Switch checked={cat.is_active} onCheckedChange={()=>handleToggleActive(cat)} /></TableCell>
+            <TableCell className="text-right"><div className="flex justify-end gap-1">
+                {!(cat as any).is_internal_generated && (
+                    <Button size="sm" variant="outline" onClick={()=>handleDeploy(cat)} disabled={isDeploying===cat.id} className="h-8 w-8 p-0 text-blue-600 border-blue-200 hover:bg-blue-50">
+                        {isDeploying===cat.id?<Loader2 className="w-4 h-4 animate-spin"/>:<UploadCloud className="w-4 h-4"/>}
+                    </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={()=>open(cat.slug.startsWith('http') ? cat.slug : `/${cat.slug}`, '_blank')} className="h-8 w-8 p-0"><Eye className="w-4 h-4"/></Button>
+                <Button variant="ghost" size="sm" onClick={() => { setEditingCategory(cat); setIsDialogOpen(true); }} className="h-8 w-8 p-0"><Pencil className="w-4 h-4"/></Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDelete(cat.id)} className="h-8 w-8 p-0 text-red-500 hover:bg-red-50"><Trash2 className="w-4 h-4"/></Button>
+            </div></TableCell>
+        </TableRow>
+      ))}</TableBody></Table></CardContent></Card>
+
+      {/* EDIT DIALOG */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 bg-slate-50/50">
+            <DialogHeader className="px-6 py-4 border-b bg-white">
+                <div className="flex justify-between items-center">
+                    <div>
+                        <DialogTitle>{editingCategory ? "Seite bearbeiten" : "Neue Seite erstellen"}</DialogTitle>
+                        <DialogDescription>Wähle den Typ und bearbeite Inhalte.</DialogDescription>
+                    </div>
+                    {/* MODUS SCHALTER */}
+                    <div className="flex bg-slate-100 p-1 rounded-lg border">
+                        <button onClick={() => setPageMode("landing")} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${pageMode === "landing" ? "bg-white shadow text-blue-600" : "text-slate-500 hover:text-slate-700"}`}>
+                            Landingpage (Classic)
+                        </button>
+                        <button onClick={() => setPageMode("internal")} className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${pageMode === "internal" ? "bg-white shadow text-purple-600" : "text-slate-500 hover:text-slate-700"}`}>
+                            <Bot className="w-3 h-3 inline mr-1" /> Ratgeber (AI & Intern)
+                        </button>
+                    </div>
+                </div>
+            </DialogHeader>
+            
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+                {/* ---------- INTERNE RATGEBER ANSICHT ---------- */}
+                {pageMode === "internal" ? (
+                    <div className="space-y-6 max-w-4xl mx-auto">
+                        {/* 1. Header */}
+                        <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+                            <h3 className="font-semibold text-lg flex items-center gap-2 text-purple-700"><FileCheck className="w-5 h-5"/> Basis Daten</h3>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2"><Label>Name (H1 Titel)</Label><Input {...register("name")} placeholder="z.B. Krypto Vergleich" /></div>
+                                <div className="space-y-2"><Label>Slug</Label><div className="flex gap-2"><Input {...register("slug")} /><Button type="button" variant="outline" onClick={handleAutoFill} size="icon"><Sparkles className="w-4 h-4 text-yellow-500"/></Button></div></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div className="space-y-2"><Label>SEO Titel</Label><Input {...register("meta_title")} /></div>
+                                <div className="space-y-2"><Label>SEO Beschreibung</Label><Textarea {...register("meta_description")} rows={2} /></div>
+                            </div>
+                        </div>
+
+                        {/* 2. Content (JETZT UNTEREINANDER / FULL WIDTH) */}
+                        <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+                            <h3 className="font-semibold text-lg flex items-center gap-2 text-purple-700"><Bot className="w-5 h-5"/> KI Content</h3>
+                            <div className="flex gap-2 bg-purple-50 p-3 rounded-lg">
+                                <Input value={topicPrompt} onChange={e=>setTopicPrompt(e.target.value)} placeholder="Thema für KI" className="bg-white" />
+                                <Button onClick={handleGenerateContent} disabled={isGenContent} className="bg-purple-600 hover:bg-purple-700 text-white min-w-[120px]">{isGenContent?<Loader2 className="animate-spin"/>:"Generieren"}</Button>
+                            </div>
+                            
+                            {/* LAYOUT FIX: UNTEREINANDER */}
+                            <div className="space-y-6">
+                                <div>
+                                    <Label className="text-base font-bold text-slate-700 mb-2 block">Intro Text (Oben)</Label>
+                                    <Controller name="long_content_top" control={form.control} render={({ field }) => (<RichTextEditor value={field.value || ''} onChange={field.onChange} />)}/>
+                                </div>
+                                <div>
+                                    <Label className="text-base font-bold text-slate-700 mb-2 block">Haupttext (Unten - Volle Breite)</Label>
+                                    <Controller name="long_content_bottom" control={form.control} render={({ field }) => (<RichTextEditor value={field.value || ''} onChange={field.onChange} />)}/>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. Sidebar Ads (MIT UPLOAD) */}
+                        <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+                            <h3 className="font-semibold text-lg flex items-center gap-2 text-purple-700"><Megaphone className="w-5 h-5"/> Sidebar & Werbung</h3>
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <Label>Banner HTML Code (Hat Vorrang)</Label>
+                                    <Controller name="sidebar_ad_html" control={form.control} render={({ field }) => (<RichTextEditor value={field.value || ''} onChange={field.onChange} />)}/>
+                                </div>
+                                <div>
+                                    <Label>Oder: Banner Bild (Upload)</Label>
+                                    <div className="flex gap-2">
+                                        <Input {...register("sidebar_ad_image")} placeholder="https://..." />
+                                        <div className="relative">
+                                            <input type="file" id="upload-ad" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
+                                            <Button type="button" variant="outline" disabled={isUploading} onClick={() => document.getElementById('upload-ad')?.click()}>
+                                                {isUploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <UploadCloud className="w-4 h-4"/>}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {watch("sidebar_ad_image") && <img src={watch("sidebar_ad_image") || ""} alt="Preview" className="mt-2 h-20 w-auto rounded border" />}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 4. Projects & FAQ */}
+                        <div className="grid grid-cols-2 gap-6">
+                            <div className="bg-white p-6 rounded-xl border shadow-sm"><h3 className="font-semibold mb-4">Projekte</h3><ProjectCheckboxList selectedIds={selectedProjectIds} onChange={setSelectedProjectIds} /></div>
+                            <div className="bg-white p-6 rounded-xl border shadow-sm"><h3 className="font-semibold mb-4">FAQs</h3><CategoryFAQEditor form={form} /></div>
+                        </div>
+                    </div>
+                ) : (
+                    /* ---------- CLASSIC ANSICHT ---------- */
+                    <Tabs defaultValue="content" className="w-full">
+                        <TabsList className="grid w-full grid-cols-5 mb-6">
+                            <TabsTrigger value="basic">Basis</TabsTrigger>
+                            <TabsTrigger value="content">Content & Ads</TabsTrigger>
+                            <TabsTrigger value="nav">Navi & Footer</TabsTrigger>
+                            <TabsTrigger value="projects">Projekte</TabsTrigger>
+                            <TabsTrigger value="expert">Expert</TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="basic" className="space-y-4 bg-white p-6 rounded-xl border shadow-sm">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div><Label>Name</Label><Input {...register("name")} /></div>
+                                <div><Label>Slug</Label><Input {...register("slug")} /></div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 pt-2">
+                                <div><Label>Theme</Label><Select onValueChange={v=>setValue("theme",v as any)} defaultValue={form.getValues("theme")}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="DATING">Dating</SelectItem><SelectItem value="CASINO">Casino</SelectItem><SelectItem value="GENERIC">Generisch</SelectItem></SelectContent></Select></div>
+                                <div><Label>Template</Label><Select onValueChange={v=>setValue("template",v as any)} defaultValue={form.getValues("template")}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent><SelectItem value="comparison">Vergleich</SelectItem><SelectItem value="review">Review</SelectItem></SelectContent></Select></div>
+                            </div>
+                            <div className="flex items-center gap-2 pt-2"><Switch checked={watch("is_active")} onCheckedChange={c=>setValue("is_active",c)} /><Label>Seite aktiv</Label></div>
+                        </TabsContent>
+
+                        <TabsContent value="content" className="space-y-4 bg-white p-6 rounded-xl border shadow-sm">
+                            <div><Label>Content Oben</Label><Controller name="long_content_top" control={form.control} render={({ field }) => (<RichTextEditor value={field.value || ''} onChange={field.onChange} />)}/></div>
+                            <div><Label>Content Unten</Label><Controller name="long_content_bottom" control={form.control} render={({ field }) => (<RichTextEditor value={field.value || ''} onChange={field.onChange} />)}/></div>
+                            
+                            {/* AD SECTION (CLASSIC) */}
+                            <div className="bg-slate-50 p-4 rounded-lg border my-4">
+                                <h4 className="font-bold mb-2">Sidebar Werbung</h4>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <Label>Banner HTML</Label>
+                                        <Controller name="sidebar_ad_html" control={form.control} render={({ field }) => (<RichTextEditor value={field.value || ''} onChange={field.onChange} />)}/>
+                                    </div>
+                                    <div>
+                                        <Label>Banner Bild</Label>
+                                        <div className="flex gap-2">
+                                            <Input {...register("sidebar_ad_image")} />
+                                            <div className="relative">
+                                                <input type="file" id="upload-ad-classic" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
+                                                <Button type="button" variant="outline" disabled={isUploading} onClick={() => document.getElementById('upload-ad-classic')?.click()}>
+                                                    <UploadCloud className="w-4 h-4"/>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                        {watch("sidebar_ad_image") && <img src={watch("sidebar_ad_image") || ""} alt="Preview" className="mt-2 h-20 w-auto rounded border" />}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="pt-4 border-t"><h4 className="font-bold mb-2">FAQ</h4><CategoryFAQEditor form={form} /></div>
+                        </TabsContent>
+
+                        <TabsContent value="nav" className="space-y-4 bg-white p-6 rounded-xl border shadow-sm">
+                             <div className="grid grid-cols-2 gap-6">
+                                <div><h4 className="font-bold mb-2">Navigation</h4>
+                                {["show_top3_dating_apps", "show_singles_in_der_naehe", "show_chat_mit_einer_frau"].map(k => (
+                                    <div key={k} className="flex justify-between items-center py-1 border-b"><span className="text-sm">{k}</span><Switch checked={watch(`navigation_settings.${k}` as any)} onCheckedChange={c=>setValue(`navigation_settings.${k}` as any,c)}/></div>
+                                ))}</div>
+                                <div><h4 className="font-bold mb-2">Footer</h4><CategoryFooterLinksEditor categoryId={editingCategory?.id || null} /><div className="mt-4"><CategoryLegalLinksEditor categoryId={editingCategory?.id || null} /></div></div>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="projects" className="bg-white p-6 rounded-xl border shadow-sm">
+                            <ProjectCheckboxList selectedIds={selectedProjectIds} onChange={setSelectedProjectIds} />
+                        </TabsContent>
+
+                        <TabsContent value="expert" className="space-y-4 bg-white p-6 rounded-xl border shadow-sm">
+                            <div><Label>Analytics Code</Label><Textarea {...register("analytics_code")} className="font-mono text-xs" /></div>
+                            <div><Label>HTML Override</Label><Textarea {...register("custom_html_override")} className="font-mono text-xs" rows={10} /></div>
+                        </TabsContent>
+                    </Tabs>
+                )}
+            </div>
+
+            <div className="p-6 border-t bg-white flex justify-between items-center">
+                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button>
+                 <Button onClick={handleSubmit(onSubmit)} className={`${pageMode === 'internal' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-blue-600 hover:bg-blue-700'} min-w-[150px]`}>
+                    <Database className="w-4 h-4 mr-2" /> Speichern {pageMode === 'internal' ? "(Live)" : ""}
+                 </Button>
+            </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

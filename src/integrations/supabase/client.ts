@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// KYRA FIX: Hardcoded Credentials, damit es sofort läuft
+// KYRA FIX: Wir nutzen den ECHTEN JWT Key jetzt direkt (Hardcoded), um alle Env-Probleme zu umgehen.
 const SUPABASE_URL = "https://oeshjjvhtmebjwbouayc.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3Wk4Tcg02ylmxwh5Om45UQ_j7GlZ7Ic";
+// Dein echter Anon-Key (JWT), den du mir gesendet hast:
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9lc2hqanZodG1lYmp3Ym91YXljIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg3MzY2ODMsImV4cCI6MjA4NDMxMjY4M30.8smfa_NrhlfFmcqRSoFKDVgz0z64eYwGgHJ_odQOwhM";
 
-// Console Log zur Sicherheit (damit wir sehen, dass es geladen wird)
-console.log("Supabase Client Init mit:", SUPABASE_URL);
+console.log("Supabase Client Reset mit Hardcoded Key (Startet mit eyJ...)");
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,

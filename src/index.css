@@ -7,7 +7,7 @@
 @layer base {
   :root {
     /* --- BASIS FARBEN (DEFAULT: DEEP NAVY #0E1F53) --- */
-    --background: 210 40% 98%;
+    --background: 210 20% 98%; /* Subtle Gray-Blue */
     --foreground: 229 88% 13%;
     
     --primary: 225 71% 19%; /* Deep Navy */
@@ -16,7 +16,7 @@
     --secondary: 20 90% 55%; /* Amber Gold */
     --secondary-foreground: 0 0% 100%;
     
-    --card: 0 0% 100%;
+    --card: 0 0% 100%; /* White */
     --card-foreground: 229 88% 13%;
     --popover: 0 0% 100%;
     --popover-foreground: 229 88% 13%;
@@ -172,9 +172,6 @@
   body {
     @apply text-foreground font-body antialiased;
     background-color: hsl(var(--background));
-    background-image: radial-gradient(hsl(var(--primary) / 0.08) 0.5px, transparent 0.5px);
-    background-size: 24px 24px;
-    background-position: 0 0;
   }
   h1, h2, h3, h4, h5, h6 {
     @apply font-display font-bold tracking-tight text-foreground;

@@ -28,28 +28,61 @@ export type NavigationSettings = z.infer<typeof navigationSettingsSchema>;
 export const categorySchema = z.object({
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
   name: z.string().min(1, "Name erforderlich"),
-  description: z.string().optional(),
-  icon: z.string().optional(),
+  description: z.string().optional().nullable(), // Nullable erlaubt
+  icon: z.string().optional().nullable(),
   theme: categoryThemeEnum.default("GENERIC"),
   color_theme: colorThemeEnum.default("light"),
   template: categoryTemplateEnum.default("comparison"),
   is_active: z.boolean().default(true),
-  hero_title: z.string().optional(),
-  hero_subtitle: z.string().optional(),
-  meta_title: z.string().optional(),
-  meta_description: z.string().optional(),
-  faq_section: z.array(z.object({
+  
+  // SEO & Meta
+  meta_title: z.string().optional().nullable(),
+  meta_description: z.string().optional().nullable(),
+  h1_title: z.string().optional().nullable(),
+  
+  // Landingpage Content
+  site_name: z.string().optional().nullable(),
+  hero_headline: z.string().optional().nullable(),
+  hero_pretitle: z.string().optional().nullable(),
+  hero_cta_text: z.string().optional().nullable(),
+  hero_badge_text: z.string().optional().nullable(),
+  
+  // Long Content
+  long_content_top: z.string().optional().nullable(),
+  long_content_bottom: z.string().optional().nullable(),
+  
+  // Tech & Override
+  analytics_code: z.string().optional().nullable(),
+  banner_override: z.string().optional().nullable(),
+  custom_html_override: z.string().optional().nullable(),
+  custom_css: z.string().optional().nullable(), // Sicher ist sicher
+  
+  // Footer Data
+  footer_site_name: z.string().optional().nullable(),
+  footer_copyright_text: z.string().optional().nullable(),
+  footer_designer_name: z.string().optional().nullable(),
+  footer_designer_url: z.string().optional().nullable(),
+  
+  // Settings & Arrays
+  navigation_settings: navigationSettingsSchema.optional().nullable(),
+  
+  // NEU: Wichtig für FAQs und Ratgeber-Modus
+  faq_data: z.array(z.object({
     question: z.string(),
     answer: z.string()
-  })).default([]),
-  footer_links: z.array(z.object({
-    label: z.string(),
-    url: z.string()
-  })).default([]),
-  legal_links: z.array(z.object({
-    label: z.string(),
-    url: z.string()
-  })).default([])
+  })).optional().default([]),
+  
+  is_internal_generated: z.boolean().optional().default(false),
+  is_city: z.boolean().optional().default(false),
+  sort_order: z.number().optional().default(0),
+
+  // Legacy (Optional lassen, damit Validation nicht fehlschlägt, werden im Admin gefiltert)
+  faq_section: z.any().optional(),
+  footer_links: z.any().optional(),
+  legal_links: z.any().optional(),
+  popular_footer_links: z.any().optional(),
+  projects: z.any().optional(),
+  category_projects: z.any().optional(),
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;
