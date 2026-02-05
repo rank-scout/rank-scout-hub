@@ -18,7 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { 
   Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
   CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
-  Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List
+  Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
@@ -40,6 +40,9 @@ export default function AdminSettings() {
   // Lokaler State
   const [localContent, setLocalContent] = useState<typeof defaultHomeContent | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  // SEO Text State (Lokal, Performance)
+  const [seoLongText, setSeoLongText] = useState("");
 
   // Bestehende States
   const [siteTitle, setSiteTitle] = useState("");
@@ -86,7 +89,6 @@ export default function AdminSettings() {
   const defaultFooterConfig = {
     text_checked: "Redaktionell geprüft",
     text_update: "Aktualisiert: 2026",
-    // HIER IST DER TEXT, DER AUTOMATISCH ÜBERNOMMEN WIRD
     text_description: "Unsere Vergleiche basieren auf echten Daten, Nutzer-Feedback und Experten-Analysen.", 
     copyright_text: "© 2026 Rank-Scout. Alle Rechte vorbehalten.",
     made_with_text: "Made with",
@@ -135,7 +137,6 @@ export default function AdminSettings() {
     }
 
     // SICHERES MERGEN FÜR HEADER & FOOTER
-    // Wenn in der DB was steht, nehmen wir das und ergänzen fehlende Keys aus den Defaults
     // @ts-ignore
     if (settings.header_config) {
         setHeaderConfig((prev: any) => ({ ...prev, ...(settings.header_config as any) }));
@@ -151,6 +152,10 @@ export default function AdminSettings() {
   useEffect(() => {
     if (serverContent && !localContent) {
       setLocalContent(JSON.parse(JSON.stringify(serverContent)));
+      // Init SEO Text local state
+      if (serverContent.seo && serverContent.seo.long_text) {
+        setSeoLongText(serverContent.seo.long_text);
+      }
     }
   }, [serverContent]);
 
@@ -205,6 +210,20 @@ export default function AdminSettings() {
     if (!localContent) return;
     saveSetting("home_content", localContent);
     setHasUnsavedChanges(false);
+  };
+
+  // SPEZIAL SAVE FÜR SEO TEXT
+  const saveSeoText = () => {
+    if (!localContent) return;
+    const newContent = {
+        ...localContent,
+        seo: {
+            ...localContent.seo,
+            long_text: seoLongText
+        }
+    };
+    setLocalContent(newContent); // Update local for immediate UI feedback
+    saveSetting("home_content", newContent); // Push to DB
   };
 
   // --- BIG THREE DYNAMISCH ---
@@ -753,7 +772,7 @@ export default function AdminSettings() {
                  </div>
                ))}
 
-               {/* --- NEU: TICKER SETTINGS BLOCK --- */}
+               {/* --- TICKER SETTINGS BLOCK --- */}
                <div className="space-y-4 pt-6 border-t mt-4">
                   <h3 className="text-sm font-bold uppercase text-muted-foreground">App-Ticker (Slider)</h3>
                   <div className="grid gap-4 md:grid-cols-2 p-4 bg-slate-50 rounded-lg">
@@ -791,6 +810,37 @@ export default function AdminSettings() {
                 </div>
                {/* ----------------------------- */}
 
+            </CardContent>
+          </Card>
+
+          {/* NEU: SEO CONTENT EDITOR CARD (PROMINENT PLATZIERT) */}
+          <Card className="bg-card border-border shadow-sm border-l-4 border-l-blue-600">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-blue-50 rounded-lg"><FileText className="w-5 h-5 text-blue-600" /></div>
+                <div>
+                  <CardTitle className="font-display text-lg">SEO Deep Content</CardTitle>
+                  <CardDescription>Der lange Text am Ende der Startseite (Accordion).</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label>Inhalt (HTML erlaubt)</Label>
+                  <span className="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">variable: seo.long_text</span>
+                </div>
+                <Textarea 
+                  className="min-h-[400px] font-mono text-sm bg-slate-50 leading-relaxed" 
+                  placeholder="<h1>Dein SEO Text hier...</h1>"
+                  value={seoLongText}
+                  onChange={(e) => setSeoLongText(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Tipp: Schreibe hier deinen langen Content (1.000+ Wörter). HTML-Tags wie &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt; werden korrekt dargestellt.</p>
+              </div>
+              <Button onClick={saveSeoText} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                <Save className="w-4 h-4 mr-2" /> SEO Text speichern
+              </Button>
             </CardContent>
           </Card>
 

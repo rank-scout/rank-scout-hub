@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "@/components/home/HeroSection";
-// TrustSection brauchen wir nicht mehr importieren, da AppTicker das übernimmt
 import { BigThreeSection } from "@/components/home/BigThreeSection";
 import { CategoriesSection } from "@/components/home/CategoriesSection";
 import { NewsSection } from "@/components/home/NewsSection";
@@ -16,17 +15,17 @@ import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/
 import { Helmet } from "react-helmet-async"; 
 import { useForceSEO } from "@/hooks/useForceSEO"; 
 import { AppTicker } from "@/components/home/AppTicker"; 
-import { HowItWorksSection } from "@/components/home/HowItWorksSection"; // <--- NEU IMPORTIERT
+import { HowItWorksSection } from "@/components/home/HowItWorksSection"; 
+import { HomeSEOText } from "@/components/home/HomeSEOText"; 
 
 const Index = () => {
   const analyticsCode = useGlobalAnalyticsCode();
-  
-  // DATEN AUS DER DATENBANK LADEN
   const { isLoading: isLoadingSettings } = useSettings();
   const globalSiteTitle = useSiteTitle(); 
   const globalSiteDescription = useSiteDescription(); 
   
-  const { sections } = useHomeLayout();
+  // Layout Config laden
+  const { sections, layout } = useHomeLayout();
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   useEffect(() => {
@@ -38,15 +37,12 @@ const Index = () => {
     if (!analyticsCode) return;
   }, [analyticsCode]);
 
-  // --- SEO LOGIK STARTSEITE ---
   const finalTitle = globalSiteTitle || "Rank-Scout";
   const finalDescription = globalSiteDescription && globalSiteDescription.trim() !== "" 
     ? globalSiteDescription 
     : "Rank-Scout - Dein Vergleichsportal für Software, Finanzen und Dienstleistungen.";
 
-  // BRECHSTANGE:
   useForceSEO(finalDescription);
-  // ---------------------------
 
   if (!minTimeElapsed || isLoadingSettings) {
       return <LoadingScreen />;
@@ -56,7 +52,7 @@ const Index = () => {
     hero: <HeroSection />,
     amazon_top: <AmazonBanner format="horizontal" />,
     trust: <AppTicker />,
-    how_it_works: <HowItWorksSection />, // <--- Registriert für alle Fälle
+    how_it_works: <HowItWorksSection />, 
     big_three: <BigThreeSection />,
     adsense_middle: <AdSenseBanner slotId="placeholder-1" />,
     categories: <CategoriesSection />,
@@ -68,13 +64,9 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative bg-white animate-in fade-in duration-500">
-      
-      {/* Basis Helmet */}
       <Helmet>
         <title>{finalTitle}</title>
         <link rel="canonical" href={canonicalUrl} />
-        
-        {/* Open Graph */}
         <meta property="og:title" content={finalTitle} />
         <meta property="og:description" content={finalDescription} />
         <meta property="og:url" content={canonicalUrl} />
@@ -84,19 +76,25 @@ const Index = () => {
       <Header />
       
       <main className="flex-grow">
-        {/* --- TEIL 1: FESTE STRUKTUR (Die Premium-Führung) --- */}
-        {/* Wir erzwingen diese Reihenfolge für maximalen Impact, unabhängig von der DB-Sortierung */}
+        {/* 1. Der Einstieg: Authority & Vertrauen */}
         <HeroSection />
         <AppTicker />
         <HowItWorksSection /> 
 
-        {/* --- TEIL 2: DYNAMISCHE SEKTIONEN --- */}
+        {/* 2. Die Auswahl: Big Three */}
+        <BigThreeSection />
+
+        {/* 3. Der Content: Redaktioneller Text (Jetzt hier platziert!) */}
+        {layout.seo_text && <HomeSEOText />}
+
+        {/* 4. Der Deep Dive: Kategorien, News etc. */}
         {sections
           .filter(section => 
             section.enabled && 
             section.id !== 'mascot' && 
-            section.id !== 'hero' && // Rausfiltern, da oben schon fest eingebaut
-            section.id !== 'trust'   // Rausfiltern (ist der AppTicker oben)
+            section.id !== 'hero' && 
+            section.id !== 'trust' &&
+            section.id !== 'big_three' // Auch rausfiltern, da oben fest verbaut
           )
           .map((section) => (
             <div id={section.id} key={section.id} className="scroll-mt-28">

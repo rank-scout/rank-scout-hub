@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { TrendingLink } from "@/lib/schemas";
+import type { TrendingLink, NavLink } from "@/lib/schemas";
 
 // --- TYPES ---
 export type HomeSection = {
@@ -107,7 +107,8 @@ export const defaultHomeLayout = {
   categories: true,
   news: true,
   forum_teaser: true,
-  ads: false
+  ads: false,
+  seo_text: true // <--- NEU: Layout Schalter für SEO Text
 };
 
 // CONTENT DEFAULTS (Erweitert um SEO Fields für Home)
@@ -159,7 +160,9 @@ export const defaultHomeContent = {
     headline: "Über unser Vergleichsportal", 
     intro: "Willkommen bei Rank-Scout. Wir bringen Licht in den Dschungel digitaler Dienstleistungen.", 
     block1_title: "Warum Rank-Scout?", block1_text: "In einer Welt voller Fake-Bewertungen und intransparenter Affiliate-Modelle setzen wir einen neuen Standard.", 
-    block2_title: "Zukunftssicherheit", block2_text: "Unsere Scouts scannen den globalen Markt permanent nach neuen Trends." 
+    block2_title: "Zukunftssicherheit", block2_text: "Unsere Scouts scannen den globalen Markt permanent nach neuen Trends.",
+    // NEU: Hier speichern wir den langen HTML Text für das Accordion
+    long_text: "" 
   },
   categories: { headline: "Alle Kategorien im Überblick", count: 6, button_more: "Alle Kategorien anzeigen", button_card: "Bereich erkunden" },
   news: { headline: "Aktuelles & Ratgeber", subheadline: "News & Updates", count: 3, button_text: "Zum Magazin", read_more: "Artikel lesen" },
@@ -239,9 +242,19 @@ export function useHomeForumTeaser() { const { data } = useSettings(); return { 
 
 export function useHomeContent() { 
   const { data: settings } = useSettings(); 
-  const content = { ...defaultHomeContent, ...(settings?.home_content as any || {}) }; 
+  const settingsContent = (settings?.home_content as any || {});
   
-  // Deep Merge sicherstellen
+  // Deep Merge: Wir stellen sicher, dass auch SEO und long_text existieren, selbst wenn die DB leer ist
+  const content = { 
+    ...defaultHomeContent, 
+    ...settingsContent,
+    seo: {
+        ...defaultHomeContent.seo,
+        ...(settingsContent.seo || {})
+    }
+  }; 
+  
+  // Deep Merge für Arrays und Unterobjekte
   content.big_three = { ...defaultHomeContent.big_three, ...(content.big_three || {}) };
   content.big_three.items = content.big_three.items || defaultHomeContent.big_three.items;
   
@@ -250,7 +263,6 @@ export function useHomeContent() {
   content.news = { ...defaultHomeContent.news, ...content.news }; 
   content.trust = { ...defaultHomeContent.trust, ...content.trust }; 
   content.hero = { ...defaultHomeContent.hero, ...content.hero }; 
-  content.seo = { ...defaultHomeContent.seo, ...content.seo }; 
   
   return { content }; 
 }
@@ -266,7 +278,6 @@ export function useForumAds() {
 }
 
 // --- EXPORTS MIT FIX ---
-// HIER WURDE GEÄNDERT: Defaults auf leeren String gesetzt, keine "Demo-Texte" mehr!
 export function useSiteTitle() { return useSetting<string>("site_title", ""); }
 export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
 export function useSiteDescription() { return useSetting<string>("site_description", ""); }
