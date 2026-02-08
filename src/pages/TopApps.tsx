@@ -16,11 +16,15 @@ import {
   CheckRead,
   QuestionCircle,
   HashtagChat,
-  Notes,
   DiagramUp,
   SettingsMinimalistic,
   DollarMinimalistic
 } from "@solar-icons/react";
+
+// Hilfsfunktion für Tailwind-Klassen
+function cn(...classes: any[]) {
+  return classes.filter(Boolean).join(' ');
+}
 
 export default function TopApps() {
   const { data: apps, isLoading } = useTop100Apps();
@@ -53,7 +57,7 @@ export default function TopApps() {
                 "aggregateRating": {
                   "@type": "AggregateRating",
                   "ratingValue": app.rating || 5,
-                  "ratingCount": "139"
+                  "ratingCount": "100"
                 }
               }
             }))
@@ -172,4 +176,78 @@ function MethodologyCard({ icon, title, desc }: { icon: React.ReactNode, title: 
   );
 }
 
-// ... Restliche Komponenten (AppRankCard, FAQCard, cn) bleiben identisch wie zuvor
+function AppRankCard({ app, index }: { app: any, index: number }) {
+  const isTopThree = index < 3;
+  return (
+    <Card className={cn(
+        "group border transition-all duration-500 rounded-[2.5rem] overflow-hidden bg-white hover:border-secondary/40 hover:bg-secondary/[0.01]",
+        isTopThree ? "border-primary/20 bg-primary/[0.01]" : "border-primary/5"
+    )}>
+      <CardContent className="p-6 md:p-10 flex flex-col lg:flex-row items-center gap-8">
+        <div className="relative flex-shrink-0">
+            <div className="w-24 h-24 sm:w-32 sm:h-32 bg-white rounded-[2rem] border border-primary/5 flex items-center justify-center p-5 group-hover:scale-105 transition-transform duration-500 shadow-sm">
+                {app.logo_url ? <img src={app.logo_url} alt={app.name} className="w-full h-full object-contain" /> : <HashtagChat weight="Bold" className="w-12 h-12 text-slate-200" />}
+            </div>
+            <div className="absolute -top-3 -right-3">
+                {index === 0 && <Badge className="bg-secondary text-primary font-black px-4 py-1.5 shadow-xl border-none">🥇 TESTSIEGER</Badge>}
+                {index === 1 && <Badge className="bg-slate-200 text-slate-700 font-black px-3 py-1 border-none">🥈 TOP 2</Badge>}
+                {index === 2 && <Badge className="bg-orange-100 text-orange-700 font-black px-3 py-1 border-none">🥉 TOP 3</Badge>}
+            </div>
+        </div>
+
+        <div className="flex-1 text-center lg:text-left">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4 justify-center lg:justify-start">
+             <h3 className="text-2xl md:text-3xl font-display font-bold text-primary group-hover:text-secondary transition-colors">{app.name}</h3>
+             <div className="flex items-center justify-center gap-2">
+                <span className="flex items-center gap-1 text-[10px] font-bold text-secondary bg-secondary/10 px-3 py-1 rounded-full uppercase">
+                    <Star weight="Bold" className="w-3 h-3" /> {app.rating?.toFixed(1) || "5.0"}
+                </span>
+             </div>
+          </div>
+          
+          <p className="text-slate-500 text-sm md:text-base mb-8 line-clamp-2 leading-relaxed font-light">
+            {app.short_description || `Exklusive Markt-Analyse für ${app.name}. Geprüft auf Datensicherheit und Performance-Metriken 2026.`}
+          </p>
+          
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8">
+            <div className="flex flex-col">
+                <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mb-1">Kategorie</span>
+                <span className="text-xs font-bold text-primary/80 uppercase">{app.category || "General"}</span>
+            </div>
+            <div className="flex flex-col">
+                <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold mb-1">Verifizierung</span>
+                <div className="flex items-center gap-1 text-xs font-bold text-green-600 uppercase">
+                    <ShieldCheck weight="Bold" className="w-3.5 h-3.5" /> Aktiv
+                </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full lg:w-auto">
+          <Button 
+            size="lg" 
+            className="w-full lg:w-auto gap-3 font-bold h-16 px-10 rounded-2xl bg-primary hover:bg-secondary hover:text-primary transition-all duration-300 shadow-none border-none group/btn" 
+            asChild
+          >
+            <a href={app.affiliate_link || "#"} target="_blank" rel="noopener noreferrer">
+              Deal sichern 
+              <AltArrowRight weight="Bold" className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
+            </a>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function FAQCard({ question, answer }: { question: string, answer: string }) {
+    return (
+        <div className="p-8 rounded-[2rem] border border-slate-100 bg-slate-50/30">
+            <div className="flex items-center gap-3 mb-4">
+                <QuestionCircle weight="Bold" className="w-6 h-6 text-secondary" />
+                <h4 className="text-lg font-display font-bold text-primary">{question}</h4>
+            </div>
+            <p className="text-slate-500 text-sm leading-relaxed font-light">{answer}</p>
+        </div>
+    );
+}
