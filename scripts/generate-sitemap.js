@@ -4,78 +4,88 @@ import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 
-// 1. Setup: Umgebungsvariablen laden (.env Datei)
-dotenv.config();
-
-// Fix für Pfade in ES-Modulen
+// --- PFAD-LOGIK FÜR ES-MODULE ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Supabase Verbindung herstellen
-const supabaseUrl = process.env.VITE_SUPABASE_URL;
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-const DOMAIN = 'https://rank-scout.com'; // DEINE DOMAIN
+// Lädt die .env explizit aus dem Hauptverzeichnis
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
+// KYRA FIX: Nutzt jetzt exakt deine Bezeichnungen aus der .env
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY; // Geändert von ANON_KEY auf PUBLISHABLE_KEY
+const DOMAIN = 'https://rank-scout.com';
+
+// --- VALIDIERUNG ---
 if (!supabaseUrl || !supabaseKey) {
   console.error('❌ FEHLER: Supabase URL oder Key fehlen in der .env Datei.');
+  console.log('Gefundene URL:', supabaseUrl ? '✅ Vorhanden' : '❌ FEHLT');
+  console.log('Gefundener Key (VITE_SUPABASE_PUBLISHABLE_KEY):', supabaseKey ? '✅ Vorhanden' : '❌ FEHLT');
   process.exit(1);
 }
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function generateSitemap() {
-  console.log('🔄 Starte Sitemap-Automatisierung...');
-  
-  // 2. Statische Seiten definieren (Die sind immer da)
-  let urls = [
-    '',
-    '/impressum',
-    '/datenschutz',
-    '/agb',
-    '/categories',
-    '/forum'
-  ];
+  console.log('🔄 Starte Sitemap-Automatisierung für Rank-Scout...');
 
-  // 3. Dynamische Daten aus Supabase holen (Automatisierung)
-  
-  // A. Kategorien holen
-  const { data: categories, error: catError } = await supabase
-    .from('categories')
-    .select('slug')
-    .eq('is_active', true);
+  try {
+    // 1. Statische Seiten definieren
+    const staticPages = [
+      '',
+      '/impressum',
+      '/datenschutz',
+      '/agb',
+      '/kategorien',
+      '/forum'
+    ];
 
-  if (categories) {
-    categories.forEach(cat => urls.push(`/category/${cat.slug}`));
-    console.log(`✅ ${categories.length} Kategorien hinzugefügt.`);
-  }
+    // 2. Dynamische Kategorien aus Supabase laden
+    const { data: categories, error: catError } = await supabase
+      .from('categories')
+      .select('slug');
 
-  // B. Forum Threads holen
-  const { data: threads, error: threadError } = await supabase
-    .from('forum_threads')
-    .select('slug');
+    if (catError) {
+      console.warn('⚠️ Hinweis: Konnte Kategorien nicht laden (evtl. Tabelle noch leer).');
+    }
 
-  if (threads) {
-    threads.forEach(thread => urls.push(`/forum/${thread.slug}`));
-    console.log(`✅ ${threads.length} Threads hinzugefügt.`);
-  }
+    // 3. Forum-Threads aus Supabase laden
+    const { data: threads, error: threadError } = await supabase
+      .from('forum_threads')
+      .select('slug');
 
-  // 4. XML zusammenbauen
-  const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+    if (threadError) {
+      console.warn('⚠️ Hinweis: Konnte Forum-Threads nicht laden.');
+    }
+
+    // 4. Alle Pfade kombinieren
+    const categoryPages = categories?.map(c => `/kategorien/${c.slug}`) || [];
+    const forumPages = threads?.map(t => `/forum/${t.slug}`) || [];
+    
+    const allPages = [...staticPages, ...categoryPages, ...forumPages];
+
+    // 5. XML generieren
+    const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  ${urls.map(url => `
-  <url>
-    <loc>${DOMAIN}${url}</loc>
-    <lastmod>${new Date().toISOString()}</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>${url === '' ? '1.0' : '0.8'}</priority>
-  </url>
-  `).join('')}
+${allPages.map(page => `  <url>
+    <loc>${DOMAIN}${page}</loc>
+    <lastmod>${new Date().toISOString().split('T')[0]}</lastmod>
+    <changefreq>${page === '' ? 'daily' : 'weekly'}</changefreq>
+    <priority>${page === '' ? '1.0' : page.includes('/kategorien/') ? '0.9' : '0.7'}</priority>
+  </url>`).join('\n')}
 </urlset>`;
 
-  // 5. Datei speichern (in den public Ordner, damit sie live geht)
-  const publicPath = path.resolve(__dirname, '../public/sitemap.xml');
-  fs.writeFileSync(publicPath, sitemap);
-  console.log(`🚀 Sitemap erfolgreich generiert: ${publicPath}`);
+    // 6. Datei im public-Ordner speichern
+    const outputPath = path.resolve(__dirname, '../public/sitemap.xml');
+    fs.writeFileSync(outputPath, sitemapXml);
+
+    console.log(`✅ ERFOLG: ${allPages.length} URLs wurden in die Sitemap geschrieben.`);
+    console.log(`📍 Speicherort: ${outputPath}`);
+
+  } catch (err) {
+    console.error('❌ KRITISCHER FEHLER beim Generieren der Sitemap:', err.message);
+    process.exit(1);
+  }
 }
 
 generateSitemap();

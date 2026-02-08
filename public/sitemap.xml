@@ -1,81 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  
   <url>
     <loc>https://rank-scout.com</loc>
-    <lastmod>2026-02-01T10:58:05.106Z</lastmod>
+    <lastmod>2026-02-08</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
-  
   <url>
     <loc>https://rank-scout.com/impressum</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
-  
   <url>
     <loc>https://rank-scout.com/datenschutz</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
-  
   <url>
     <loc>https://rank-scout.com/agb</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
-  
   <url>
-    <loc>https://rank-scout.com/categories</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <loc>https://rank-scout.com/kategorien</loc>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
-  
   <url>
     <loc>https://rank-scout.com/forum</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
+    <lastmod>2026-02-08</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
-  
-  <url>
-    <loc>https://rank-scout.com/category/tesss</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <url>
-    <loc>https://rank-scout.com/category/willkommen</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <url>
-    <loc>https://rank-scout.com/forum/ascsawcde</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <url>
-    <loc>https://rank-scout.com/forum/werfvre</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
-  <url>
-    <loc>https://rank-scout.com/forum/erververv</loc>
-    <lastmod>2026-02-01T10:58:05.107Z</lastmod>
-    <changefreq>daily</changefreq>
-    <priority>0.8</priority>
-  </url>
-  
 </urlset>

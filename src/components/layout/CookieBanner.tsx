@@ -15,11 +15,11 @@ export const CookieBanner = () => {
   const [showDetails, setShowDetails] = useState(false);
   
   // Standard: Nur Essenziell ist an, Rest aus (Opt-In Prinzip!)
-  const [settings, setSettings] = useState<ConsentSettings>({
+  const [settings, setSettings] = useState<ConsentSettings>(({
     essential: true, // Darf nicht deaktivierbar sein
     analytics: false,
     marketing: false
-  });
+  }));
 
   useEffect(() => {
     // Prüfen, ob bereits eine Entscheidung getroffen wurde
@@ -34,6 +34,14 @@ export const CookieBanner = () => {
             console.error("Cookie Parse Error", e);
         }
     }
+
+    // KYRA FIX: Manueller Trigger für Cookie-Einstellungen
+    const handleManualShow = () => {
+      setIsVisible(true);
+      setShowDetails(true); // Direkt Details zeigen für volle Kontrolle
+    };
+    window.addEventListener("showCookieSettings", handleManualShow);
+    return () => window.removeEventListener("showCookieSettings", handleManualShow);
   }, []);
 
   // Hilfsfunktion zum Speichern und Event feuern

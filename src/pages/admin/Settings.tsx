@@ -237,7 +237,7 @@ export default function AdminSettings() {
       desc: "Beschreibung...",
       link: "/",
       button_text: "Ansehen",
-      image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab",
+      image_url: "",
       theme: "blue",
       icon: "trending"
     };
@@ -887,6 +887,20 @@ export default function AdminSettings() {
                                     <Input value={item.button_text} onChange={e => updateBigThreeItem(idx, 'button_text', e.target.value)} className="h-8 text-sm" placeholder="Button"/>
                                 </div>
                                 <Textarea value={item.desc} onChange={e => updateBigThreeItem(idx, 'desc', e.target.value)} className="h-16 text-sm" placeholder="Beschreibung"/>
+                                
+                                {/* NEU: Bild URL Input */}
+                                <div className="space-y-1">
+                                    <Label className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
+                                        <LinkIcon className="w-3 h-3" /> Bild URL (Freepik/Unsplash)
+                                    </Label>
+                                    <Input 
+                                        value={item.image_url || ""} 
+                                        onChange={e => updateBigThreeItem(idx, 'image_url', e.target.value)} 
+                                        className="h-8 text-sm font-mono" 
+                                        placeholder="https://..."
+                                    />
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-2">
                                     <Input value={item.link} onChange={e => updateBigThreeItem(idx, 'link', e.target.value)} className="h-8 text-sm" placeholder="Link"/>
                                     <Select value={item.theme} onValueChange={v => updateBigThreeItem(idx, 'theme', v)}>

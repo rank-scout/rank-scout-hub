@@ -9,6 +9,12 @@ export const Footer = () => {
   const legalLinks = config.legal_links || [];
   const popularLinks = config.popular_links || [];
 
+  // KYRA FIX: Trigger-Funktion für Cookie-Einstellungen
+  const openCookieSettings = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.dispatchEvent(new Event("showCookieSettings"));
+  };
+
   return (
     <footer className="relative bg-primary pt-20 pb-12 overflow-hidden border-t border-white/10 mt-0">
       
@@ -80,6 +86,16 @@ export const Footer = () => {
                   </Link>
                 </li>
               ))}
+              {/* KYRA FIX: Cookie Settings Button */}
+              <li>
+                <button 
+                  onClick={openCookieSettings}
+                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group w-full text-left"
+                >
+                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                  Cookie-Einstellungen
+                </button>
+              </li>
             </ul>
           </div>
 
