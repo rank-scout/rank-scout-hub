@@ -27,7 +27,8 @@ const Index = () => {
   // Layout Config laden
   const { sections, layout } = useHomeLayout();
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-  const canonicalUrl = window.location.origin;
+  // KYRA FIX: Harte Domain erzwingen (Kein www!)
+  const canonicalUrl = "https://rank-scout.com";
 
   useEffect(() => {
     const timer = setTimeout(() => setMinTimeElapsed(true), 100);
@@ -45,7 +46,7 @@ const Index = () => {
 
   useForceSEO(finalDescription);
 
-  // KYRA UPDATE: SEO-Metadaten isoliert, damit sie immer laden
+  // KYRA UPDATE: SEO-Metadaten isoliert
   const seoHead = (
     <Helmet>
       <title>{finalTitle}</title>
@@ -58,7 +59,6 @@ const Index = () => {
   );
 
   if (!minTimeElapsed || isLoadingSettings) {
-      // KYRA FIX: SEO Head wird jetzt AUCH während des Ladens ausgegeben
       return (
         <>
           {seoHead}
@@ -86,25 +86,21 @@ const Index = () => {
       <Header />
       
       <main className="flex-grow">
-        {/* 1. Der Einstieg: Authority & Vertrauen */}
         <HeroSection />
         <AppTicker />
         <HowItWorksSection /> 
 
-        {/* 2. Die Auswahl: Big Three */}
         <BigThreeSection />
 
-        {/* 3. Der Content: Redaktioneller Text (Jetzt hier platziert!) */}
         {layout.seo_text && <HomeSEOText />}
 
-        {/* 4. Der Deep Dive: Kategorien, News etc. */}
         {sections
           .filter(section => 
             section.enabled && 
             section.id !== 'mascot' && 
             section.id !== 'hero' && 
             section.id !== 'trust' &&
-            section.id !== 'big_three' // Auch rausfiltern, da oben fest verbaut
+            section.id !== 'big_three'
           )
           .map((section) => (
             <div id={section.id} key={section.id} className="scroll-mt-28">

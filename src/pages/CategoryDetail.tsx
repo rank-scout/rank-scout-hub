@@ -7,7 +7,6 @@ import { useProjects } from "@/hooks/useProjects";
 import { useCategoryProjects } from "@/hooks/useCategoryProjects";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react"; 
-// Solar Icons Importe
 import { 
     ShieldCheck, 
     ClockCircle, 
@@ -51,7 +50,6 @@ const ProjectCard = ({ project, index }: { project: any, index: number }) => {
         <div className={`relative flex flex-col md:flex-row bg-card rounded-2xl border ${isWinner ? 'border-primary ring-1 ring-primary/20 shadow-lg' : 'border-border'} shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden mb-4 group`}>
             {isWinner && (
                 <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-xs font-bold px-3 py-1 rounded-bl-xl z-10 flex items-center gap-1 shadow-md">
-                    {/* Winner Icon: Gold/Orange */}
                     <Cup weight="Bold" className="w-3 h-3 text-secondary mr-1" /> TESTSIEGER
                 </div>
             )}
@@ -75,7 +73,6 @@ const ProjectCard = ({ project, index }: { project: any, index: number }) => {
                     <div className="text-xs text-muted-foreground font-medium uppercase tracking-wide">/ 10</div>
                 </div>
                 <div className="flex text-secondary gap-0.5">
-                    {/* Sterne: Gold/Orange */}
                     {[...Array(5)].map((_, i) => <Star key={i} weight="Bold" className="w-3.5 h-3.5 fill-current" />)}
                 </div>
             </div>
@@ -90,7 +87,6 @@ const ProjectCard = ({ project, index }: { project: any, index: number }) => {
                 <div className="flex flex-wrap gap-2">
                     {(project.features || ["Top Support", "Schnelle Auszahlung", "Sicher"]).slice(0, 3).map((feat: string, i: number) => (
                         <div key={i} className="flex items-center gap-1.5 text-xs font-medium text-foreground bg-accent/50 border border-border px-2.5 py-1 rounded-md">
-                            {/* Feature Haken: GRÜN wie gewünscht */}
                             <CheckCircle weight="Bold" className="w-3.5 h-3.5 text-green-600" /> {feat}
                         </div>
                     ))}
@@ -135,36 +131,6 @@ export default function CategoryDetail() {
       return generateStableRating(slug);
   }, [slug]);
 
-  useEffect(() => {
-      if (category && category.meta_description) {
-          let meta = document.querySelector("meta[name='description']");
-          if (!meta) {
-              meta = document.createElement("meta");
-              meta.setAttribute("name", "description");
-              document.head.appendChild(meta);
-          }
-          meta.setAttribute("content", category.meta_description);
-      }
-      document.documentElement.style.scrollBehavior = "smooth";
-      return () => {
-          document.documentElement.style.scrollBehavior = "";
-      };
-  }, [category]);
-
-  const extractHeadings = (html: string) => {
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const h2s = Array.from(doc.querySelectorAll('h2'));
-      return h2s.map(h2 => ({
-          id: h2.id || h2.textContent?.toLowerCase().replace(/ /g, '-') || '',
-          text: h2.textContent || ''
-      }));
-  };
-
-  const headings = useMemo(() => {
-      return category?.long_content_top ? extractHeadings(category.long_content_top) : [];
-  }, [category?.long_content_top]);
-
   const contentTopRef = useRef<HTMLDivElement | null>(null);
   const isInternalPage = (category as any)?.is_internal_generated === true;
 
@@ -181,15 +147,16 @@ export default function CategoryDetail() {
     );
   }
 
-  const currentUrl = `${window.location.origin}/${category.slug}`;
+  // KYRA FIX: Harte Domain + korrekter Pfad (/kategorien)
+  const currentUrl = `https://rank-scout.com/kategorien/${category.slug}`;
 
-  // SCHEMA MARKUP
+  // KYRA FIX: Schema mit "offers" für Semrush
   const jsonLdSchema = {
     "@context": "https://schema.org",
     "@type": "Product", 
     "name": `${category.name} Vergleich & Test ${new Date().getFullYear()}`,
     "description": category.meta_description,
-    "image": category.image_url || `${window.location.origin}/og-image.jpg`,
+    "image": category.image_url || `https://rank-scout.com/og-image.jpg`,
     "brand": {
         "@type": "Brand",
         "name": "Rank-Scout"
@@ -205,7 +172,8 @@ export default function CategoryDetail() {
         "@type": "Offer",
         "price": "0",
         "priceCurrency": "EUR",
-        "availability": "https://schema.org/InStock"
+        "availability": "https://schema.org/InStock",
+        "url": currentUrl
     }
   };
 
@@ -239,10 +207,8 @@ export default function CategoryDetail() {
         </Helmet>
 
         <Header />
-        {/* ... (Rest von Design A bleibt unverändert) ... */}
-        {/* Ich kürze den Code hier für die Übersicht, da er im Original korrekt war, solange du nichts gelöscht hast. */}
-        {/* ... ABER wichtig: Das ist der Return Block für InternalPage ... */}
-         <main className="flex-1">
+
+        <main className="flex-1">
           <div className="border-b border-border bg-background/80 sticky top-[60px] z-10 backdrop-blur-md">
             <div className="container mx-auto px-4 h-10 flex items-center text-xs font-medium text-muted-foreground overflow-hidden">
                 <Link to="/" className="hover:text-primary flex items-center gap-1 transition-colors"><Home className="w-3 h-3"/> Home</Link>
@@ -250,8 +216,7 @@ export default function CategoryDetail() {
                 <span className="text-foreground truncate">{category.name}</span>
             </div>
           </div>
-          {/* ... Hier kommt der ganze Hero und Content Code aus deinem Input ... */}
-          {/* ACHTUNG: Ich füge hier den vollen Content wieder ein, damit es copy-paste ready bleibt */}
+
           <section className="relative pt-20 pb-16 border-b border-border bg-gradient-to-b from-background to-muted/30">
             <div className="container mx-auto px-4 max-w-4xl text-center">
               <div className="flex justify-center mb-6">
@@ -283,6 +248,7 @@ export default function CategoryDetail() {
               </div>
             </div>
           </section>
+
           <div className="container mx-auto px-4 py-12 max-w-7xl lg:flex lg:gap-10">
               <div className="lg:w-2/3" ref={contentTopRef}>
                 <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border mb-8 overflow-hidden relative">
@@ -300,6 +266,7 @@ export default function CategoryDetail() {
                     </div>
                   </div>
                 </div>
+
                 {category.long_content_top && (
                   <div className="bg-card rounded-2xl p-6 md:p-10 shadow-sm border border-border mb-12">
                       <article id="content-top" className="scroll-mt-32 prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-p:leading-relaxed prose-img:rounded-2xl prose-img:shadow-md prose-a:text-primary hover:prose-a:text-primary/80">
@@ -307,6 +274,7 @@ export default function CategoryDetail() {
                       </article>
                   </div>
                 )}
+
                 {projects.length > 0 && (
                     <div id="vergleich" className="scroll-mt-32 mb-16">
                         <div className="flex items-center justify-between mb-6 px-2">
@@ -325,6 +293,7 @@ export default function CategoryDetail() {
                         </div>
                     </div>
                 )}
+
                 {category.long_content_bottom && (
                   <div className="bg-card rounded-2xl p-6 md:p-10 shadow-sm border border-border mb-12">
                       <article id="content-bottom" className="scroll-mt-32 prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-p:leading-relaxed prose-img:rounded-2xl prose-img:shadow-md prose-a:text-primary hover:prose-a:text-primary/80">
@@ -332,6 +301,7 @@ export default function CategoryDetail() {
                       </article>
                   </div>
                 )}
+
                 <div className="bg-card rounded-2xl p-8 border border-border shadow-sm flex items-center gap-6 mb-16">
                   <Avatar className="w-16 h-16 border-2 border-card shadow-md">
                     <AvatarImage src="/images/avatar-placeholder.jpg" />
@@ -342,6 +312,7 @@ export default function CategoryDetail() {
                     <p className="text-sm text-muted-foreground">Unser Experten-Team analysiert täglich den Markt, um dir transparente und unabhängige Vergleiche zu liefern.</p>
                   </div>
                 </div>
+
                 {category.faq_data && Array.isArray(category.faq_data) && category.faq_data.length > 0 && (
                     <section id="faq" className="scroll-mt-32 mb-20">
                         <div className="mb-8 px-2">
@@ -365,6 +336,7 @@ export default function CategoryDetail() {
                     </section>
                 )}
               </div>
+
               <aside className="lg:w-1/3 lg:sticky top-24 self-start hidden lg:block max-h-[calc(100vh-120px)] overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none] pb-10">
                 {topPick && (
                   <div className="bg-card rounded-2xl p-6 border border-primary/20 shadow-lg shadow-primary/5 mb-6 relative overflow-hidden group">
@@ -402,6 +374,7 @@ export default function CategoryDetail() {
                     </Button>
                   </div>
                 )}
+
                 <div className="bg-card rounded-2xl p-6 border border-border shadow-sm mb-6">
                   <p className="font-bold text-foreground mb-4 flex items-center gap-2 text-sm uppercase tracking-wide text-muted-foreground">
                       <Bolt weight="Bold" className="w-4 h-4 text-yellow-500"/> Inhalt
@@ -419,6 +392,7 @@ export default function CategoryDetail() {
                     )}
                   </ul>
                 </div>
+
                 {(adHtml || adImage) && (
                     <div className="relative bg-card rounded-2xl border border-border shadow-sm overflow-hidden mb-6 group transition-all hover:shadow-md">
                         <div className="absolute top-0 right-0 bg-muted px-2.5 py-1 rounded-bl-xl border-b border-l border-border z-10">
@@ -437,6 +411,7 @@ export default function CategoryDetail() {
                         </div>
                     </div>
                 )}
+
                 <div className="bg-card rounded-2xl p-6 border border-border shadow-sm mb-6">
                   <p className="font-bold text-foreground mb-4 text-[10px] uppercase tracking-wider text-center text-muted-foreground">Wir garantieren</p>
                   <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
@@ -452,6 +427,7 @@ export default function CategoryDetail() {
                     </div>
                   </div>
                 </div>
+
               </aside>
           </div>
         </main>
@@ -460,11 +436,7 @@ export default function CategoryDetail() {
     );
   }
 
-  // DESIGN B: LEGACY LANDINGPAGES (CITY & REVIEW)
-  // KYRA FIX: Schema Injection hinzugefügt!
-  // ReviewTemplate hat eigenes Schema, aber CityLanding braucht es.
-  // Zur Sicherheit geben wir das Product Schema hier als Fallback mit, falls CustomRenderer oder CityLanding nichts eigenes definieren.
-  
+  // DESIGN B: LEGACY LANDINGPAGES
   return (
     <>
         <Helmet>
