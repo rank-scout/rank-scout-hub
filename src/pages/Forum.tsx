@@ -94,9 +94,6 @@ export default function Forum() {
       }
   }, [globalAds]); 
 
-  // ACHTUNG: Hier war der Fehler! Der Loading-Check wurde ENTFERNT.
-  // Er steht jetzt ganz unten vor dem Return.
-
   const handleCategoryChange = (value: string) => {
     setCategoryFilter(value);
     if (value === "all") navigate("/forum");
@@ -107,6 +104,79 @@ export default function Forum() {
   };
 
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric", });
+
+  // --- HARTE SEO LOGIK (KYRA FIX: Vor Rendering Logik gezogen) ---
+  
+  // Wir versuchen den Titel zu setzen, auch wenn "categories" noch laden
+  const derivedCategoryName = categorySlug 
+    ? categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1).replace(/-/g, ' ') 
+    : null;
+
+  const seoCategory = categorySlug && categories 
+    ? categories.find(c => c.slug === categorySlug) 
+    : null;
+
+  // 1. TITEL
+  let seoTitle = "Community Forum | Rank-Scout";
+  if (seoCategory) {
+    if (seoCategory.seo_title && seoCategory.seo_title.trim() !== "") {
+      seoTitle = seoCategory.seo_title;
+    } else {
+      seoTitle = `${seoCategory.name} Forum - Erfahrungen & Diskussionen | Rank-Scout`;
+    }
+  } else if (derivedCategoryName) {
+    // Fallback während Loading: Titel basierend auf URL generieren
+    seoTitle = `${derivedCategoryName} Forum | Rank-Scout`;
+  } else if (bannerConfig?.headline) {
+    seoTitle = `${bannerConfig.headline} | Rank-Scout`;
+  }
+
+  // 2. BESCHREIBUNG
+  let seoDescription = "Das große Vergleichsportal Forum. Diskutiere mit Experten über Software, Finanzen und mehr.";
+  
+  if (seoCategory) {
+    if (seoCategory.seo_description && seoCategory.seo_description.trim() !== "") {
+      seoDescription = seoCategory.seo_description;
+    } else if ((seoCategory as any).meta_description && (seoCategory as any).meta_description.trim() !== "") {
+       seoDescription = (seoCategory as any).meta_description;
+    } else if (seoCategory.description && seoCategory.description.trim() !== "") {
+      seoDescription = seoCategory.description.substring(0, 155);
+    } else {
+      seoDescription = `Diskutiere jetzt im Bereich ${seoCategory.name} auf Rank-Scout.`;
+    }
+  } else if (bannerConfig?.subheadline) {
+    seoDescription = bannerConfig.subheadline;
+  }
+
+  useForceSEO(seoDescription);
+
+  const canonicalUrl = categorySlug
+    ? `${window.location.origin}/forum/kategorie/${categorySlug}`
+    : `${window.location.origin}/forum`;
+
+  // KYRA FIX: Helmet Block isoliert
+  const seoHead = (
+    <Helmet key={location.pathname}>
+      <title>{seoTitle}</title>
+      <link rel="canonical" href={canonicalUrl} />
+      <meta property="og:title" content={seoTitle} />
+      <meta property="og:description" content={seoDescription} />
+      <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:type" content="website" />
+    </Helmet>
+  );
+
+  // WICHTIG: Erst Helmet rendern, dann Loading prüfen
+  if (isLoading || categoriesLoading) {
+    return (
+      <>
+        {seoHead}
+        <LoadingScreen />
+      </>
+    );
+  }
+
+  // --- Normales Rendering ab hier ---
 
   const filteredThreads = (threads || []).filter((thread) => {
       const matchesSearch = thread.title.toLowerCase().includes(searchQuery.toLowerCase()) || thread.content.toLowerCase().includes(searchQuery.toLowerCase());
@@ -137,67 +207,10 @@ export default function Forum() {
     return randomGlobalAd;
   })();
 
-  // --- HARTE SEO LOGIK ---
-  
-  const seoCategory = categorySlug && categories 
-    ? categories.find(c => c.slug === categorySlug) 
-    : null;
-
-  // 1. TITEL
-  let seoTitle = "Community Forum | Rank-Scout";
-  if (seoCategory) {
-    if (seoCategory.seo_title && seoCategory.seo_title.trim() !== "") {
-      seoTitle = seoCategory.seo_title;
-    } else {
-      seoTitle = `${seoCategory.name} Forum - Erfahrungen & Diskussionen | Rank-Scout`;
-    }
-  } else if (bannerConfig?.headline) {
-    seoTitle = `${bannerConfig.headline} | Rank-Scout`;
-  }
-
-  // 2. BESCHREIBUNG
-  let seoDescription = "Das große Vergleichsportal Forum. Diskutiere mit Experten über Software, Finanzen und mehr.";
-  
-  if (seoCategory) {
-    if (seoCategory.seo_description && seoCategory.seo_description.trim() !== "") {
-      seoDescription = seoCategory.seo_description;
-    } else if ((seoCategory as any).meta_description && (seoCategory as any).meta_description.trim() !== "") {
-       seoDescription = (seoCategory as any).meta_description;
-    } else if (seoCategory.description && seoCategory.description.trim() !== "") {
-      seoDescription = seoCategory.description.substring(0, 155);
-    } else {
-      seoDescription = `Diskutiere jetzt im Bereich ${seoCategory.name} auf Rank-Scout.`;
-    }
-  } else if (bannerConfig?.subheadline) {
-    seoDescription = bannerConfig.subheadline;
-  }
-
-  // --- FORCE UPDATE (MUSS VOR DEM RETURN STEHEN!) ---
-  useForceSEO(seoDescription);
-  // ------------------------------------------------
-
-  const canonicalUrl = seoCategory
-    ? `${window.location.origin}/forum/kategorie/${seoCategory.slug}`
-    : `${window.location.origin}/forum`;
-
-  // WICHTIG: Der Loading-Check kommt erst HIER, NACHDEM alle Hooks initialisiert wurden.
-  // Das verhindert den "Rendered fewer hooks than expected" Fehler.
-  if (isLoading || categoriesLoading) {
-    return <LoadingScreen />;
-  }
-
   return (
     <div className="min-h-screen flex flex-col bg-slate-50/50">
       
-      {/* Helmet für Title und OpenGraph */}
-      <Helmet key={location.pathname}>
-        <title>{seoTitle}</title>
-        <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:title" content={seoTitle} />
-        <meta property="og:description" content={seoDescription} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="website" />
-      </Helmet>
+      {seoHead}
 
       <Header />
       <ScrollToTopHandler />

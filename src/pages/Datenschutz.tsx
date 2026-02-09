@@ -1,10 +1,19 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Lock, ShieldCheck, Server, BarChart3, Globe, Mail } from "lucide-react";
+import { Helmet } from "react-helmet-async"; // KYRA FIX
 
 const Datenschutz = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900">
+      {/* KYRA FIX: Unique Title für Datenschutz */}
+      <Helmet>
+        <title>Datenschutzerklärung | Rank-Scout</title>
+        <meta name="description" content="Informationen zum Datenschutz auf Rank-Scout. Wie wir deine Daten schützen." />
+        <link rel="canonical" href="https://rank-scout.com/datenschutz" />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
+
       <Header />
       
       {/* --- HEADER BEREICH (ZENTRIERT) --- */}

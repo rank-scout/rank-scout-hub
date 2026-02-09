@@ -6,6 +6,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useProjects } from "@/hooks/useProjects";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowRight, Loader2 } from "lucide-react";
+import { Helmet } from "react-helmet-async"; // KYRA FIX: Import
 
 export default function Categories() {
   const { data: categories = [], isLoading } = useCategories();
@@ -56,6 +57,13 @@ export default function Categories() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* KYRA FIX: Unique Title für die Übersicht */}
+      <Helmet>
+        <title>Alle Kategorien im Vergleich | Rank-Scout</title>
+        <meta name="description" content="Übersicht aller Testberichte und Vergleiche auf Rank-Scout. Finde den besten Anbieter in den Bereichen Software, Finanzen, Dating und mehr." />
+        <link rel="canonical" href="https://rank-scout.com/kategorien" />
+      </Helmet>
+
       <Header />
       <main className="pt-16">
         {/* Hero */}

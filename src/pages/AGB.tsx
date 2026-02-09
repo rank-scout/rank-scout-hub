@@ -1,10 +1,19 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Scale, AlertTriangle, CheckCircle2, ShieldCheck, Mail, Info } from "lucide-react";
+import { Helmet } from "react-helmet-async"; // KYRA FIX
 
 const AGB = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900">
+      {/* KYRA FIX: Unique Title für AGB */}
+      <Helmet>
+        <title>Allgemeine Geschäftsbedingungen (AGB) | Rank-Scout</title>
+        <meta name="description" content="Unsere allgemeinen Geschäftsbedingungen für die Nutzung von Rank-Scout." />
+        <link rel="canonical" href="https://rank-scout.com/agb" />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
+
       <Header />
       
       {/* --- HEADER BEREICH (ZENTRIERT) --- */}

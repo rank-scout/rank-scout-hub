@@ -1,10 +1,19 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Mail, MapPin, ShieldCheck } from "lucide-react";
+import { Helmet } from "react-helmet-async"; // KYRA FIX
 
 const Impressum = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900">
+      {/* KYRA FIX: Unique Title für Impressum */}
+      <Helmet>
+        <title>Impressum | Rank-Scout</title>
+        <meta name="description" content="Impressum und rechtliche Hinweise von Rank-Scout." />
+        <link rel="canonical" href="https://rank-scout.com/impressum" />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
+
       <Header />
 
       {/* --- HEADER BEREICH (ZENTRIERT) --- */}
