@@ -3,19 +3,19 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-// Fetch explizit importieren für ältere Node-Versionen
+// WICHTIG: Fetch für Node-Umgebungen
 import fetch from 'node-fetch';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// .env Datei laden
+// .env laden
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
-// WICHTIG: Hier wird bevorzugt der SERVICE_ROLE_KEY genommen!
+// Wir bevorzugen den Service Role Key für vollen Zugriff (umgeht RLS)
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-const DOMAIN = 'https://rank-scout.com';
+const DOMAIN = 'https://rank-scout.com'; // WICHTIG: Hauptdomain ohne www
 
 console.log('🔧 Konfiguration prüfen...');
 if (!supabaseUrl || !supabaseKey) {
@@ -23,17 +23,18 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
-// Client initialisieren mit explizitem Fetch und Auth-Persistenz aus
+// Client initialisieren
 const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: { persistSession: false },
   global: { fetch: fetch }
 });
 
-// Hier sind die Tabellen definiert, die gescannt werden
+// --- HIER IST DER FIX ---
+// Wir nutzen jetzt "/kategorien" statt "/category", damit es zur App passt!
 const DYNAMIC_SOURCES = [
-  { table: 'categories', prefix: '/category' },
+  { table: 'categories', prefix: '/kategorien' },
   { table: 'forum_threads', prefix: '/forum' }
-  // { table: 'top_lists', prefix: '/top-100' } <-- ENTFERNT, da Tabelle nicht existiert
+  // { table: 'top_lists', prefix: '/top-100' } // Entfernt, da Tabelle fehlt
 ];
 
 const STATIC_PAGES = [
@@ -41,17 +42,12 @@ const STATIC_PAGES = [
   '/impressum',
   '/datenschutz',
   '/agb',
-  '/kategorien',
-  '/forum'
+  '/kategorien', // Übersicht
+  '/forum'       // Übersicht
 ];
 
 async function generateSitemap() {
   console.log(`✅ URL erkannt: ${supabaseUrl}`);
-  
-  // Kleiner Sicherheitscheck, welcher Key verwendet wird (nur die ersten 5 Zeichen anzeigen)
-  const keyType = supabaseKey.startsWith('ey') ? 'JWT (Anon/Service)' : 'Unknown';
-  console.log(`🔑 Key-Typ: ${keyType} (${supabaseKey.substring(0, 5)}...)`);
-  
   console.log('🚀 Starte Sitemap-Generierung...');
   
   let allUrls = [...STATIC_PAGES];
@@ -70,6 +66,7 @@ async function generateSitemap() {
       }
 
       if (data && data.length > 0) {
+        // Generiert URLs wie https://rank-scout.com/kategorien/dating
         const paths = data.map(item => `${source.prefix}/${item.slug}`);
         allUrls = [...allUrls, ...paths];
         console.log(`✅ ${data.length} Einträge gefunden.`);
@@ -78,6 +75,7 @@ async function generateSitemap() {
       }
     }
 
+    // XML Aufbau
     const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${allUrls.map(url => `  <url>

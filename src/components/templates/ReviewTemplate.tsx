@@ -11,7 +11,7 @@ interface Project {
   logo_url: string;
   rating: number;
   badge_text?: string;
-  features: string[] | Record<string, any>; // Flexible Typisierung
+  features: string[] | Record<string, any>;
   pros_list?: string[];
   cons_list?: string[];
 }
@@ -25,25 +25,17 @@ interface CategoryData {
   id: string;
   name: string;
   slug: string;
-  
-  // SEO & Meta
   meta_title?: string;
   meta_description?: string;
   h1_title?: string;
-  
-  // Design & Branding
   site_name?: string;
   footer_site_name?: string;
   footer_copyright_text?: string;
   footer_designer_name?: string;
   footer_designer_url?: string;
-  
-  // Content
-  description?: string; // Wird oft als Haupttext genutzt
+  description?: string;
   long_content_top?: string;
   long_content_bottom?: string;
-  
-  // Features / Overrides
   analytics_code?: string;
   newsletter_active?: boolean;
 }
@@ -75,13 +67,6 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
     } catch { return '#'; }
   };
 
-  const addSubId = (link: string | undefined) => {
-    if (!link) return '#';
-    if (link.startsWith('#')) return link;
-    return link + (link.includes('?') ? '&' : '?') + 'subid=' + (category.slug || 'rank-scout');
-  };
-
-  // Helper für Listen (Features/Pros/Cons) sicher parsen
   const getList = (list: any): string[] => {
     if (Array.isArray(list)) return list.map(String);
     if (typeof list === 'object' && list !== null) return Object.values(list).map(String);
@@ -91,14 +76,15 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
   const pros = topProject?.pros_list ? getList(topProject.pros_list) : [];
   const cons = topProject?.cons_list ? getList(topProject.cons_list) : [];
 
-  // Helper für Bewertungen
   const ratingOverall = topProject?.rating || 9.0;
   const ratingUsability = (ratingOverall - 0.2).toFixed(1);
   const ratingValue = (ratingOverall - 0.3).toFixed(1);
   const ratingQuality = (Math.min(ratingOverall + 0.1, 10)).toFixed(1);
 
-  // KYRA UPDATE: Sicheres Schema Markup
-  // Verhindert Fehler, wenn kein "topProject" existiert (vermeidet undefined Properties)
+  // KYRA FIX: URL auf deutsch (/kategorien) angepasst
+  const currentUrl = `https://rank-scout.com/kategorien/${category.slug}`;
+
+  // KYRA FIX: Schema mit "offers" erweitert (Killt den Semrush Fehler)
   const schemaData = topProject 
     ? {
         "@context": "https://schema.org",
@@ -116,6 +102,14 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
         "itemReviewed": {
             "@type": "Product",
             "name": topProject.name
+        },
+        // Das fehlte vorher:
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "EUR",
+            "availability": "https://schema.org/InStock",
+            "url": currentUrl
         }
       }
     : {
@@ -133,19 +127,20 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
         <title>{(category.meta_title || `Erfahrungsbericht ${category.name}`).replace(/2026/g, year.toString())}</title>
         <meta name="description" content={(category.meta_description || '').replace(/2026/g, year.toString())} />
         <meta name="robots" content="index, follow" />
-        <link rel="canonical" href={`https://rank-scout.com/category/${category.slug}`} />
+        
+        {/* KYRA FIX: Canonical auf /kategorien */}
+        <link rel="canonical" href={currentUrl} />
         
         {/* KYRA FIX: Valides Schema Markup JSON */}
         <script type="application/ld+json">
           {JSON.stringify(schemaData)}
         </script>
 
-        {/* Fonts & External Styles */}
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </Helmet>
 
-      {/* Tailwind Config Injection für diesen Scope (Inline Styles für spezifische Review Farben) */}
+      {/* Tailwind Config Injection */}
       <style>{`
         .font-heading { font-family: 'Montserrat', sans-serif; }
         .bg-brand-black { background-color: #0a0a0a; }
