@@ -222,9 +222,7 @@ export default function CategoryDetail() {
       }))
   } : null;
 
-  // =========================================================================
   // DESIGN A: RATGEBER / MODERN (CLEAN MIT FARBEN)
-  // =========================================================================
   if (isInternalPage) {
     const updatedAt = new Date(category.updated_at || new Date()).toLocaleDateString('de-DE', { month: 'long', day: 'numeric' });
     const adHtml = (category as any).sidebar_ad_html;
@@ -241,9 +239,10 @@ export default function CategoryDetail() {
         </Helmet>
 
         <Header />
-
-        <main className="flex-1">
-          {/* Breadcrumb */}
+        {/* ... (Rest von Design A bleibt unverändert) ... */}
+        {/* Ich kürze den Code hier für die Übersicht, da er im Original korrekt war, solange du nichts gelöscht hast. */}
+        {/* ... ABER wichtig: Das ist der Return Block für InternalPage ... */}
+         <main className="flex-1">
           <div className="border-b border-border bg-background/80 sticky top-[60px] z-10 backdrop-blur-md">
             <div className="container mx-auto px-4 h-10 flex items-center text-xs font-medium text-muted-foreground overflow-hidden">
                 <Link to="/" className="hover:text-primary flex items-center gap-1 transition-colors"><Home className="w-3 h-3"/> Home</Link>
@@ -251,60 +250,45 @@ export default function CategoryDetail() {
                 <span className="text-foreground truncate">{category.name}</span>
             </div>
           </div>
-
-          {/* Hero Section */}
+          {/* ... Hier kommt der ganze Hero und Content Code aus deinem Input ... */}
+          {/* ACHTUNG: Ich füge hier den vollen Content wieder ein, damit es copy-paste ready bleibt */}
           <section className="relative pt-20 pb-16 border-b border-border bg-gradient-to-b from-background to-muted/30">
             <div className="container mx-auto px-4 max-w-4xl text-center">
-              
               <div className="flex justify-center mb-6">
                 <Badge variant="secondary" className="bg-card text-primary hover:bg-accent border border-border px-4 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm">
                   {category.hero_pretitle || "Redaktionell geprüft"}
                 </Badge>
               </div>
-              
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-foreground tracking-tight mb-6 leading-[1.1]">
                 {category.h1_title || category.name}
               </h1>
-
               {category.hero_headline && (
                 <p className="text-lg md:text-xl text-muted-foreground font-medium mb-10 leading-relaxed max-w-2xl mx-auto">
                   {category.hero_headline}
                 </p>
               )}
-
-              {/* Trust Bar (Clean mit Semantic Colors) */}
               <div className="inline-grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-muted-foreground bg-card rounded-2xl p-4 shadow-lg shadow-black/5 border border-border max-w-3xl mx-auto">
                 <div className="flex items-center justify-center gap-2 px-2">
-                    {/* HIER: Schild ist GRÜN (Verified) */}
                     <ShieldCheck weight="Bold" size={24} className="text-green-600" /> Redaktionell geprüft
                 </div>
                 <div className="flex items-center justify-center gap-2 px-2">
-                    {/* Uhr: Blau (Neutral/Info) */}
                     <ClockCircle weight="Bold" size={24} className="text-primary" /> Stand: {currentMonthYear}
                 </div>
                 <div className="flex items-center justify-center gap-2 px-2">
-                    {/* User: Blau (Neutral/Info) */}
                     <UsersGroupTwoRounded weight="Bold" size={24} className="text-primary" /> Unabhängig
                 </div>
                 <div className="flex items-center justify-center gap-2 px-2">
-                    {/* Lock: Blau (oder auch Grün möglich, aber Blau wirkt technischer) */}
                     <LockKeyhole weight="Bold" size={24} className="text-primary" /> SSL Verschlüsselt
                 </div>
               </div>
-
             </div>
           </section>
-
-          {/* Main Content */}
           <div className="container mx-auto px-4 py-12 max-w-7xl lg:flex lg:gap-10">
-              
-              {/* LEFT: Content */}
               <div className="lg:w-2/3" ref={contentTopRef}>
                 <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border mb-8 overflow-hidden relative">
                   <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
                   <div className="flex items-start gap-4">
                     <div className="p-3 bg-primary/10 rounded-xl text-primary shrink-0">
-                        {/* HIER: Glühbirne ist GELB (Idee) */}
                         <Lightbulb weight="Bold" className="w-6 h-6 text-yellow-500" />
                     </div>
                     <div>
@@ -316,7 +300,6 @@ export default function CategoryDetail() {
                     </div>
                   </div>
                 </div>
-
                 {category.long_content_top && (
                   <div className="bg-card rounded-2xl p-6 md:p-10 shadow-sm border border-border mb-12">
                       <article id="content-top" className="scroll-mt-32 prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-p:leading-relaxed prose-img:rounded-2xl prose-img:shadow-md prose-a:text-primary hover:prose-a:text-primary/80">
@@ -324,14 +307,11 @@ export default function CategoryDetail() {
                       </article>
                   </div>
                 )}
-
-                {/* === COMPARISON TABLE === */}
                 {projects.length > 0 && (
                     <div id="vergleich" className="scroll-mt-32 mb-16">
                         <div className="flex items-center justify-between mb-6 px-2">
                             <div>
                                 <h2 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
-                                    {/* Pokal: Gold/Orange */}
                                     <Cup weight="Bold" className="w-7 h-7 text-secondary" />
                                     Alle Anbieter im Vergleich
                                 </h2>
@@ -345,7 +325,6 @@ export default function CategoryDetail() {
                         </div>
                     </div>
                 )}
-
                 {category.long_content_bottom && (
                   <div className="bg-card rounded-2xl p-6 md:p-10 shadow-sm border border-border mb-12">
                       <article id="content-bottom" className="scroll-mt-32 prose prose-slate dark:prose-invert max-w-none prose-headings:font-bold prose-headings:text-foreground prose-p:text-muted-foreground prose-p:leading-relaxed prose-img:rounded-2xl prose-img:shadow-md prose-a:text-primary hover:prose-a:text-primary/80">
@@ -353,7 +332,6 @@ export default function CategoryDetail() {
                       </article>
                   </div>
                 )}
-
                 <div className="bg-card rounded-2xl p-8 border border-border shadow-sm flex items-center gap-6 mb-16">
                   <Avatar className="w-16 h-16 border-2 border-card shadow-md">
                     <AvatarImage src="/images/avatar-placeholder.jpg" />
@@ -364,8 +342,6 @@ export default function CategoryDetail() {
                     <p className="text-sm text-muted-foreground">Unser Experten-Team analysiert täglich den Markt, um dir transparente und unabhängige Vergleiche zu liefern.</p>
                   </div>
                 </div>
-
-                {/* FAQ Section */}
                 {category.faq_data && Array.isArray(category.faq_data) && category.faq_data.length > 0 && (
                     <section id="faq" className="scroll-mt-32 mb-20">
                         <div className="mb-8 px-2">
@@ -389,10 +365,7 @@ export default function CategoryDetail() {
                     </section>
                 )}
               </div>
-
-              {/* RIGHT: Sidebar */}
               <aside className="lg:w-1/3 lg:sticky top-24 self-start hidden lg:block max-h-[calc(100vh-120px)] overflow-y-auto pr-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none] pb-10">
-
                 {topPick && (
                   <div className="bg-card rounded-2xl p-6 border border-primary/20 shadow-lg shadow-primary/5 mb-6 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm">TESTSIEGER</div>
@@ -418,7 +391,6 @@ export default function CategoryDetail() {
                     <ul className="space-y-2.5 mb-6">
                         {(topPick.features || []).slice(0, 3).map((feat: string, i: number) => (
                             <li key={i} className="flex items-center gap-2.5 text-sm text-muted-foreground">
-                                {/* Haken: Grün */}
                                 <CheckCircle weight="Bold" className="w-4 h-4 text-green-600 shrink-0" /> {feat}
                             </li>
                         ))}
@@ -430,10 +402,8 @@ export default function CategoryDetail() {
                     </Button>
                   </div>
                 )}
-
                 <div className="bg-card rounded-2xl p-6 border border-border shadow-sm mb-6">
                   <p className="font-bold text-foreground mb-4 flex items-center gap-2 text-sm uppercase tracking-wide text-muted-foreground">
-                      {/* Blitz: Gelb (Energie/Inhalt) */}
                       <Bolt weight="Bold" className="w-4 h-4 text-yellow-500"/> Inhalt
                   </p>
                   <ul className="text-sm text-muted-foreground space-y-3">
@@ -449,7 +419,6 @@ export default function CategoryDetail() {
                     )}
                   </ul>
                 </div>
-
                 {(adHtml || adImage) && (
                     <div className="relative bg-card rounded-2xl border border-border shadow-sm overflow-hidden mb-6 group transition-all hover:shadow-md">
                         <div className="absolute top-0 right-0 bg-muted px-2.5 py-1 rounded-bl-xl border-b border-l border-border z-10">
@@ -468,13 +437,11 @@ export default function CategoryDetail() {
                         </div>
                     </div>
                 )}
-
                 <div className="bg-card rounded-2xl p-6 border border-border shadow-sm mb-6">
                   <p className="font-bold text-foreground mb-4 text-[10px] uppercase tracking-wider text-center text-muted-foreground">Wir garantieren</p>
                   <div className="grid grid-cols-1 gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-3">
                         <div className="p-1.5 bg-green-500/10 rounded-full text-green-500">
-                            {/* Garantie-Schild: GRÜN */}
                             <ShieldCheck weight="Bold" className="w-4 h-4 text-green-600" />
                         </div> Redaktionell geprüft
                     </div>
@@ -485,7 +452,6 @@ export default function CategoryDetail() {
                     </div>
                   </div>
                 </div>
-
               </aside>
           </div>
         </main>
@@ -494,13 +460,19 @@ export default function CategoryDetail() {
     );
   }
 
-  // DESIGN B: LEGACY LANDINGPAGES
+  // DESIGN B: LEGACY LANDINGPAGES (CITY & REVIEW)
+  // KYRA FIX: Schema Injection hinzugefügt!
+  // ReviewTemplate hat eigenes Schema, aber CityLanding braucht es.
+  // Zur Sicherheit geben wir das Product Schema hier als Fallback mit, falls CustomRenderer oder CityLanding nichts eigenes definieren.
+  
   return (
     <>
         <Helmet>
           <title>{category.meta_title || category.name}</title>
           <meta name="description" content={category.meta_description || ""} />
           <link rel="canonical" href={currentUrl} />
+          {/* KYRA FIX: Schema auch hier ausgeben! */}
+          <script type="application/ld+json">{JSON.stringify(jsonLdSchema)}</script>
         </Helmet>
         
         {category.custom_html_override ? (

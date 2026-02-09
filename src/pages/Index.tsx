@@ -27,6 +27,7 @@ const Index = () => {
   // Layout Config laden
   const { sections, layout } = useHomeLayout();
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+  const canonicalUrl = window.location.origin;
 
   useEffect(() => {
     const timer = setTimeout(() => setMinTimeElapsed(true), 100);
@@ -44,8 +45,26 @@ const Index = () => {
 
   useForceSEO(finalDescription);
 
+  // KYRA UPDATE: SEO-Metadaten isoliert, damit sie immer laden
+  const seoHead = (
+    <Helmet>
+      <title>{finalTitle}</title>
+      <link rel="canonical" href={canonicalUrl} />
+      <meta property="og:title" content={finalTitle} />
+      <meta property="og:description" content={finalDescription} />
+      <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:type" content="website" />
+    </Helmet>
+  );
+
   if (!minTimeElapsed || isLoadingSettings) {
-      return <LoadingScreen />;
+      // KYRA FIX: SEO Head wird jetzt AUCH während des Ladens ausgegeben
+      return (
+        <>
+          {seoHead}
+          <LoadingScreen />
+        </>
+      );
   }
 
   const sectionComponents: Record<string, React.ReactNode> = {
@@ -60,18 +79,9 @@ const Index = () => {
     news: <NewsSection />,
   };
 
-  const canonicalUrl = window.location.origin;
-
   return (
     <div className="min-h-screen flex flex-col relative bg-white animate-in fade-in duration-500">
-      <Helmet>
-        <title>{finalTitle}</title>
-        <link rel="canonical" href={canonicalUrl} />
-        <meta property="og:title" content={finalTitle} />
-        <meta property="og:description" content={finalDescription} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="website" />
-      </Helmet>
+      {seoHead}
       
       <Header />
       

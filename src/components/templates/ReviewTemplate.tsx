@@ -97,6 +97,35 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
   const ratingValue = (ratingOverall - 0.3).toFixed(1);
   const ratingQuality = (Math.min(ratingOverall + 0.1, 10)).toFixed(1);
 
+  // KYRA UPDATE: Sicheres Schema Markup
+  // Verhindert Fehler, wenn kein "topProject" existiert (vermeidet undefined Properties)
+  const schemaData = topProject 
+    ? {
+        "@context": "https://schema.org",
+        "@type": "Review",
+        "name": category.h1_title || category.name,
+        "description": category.meta_description,
+        "author": { "@type": "Organization", "name": "Rank-Scout Redaktion" },
+        "datePublished": new Date().toISOString().split('T')[0],
+        "reviewRating": {
+            "@type": "Rating",
+            "ratingValue": ratingOverall,
+            "bestRating": "10",
+            "worstRating": "1"
+        },
+        "itemReviewed": {
+            "@type": "Product",
+            "name": topProject.name
+        }
+      }
+    : {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": category.h1_title || category.name,
+        "description": category.meta_description,
+        "author": { "@type": "Organization", "name": "Rank-Scout Redaktion" }
+      };
+
   return (
     <div className="font-sans antialiased text-gray-800 bg-[#fafafa] min-h-screen">
       <Helmet>
@@ -106,26 +135,9 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
         <meta name="robots" content="index, follow" />
         <link rel="canonical" href={`https://rank-scout.com/category/${category.slug}`} />
         
-        {/* Schema Markup */}
+        {/* KYRA FIX: Valides Schema Markup JSON */}
         <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Review",
-            "name": category.h1_title || category.name,
-            "description": category.meta_description,
-            "author": { "@type": "Organization", "name": "Rank-Scout Redaktion" },
-            "datePublished": new Date().toISOString().split('T')[0],
-            "reviewRating": topProject ? {
-                "@type": "Rating",
-                "ratingValue": ratingOverall,
-                "bestRating": "10",
-                "worstRating": "1"
-            } : undefined,
-            "itemReviewed": topProject ? {
-                "@type": "Product",
-                "name": topProject.name
-            } : undefined
-          })}
+          {JSON.stringify(schemaData)}
         </script>
 
         {/* Fonts & External Styles */}

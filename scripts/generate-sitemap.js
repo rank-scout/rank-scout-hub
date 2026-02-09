@@ -3,29 +3,37 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
+// Fetch explizit importieren für ältere Node-Versionen
+import fetch from 'node-fetch';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Lädt die .env aus dem Hauptverzeichnis
+// .env Datei laden
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-// KYRA FIX: Wir priorisieren den Service Role Key, falls vorhanden, um RLS zu umgehen
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
+// WICHTIG: Hier wird bevorzugt der SERVICE_ROLE_KEY genommen!
 const supabaseKey = process.env.VITE_SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const DOMAIN = 'https://rank-scout.com';
 
+console.log('🔧 Konfiguration prüfen...');
 if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ FEHLER: Supabase Konfiguration unvollständig.');
+  console.error('❌ Supabase URL oder Key fehlt! Prüfe deine .env Datei.');
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Client initialisieren mit explizitem Fetch und Auth-Persistenz aus
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: { persistSession: false },
+  global: { fetch: fetch }
+});
 
+// Hier sind die Tabellen definiert, die gescannt werden
 const DYNAMIC_SOURCES = [
-  { table: 'categories', prefix: '/kategorien' },
-  { table: 'forum_threads', prefix: '/forum' },
-  { table: 'top_lists', prefix: '/top-100' }
+  { table: 'categories', prefix: '/category' },
+  { table: 'forum_threads', prefix: '/forum' }
+  // { table: 'top_lists', prefix: '/top-100' } <-- ENTFERNT, da Tabelle nicht existiert
 ];
 
 const STATIC_PAGES = [
@@ -38,7 +46,14 @@ const STATIC_PAGES = [
 ];
 
 async function generateSitemap() {
-  console.log('🚀 Starte universelle Sitemap-Generierung...');
+  console.log(`✅ URL erkannt: ${supabaseUrl}`);
+  
+  // Kleiner Sicherheitscheck, welcher Key verwendet wird (nur die ersten 5 Zeichen anzeigen)
+  const keyType = supabaseKey.startsWith('ey') ? 'JWT (Anon/Service)' : 'Unknown';
+  console.log(`🔑 Key-Typ: ${keyType} (${supabaseKey.substring(0, 5)}...)`);
+  
+  console.log('🚀 Starte Sitemap-Generierung...');
+  
   let allUrls = [...STATIC_PAGES];
 
   try {
@@ -50,18 +65,16 @@ async function generateSitemap() {
         .select('slug');
 
       if (error) {
-        // KYRA FIX: Detailliertes Error-Logging
-        console.error(`❌ Fehler in Tabelle "${source.table}":`, error.message);
-        console.error(`Details: ${error.details || 'Keine weiteren Details'}`);
+        console.error(`❌ API-Fehler bei "${source.table}":`, error.message);
         continue;
       }
 
       if (data && data.length > 0) {
         const paths = data.map(item => `${source.prefix}/${item.slug}`);
         allUrls = [...allUrls, ...paths];
-        console.log(`✅ ${data.length} Einträge aus "${source.table}" hinzugefügt.`);
+        console.log(`✅ ${data.length} Einträge gefunden.`);
       } else {
-        console.warn(`⚠️ Hinweis: Tabelle "${source.table}" ist leer.`);
+        console.warn(`⚠️ Tabelle "${source.table}" ist leer (oder Zugriff verweigert).`);
       }
     }
 
@@ -78,11 +91,10 @@ ${allUrls.map(url => `  <url>
     const outputPath = path.resolve(__dirname, '../public/sitemap.xml');
     fs.writeFileSync(outputPath, sitemapXml);
 
-    console.log(`\n✨ FERTIG! Insgesamt ${allUrls.length} URLs in der Sitemap.`);
-    console.log(`📍 Ort: ${outputPath}`);
+    console.log(`\n✨ FERTIG! ${allUrls.length} URLs in ${outputPath} gespeichert.`);
 
   } catch (err) {
-    console.error('❌ KRITISCHER SYSTEMFEHLER:', err.message);
+    console.error('\n❌ SYSTEMFEHLER:', err.message);
   }
 }
 

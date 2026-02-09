@@ -16,6 +16,7 @@ import {
 import DOMPurify from "dompurify";
 import type { Category } from "@/hooks/useCategories";
 import type { ProjectWithCategory } from "@/hooks/useProjects";
+import { Helmet } from "react-helmet-async"; // KYRA FIX: Import added
 
 interface CityLandingTemplateProps {
   category: Category;
@@ -70,8 +71,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
   const isDev = import.meta.env.DEV;
 
   // --- FIX START: Robuste Settings-Logik ---
-  
-  // 1. Definition der Standardwerte (Alles AN)
   const defaultSettings = {
     show_top3_dating_apps: true,
     show_singles_in_der_naehe: true,
@@ -81,19 +80,13 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
     show_18plus_hint_box: true,
   };
 
-  // 2. Merge: Defaults nehmen + Datenbank-Werte darüberlegen
-  // Das verhindert, dass fehlende Werte das Layout zerschießen.
   const navSettings = {
     ...defaultSettings,
     ...(category.navigation_settings || {})
   };
 
-  // Debugging: Zeigt dir in der Browser-Konsole (F12), was wirklich ankommt.
   console.log(`Settings für ${category.name}:`, navSettings);
 
-  // --- FIX ENDE ---
-
-  // Check if any quick navigation links should be shown
   const hasQuickNavLinks = navSettings.show_top3_dating_apps || 
     navSettings.show_singles_in_der_naehe || 
     navSettings.show_chat_mit_einer_frau || 
@@ -101,11 +94,36 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
     navSettings.show_bildkontakte_login ||
     navSettings.show_18plus_hint_box;
 
+  // KYRA FIX: Schema.org für City Pages (CollectionPage)
+  const schemaData = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": category.hero_headline || category.name,
+    "description": category.description,
+    "url": `https://rank-scout.com/category/${category.slug}`,
+    "mainEntity": {
+      "@type": "ItemList",
+      "itemListElement": projects.map((project, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "name": project.name,
+        "url": project.url || `https://rank-scout.com/go/${project.slug}`
+      }))
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      {/* KYRA FIX: Helmet Block für Schema Injection */}
+      <Helmet>
+        <script type="application/ld+json">
+          {JSON.stringify(schemaData)}
+        </script>
+      </Helmet>
+
       <Header />
       <main className="pt-16">
-        {/* Hero Section */}
+        {/* ... (Rest des Codes bleibt identisch wie von dir gesendet) ... */}
         <section className="relative bg-gradient-to-br from-[#3d1515] via-[#5c1a1a] to-[#2d1010] py-16 md:py-24 overflow-hidden">
           <div className="absolute inset-0 opacity-5">
             <div className="absolute inset-0" style={{
@@ -153,7 +171,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </div>
         </section>
 
-        {/* Enhanced Trust Bar */}
         <section className="bg-gradient-to-r from-muted/80 via-muted/60 to-muted/80 border-y border-border py-5">
           <div className="container mx-auto px-4">
             <div className="flex flex-wrap items-center justify-center gap-6 md:gap-12 text-sm">
@@ -179,7 +196,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </div>
         </section>
 
-        {/* Banner Override Area */}
         {(category.banner_override || isDev) && (
           <section className="py-6 bg-muted/30">
             <div className="container mx-auto px-4">
@@ -202,7 +218,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </section>
         )}
 
-        {/* Quick Navigation Section */}
         {hasQuickNavLinks && (
           <section className="py-8 bg-background">
             <div className="container mx-auto px-4">
@@ -249,7 +264,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
                   )}
                 </div>
 
-                {/* 18+ Hint Box */}
                 {navSettings.show_18plus_hint_box && (
                   <div className="bg-red-500/5 border border-red-500/20 rounded-lg p-4 flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
@@ -275,7 +289,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </section>
         )}
 
-        {/* Content Top - USPs with enhanced styling */}
         {category.long_content_top && (
           <section className="py-12 md:py-16 bg-gradient-to-b from-background to-muted/20">
             <div className="container mx-auto px-4">
@@ -287,7 +300,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </section>
         )}
 
-        {/* App Comparison List with enhanced styling */}
         <section id="vergleich" className="py-12 md:py-20 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
@@ -391,7 +403,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </div>
         </section>
 
-        {/* SEO Deep Dive Content with FAQ section styling */}
         {category.long_content_bottom && (
           <section className="py-12 md:py-20 bg-gradient-to-b from-muted/30 via-background to-muted/20">
             <div className="container mx-auto px-4">
@@ -403,7 +414,6 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
           </section>
         )}
 
-        {/* Back Link */}
         <section className="py-12 bg-muted/20">
           <div className="container mx-auto px-4 text-center">
             <Link to="/kategorien" className={`inline-flex items-center gap-2 ${theme.text} hover:underline font-medium`}>
