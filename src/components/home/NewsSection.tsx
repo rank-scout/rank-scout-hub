@@ -11,12 +11,14 @@ import {
   CarouselPrevious 
 } from "@/components/ui/carousel";
 import { 
-  AltArrowRight, 
+  ArrowRight, 
   Calendar, 
-  ClockCircle, 
+  Clock, 
   Tag, 
-  Widget
-} from "@solar-icons/react";
+  Newspaper // Nutze Lucide Icons, da Solar Icons Probleme machten
+} from "lucide-react";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
 
 const getOptimizedImageUrl = (url: string | null | undefined, width = 600) => {
   if (!url) return "";
@@ -31,147 +33,140 @@ export function NewsSection() {
   const { content } = useHomeContent();
   const limit = content?.news?.count || 6;
 
+  // Wir holen Threads aus der Kategorie 'magazin' oder einfach die neuesten gepinnten Threads
   const { data: posts, isLoading } = useQuery({
-    queryKey: ["latest-news-precision-tight", limit],
+    queryKey: ["latest-news-magazin", limit],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // 1. Erst die Kategorie ID holen (optional, aber sauberer)
+      const { data: catData } = await supabase
+        .from('forum_categories')
+        .select('id')
+        .eq('slug', 'magazin')
+        .single();
+      
+      let query = supabase
         .from("forum_threads")
-        .select(`
-          id, title, slug, content, seo_description, created_at, featured_image_url,
-          forum_categories ( name )
-        `)
-        .eq("status", "published")
-        .eq("is_active", true)
+        .select("*, forum_categories(name, slug)")
         .order("created_at", { ascending: false })
         .limit(limit);
 
+      // Wenn wir die Kategorie gefunden haben, filtern wir danach
+      if (catData) {
+        query = query.eq('category_id', catData.id);
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
-    enabled: !!content
   });
 
-  if (!content || !posts || posts.length === 0) return null;
-
-  if (isLoading) {
-    return <div className="py-16 animate-pulse container bg-white h-80 rounded-[2rem]" />;
-  }
+  if (isLoading || !posts || posts.length === 0) return null;
 
   return (
-    <section className="py-16 bg-white border-t border-slate-100">
-      <div className="container px-4 mx-auto">
+    <section className="py-24 bg-white relative overflow-hidden">
+      <div className="container px-4 mx-auto relative z-10">
         
-        {/* Header - Gestrafft & Präzise */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-[0.25em] text-[10px] mb-3">
-              <Widget weight="Bold" className="w-4 h-4" />
-              Wissen & News
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 text-primary text-xs font-bold uppercase tracking-wider mb-4 border border-primary/10">
+              <Newspaper className="w-4 h-4" />
+              Rank-Scout Magazin
             </div>
-            <h2 className="text-3xl md:text-4xl font-display font-bold text-primary tracking-tight">
-              Aktuelles & Ratgeber
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-slate-900 mb-4 leading-tight">
+              {content?.news?.headline || "Insights & Tech Trends"}
             </h2>
-            <p className="text-slate-500 mt-4 text-lg leading-relaxed font-light">
-              Tipps und Tricks unserer Experten. Wir bringen dir den Wissensvorsprung, den du brauchst.
+            <p className="text-lg text-slate-500 leading-relaxed max-w-xl">
+              {content?.news?.subheadline || "Deep-Dives in die Welt von Software, Krypto und AI."}
             </p>
           </div>
-          
-          <div className="hidden md:block">
-             <Button variant="ghost" className="group text-sm font-bold text-slate-400 hover:text-primary transition-all px-0" asChild>
-                <Link to="/forum" className="flex items-center gap-2">
-                    Alle Beiträge 
-                    <AltArrowRight weight="Bold" className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+
+          <div className="hidden md:flex gap-4">
+             <Button variant="outline" className="rounded-full" asChild>
+                <Link to="/forum">Zum Forum</Link>
              </Button>
           </div>
         </div>
 
-        {/* --- CAROUSEL --- */}
+        {/* Carousel */}
         <Carousel
-          opts={{ align: "start", loop: true }}
+          opts={{
+            align: "start",
+            loop: true,
+          }}
           className="w-full"
         >
-          <CarouselContent className="-ml-6 md:-ml-8">
-            {posts.map((post) => (
-              <CarouselItem key={post.id} className="pl-6 md:pl-8 md:basis-1/2 lg:basis-1/3">
-                <NewsCard post={post} />
-              </CarouselItem>
-            ))}
+          <CarouselContent className="-ml-4">
+            {posts.map((post) => {
+              const date = post.created_at ? format(new Date(post.created_at), "d. MMM yyyy", { locale: de }) : "Heute";
+              // Lesezeit schätzen (Wörter / 200)
+              const wordCount = post.content ? post.content.replace(/<[^>]*>/g, '').split(/\s+/).length : 0;
+              const readTime = Math.max(1, Math.ceil(wordCount / 200)) + " Min.";
+
+              return (
+                <CarouselItem key={post.id} className="pl-4 md:basis-1/2 lg:basis-1/3 h-full">
+                  <Link to={`/forum/${post.slug}`} className="group block h-full">
+                    <div className="bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 h-full flex flex-col transition-all duration-500 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1">
+                      
+                      {/* Image Area */}
+                      <div className="aspect-[16/9] relative overflow-hidden">
+                        <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+                        {post.featured_image && (
+                          <img 
+                            src={getOptimizedImageUrl(post.featured_image)} 
+                            alt={post.title}
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            loading="lazy"
+                          />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-60" />
+                        
+                        <div className="absolute top-4 left-4">
+                          <span className="px-3 py-1 bg-white/90 backdrop-blur-md text-slate-900 text-xs font-bold rounded-full shadow-sm">
+                            {post.forum_categories?.name || "News"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Content Area */}
+                      <div className="p-8 flex flex-col flex-grow">
+                        <div className="flex items-center justify-between mb-4">
+                           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                              <Calendar className="w-3.5 h-3.5 text-primary" />
+                              {date}
+                           </div>
+                           <div className="flex items-center gap-2 text-xs font-medium text-slate-500">
+                              <Clock className="w-3.5 h-3.5 text-primary" />
+                              {readTime}
+                           </div>
+                        </div>
+
+                        <h3 className="text-xl font-bold text-slate-900 mb-3 leading-tight group-hover:text-primary transition-colors line-clamp-2">
+                          {post.title}
+                        </h3>
+                        
+                        <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-6 flex-grow">
+                          {post.seo_description || "Lies den vollständigen Artikel im Forum..."}
+                        </p>
+
+                        <div className="flex items-center text-sm font-bold text-primary mt-auto group/btn">
+                          Artikel lesen
+                          <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </CarouselItem>
+              );
+            })}
           </CarouselContent>
-          
-          {/* Navigation Buttons - JETZT ZENTRIERT UNTER DEM SLIDER */}
-          <div className="flex justify-center items-center gap-4 mt-12">
-            <CarouselPrevious className="static translate-y-0 h-12 w-12 border-primary/10 hover:border-primary/40 hover:bg-white text-primary transition-all" />
-            <div className="h-px w-8 bg-slate-100 md:block hidden" />
-            <CarouselNext className="static translate-y-0 h-12 w-12 border-primary/10 hover:border-primary/40 hover:bg-white text-primary transition-all" />
+          <div className="flex justify-end gap-2 mt-8 md:hidden">
+            <CarouselPrevious className="static translate-y-0" />
+            <CarouselNext className="static translate-y-0" />
           </div>
         </Carousel>
-
-        {/* Mobile Button - Nur falls nötig */}
-        <div className="mt-10 md:hidden">
-            <Button className="w-full py-6 rounded-xl bg-primary text-white font-bold" asChild>
-                <Link to="/forum">Alle Beiträge lesen</Link>
-            </Button>
-        </div>
-
       </div>
     </section>
   );
-}
-
-function NewsCard({ post }: { post: any }) {
-    const date = new Date(post.created_at).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
-    const readTime = Math.max(1, Math.ceil((post.content?.length || 0) / 1000)) + " Min. Lesezeit";
-    // @ts-ignore
-    const categoryName = post.forum_categories?.name || "Insights";
-
-    return (
-        <Link 
-            to={`/forum/${post.slug}`}
-            className="group flex flex-col h-full bg-white border border-primary/10 rounded-[2rem] overflow-hidden transition-all duration-500 hover:border-primary/40 hover:bg-slate-50/30 active:scale-[0.98]"
-        >
-            <div className="relative aspect-[16/10] overflow-hidden bg-slate-50">
-                <img 
-                    src={getOptimizedImageUrl(post.featured_image_url, 600)} 
-                    alt={post.title} 
-                    loading="lazy"
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                />
-            </div>
-
-            <div className="p-8 flex flex-col flex-grow">
-                <div className="flex items-center gap-4 mb-5">
-                    <span className="inline-flex items-center px-3 py-1 rounded-lg bg-primary/5 text-[10px] font-bold text-primary uppercase tracking-widest border border-primary/10">
-                        <Tag weight="Bold" className="w-3.5 h-3.5 mr-2 text-secondary" />
-                        {categoryName}
-                    </span>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase">
-                        <Calendar weight="Bold" className="w-3.5 h-3.5" />
-                        {date}
-                    </div>
-                </div>
-
-                <h3 className="text-xl font-display font-bold text-primary mb-3 leading-tight group-hover:text-primary transition-colors line-clamp-2">
-                    {post.title}
-                </h3>
-                
-                <p className="text-slate-500 text-sm leading-relaxed line-clamp-3 mb-8 flex-grow font-light">
-                    {post.seo_description}
-                </p>
-
-                <div className="w-full h-px bg-slate-100 mb-6" />
-
-                <div className="flex items-center justify-between mt-auto">
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-primary/50 uppercase">
-                        <ClockCircle weight="Bold" className="w-4 h-4" />
-                        {readTime}
-                    </div>
-                    <div className="flex items-center gap-2 text-sm font-bold text-primary group-hover:gap-3 transition-all">
-                        Beitrag lesen
-                        <AltArrowRight weight="Bold" className="w-5 h-5 transition-transform group-hover:translate-x-1" />
-                    </div>
-                </div>
-            </div>
-        </Link>
-    );
 }

@@ -13,7 +13,7 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
 import { Helmet } from "react-helmet-async"; 
-import { useForceSEO } from "@/hooks/useForceSEO"; 
+// useForceSEO entfernt, da es den Crash verursacht hat
 import { AppTicker } from "@/components/home/AppTicker"; 
 import { HowItWorksSection } from "@/components/home/HowItWorksSection"; 
 import { HomeSEOText } from "@/components/home/HomeSEOText"; 
@@ -21,44 +21,49 @@ import { HomeSEOText } from "@/components/home/HomeSEOText";
 const Index = () => {
   const analyticsCode = useGlobalAnalyticsCode();
   const { isLoading: isLoadingSettings } = useSettings();
-  const globalSiteTitle = useSiteTitle(); 
-  const globalSiteDescription = useSiteDescription(); 
-  
-  // Layout Config laden
-  const { sections, layout } = useHomeLayout();
+  const siteTitle = useSiteTitle(); 
+  const siteDescription = useSiteDescription();
+  const { layout, sections, isLoading: isLoadingLayout } = useHomeLayout();
+
+  // --- CRASH FIX START ---
+  // Wir bauen den Seitentitel sicher zusammen, ohne useForceSEO
+  const safeTitle = (typeof siteTitle === 'string' && siteTitle.length > 0) 
+    ? siteTitle 
+    : "Rank-Scout | Dein Vergleichsportal";
+    
+  const safeDescription = (typeof siteDescription === 'string' && siteDescription.length > 0) 
+    ? siteDescription 
+    : "Finde die besten Tools, Software und Finanzprodukte.";
+  // --- CRASH FIX END ---
+
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-  // KYRA FIX: Harte Domain erzwingen (Kein www!)
-  const canonicalUrl = "https://rank-scout.com";
 
   useEffect(() => {
-    const timer = setTimeout(() => setMinTimeElapsed(true), 100);
+    const timer = setTimeout(() => {
+      setMinTimeElapsed(true);
+    }, 500); 
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (!analyticsCode) return;
-  }, [analyticsCode]);
-
-  const finalTitle = globalSiteTitle || "Rank-Scout";
-  const finalDescription = globalSiteDescription && globalSiteDescription.trim() !== "" 
-    ? globalSiteDescription 
-    : "Rank-Scout - Dein Vergleichsportal für Software, Finanzen und Dienstleistungen.";
-
-  useForceSEO(finalDescription);
-
-  // KYRA UPDATE: SEO-Metadaten isoliert
   const seoHead = (
     <Helmet>
-      <title>{finalTitle}</title>
-      <link rel="canonical" href={canonicalUrl} />
-      <meta property="og:title" content={finalTitle} />
-      <meta property="og:description" content={finalDescription} />
-      <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:type" content="website" />
+      <title>{safeTitle}</title>
+      <meta name="description" content={safeDescription} />
+      {analyticsCode && <script async src={`https://www.googletagmanager.com/gtag/js?id=${analyticsCode}`}></script>}
+      {analyticsCode && (
+        <script>
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${analyticsCode}');
+          `}
+        </script>
+      )}
     </Helmet>
   );
 
-  if (!minTimeElapsed || isLoadingSettings) {
+  if (isLoadingLayout || !minTimeElapsed || isLoadingSettings) {
       return (
         <>
           {seoHead}
@@ -103,10 +108,11 @@ const Index = () => {
             section.id !== 'big_three'
           )
           .map((section) => (
-            <div id={section.id} key={section.id} className="scroll-mt-28">
-               {section.id !== 'seo' && sectionComponents[section.id]}
+            <div key={section.id} className="w-full">
+               {sectionComponents[section.id] || null}
             </div>
-          ))}
+          ))
+        }
       </main>
 
       <Footer />

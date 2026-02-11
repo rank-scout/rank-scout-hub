@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 export function ForumSidebar() {
   const { data: threads, isLoading } = useForumThreads();
 
+  // Wir sortieren zwar nach Views, zeigen sie aber nicht mehr an
   const trendingThreads = threads
     ? [...threads].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 5)
     : [];
@@ -38,12 +39,7 @@ export function ForumSidebar() {
                 <h3 className="font-medium text-sm text-foreground group-hover:text-primary transition-colors line-clamp-2">
                   {thread.title}
                 </h3>
-                <div className="flex items-center gap-2 mt-1.5 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <MessageSquare className="w-3 h-3" />
-                    {thread.view_count || 0} Aufrufe
-                  </span>
-                </div>
+                {/* Views Anzeige entfernt */}
               </Link>
               <Separator className="mt-3 opacity-50" />
             </div>

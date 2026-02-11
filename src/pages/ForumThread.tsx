@@ -5,7 +5,7 @@ import { Footer } from "@/components/layout/Footer";
 import { useForumThread, useThreadReplies, useCreateReply, useToggleLike, ForumReplyWithLikes } from "@/hooks/useForum";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  MessageSquare, Eye, Pin, Clock, ArrowLeft, Send, User, Lock, CheckCircle, ThumbsUp
+  MessageSquare, Pin, Clock, ArrowLeft, Send, User, Lock, CheckCircle, ThumbsUp
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
 import { Helmet } from "react-helmet-async"; 
-import { useForceSEO } from "@/hooks/useForceSEO"; // <--- UNSER VOLLSTRECKER
+import { useForceSEO } from "@/hooks/useForceSEO"; 
 
 export default function ForumThread() {
   const { slug } = useParams<{ slug: string }>();
@@ -96,27 +96,21 @@ export default function ForumThread() {
   };
 
   // --- SEO LOGIK ---
-  
-  // 1. Titel bestimmen (Admin > Thread Titel)
   const seoTitle = thread?.seo_title && thread.seo_title.trim() !== "" 
     ? thread.seo_title 
     : (thread ? `${thread.title} | Forum` : "Lade Beitrag...");
 
-  // 2. Beschreibung bestimmen (Admin > Content Auszug)
   let seoDescription = "";
   if (thread) {
     if (thread.seo_description && thread.seo_description.trim() !== "") {
       seoDescription = thread.seo_description;
     } else {
-      // Fallback: Erste 155 Zeichen vom Content, HTML Tags entfernt
       const cleanContent = thread.content.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
       seoDescription = cleanContent.substring(0, 155) + (cleanContent.length > 155 ? "..." : "");
     }
   }
 
-  // --- DIE BRECHSTANGE ---
   useForceSEO(seoDescription);
-  // -----------------------
 
   const canonicalUrl = window.location.href;
 
@@ -152,7 +146,6 @@ export default function ForumThread() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       
-      {/* React Helmet als Basis + OpenGraph */}
       <Helmet key={location.pathname}>
         <title>{seoTitle}</title>
         <link rel="canonical" href={canonicalUrl} />
@@ -166,7 +159,6 @@ export default function ForumThread() {
       <Header />
 
       <main className="flex-grow">
-        {/* Breadcrumb */}
         <div className="bg-muted/30 border-b py-4">
           <div className="container mx-auto px-4">
             <Link to="/forum" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -175,7 +167,6 @@ export default function ForumThread() {
           </div>
         </div>
 
-        {/* Content */}
         <section className="py-12">
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row gap-8">
@@ -193,7 +184,7 @@ export default function ForumThread() {
                       <span className="font-medium text-foreground">{thread.author_name}</span>
                     </span>
                     <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {formatDate(thread.created_at || "")}</span>
-                    <span className="flex items-center gap-1"><Eye className="w-4 h-4" /> {thread.view_count || 0} Aufrufe</span>
+                    {/* View Count entfernt */}
                   </div>
                 </div>
 
@@ -272,7 +263,7 @@ export default function ForumThread() {
           author: { "@type": "Person", name: thread.author_name },
           datePublished: thread.created_at,
           dateModified: thread.updated_at,
-          interactionStatistic: { "@type": "InteractionCounter", interactionType: "https://schema.org/ViewAction", userInteractionCount: thread.view_count || 0 }
+          interactionStatistic: { "@type": "InteractionCounter", interactionType: "https://schema.org/ViewAction", userInteractionCount: 0 }
         })}
       </script>
     </div>
