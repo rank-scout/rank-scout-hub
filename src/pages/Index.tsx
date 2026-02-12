@@ -87,15 +87,18 @@ const Index = () => {
   return (
     <div className="min-h-screen flex flex-col relative bg-white animate-in fade-in duration-500">
       {seoHead}
-      
+       
       <Header />
-      
+       
       <main className="flex-grow">
         <HeroSection />
         <AppTicker />
         <HowItWorksSection /> 
 
         <BigThreeSection />
+
+        {/* KYRA: NewsSection hier fest eingebaut für Sichtbarkeit */}
+        <NewsSection />
 
         {layout.seo_text && <HomeSEOText />}
 
@@ -105,7 +108,8 @@ const Index = () => {
             section.id !== 'mascot' && 
             section.id !== 'hero' && 
             section.id !== 'trust' &&
-            section.id !== 'big_three'
+            section.id !== 'big_three' &&
+            section.id !== 'news' // KYRA: News hier ausschließen, da oben hardcoded
           )
           .map((section) => (
             <div key={section.id} className="w-full">

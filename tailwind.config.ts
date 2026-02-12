@@ -2,8 +2,29 @@ import type { Config } from "tailwindcss";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
+  // KYRA: Safelist sorgt dafür, dass dynamische Klassen aus der DB nicht gelöscht werden
+  safelist: [
+    'bg-slate-900',
+    'text-[#FF8400]',
+    'border-[#FF8400]',
+    'bg-[#FF8400]',
+    'hover:bg-[#FF8400]/90',
+    'text-orange-50',
+    'bg-orange-50',
+    'border-orange-100',
+    'prose',
+    'prose-lg',
+    'prose-xl',
+    'prose-slate',
+    'max-w-none'
+  ],
   theme: {
     container: {
       center: true,
@@ -108,6 +129,6 @@ export default {
   },
   plugins: [
     require("tailwindcss-animate"),
-    require("@tailwindcss/typography"), // HIER ist das Plugin jetzt drin
+    require("@tailwindcss/typography"),
   ],
 } satisfies Config;

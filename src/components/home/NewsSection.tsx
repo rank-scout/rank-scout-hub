@@ -14,8 +14,7 @@ import {
   ArrowRight, 
   Calendar, 
   Clock, 
-  Tag, 
-  Newspaper // Nutze Lucide Icons, da Solar Icons Probleme machten
+  Newspaper 
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
@@ -33,29 +32,18 @@ export function NewsSection() {
   const { content } = useHomeContent();
   const limit = content?.news?.count || 6;
 
-  // Wir holen Threads aus der Kategorie 'magazin' oder einfach die neuesten gepinnten Threads
+  // Wir holen die neuesten veröffentlichten Threads, unabhängig von der Kategorie
   const { data: posts, isLoading } = useQuery({
-    queryKey: ["latest-news-magazin", limit],
+    queryKey: ["latest-news-global", limit],
     queryFn: async () => {
-      // 1. Erst die Kategorie ID holen (optional, aber sauberer)
-      const { data: catData } = await supabase
-        .from('forum_categories')
-        .select('id')
-        .eq('slug', 'magazin')
-        .single();
-      
-      let query = supabase
+      const { data, error } = await supabase
         .from("forum_threads")
         .select("*, forum_categories(name, slug)")
+        .eq("status", "published")
+        .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(limit);
 
-      // Wenn wir die Kategorie gefunden haben, filtern wir danach
-      if (catData) {
-        query = query.eq('category_id', catData.id);
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -83,9 +71,9 @@ export function NewsSection() {
           </div>
 
           <div className="hidden md:flex gap-4">
-             <Button variant="outline" className="rounded-full" asChild>
-                <Link to="/forum">Zum Forum</Link>
-             </Button>
+              <Button variant="outline" className="rounded-full" asChild>
+                 <Link to="/forum">Zum Forum</Link>
+              </Button>
           </div>
         </div>
 
@@ -104,22 +92,33 @@ export function NewsSection() {
               const wordCount = post.content ? post.content.replace(/<[^>]*>/g, '').split(/\s+/).length : 0;
               const readTime = Math.max(1, Math.ceil(wordCount / 200)) + " Min.";
 
+              // WICHTIG: Hier greifen wir auf featured_image_url zu
+              const imageUrl = post.featured_image_url;
+
               return (
                 <CarouselItem key={post.id} className="pl-4 md:basis-1/2 lg:basis-1/3 h-full">
                   <Link to={`/forum/${post.slug}`} className="group block h-full">
                     <div className="bg-slate-50 rounded-3xl overflow-hidden border border-slate-100 h-full flex flex-col transition-all duration-500 hover:shadow-xl hover:border-primary/20 hover:-translate-y-1">
                       
                       {/* Image Area */}
-                      <div className="aspect-[16/9] relative overflow-hidden">
-                        <div className="absolute inset-0 bg-slate-200 animate-pulse" />
-                        {post.featured_image && (
+                      <div className="aspect-[16/9] relative overflow-hidden bg-slate-200">
+                        {/* Fallback Placeholder Animation nur wenn kein Bild da ist */}
+                        {!imageUrl && <div className="absolute inset-0 animate-pulse" />}
+                        
+                        {imageUrl ? (
                           <img 
-                            src={getOptimizedImageUrl(post.featured_image)} 
+                            src={getOptimizedImageUrl(imageUrl)} 
                             alt={post.title}
                             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                             loading="lazy"
                           />
+                        ) : (
+                          // Fallback Icon wenn gar kein Bild existiert
+                          <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                            <Newspaper className="w-12 h-12 opacity-20" />
+                          </div>
                         )}
+
                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent opacity-60" />
                         
                         <div className="absolute top-4 left-4">
