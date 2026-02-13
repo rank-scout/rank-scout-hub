@@ -147,8 +147,9 @@ export default function CategoryDetail() {
     );
   }
 
-  // KYRA FIX: Harte Domain + korrekter Pfad (/kategorien)
-  const currentUrl = `https://rank-scout.com/kategorien/${category.slug}`;
+  // KYRA FIX: Duplicate Content Vermeidung.
+  // Wir setzen die Canonical URL hart auf die Root-Ebene (Short URL), da dies unsere Catch-All Route ist.
+  const currentUrl = `https://rank-scout.com/${category.slug}`;
 
   // KYRA FIX: Schema mit "offers" für Semrush
   const jsonLdSchema = {
@@ -210,7 +211,7 @@ export default function CategoryDetail() {
 
         <main className="flex-1">
           <div className="border-b border-border bg-background/80 sticky top-[60px] z-10 backdrop-blur-md">
-            <div className="container mx-auto px-4 h-10 flex items-center text-xs font-medium text-muted-foreground overflow-hidden">
+            <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 h-10 flex items-center text-xs font-medium text-muted-foreground overflow-hidden">
                 <Link to="/" className="hover:text-primary flex items-center gap-1 transition-colors"><Home className="w-3 h-3"/> Home</Link>
                 <span className="mx-2 text-muted-foreground/50">/</span>
                 <span className="text-foreground truncate">{category.name}</span>
@@ -249,7 +250,8 @@ export default function CategoryDetail() {
             </div>
           </section>
 
-          <div className="container mx-auto px-4 py-12 max-w-7xl lg:flex lg:gap-10">
+          {/* KYRA FIX: FULL WIDTH LAYOUT - w-full und max-w-[1920px] für Premium Breite */}
+          <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-12 lg:flex lg:gap-12">
               <div className="lg:w-2/3" ref={contentTopRef}>
                 <div className="bg-card rounded-2xl p-6 md:p-8 shadow-sm border border-border mb-8 overflow-hidden relative">
                   <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>

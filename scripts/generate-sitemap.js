@@ -29,10 +29,10 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   global: { fetch: fetch }
 });
 
-// --- HIER IST DER FIX ---
-// Wir nutzen jetzt "/kategorien" statt "/category", damit es zur App passt!
+// --- KYRA FIX ---
+// Wir nutzen jetzt "" statt "/kategorien", da die App Short-URLs nutzt!
 const DYNAMIC_SOURCES = [
-  { table: 'categories', prefix: '/kategorien' },
+  { table: 'categories', prefix: '' }, // Kein Prefix mehr!
   { table: 'forum_threads', prefix: '/forum' }
   // { table: 'top_lists', prefix: '/top-100' } // Entfernt, da Tabelle fehlt
 ];
@@ -66,8 +66,14 @@ async function generateSitemap() {
       }
 
       if (data && data.length > 0) {
-        // Generiert URLs wie https://rank-scout.com/kategorien/dating
-        const paths = data.map(item => `${source.prefix}/${item.slug}`);
+        // Generiert URLs wie https://rank-scout.com/dating (ohne Zwischenpfad)
+        // KYRA FIX: "/" nur hinzufügen, wenn Prefix existiert oder Slug nicht mit / beginnt
+        const paths = data.map(item => {
+            const prefix = source.prefix;
+            const slug = item.slug;
+            // Verhindert doppelte Slashes, falls Prefix leer ist
+            return prefix ? `${prefix}/${slug}` : `/${slug}`;
+        });
         allUrls = [...allUrls, ...paths];
         console.log(`✅ ${data.length} Einträge gefunden.`);
       } else {

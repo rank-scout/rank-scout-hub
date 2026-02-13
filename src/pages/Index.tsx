@@ -13,28 +13,36 @@ import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
 import { Helmet } from "react-helmet-async"; 
-// useForceSEO entfernt, da es den Crash verursacht hat
 import { AppTicker } from "@/components/home/AppTicker"; 
 import { HowItWorksSection } from "@/components/home/HowItWorksSection"; 
 import { HomeSEOText } from "@/components/home/HomeSEOText"; 
+// KYRA FIX: Die Brechstange ist zurück.
+import { useForceSEO } from "@/hooks/useForceSEO"; 
 
 const Index = () => {
   const analyticsCode = useGlobalAnalyticsCode();
-  const { isLoading: isLoadingSettings } = useSettings();
+  const { data: settings, isLoading: isLoadingSettings } = useSettings();
   const siteTitle = useSiteTitle(); 
   const siteDescription = useSiteDescription();
   const { layout, sections, isLoading: isLoadingLayout } = useHomeLayout();
 
-  // --- CRASH FIX START ---
-  // Wir bauen den Seitentitel sicher zusammen, ohne useForceSEO
+  // --- SAFE SEO DATA CONSTRUCTION ---
   const safeTitle = (typeof siteTitle === 'string' && siteTitle.length > 0) 
     ? siteTitle 
     : "Rank-Scout | Dein Vergleichsportal";
     
   const safeDescription = (typeof siteDescription === 'string' && siteDescription.length > 0) 
     ? siteDescription 
-    : "Finde die besten Tools, Software und Finanzprodukte.";
-  // --- CRASH FIX END ---
+    : "Finde die besten Tools, Software und Finanzprodukte im unabhängigen Vergleich.";
+
+  // Keywords: Versuche aus Settings zu laden, sonst Fallback
+  // HINWEIS: Prüfe im Admin-Panel, ob der Key 'seo_keywords' wirklich gefüllt ist!
+  const safeKeywords = (settings?.seo_keywords as string) || "Vergleich, Finanzen, Software, Testsieger, Rank-Scout, Erfahrungen, Test";
+
+  // --- KYRA FIX: USE FORCE SEO ---
+  // Wir rufen den Hook auf, um die Description hart in den DOM zu schreiben.
+  // Das löst das Problem, dass Tools die Description manchmal "übersehen".
+  useForceSEO(safeDescription);
 
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
@@ -47,8 +55,32 @@ const Index = () => {
 
   const seoHead = (
     <Helmet>
+      {/* 1. Titel (Description wird zusätzlich durch useForceSEO gesetzt) */}
       <title>{safeTitle}</title>
+      
+      {/* Helmet Description als Backup/Standard React Weg */}
       <meta name="description" content={safeDescription} />
+      
+      {/* 2. Canonical (Fest auf Production Domain) */}
+      <link rel="canonical" href="https://rank-scout.com/" />
+      
+      {/* 3. Robots */}
+      <meta name="robots" content="index, follow" />
+      
+      {/* 4. Keywords & Autor */}
+      <meta name="keywords" content={safeKeywords} />
+      <meta name="author" content="Rank-Scout" />
+      <meta name="publisher" content="Rank-Scout" />
+      
+      {/* 5. Open Graph */}
+      <meta property="og:title" content={safeTitle} />
+      <meta property="og:description" content={safeDescription} />
+      <meta property="og:url" content="https://rank-scout.com/" />
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="Rank-Scout" />
+      <meta property="og:locale" content="de_DE" />
+
+      {/* Analytics */}
       {analyticsCode && <script async src={`https://www.googletagmanager.com/gtag/js?id=${analyticsCode}`}></script>}
       {analyticsCode && (
         <script>
@@ -95,10 +127,9 @@ const Index = () => {
         <AppTicker />
         <HowItWorksSection /> 
 
-        <BigThreeSection />
+        {sections.find(s => s.id === 'news')?.enabled && <NewsSection />}
 
-        {/* KYRA: NewsSection hier fest eingebaut für Sichtbarkeit */}
-        <NewsSection />
+        <BigThreeSection />
 
         {layout.seo_text && <HomeSEOText />}
 
@@ -109,7 +140,8 @@ const Index = () => {
             section.id !== 'hero' && 
             section.id !== 'trust' &&
             section.id !== 'big_three' &&
-            section.id !== 'news' // KYRA: News hier ausschließen, da oben hardcoded
+            section.id !== 'how_it_works' && 
+            section.id !== 'news' 
           )
           .map((section) => (
             <div key={section.id} className="w-full">
