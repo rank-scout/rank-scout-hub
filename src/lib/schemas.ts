@@ -28,7 +28,7 @@ export type NavigationSettings = z.infer<typeof navigationSettingsSchema>;
 export const categorySchema = z.object({
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
   name: z.string().min(1, "Name erforderlich"),
-  description: z.string().optional().nullable(), // Nullable erlaubt
+  description: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),
   theme: categoryThemeEnum.default("GENERIC"),
   color_theme: colorThemeEnum.default("light"),
@@ -47,6 +47,9 @@ export const categorySchema = z.object({
   hero_cta_text: z.string().optional().nullable(),
   hero_badge_text: z.string().optional().nullable(),
   
+  // KYRA UPDATE: Hier ist der Fix! Das Feld muss existieren.
+  hero_image_url: z.string().optional().nullable(),
+  
   // Long Content
   long_content_top: z.string().optional().nullable(),
   long_content_bottom: z.string().optional().nullable(),
@@ -55,7 +58,7 @@ export const categorySchema = z.object({
   analytics_code: z.string().optional().nullable(),
   banner_override: z.string().optional().nullable(),
   custom_html_override: z.string().optional().nullable(),
-  custom_css: z.string().optional().nullable(), // Sicher ist sicher
+  custom_css: z.string().optional().nullable(),
   
   // Footer Data
   footer_site_name: z.string().optional().nullable(),
@@ -66,7 +69,10 @@ export const categorySchema = z.object({
   // Settings & Arrays
   navigation_settings: navigationSettingsSchema.optional().nullable(),
   
-  // NEU: Wichtig für FAQs und Ratgeber-Modus
+  // Sidebar Ads
+  sidebar_ad_html: z.string().optional().nullable(),
+  sidebar_ad_image: z.string().optional().nullable(),
+
   faq_data: z.array(z.object({
     question: z.string(),
     answer: z.string()
@@ -76,7 +82,7 @@ export const categorySchema = z.object({
   is_city: z.boolean().optional().default(false),
   sort_order: z.number().optional().default(0),
 
-  // Legacy (Optional lassen, damit Validation nicht fehlschlägt, werden im Admin gefiltert)
+  // Legacy
   faq_section: z.any().optional(),
   footer_links: z.any().optional(),
   legal_links: z.any().optional(),
@@ -108,7 +114,7 @@ export const projectSchema = z.object({
 
 export type ProjectInput = z.infer<typeof projectSchema>;
 
-// Settings schemas
+// Settings & Home Schemas
 export const trendingLinkSchema = z.object({
   label: z.string().min(1),
   url: z.string().min(1),
@@ -136,8 +142,6 @@ export const siteSettingsSchema = z.object({
   legal_nav: z.array(navLinkSchema).default([]),
 });
 
-// NEUE SCHEMAS FÜR DYNAMISCHE SEKTIONEN
-
 const bigThreeItemSchema = z.object({
   id: z.string(),
   title: z.string(),
@@ -145,8 +149,8 @@ const bigThreeItemSchema = z.object({
   link: z.string(),
   button_text: z.string().default("Vergleichen"),
   image_url: z.string().optional(),
-  theme: z.enum(["blue", "gold", "dark"]).default("blue"), // Farb-Thema pro Karte
-  icon: z.string().default("trending"), // icon slug
+  theme: z.enum(["blue", "gold", "dark"]).default("blue"),
+  icon: z.string().default("trending"),
 });
 
 const featureItemSchema = z.object({
@@ -177,7 +181,6 @@ export const homeContentSchema = z.object({
   }),
   big_three: z.object({
     headline: z.string(),
-    // Legacy Fields (kept for safety, but we move to 'items')
     finance_title: z.string().optional(),
     finance_desc: z.string().optional(),
     finance_link: z.string().optional(),
@@ -187,7 +190,6 @@ export const homeContentSchema = z.object({
     services_title: z.string().optional(),
     services_desc: z.string().optional(),
     services_link: z.string().optional(),
-    // NEW DYNAMIC ARRAY
     items: z.array(bigThreeItemSchema).default([]),
   }),
   why_us: z.object({
@@ -199,7 +201,7 @@ export const homeContentSchema = z.object({
       { title: "Global & Lokal", text: "Von International bis Regional.", icon: "globe" },
       { title: "Echtzeit Updates", text: "Täglich frische Daten.", icon: "chart" }
     ])
-  }).default({}), // Default object to prevent crashes
+  }).default({}),
   categories: z.object({
     headline: z.string(),
     count: z.number().default(6),

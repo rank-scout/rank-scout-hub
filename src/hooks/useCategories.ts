@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CategoryInput, NavigationSettings } from "@/lib/schemas";
 
-// Wir definieren den Typ vollständig, damit TypeScript nicht meckert
 export type Category = {
   id: string;
   slug: string;
@@ -25,6 +24,9 @@ export type Category = {
   long_content_top: string | null;
   long_content_bottom: string | null;
   
+  // KYRA UPDATE: Typ-Definition
+  hero_image_url: string | null;
+  
   // Tech & Override
   analytics_code: string | null;
   banner_override: string | null;
@@ -38,12 +40,16 @@ export type Category = {
   
   // JSONB / Complex Objects
   navigation_settings: NavigationSettings | null;
-  faq_data: any; // Wichtig für FAQs
+  faq_data: any; 
   
+  // Sidebar Ads (Zur Sicherheit auch hier)
+  sidebar_ad_html: string | null;
+  sidebar_ad_image: string | null;
+
   // Flags & Meta
   is_active: boolean;
   is_city: boolean;
-  is_internal_generated: boolean; // Das fehlte vorher oft
+  is_internal_generated: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;
@@ -104,7 +110,6 @@ export function useCreateCategory() {
 
   return useMutation({
     mutationFn: async (input: CategoryInput) => {
-      // Sort Order automatisch ermitteln
       const { data: existing } = await supabase
         .from("categories")
         .select("sort_order")
@@ -113,12 +118,10 @@ export function useCreateCategory() {
         .single();
       const nextOrder = (existing?.sort_order ?? 0) + 1;
 
-      // Beim Erstellen müssen wir explizit sein, um Defaults zu setzen
       const { data, error } = await supabase
         .from("categories")
         .insert({
-          ...input, // Nimmt alles aus dem Input
-          // Sicherheits-Defaults falls Input leer ist:
+          ...input,
           description: input.description || null,
           icon: input.icon || "📊",
           color_theme: input.color_theme || "dark",
@@ -140,19 +143,15 @@ export function useCreateCategory() {
   });
 }
 
-// HIER IST DER FIX (FORUM STYLE):
 export function useUpdateCategory() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    // Wir destructuren 'id' und nehmen den REST als 'updates'.
-    // Das ist der "Community Hub" Trick.
     mutationFn: async ({ id, ...updates }: { id: string } & Partial<CategoryInput>) => {
-      
       const { data, error } = await supabase
         .from("categories")
         .update({
-            ...updates, // Schreibt ALLES direkt in die DB (meta_description, faq_data, etc.)
+            ...updates,
             updated_at: new Date().toISOString()
         })
         .eq("id", id)
@@ -164,7 +163,6 @@ export function useUpdateCategory() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      // Auch den Single-View Cache invalidieren
       if (data.slug) {
           queryClient.invalidateQueries({ queryKey: ["category", data.slug] });
       }
@@ -177,11 +175,7 @@ export function useDeleteCategory() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("categories")
-        .delete()
-        .eq("id", id);
-
+      const { error } = await supabase.from("categories").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -198,7 +192,6 @@ export function useDuplicateCategory() {
       const { id, created_at, updated_at, ...rest } = category;
       const newSlug = `${rest.slug}-copy-${Math.floor(Math.random() * 1000)}`;
       
-      // Kopiert ALLES, weil wir 'rest' spreaden
       const { data: newCat, error: catError } = await supabase
         .from("categories")
         .insert({
@@ -212,35 +205,15 @@ export function useDuplicateCategory() {
 
       if (catError) throw catError;
 
-      // Projekte kopieren
-      const { data: links } = await supabase
-        .from("category_projects")
-        .select("*")
-        .eq("category_id", id);
-
+      const { data: links } = await supabase.from("category_projects").select("*").eq("category_id", id);
       if (links && links.length > 0) {
-        const newLinks = links.map(l => ({
-          category_id: newCat.id,
-          project_id: l.project_id,
-          sort_order: l.sort_order
-        }));
+        const newLinks = links.map(l => ({ category_id: newCat.id, project_id: l.project_id, sort_order: l.sort_order }));
         await supabase.from("category_projects").insert(newLinks);
       }
       
-      // Footer Links kopieren
-      const { data: footerLinks } = await supabase
-        .from("popular_footer_links")
-        .select("*")
-        .eq("category_id", id);
-        
+      const { data: footerLinks } = await supabase.from("popular_footer_links").select("*").eq("category_id", id);
       if (footerLinks && footerLinks.length > 0) {
-         const newFooterLinks = footerLinks.map(l => ({
-             category_id: newCat.id,
-             label: l.label,
-             url: l.url,
-             sort_order: l.sort_order,
-             is_active: l.is_active
-         }));
+         const newFooterLinks = footerLinks.map(l => ({ category_id: newCat.id, label: l.label, url: l.url, sort_order: l.sort_order, is_active: l.is_active }));
          try { await supabase.from("popular_footer_links").insert(newFooterLinks); } catch(e) {}
       }
 

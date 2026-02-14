@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, UploadCloud, LayoutTemplate, FileCheck, Sparkles, Bot, Database, Eye, Megaphone } from "lucide-react";
+import { Plus, Pencil, Trash2, Loader2, ArrowUp, ArrowDown, UploadCloud, LayoutTemplate, FileCheck, Sparkles, Bot, Database, Eye, Megaphone, Image as ImageIcon } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import { CategoryFooterLinksEditor } from "@/components/admin/CategoryFooterLinksEditor";
 import { CategoryLegalLinksEditor } from "@/components/admin/CategoryLegalLinksEditor";
@@ -76,7 +76,6 @@ export default function Categories() {
 
   const { data: categoryProjects = [] } = useCategoryProjects(editingCategory?.id);
 
-  // Sync Projects
   useEffect(() => {
     let newIds: string[] = [];
     if (categoryProjects && categoryProjects.length > 0) {
@@ -92,7 +91,6 @@ export default function Categories() {
 
   const { register, handleSubmit, reset, setValue, watch, control } = form;
 
-  // Initiale Daten laden
   useEffect(() => {
     if (editingCategory) {
       const isInternal = (editingCategory as any).is_internal_generated === true;
@@ -118,9 +116,10 @@ export default function Categories() {
         long_content_bottom: editingCategory.long_content_bottom || "",
         faq_data: editingCategory.faq_data || [],
         
-        // NEU: Sidebar Ads
+        // NEU: Sidebar Ads & Hero Image (Jetzt sauber im Schema)
         sidebar_ad_html: (editingCategory as any).sidebar_ad_html || "",
         sidebar_ad_image: (editingCategory as any).sidebar_ad_image || "",
+        hero_image_url: (editingCategory as any).hero_image_url || "", 
 
         // Legacy Fields
         site_name: editingCategory.site_name || "",
@@ -139,21 +138,19 @@ export default function Categories() {
       setPageMode("landing");
       form.reset({ 
           name: "", slug: "", theme: "DATING", template: "comparison", is_active: true, 
-          faq_data: [], meta_title: "", meta_description: "", sidebar_ad_html: '', sidebar_ad_image: '' 
-      });
+          faq_data: [], meta_title: "", meta_description: "", sidebar_ad_html: '', sidebar_ad_image: '', hero_image_url: '' 
+      } as any);
       setSelectedProjectIds([]);
       setTopicPrompt("");
     }
   }, [editingCategory, form]);
 
-  // --- SAVE ---
   async function onSubmit(data: CategoryInput) {
     try {
       const now = new Date().toISOString();
       const isInternal = pageMode === "internal";
       const rawData = { ...data } as any;
 
-      // Cleanup
       delete rawData.faq_section; delete rawData.footer_links; delete rawData.popular_footer_links; delete rawData.legal_links; delete rawData.projects; delete rawData.category_projects; delete rawData.reviews; delete rawData.testimonials;
 
       const payload = { ...rawData, updated_at: now, is_internal_generated: isInternal };
@@ -177,7 +174,6 @@ export default function Categories() {
     }
   }
 
-  // --- TOOLS ---
   const handleGenerateContent = async () => {
     const catName = form.getValues("name");
     if (!catName) return toast({ title: "Fehler", description: "Name fehlt.", variant: "destructive" });
@@ -199,19 +195,17 @@ export default function Categories() {
     toast({ title: "SEO Data Auto-Filled" });
   };
 
-  // --- IMAGE UPLOAD HANDLER ---
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, fieldName: any) => {
     if (!e.target.files || e.target.files.length === 0) return;
     setIsUploading(true);
     const url = await uploadImageToSupabase(e.target.files[0]);
     if (url) {
-        form.setValue("sidebar_ad_image", url, { shouldDirty: true });
+        form.setValue(fieldName, url, { shouldDirty: true });
         toast({ title: "Bild hochgeladen", description: "URL wurde eingefügt." });
     }
     setIsUploading(false);
   };
 
-  // --- DEPLOY (Legacy) ---
   async function handleDeploy(category: Category) {
     setIsDeploying(category.id);
     const BRIDGE_URL = "https://dating.rank-scout.com/bridge.php"; 
@@ -255,7 +249,6 @@ export default function Categories() {
     finally { setIsDeploying(null); }
   }
 
-  // --- DELETE / MOVE / DUPLICATE ---
   async function handleDelete(id: string) { if(confirm("Löschen?")) await deleteCategory.mutateAsync(id); }
   async function handleDuplicate(category: Category) { if(confirm("Duplizieren?")) await duplicateCategory.mutateAsync(category); }
   async function handleToggleActive(category: Category) { await updateCategory.mutateAsync({ id: category.id, is_active: !category.is_active }); }
@@ -339,7 +332,28 @@ export default function Categories() {
                             </div>
                         </div>
 
-                        {/* 2. Content (JETZT UNTEREINANDER / FULL WIDTH) */}
+                        {/* 1.5 Hero Design - KYRA ADDED */}
+                        <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
+                            <h3 className="font-semibold text-lg flex items-center gap-2 text-purple-700"><ImageIcon className="w-5 h-5"/> Hero Design</h3>
+                            <div className="grid grid-cols-1 gap-4">
+                                <div>
+                                    <Label>Hintergrundbild URL (Optional)</Label>
+                                    <p className="text-xs text-muted-foreground mb-2">Wenn leer, wählt das System automatisch ein passendes Bild (Krypto, Dating, etc.).</p>
+                                    <div className="flex gap-2">
+                                        <Input {...register("hero_image_url")} placeholder="https://..." />
+                                        <div className="relative">
+                                            <input type="file" id="upload-hero" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, "hero_image_url")} disabled={isUploading} />
+                                            <Button type="button" variant="outline" disabled={isUploading} onClick={() => document.getElementById('upload-hero')?.click()}>
+                                                {isUploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <UploadCloud className="w-4 h-4"/>}
+                                            </Button>
+                                        </div>
+                                    </div>
+                                    {watch("hero_image_url") && <img src={watch("hero_image_url") || ""} alt="Preview" className="mt-2 h-40 w-full object-cover rounded-xl border" />}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2. Content */}
                         <div className="bg-white p-6 rounded-xl border shadow-sm space-y-4">
                             <h3 className="font-semibold text-lg flex items-center gap-2 text-purple-700"><Bot className="w-5 h-5"/> KI Content</h3>
                             <div className="flex gap-2 bg-purple-50 p-3 rounded-lg">
@@ -347,7 +361,6 @@ export default function Categories() {
                                 <Button onClick={handleGenerateContent} disabled={isGenContent} className="bg-purple-600 hover:bg-purple-700 text-white min-w-[120px]">{isGenContent?<Loader2 className="animate-spin"/>:"Generieren"}</Button>
                             </div>
                             
-                            {/* LAYOUT FIX: UNTEREINANDER */}
                             <div className="space-y-6">
                                 <div>
                                     <Label className="text-base font-bold text-slate-700 mb-2 block">Intro Text (Oben)</Label>
@@ -373,7 +386,7 @@ export default function Categories() {
                                     <div className="flex gap-2">
                                         <Input {...register("sidebar_ad_image")} placeholder="https://..." />
                                         <div className="relative">
-                                            <input type="file" id="upload-ad" className="hidden" accept="image/*" onChange={handleImageUpload} disabled={isUploading} />
+                                            <input type="file" id="upload-ad" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, "sidebar_ad_image")} disabled={isUploading} />
                                             <Button type="button" variant="outline" disabled={isUploading} onClick={() => document.getElementById('upload-ad')?.click()}>
                                                 {isUploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <UploadCloud className="w-4 h-4"/>}
                                             </Button>

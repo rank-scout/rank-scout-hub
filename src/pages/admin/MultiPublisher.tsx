@@ -8,13 +8,14 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, UploadCloud, Globe, FileText, LayoutList, Database, Save, Eye, PlusCircle } from "lucide-react";
+import { Loader2, UploadCloud, Globe, FileText, LayoutList, Database, Save, Eye, PlusCircle, ArrowUpDown } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useGenerateCityContent } from "@/hooks/useGenerateCityContent";
 import { useGenerateCategoryContent, GeneratedCategoryContent } from "@/hooks/useGenerateCategoryContent";
+// KYRA FIX: Import ohne geschweifte Klammern, da es ein Default Export ist
+import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 
 // Typen
 type DeploymentTarget = { id: string; name: string; bridge_url: string; api_key: string; };
@@ -59,6 +60,15 @@ export default function AdminPublisher() {
     fetchCategories();
   }, []);
 
+  // Sync Projects when Category changes in Internal Mode
+  useEffect(() => {
+    if (mode === 'internal' && selectedCategoryId) {
+        fetchExistingCategoryProjects(selectedCategoryId);
+    } else {
+        setSelectedProjectIds([]);
+    }
+  }, [selectedCategoryId, mode]);
+
   const fetchTargets = async () => {
     setTargets([
       { id: "1", name: "Dating-Vergleich.org", bridge_url: "https://dating-vergleich.org/bridge.php", api_key: "xyz" },
@@ -72,23 +82,26 @@ export default function AdminPublisher() {
   };
 
   const fetchCategories = async () => {
-    // FIX: Wir laden NUR Kategorien, die das Flag 'is_internal_generated' haben.
-    // Die "geschützten" Landingpages werden hier ignoriert.
     const { data } = await supabase
       .from("categories")
       .select("id, name, slug, is_internal_generated")
       .eq("is_active", true)
-      .eq("is_internal_generated", true) // <--- Der Filter für die Entkopplung
+      .eq("is_internal_generated", true)
       .order("name");
 
     if (data) setCategories(data);
   };
 
-  // --- External Logic (City Pages) ---
-  const toggleProject = (id: string) => {
-    setSelectedProjectIds(prev => 
-      prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]
-    );
+  const fetchExistingCategoryProjects = async (catId: string) => {
+      const { data } = await supabase
+        .from('category_projects')
+        .select('project_id')
+        .eq('category_id', catId)
+        .order('sort_order');
+      
+      if (data) {
+          setSelectedProjectIds(data.map(p => p.project_id));
+      }
   };
 
   const handleGenerateCityHTML = async () => {
@@ -131,7 +144,6 @@ export default function AdminPublisher() {
     const target = targets.find(t => t.id === selectedTargetId);
     if(!target) return;
     try {
-      console.log("Sende an Bridge:", target.bridge_url);
       await new Promise(r => setTimeout(r, 1500)); 
       toast({ title: "Erfolg", description: `Seite erfolgreich veröffentlicht!` });
     } catch (e) {
@@ -141,9 +153,6 @@ export default function AdminPublisher() {
     }
   };
 
-  // --- Internal Logic (Category Pages) ---
-  
-  // Quick Create Function (Interne Seiten)
   const handleCreateInternalCategory = async () => {
     if (!newInternalName.trim()) return;
     setIsCreatingCat(true);
@@ -160,7 +169,7 @@ export default function AdminPublisher() {
           name: newInternalName,
           slug: slug,
           is_active: true,
-          is_internal_generated: true, // Setzt das Flag für die Trennung
+          is_internal_generated: true,
           theme: 'GENERIC',
           template: 'comparison'
         })
@@ -170,11 +179,7 @@ export default function AdminPublisher() {
       if (error) throw error;
 
       toast({ title: "Erstellt", description: `Interne Seite "${newInternalName}" angelegt.` });
-      
-      // Liste neu laden, damit die neue Kategorie erscheint
       await fetchCategories();
-      
-      // Direkt auswählen
       if (data) setSelectedCategoryId(data.id);
       setNewInternalName("");
       
@@ -193,7 +198,6 @@ export default function AdminPublisher() {
     const cat = categories.find(c => c.id === selectedCategoryId);
     if (!cat) return;
 
-    // Aufruf des fixierten Hooks
     const result = await generateCategoryContent(cat.name, catKeyword);
     if (result) {
       setGeneratedCategoryContent(result);
@@ -202,24 +206,43 @@ export default function AdminPublisher() {
   };
 
   const handleSaveToDatabase = async () => {
-    if (!selectedCategoryId || !generatedCategoryContent) return;
+    if (!selectedCategoryId) return;
     setIsSaving(true);
 
     try {
-      const { error } = await supabase
-        .from("categories")
-        .update({
-          long_content_top: generatedCategoryContent.contentTop,
-          long_content_bottom: generatedCategoryContent.contentBottom,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", selectedCategoryId);
+      if (generatedCategoryContent) {
+          const { error: catError } = await supabase
+            .from("categories")
+            .update({
+              long_content_top: generatedCategoryContent.contentTop,
+              long_content_bottom: generatedCategoryContent.contentBottom,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", selectedCategoryId);
+          if (catError) throw catError;
+      }
 
-      if (error) throw error;
+      const { error: deleteError } = await supabase
+        .from('category_projects')
+        .delete()
+        .eq('category_id', selectedCategoryId);
+      if (deleteError) throw deleteError;
 
-      toast({ title: "Gespeichert", description: "Content erfolgreich in die Datenbank geschrieben!" });
+      if (selectedProjectIds.length > 0) {
+          const projectMappings = selectedProjectIds.map((pid, index) => ({
+              category_id: selectedCategoryId,
+              project_id: pid,
+              sort_order: index
+          }));
+
+          const { error: insertError } = await supabase
+            .from('category_projects')
+            .insert(projectMappings);
+          if (insertError) throw insertError;
+      }
+
+      toast({ title: "Gespeichert", description: "Content & Projekt-Mapping erfolgreich aktualisiert!" });
     } catch (e: any) {
-      console.error(e);
       toast({ title: "Speicherfehler", description: e.message || "Zugriff verweigert.", variant: "destructive" });
     } finally {
       setIsSaving(false);
@@ -246,12 +269,11 @@ export default function AdminPublisher() {
       </div>
 
       {mode === 'external' ? (
-        // --- EXTERNAL MODE UI (Unverändert) ---
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-blue-900">
                             <Globe className="w-5 h-5 text-blue-500" />
                             1. Ziel & Content Setup
                         </CardTitle>
@@ -310,44 +332,33 @@ export default function AdminPublisher() {
              <div className="space-y-6">
                 <Card className="h-full">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-blue-900">
                             <LayoutList className="w-5 h-5 text-blue-500" />
                             2. Projekte Wählen
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ScrollArea className="h-[500px] pr-4">
-                            <div className="space-y-3">
-                                {projects.map(project => (
-                                    <div key={project.id} className="flex items-start gap-3 p-3 rounded-lg border hover:bg-slate-50 transition-colors">
-                                        <Checkbox id={`p-${project.id}`} checked={selectedProjectIds.includes(project.id)} onCheckedChange={() => toggleProject(project.id)} />
-                                        <div className="flex-1">
-                                            <Label htmlFor={`p-${project.id}`} className="font-medium cursor-pointer block">{project.name}</Label>
-                                            <span className="text-[10px] bg-slate-200 px-1.5 rounded text-slate-600">Rating: {project.rating}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                            {/* KYRA FIX: Korrekte Props für die Komponente */}
+                            <ProjectCheckboxList 
+                                selectedIds={selectedProjectIds} 
+                                onChange={setSelectedProjectIds} 
+                            />
                         </ScrollArea>
                     </CardContent>
                 </Card>
             </div>
         </div>
       ) : (
-        // --- INTERNAL MODE UI (RANK-SCOUT) ---
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
              <div className="space-y-6">
                 
-                {/* 1. Neue Kategorie erstellen (Bypass Lock) */}
                 <Card className="border-indigo-100 shadow-sm bg-indigo-50/30">
                     <CardHeader className="pb-3">
                         <CardTitle className="flex items-center gap-2 text-indigo-900 text-lg">
                             <PlusCircle className="w-5 h-5 text-indigo-600" />
                             Neue Interne Seite anlegen
                         </CardTitle>
-                        <CardDescription>
-                           Erstellt eine saubere, entkoppelte Seite.
-                        </CardDescription>
                     </CardHeader>
                     <CardContent className="flex gap-2">
                          <Input 
@@ -362,43 +373,33 @@ export default function AdminPublisher() {
                     </CardContent>
                 </Card>
 
-                {/* 2. Kategorie wählen & Generieren */}
                 <Card className="border-indigo-100 shadow-sm">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-indigo-900">
                             <Database className="w-5 h-5 text-indigo-600" />
-                            Content Generieren
+                            1. Seite wählen & Content
                         </CardTitle>
-                        <CardDescription>
-                            Hier erscheinen nur deine internen Seiten.
-                        </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-0">
                         <div className="space-y-3">
-                            <Label>Kategorie wählen (Nur Interne)</Label>
+                            <Label>Zielseite wählen</Label>
                             <Select onValueChange={setSelectedCategoryId} value={selectedCategoryId}>
                                 <SelectTrigger className="h-12 text-lg">
                                     <SelectValue placeholder="Liste laden..." />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {categories.length > 0 ? categories.map(c => (
-                                        <SelectItem key={c.id} value={c.id}>
-                                            {c.name} 
-                                        </SelectItem>
+                                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                     )) : (
-                                        <SelectItem value="none" disabled>Keine internen Seiten gefunden. Erstelle oben eine.</SelectItem>
+                                        <SelectItem value="none" disabled>Keine internen Seiten gefunden.</SelectItem>
                                     )}
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-3">
-                            <Label>Fokus-Thema (Prompt)</Label>
-                            <Input 
-                                value={catKeyword} 
-                                onChange={e => setCatKeyword(e.target.value)} 
-                                placeholder="z.B. Vergleich" 
-                            />
+                            <Label>Fokus-Keyword (AI Prompt)</Label>
+                            <Input value={catKeyword} onChange={e => setCatKeyword(e.target.value)} placeholder="z.B. Krypto Börsen Vergleich" />
                         </div>
 
                         <Button 
@@ -407,51 +408,76 @@ export default function AdminPublisher() {
                             className="w-full h-12 text-lg bg-indigo-600 hover:bg-indigo-700"
                         >
                             {isGeneratingCat ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <FileText className="w-5 h-5 mr-2" />}
-                            Content Generieren
+                            AI Content Generieren
                         </Button>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-indigo-100 shadow-sm">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-indigo-900">
+                            <ArrowUpDown className="w-5 h-5 text-indigo-600" />
+                            2. Ranking & Projekte festlegen
+                        </CardTitle>
+                        <CardDescription>Wähle aus, welche Anbieter in welcher Reihenfolge erscheinen.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrollArea className="h-[400px] pr-4 border rounded-lg p-4 bg-slate-50/50">
+                            {/* KYRA FIX: Korrekte Props für die Komponente */}
+                            <ProjectCheckboxList 
+                                selectedIds={selectedProjectIds} 
+                                onChange={setSelectedProjectIds} 
+                            />
+                        </ScrollArea>
+                        <p className="mt-4 text-xs text-muted-foreground italic text-center">Tipp: Die Reihenfolge der Auswahl bestimmt das Ranking auf der Seite.</p>
                     </CardContent>
                 </Card>
              </div>
 
              <div className="space-y-6">
-                {generatedCategoryContent ? (
-                    <Card className="h-full border-green-100">
-                        <CardHeader className="bg-green-50/50 pb-4">
+                {selectedCategoryId ? (
+                    <Card className="h-full border-green-100 shadow-lg">
+                        <CardHeader className="bg-green-50/50 pb-4 border-b">
                             <CardTitle className="flex items-center gap-2 text-green-900">
                                 <Eye className="w-5 h-5 text-green-600" />
-                                Vorschau & Save
+                                3. Finalisierung
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4 pt-4">
-                            <Tabs defaultValue="top">
-                                <TabsList className="w-full">
-                                    <TabsTrigger value="top" className="flex-1">Content Top</TabsTrigger>
-                                    <TabsTrigger value="bottom" className="flex-1">Content Bottom</TabsTrigger>
+                        <CardContent className="space-y-6 pt-6">
+                            <Tabs defaultValue="top" className="w-full">
+                                <TabsList className="w-full bg-slate-100 p-1">
+                                    <TabsTrigger value="top" className="flex-1">Einleitung (Top)</TabsTrigger>
+                                    <TabsTrigger value="bottom" className="flex-1">Ratgeber (Bottom)</TabsTrigger>
                                 </TabsList>
-                                <TabsContent value="top" className="mt-4">
-                                    <div className="p-4 bg-slate-50 rounded border h-[300px] overflow-y-auto prose prose-sm max-w-none" 
-                                         dangerouslySetInnerHTML={{ __html: generatedCategoryContent.contentTop || '<i class="text-slate-400">Leer</i>' }} />
+                                <TabsContent value="top" className="mt-4 animate-in slide-in-from-left-2">
+                                    <div className="p-4 bg-white rounded border h-[350px] overflow-y-auto prose prose-sm max-w-none shadow-inner" 
+                                         dangerouslySetInnerHTML={{ __html: generatedCategoryContent?.contentTop || '<span class="text-slate-400 italic">Noch kein Content generiert...</span>' }} />
                                 </TabsContent>
-                                <TabsContent value="bottom" className="mt-4">
-                                    <div className="p-4 bg-slate-50 rounded border h-[300px] overflow-y-auto prose prose-sm max-w-none" 
-                                         dangerouslySetInnerHTML={{ __html: generatedCategoryContent.contentBottom || '<i class="text-slate-400">Leer</i>' }} />
+                                <TabsContent value="bottom" className="mt-4 animate-in slide-in-from-right-2">
+                                    <div className="p-4 bg-white rounded border h-[350px] overflow-y-auto prose prose-sm max-w-none shadow-inner" 
+                                         dangerouslySetInnerHTML={{ __html: generatedCategoryContent?.contentBottom || '<span class="text-slate-400 italic">Noch kein Content generiert...</span>' }} />
                                 </TabsContent>
                             </Tabs>
 
-                            <Button 
-                                onClick={handleSaveToDatabase} 
-                                disabled={isSaving}
-                                className="w-full bg-green-600 hover:bg-green-700 h-12 text-lg shadow-lg shadow-green-200"
-                            >
-                                {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
-                                Content Speichern
-                            </Button>
+                            <div className="bg-slate-50 p-4 rounded-xl border border-dashed flex items-center justify-between">
+                                <div className="text-sm">
+                                    <span className="font-bold text-slate-700">{selectedProjectIds.length}</span> Projekte verknüpft
+                                </div>
+                                <Button 
+                                    onClick={handleSaveToDatabase} 
+                                    disabled={isSaving}
+                                    className="bg-green-600 hover:bg-green-700 h-12 px-8 text-lg shadow-lg shadow-green-200"
+                                >
+                                    {isSaving ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Save className="w-5 h-5 mr-2" />}
+                                    Live Schalten
+                                </Button>
+                            </div>
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-400">
+                    <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-xl p-8 text-slate-400 bg-slate-50/30">
                         <Database className="w-12 h-12 mb-4 opacity-20" />
-                        <p>Wähle links eine Kategorie und starte die Generierung.</p>
+                        <p className="text-center">Wähle links eine Zielseite aus,<br/>um den Editor zu aktivieren.</p>
                     </div>
                 )}
              </div>
