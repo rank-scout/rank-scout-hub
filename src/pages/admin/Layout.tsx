@@ -19,20 +19,22 @@ import {
   BarChart3, 
   Globe, 
   BookOpen,
-  Smartphone // <--- NEU
+  Smartphone,
+  Handshake, // Neu für Partner
+  Network // Neu für Hubs
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Navigation Items
+// Navigation Items - KYRA CLEAN UP
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-  { label: "Projekte", icon: Globe, path: "/admin/projects" },
-  { label: "Apps & Deals", icon: Smartphone, path: "/admin/apps" }, // <--- NEU EINGEFÜGT
-  { label: "Kategorien", icon: Layers, path: "/admin/categories" },
+  { label: "Partner & Angebote", icon: Handshake, path: "/admin/projects" }, // Ex-Projekte
+  { label: "Apps & Deals", icon: Smartphone, path: "/admin/apps" },
+  { label: "Seiten & Hubs", icon: Network, path: "/admin/categories" }, // Ex-Kategorien
   { label: "Magazin", icon: BookOpen, path: "/admin/forum" },
-  { label: "Publisher", icon: UploadCloud, path: "/admin/multi-publisher" },
+  { label: "Massen-Generator", icon: UploadCloud, path: "/admin/multi-publisher" }, // Ex-Publisher
   { label: "Redirects", icon: BarChart3, path: "/admin/redirects" },
   { label: "Footer-Links", icon: Link2, path: "/admin/footer-links" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },
@@ -200,7 +202,7 @@ export default function AdminLayout() {
              <h1 className="text-primary font-bold text-lg capitalize">{currentTitle}</h1>
           </div>
           <div className="flex items-center gap-4">
-             <div className="text-xs font-mono text-muted-foreground bg-slate-100 px-2 py-1 rounded">v2.0.1</div>
+             <div className="text-xs font-mono text-muted-foreground bg-slate-100 px-2 py-1 rounded">v2.1.0 Kyra-Hub</div>
           </div>
         </div>
 

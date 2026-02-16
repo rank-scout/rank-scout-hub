@@ -1,138 +1,175 @@
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
-const GEMINI_API_KEY = "AIzaSyA1BJE6mOrSA8tcIXydbtNoEqov6U1Z9W4"; 
+type AIProvider = "google" | "openai";
 
-export interface GeneratedCategoryContent {
-  contentTop: string;
-  contentBottom: string;
-  wordCount: number;
+interface AIConfig {
+  provider: AIProvider;
+  googleKey: string;
+  openaiKey: string;
 }
 
-export function useGenerateCategoryContent() {
+export const useGenerateCategoryContent = () => {
   const [isGenerating, setIsGenerating] = useState(false);
 
-  // Hilfsfunktion: Ermittelt automatisch ein verfügbares Modell
-  const findWorkingModel = async (): Promise<string> => {
+  const getConfig = (): AIConfig => {
+    return {
+      provider: (localStorage.getItem("ai_provider") as AIProvider) || "google",
+      googleKey: localStorage.getItem("ai_key_google") || "",
+      openaiKey: localStorage.getItem("ai_key_openai") || "",
+    };
+  };
+
+  // Wir suchen das beste Modell (Priorität auf Flash für Speed, Pro für Quality wenn verfügbar)
+  const findBestGoogleModel = async (apiKey: string): Promise<string> => {
     try {
-      console.log("[Gemini-Auto] Suche verfügbare Modelle...");
-      const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${GEMINI_API_KEY}`;
-      
-      const response = await fetch(listUrl);
-      if (!response.ok) throw new Error("Konnte Modell-Liste nicht laden");
-      
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      if (!response.ok) return "models/gemini-1.5-flash"; 
       const data = await response.json();
       const models = data.models || [];
+      const textModels = models.filter((m: any) => m.supportedGenerationMethods?.includes("generateContent"));
       
-      // Wir suchen Modelle, die 'generateContent' unterstützen
-      const contentModels = models.filter((m: any) => 
-        m.supportedGenerationMethods?.includes("generateContent")
-      );
-
-      if (contentModels.length === 0) throw new Error("Keine generativen Modelle gefunden.");
-
-      // Priorisierung: Wir wollen Flash oder Pro
-      const preferred = contentModels.find((m: any) => m.name.includes("flash")) ||
-                        contentModels.find((m: any) => m.name.includes("pro")) ||
-                        contentModels[0]; // Fallback: Nimm einfach das erste
-
-      // Der Name kommt oft als "models/gemini-1.5-flash". Wir brauchen nur den hinteren Teil für manche Calls,
-      // aber die API akzeptiert meistens den vollen Namen "models/..." nicht im URL Pfad, sondern wir müssen aufpassen.
-      // Die API erwartet oft: /v1beta/models/MODEL_NAME:generateContent
-      // Der 'name' im JSON ist z.B. "models/gemini-1.5-flash". 
-      // Wir nehmen ihn so, wie er kommt, schneiden aber "models/" ab, falls wir es in der URL selbst bauen.
+      const flash = textModels.find((m: any) => m.name.includes("flash"));
+      const pro = textModels.find((m: any) => m.name.includes("gemini-1.5-pro"));
+      const anyPro = textModels.find((m: any) => m.name.includes("pro"));
       
-      const cleanName = preferred.name.replace("models/", "");
-      console.log(`[Gemini-Auto] Bestes Modell gefunden: ${cleanName}`);
-      return cleanName;
-
-    } catch (e) {
-      console.warn("[Gemini-Auto] Auto-Discovery fehlgeschlagen, nutze Fallback.", e);
-      return "gemini-1.5-flash"; // Letzter Strohhalm
+      // Flash ist oft stabiler verfügbar, daher Priorität 1
+      if (flash) return flash.name;
+      if (pro) return pro.name;
+      if (anyPro) return anyPro.name;
+      return "models/gemini-1.5-flash";
+    } catch {
+      return "models/gemini-1.5-flash";
     }
   };
 
-  const generateCategoryContent = async (
-    categoryName: string,
-    topic: string = "Bester Vergleich & Ratgeber",
-    wordCount: number = 1500
-  ): Promise<GeneratedCategoryContent | null> => {
+  const generateCategoryContent = async (categoryName: string, topicPrompt: string) => {
     setIsGenerating(true);
+    const config = getConfig();
+    const finalTopic = topicPrompt || categoryName;
+    console.log(`Starte Premium-Design-Mode (${config.provider}) für: ${finalTopic}`);
 
-    if (!GEMINI_API_KEY) {
-        toast({ title: "Fehler", description: "Google API Key fehlt!", variant: "destructive" });
-        setIsGenerating(false);
-        return null;
-    }
+    // --- DER "MASTER-PROMPT" ---
+    // Enthält Design-Vorgaben, Bild-Logik und Struktur
+    const systemPrompt = `
+      Du bist Lead-Designer und Chefredakteur von 'Rank-Scout'.
+      THEMA: "${finalTopic}"
+
+      AUFGABE:
+      Erstelle ein JSON-Objekt mit visuell beeindruckendem Content.
+      Der Text muss "scannbar" sein (keine Textwüsten!). Nutze visuelle Anker.
+
+      DESIGN & HTML VORGABEN (Tailwind CSS):
+      1. **Highlight-Boxen (Blau)**: Für Tipps/Expertenwissen nutze:
+         <div class="bg-blue-50 border-l-4 border-blue-500 p-5 my-6 rounded-r-lg shadow-sm">
+           <h4 class="text-blue-700 font-bold text-lg mb-1 flex items-center gap-2">💡 Rank-Scout Experten-Tipp</h4>
+           <p class="text-slate-700 text-sm leading-relaxed">DEIN TEXT...</p>
+         </div>
+
+      2. **Warn-Boxen (Rot)**: Für Risiken/Warnungen nutze:
+         <div class="bg-red-50 border-l-4 border-red-500 p-5 my-6 rounded-r-lg shadow-sm">
+           <h4 class="text-red-700 font-bold text-lg mb-1 flex items-center gap-2">⚠️ Achtung</h4>
+           <p class="text-slate-700 text-sm leading-relaxed">DEINE WARNUNG...</p>
+         </div>
+
+      3. **Checklisten (Grün)**: Statt normaler Listen nutze:
+         <ul class="space-y-2 my-6">
+           <li class="flex items-start gap-3 p-2 bg-green-50/50 rounded-lg"><span class="text-green-600 font-bold text-lg">✓</span> <span class="text-slate-700 font-medium">POSITIVER PUNKT 1</span></li>
+           <li class="flex items-start gap-3 p-2 bg-green-50/50 rounded-lg"><span class="text-green-600 font-bold text-lg">✓</span> <span class="text-slate-700 font-medium">POSITIVER PUNKT 2</span></li>
+         </ul>
+
+      4. **CTA Button**: Baue mitten im Text einmal diesen Button ein:
+         <div class="my-8 text-center">
+           <a href="#vergleich" class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:-translate-y-1">🏆 Zum Testsieger springen</a>
+         </div>
+
+      STRUKTUR DES ARTIKELS:
+      1. **Intro**: Starker Einstieg (Textmarker-Effekt nutzen: <span class="bg-yellow-200 px-1">Wichtiges Keyword</span>).
+      2. **Deep Dive (H2)**: Fachwissen. Setze hier eine "Experten-Box" ein.
+      3. **Vergleich/Analyse (H2)**: Nutze hier die "Grüne Checkliste".
+      4. **Kritik (H2)**: Nutze hier die "Rote Warn-Box".
+      5. **Fazit (H2)**: Zusammenfassung.
+
+      BILDER REGELN (Pollinations Flux):
+      - Füge 2-3 Bilder ein.
+      - URL: https://image.pollinations.ai/prompt/KEYWORD?width=1080&height=720&nologo=true&model=flux
+      - (Ersetze KEYWORD durch ein englisches Wort, z.B. 'business meeting', 'dating couple', 'bitcoin chart').
+
+      OUTPUT FORMAT (JSON Only):
+      {
+        "htmlContent": "HTML STRING...",
+        "faqData": [
+          { "question": "Frage 1?", "answer": "Antwort 1." },
+          { "question": "Frage 2?", "answer": "Antwort 2." },
+          { "question": "Frage 3?", "answer": "Antwort 3." },
+          { "question": "Frage 4?", "answer": "Antwort 4." },
+          { "question": "Frage 5?", "answer": "Antwort 5." }
+        ]
+      }
+    `;
 
     try {
-      console.log(`[Gemini-AI] Starte für: ${categoryName}...`);
+      let rawText = "";
 
-      // SCHRITT 1: Modell automatisch finden
-      const modelName = await findWorkingModel();
+      // --- GOOGLE ---
+      if (config.provider === "google") {
+        if (!config.googleKey) throw new Error("Google Key fehlt.");
+        const modelName = await findBestGoogleModel(config.googleKey);
+        
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${config.googleKey}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: systemPrompt }] }],
+            generationConfig: { responseMimeType: "application/json" },
+            safetySettings: [
+                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
+          }),
+        });
 
-      const prompt = `
-      Du bist ein professioneller SEO-Texter für ein Vergleichsportal (Rank-Scout).
-      Thema: "${categoryName}". Fokus: "${topic}".
+        if (!response.ok) {
+           const err = await response.json();
+           throw new Error(`Google Fehler: ${err.error?.message || response.statusText}`);
+        }
+        const data = await response.json();
+        rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      } 
       
-      Aufgabe:
-      1. 'contentTop': Ein packendes Intro (ca. 150 Wörter). Warum vergleichen? Was bringt es?
-      2. 'contentBottom': Ein ausführlicher Ratgeber (ca. ${wordCount} Wörter).
-         - Nutze sinnvolle H2 und H3 Überschriften.
-         - Nutze HTML Tags für Formatierung: <h2>, <h3>, <p>, <ul>, <li>, <strong>.
-         - KEIN Markdown (keine Sternchen ** oder Rauten ##), nur reines HTML.
-      
-      WICHTIG: Antworte AUSSCHLIESSLICH mit einem validen JSON-Objekt:
-      {
-        "contentTop": "...",
-        "contentBottom": "..."
+      // --- OPENAI ---
+      else if (config.provider === "openai") {
+        if (!config.openaiKey) throw new Error("OpenAI Key fehlt.");
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${config.openaiKey}` },
+          body: JSON.stringify({
+            model: "gpt-4o",
+            messages: [{ role: "system", content: "Output JSON only." }, { role: "user", content: systemPrompt }],
+            response_format: { type: "json_object" }
+          }),
+        });
+        if (!response.ok) throw new Error("OpenAI API Fehler");
+        const data = await response.json();
+        rawText = data.choices?.[0]?.message?.content || "";
       }
-      `;
-
-      // SCHRITT 2: Generieren mit dem gefundenen Modell
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`;
-
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseMimeType: "application/json" }
-        })
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`API Fehler (${response.status}) bei Modell ${modelName}: ${errText}`);
-      }
-
-      const data = await response.json();
-      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!rawText) throw new Error("Keine Antwort erhalten.");
 
-      // Parsing
-      let parsed;
-      try {
-        parsed = JSON.parse(rawText);
-      } catch (e) {
-        console.error("JSON Parse Fehler:", e);
-        throw new Error("KI-Antwort war kein gültiges JSON.");
-      }
+      const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+      const parsedData = JSON.parse(cleanJson);
 
-      return {
-        contentTop: parsed.contentTop || "",
-        contentBottom: parsed.contentBottom || "",
-        wordCount
+      return { 
+        contentTop: parsedData.htmlContent, 
+        contentBottom: "",
+        faqData: parsedData.faqData 
       };
 
-    } catch (err: any) {
-      console.error("[Gemini-AI] Finaler Fehler:", err);
-      toast({
-        title: "Fehler",
-        description: err.message,
-        variant: "destructive"
-      });
+    } catch (error: any) {
+      console.error("KI Fehler:", error);
+      toast({ title: "Fehler", description: error.message, variant: "destructive" });
       return null;
     } finally {
       setIsGenerating(false);
@@ -140,4 +177,4 @@ export function useGenerateCategoryContent() {
   };
 
   return { generateCategoryContent, isGenerating };
-}
+};

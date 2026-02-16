@@ -10,7 +10,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 
 // Category schemas
 export const categoryThemeEnum = z.enum(["DATING", "ADULT", "CASINO", "GENERIC"]);
-export const categoryTemplateEnum = z.enum(["comparison", "review"]);
+export const categoryTemplateEnum = z.enum(["comparison", "review", "hub_overview"]); // Hub hinzugefügt
 export const colorThemeEnum = z.enum(["dark", "light", "neon"]);
 
 // Navigation settings
@@ -26,13 +26,14 @@ export const navigationSettingsSchema = z.object({
 export type NavigationSettings = z.infer<typeof navigationSettingsSchema>;
 
 export const categorySchema = z.object({
+  // Basis Daten
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
   name: z.string().min(1, "Name erforderlich"),
   description: z.string().optional().nullable(),
   icon: z.string().optional().nullable(),
   theme: categoryThemeEnum.default("GENERIC"),
   color_theme: colorThemeEnum.default("light"),
-  template: categoryTemplateEnum.default("comparison"),
+  template: z.string().default("comparison"), // String erlaubt mehr Flexibilität
   is_active: z.boolean().default(true),
   
   // SEO & Meta
@@ -47,7 +48,7 @@ export const categorySchema = z.object({
   hero_cta_text: z.string().optional().nullable(),
   hero_badge_text: z.string().optional().nullable(),
   
-  // KYRA UPDATE: Hier ist der Fix! Das Feld muss existieren.
+  // Images
   hero_image_url: z.string().optional().nullable(),
   
   // Long Content
@@ -58,7 +59,10 @@ export const categorySchema = z.object({
   analytics_code: z.string().optional().nullable(),
   banner_override: z.string().optional().nullable(),
   custom_html_override: z.string().optional().nullable(),
-  custom_css: z.string().optional().nullable(),
+  custom_html: z.string().optional().nullable(), // Legacy Support
+  
+  // HUB CONFIG (Das fehlende Puzzleteil!)
+  custom_css: z.string().optional().nullable(), 
   
   // Footer Data
   footer_site_name: z.string().optional().nullable(),
@@ -82,13 +86,15 @@ export const categorySchema = z.object({
   is_city: z.boolean().optional().default(false),
   sort_order: z.number().optional().default(0),
 
-  // Legacy
+  // Legacy / Loose Types um Validation Errors zu vermeiden
   faq_section: z.any().optional(),
   footer_links: z.any().optional(),
   legal_links: z.any().optional(),
   popular_footer_links: z.any().optional(),
   projects: z.any().optional(),
   category_projects: z.any().optional(),
+  reviews: z.any().optional(),
+  testimonials: z.any().optional(),
 });
 
 export type CategoryInput = z.infer<typeof categorySchema>;
