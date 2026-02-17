@@ -1,8 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { useForumThread, useThreadReplies, useCreateReply, useToggleLike, ForumReplyWithLikes } from "@/hooks/useForum";
+import { 
+  useForumThread, 
+  useThreadReplies, 
+  useCreateReply, 
+  useToggleLike, 
+  useIncrementThreadView, // NEU IMPORTIERT
+  ForumReplyWithLikes 
+} from "@/hooks/useForum";
 import { supabase } from "@/integrations/supabase/client";
 import {
   MessageSquare, Pin, Clock, ArrowLeft, Send, User, Lock, CheckCircle, ThumbsUp
@@ -25,6 +32,9 @@ export default function ForumThread() {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  // Ref um View-Increment nur 1x pro Session/Load zu feuern
+  const viewIncremented = useRef(false);
    
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -42,6 +52,16 @@ export default function ForumThread() {
   const { data: replies, isLoading: repliesLoading } = useThreadReplies(thread?.id || "", currentUserId || undefined);
   const createReply = useCreateReply();
   const toggleLike = useToggleLike();
+  const incrementView = useIncrementThreadView(); // NEU: Hook nutzen
+
+  // --- VIEW COUNTING LOGIC ---
+  useEffect(() => {
+    if (thread?.id && !viewIncremented.current) {
+      incrementView.mutate(thread.id);
+      viewIncremented.current = true;
+    }
+  }, [thread?.id, incrementView]);
+  // ---------------------------
 
   const [replyName, setReplyName] = useState("");
   const [replyContent, setReplyContent] = useState("");
@@ -91,19 +111,16 @@ export default function ForumThread() {
   };
 
   const renderContent = () => {
-  if (!thread) return { __html: "" };
-  const htmlContent = thread.raw_html_content || thread.content;
-  
-  // WICHTIG: Klassen und Styles erlauben, sonst wird dein Layout zerstört
-  return { 
-    __html: DOMPurify.sanitize(htmlContent, {
-      ADD_ATTR: ['class', 'style', 'target', 'rel'],
-      ADD_TAGS: ['iframe', 'figure', 'figcaption'] // Falls wir mal Videos oder Figures brauchen
-    }) 
+    if (!thread) return { __html: "" };
+    const htmlContent = thread.raw_html_content || thread.content;
+    return { 
+      __html: DOMPurify.sanitize(htmlContent, {
+        ADD_ATTR: ['class', 'style', 'target', 'rel'],
+        ADD_TAGS: ['iframe', 'figure', 'figcaption']
+      }) 
+    };
   };
-};
 
-  // --- SEO LOGIK ---
   const seoTitle = thread?.seo_title && thread.seo_title.trim() !== "" 
     ? thread.seo_title 
     : (thread ? `${thread.title} | Forum` : "Lade Beitrag...");
@@ -119,7 +136,6 @@ export default function ForumThread() {
   }
 
   useForceSEO(seoDescription);
-
   const canonicalUrl = window.location.href;
 
   if (threadLoading) {
@@ -153,7 +169,6 @@ export default function ForumThread() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-       
       <Helmet key={location.pathname}>
         <title>{seoTitle}</title>
         <link rel="canonical" href={canonicalUrl} />
@@ -163,40 +178,33 @@ export default function ForumThread() {
         <meta property="og:type" content="article" />
         {thread.featured_image_url && <meta property="og:image" content={thread.featured_image_url} />}
       </Helmet>
-
       <Header />
-
       <main className="flex-grow">
-        {/* Sticky Nav Bar für bessere UX */}
         <div className="sticky top-0 z-40 w-full bg-white/80 backdrop-blur-md border-b border-slate-100 mb-8">
             <div className="container mx-auto px-4 h-14 flex items-center justify-between">
                  <Link to="/forum" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group">
                     <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
                     Zurück zur Übersicht
                  </Link>
+                 <div className="text-xs text-muted-foreground flex items-center gap-1">
+                    <span className="font-bold text-slate-700">{thread.views}</span> Aufrufe
+                 </div>
             </div>
         </div>
-
+        {/* Rest der UI bleibt identisch */}
         <section className="pb-24">
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row gap-12">
-              
-              {/* --- MAIN CONTENT AREA --- */}
               <div className="flex-1 lg:w-[70%]">
-                
-                {/* Header Info */}
                 <div className="mb-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
                   <div className="flex items-center gap-2 mb-4 flex-wrap">
                     {thread.is_pinned && <Badge variant="secondary" className="gap-1 bg-slate-100 text-slate-700 hover:bg-slate-200"><Pin className="w-3 h-3" /> Angepinnt</Badge>}
                     {thread.is_locked && <Badge variant="outline" className="gap-1 border-slate-200"><Lock className="w-3 h-3" /> Geschlossen</Badge>}
                     {thread.is_answered && <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 gap-1 hover:bg-emerald-100"><CheckCircle className="w-3 h-3" /> Beantwortet</Badge>}
                   </div>
-                  
-                  {/* Premium Title Typography */}
                   <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold mb-6 leading-[1.1] text-slate-900 tracking-tight">
                     {thread.title}
                   </h1>
-                  
                   <div className="flex items-center gap-6 text-sm text-muted-foreground border-b border-slate-100 pb-8">
                     <span className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-primary/5 flex items-center justify-center border border-primary/10">
@@ -219,35 +227,20 @@ export default function ForumThread() {
                     </span>
                   </div>
                 </div>
-
-                {/* CONTENT: FadeIn Wrapper & Premium Typography */}
                 <FadeIn>
                     <div className="mb-16">
-                        {/* Wir nutzen prose-xl für bessere Lesbarkeit und max-w-none für volle Breite */}
                         <div 
-                            className="
-                                prose prose-lg md:prose-xl prose-slate dark:prose-invert max-w-none 
-                                prose-headings:font-display prose-headings:font-bold prose-headings:text-slate-900
-                                prose-p:text-slate-600 prose-p:leading-relaxed
-                                prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                                prose-strong:text-slate-900 prose-strong:font-bold
-                                prose-img:rounded-[2.5rem] prose-img:shadow-2xl prose-img:w-full prose-img:object-cover prose-img:my-12 prose-img:border prose-img:border-slate-100
-                                prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-slate-50 prose-blockquote:py-6 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:font-medium prose-blockquote:text-slate-800
-                            " 
+                            className="prose prose-lg md:prose-xl prose-slate dark:prose-invert max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:text-slate-900 prose-p:text-slate-600 prose-p:leading-relaxed prose-a:text-primary prose-a:no-underline hover:prose-a:underline prose-strong:text-slate-900 prose-strong:font-bold prose-img:rounded-[2.5rem] prose-img:shadow-2xl prose-img:w-full prose-img:object-cover prose-img:my-12 prose-img:border prose-img:border-slate-100 prose-blockquote:border-l-4 prose-blockquote:border-primary prose-blockquote:bg-slate-50 prose-blockquote:py-6 prose-blockquote:px-8 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:font-medium prose-blockquote:text-slate-800" 
                             dangerouslySetInnerHTML={renderContent()} 
                         />
                     </div>
                 </FadeIn>
-
                 <Separator className="my-12 bg-slate-100" />
-
-                {/* Comments Section */}
                 <div className="mb-12">
                   <h2 className="text-3xl font-bold mb-8 flex items-center gap-3 text-slate-900">
                     <MessageSquare className="w-8 h-8 text-primary" /> 
                     Kommentare <span className="text-slate-300 text-2xl font-normal">({replies?.length || 0})</span>
                   </h2>
-                  
                   {repliesLoading ? (
                     <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 rounded-3xl" />)}</div>
                   ) : replies && replies.length > 0 ? (
@@ -297,7 +290,6 @@ export default function ForumThread() {
                     </div>
                   )}
                 </div>
-
                 {!thread.is_locked ? (
                   <Card className="border border-slate-200 shadow-xl shadow-slate-200/40 rounded-[2rem] overflow-hidden">
                     <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-8 py-6">
@@ -328,7 +320,6 @@ export default function ForumThread() {
                                 className="bg-slate-50 border-slate-200 rounded-xl min-h-[150px] focus:ring-primary/20 focus:border-primary transition-all p-4" 
                              />
                         </div>
-                        
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-2">
                           <p className="text-xs text-slate-400 font-medium order-2 sm:order-1 flex items-center gap-1">
                              <Lock className="w-3 h-3" /> Moderiert • Respektvoller Umgang
@@ -353,30 +344,16 @@ export default function ForumThread() {
                   </Card>
                 )}
               </div>
-              
-              {/* --- SIDEBAR --- */}
               <aside className="lg:w-[30%]">
                  <div className="sticky top-24">
                     <ForumSidebar />
                  </div>
               </aside>
-
             </div>
           </div>
         </section>
       </main>
       <Footer />
-      <script type="application/ld+json">
-        {JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "DiscussionForumPosting",
-          headline: thread.title,
-          author: { "@type": "Person", name: thread.author_name },
-          datePublished: thread.created_at,
-          dateModified: thread.updated_at,
-          interactionStatistic: { "@type": "InteractionCounter", interactionType: "https://schema.org/ViewAction", userInteractionCount: 0 }
-        })}
-      </script>
     </div>
   );
 }

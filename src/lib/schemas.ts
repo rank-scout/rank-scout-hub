@@ -26,7 +26,6 @@ export const navigationSettingsSchema = z.object({
 export type NavigationSettings = z.infer<typeof navigationSettingsSchema>;
 
 export const categorySchema = z.object({
-  // Basis Daten
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
   name: z.string().min(1, "Name erforderlich"),
   description: z.string().optional().nullable(),
@@ -35,61 +34,37 @@ export const categorySchema = z.object({
   color_theme: colorThemeEnum.default("light"),
   template: z.string().default("comparison"),
   is_active: z.boolean().default(true),
-  
-  // SEO & Meta
   meta_title: z.string().optional().nullable(),
   meta_description: z.string().optional().nullable(),
   h1_title: z.string().optional().nullable(),
-  
-  // Landingpage Content
   site_name: z.string().optional().nullable(),
   hero_headline: z.string().optional().nullable(),
   hero_pretitle: z.string().optional().nullable(),
   hero_cta_text: z.string().optional().nullable(),
   hero_badge_text: z.string().optional().nullable(),
-  
-  // Images
   hero_image_url: z.string().optional().nullable(),
-  
-  // Long Content
   long_content_top: z.string().optional().nullable(),
   long_content_bottom: z.string().optional().nullable(),
-  
-  // Tech & Override
   analytics_code: z.string().optional().nullable(),
   banner_override: z.string().optional().nullable(),
   custom_html_override: z.string().optional().nullable(),
   custom_html: z.string().optional().nullable(), 
-  
-  // HUB CONFIG
   custom_css: z.string().optional().nullable(), 
-
-  // --- NEU: AFFILIATE WIDGET CODE ---
   comparison_widget_code: z.string().optional().nullable(),
-  
-  // Footer Data
   footer_site_name: z.string().optional().nullable(),
   footer_copyright_text: z.string().optional().nullable(),
   footer_designer_name: z.string().optional().nullable(),
   footer_designer_url: z.string().optional().nullable(),
-  
-  // Settings & Arrays
   navigation_settings: navigationSettingsSchema.optional().nullable(),
-  
-  // Sidebar Ads
   sidebar_ad_html: z.string().optional().nullable(),
   sidebar_ad_image: z.string().optional().nullable(),
-
   faq_data: z.array(z.object({
     question: z.string(),
     answer: z.string()
   })).optional().default([]),
-  
   is_internal_generated: z.boolean().optional().default(false),
   is_city: z.boolean().optional().default(false),
   sort_order: z.number().optional().default(0),
-
-  // Legacy / Loose Types
   faq_section: z.any().optional(),
   footer_links: z.any().optional(),
   legal_links: z.any().optional(),
@@ -102,7 +77,6 @@ export const categorySchema = z.object({
 
 export type CategoryInput = z.infer<typeof categorySchema>;
 
-// Project schemas
 export const countryScopeEnum = z.enum(["DACH", "DE", "AT", "CH"]);
 
 export const projectSchema = z.object({
@@ -123,7 +97,6 @@ export const projectSchema = z.object({
 
 export type ProjectInput = z.infer<typeof projectSchema>;
 
-// Settings & Home Schemas
 export const trendingLinkSchema = z.object({
   label: z.string().min(1),
   url: z.string().min(1),
@@ -139,6 +112,11 @@ export const siteSettingsSchema = z.object({
   site_title: z.string().min(1).max(100),
   site_description: z.string().max(300),
   contact_email: z.string().email().optional().or(z.literal("")),
+  // --- NEUE GOOGLE FIELDS ---
+  google_analytics_id: z.string().optional().or(z.literal("")),
+  google_search_console_verification: z.string().optional().or(z.literal("")),
+  custom_report_url: z.string().optional().or(z.literal("")),
+  // --------------------------
   social_links: z.object({
     facebook: z.string().url().optional().or(z.literal("")),
     twitter: z.string().url().optional().or(z.literal("")),
@@ -149,23 +127,6 @@ export const siteSettingsSchema = z.object({
   header_nav: z.array(navLinkSchema).default([]),
   footer_nav: z.array(navLinkSchema).default([]),
   legal_nav: z.array(navLinkSchema).default([]),
-});
-
-const bigThreeItemSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  desc: z.string(),
-  link: z.string(),
-  button_text: z.string().default("Vergleichen"),
-  image_url: z.string().optional(),
-  theme: z.enum(["blue", "gold", "dark"]).default("blue"),
-  icon: z.string().default("trending"),
-});
-
-const featureItemSchema = z.object({
-  title: z.string(),
-  text: z.string(),
-  icon: z.string().default("zap"),
 });
 
 export const homeContentSchema = z.object({
@@ -199,17 +160,12 @@ export const homeContentSchema = z.object({
     services_title: z.string().optional(),
     services_desc: z.string().optional(),
     services_link: z.string().optional(),
-    items: z.array(bigThreeItemSchema).default([]),
+    items: z.array(z.any()).default([]),
   }),
   why_us: z.object({
     headline: z.string().default("Warum Rank-Scout?"),
     subheadline: z.string().default("Wir sind nicht nur ein weiteres Vergleichsportal."),
-    features: z.array(featureItemSchema).default([
-      { title: "Extreme Performance", text: "Keine Ladezeiten, nur Fakten.", icon: "zap" },
-      { title: "100% Unabhängig", text: "Wir lassen uns nicht kaufen.", icon: "shield" },
-      { title: "Global & Lokal", text: "Von International bis Regional.", icon: "globe" },
-      { title: "Echtzeit Updates", text: "Täglich frische Daten.", icon: "chart" }
-    ])
+    features: z.array(z.any()).default([])
   }).default({}),
   categories: z.object({
     headline: z.string(),

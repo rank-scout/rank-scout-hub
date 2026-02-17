@@ -57,6 +57,11 @@ export default function AdminSettings() {
   const [analyticsStatus, setAnalyticsStatus] = useState<"idle" | "checking" | "found" | "not-found">("idle");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
+  // --- NEUE ANALYTICS STATES ---
+  const [ga4Id, setGa4Id] = useState("");
+  const [gscVerification, setGscVerification] = useState("");
+  const [reportUrl, setReportUrl] = useState("");
+
   const [adSenseClient, setAdSenseClient] = useState("");
   const [adSenseSlot, setAdSenseSlot] = useState("");
   const [amznHeadline, setAmznHeadline] = useState("");
@@ -120,6 +125,11 @@ export default function AdminSettings() {
     setAnalyticsCode((settings.global_analytics_code as string) || "");
     setAdsEnabled((settings.ads_enabled as boolean) || false);
     
+    // Load Analytics
+    setGa4Id((settings as any).google_analytics_id || "");
+    setGscVerification((settings as any).google_search_console_verification || "");
+    setReportUrl((settings as any).custom_report_url || "");
+
     setAdSenseClient((settings.ads_sense_client_id as string) || "");
     setAdSenseSlot((settings.ads_sense_slot_id as string) || "");
     
@@ -184,6 +194,13 @@ export default function AdminSettings() {
         high_ticket_url: scoutyHighTicketUrl,
         enabled: scoutyEnabled
     });
+  };
+
+  const saveAnalytics = () => {
+    saveSetting("google_analytics_id", ga4Id);
+    saveSetting("google_search_console_verification", gscVerification);
+    saveSetting("custom_report_url", reportUrl);
+    saveSetting("global_analytics_code", analyticsCode);
   };
 
   const toggleSection = (key: keyof typeof defaultHomeLayout) => {
@@ -400,7 +417,7 @@ export default function AdminSettings() {
 
   const checkAnalyticsStatus = async () => {
     setAnalyticsStatus("checking");
-    const id = analyticsCode.match(/G-[A-Z0-9]+/)?.[0];
+    const id = analyticsCode.match(/G-[A-Z0-9]+/)?.[0] || ga4Id;
     try {
       if (id) {
         setAnalyticsStatus("found");
@@ -431,23 +448,17 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="global" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl h-auto">
-          <TabsTrigger 
-            value="global" 
-            className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
-          >
+        <TabsList className="grid w-full grid-cols-4 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl h-auto">
+          <TabsTrigger value="global" className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium">
             Global & Branding
           </TabsTrigger>
-          <TabsTrigger 
-            value="navigation" 
-            className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
-          >
+          <TabsTrigger value="analytics_new" className="py-3 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium flex gap-2 items-center justify-center">
+            <BarChart3 className="w-4 h-4"/> Analytics & API
+          </TabsTrigger>
+          <TabsTrigger value="navigation" className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium">
             Navi & Footer
           </TabsTrigger>
-          <TabsTrigger 
-            value="home" 
-            className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
-          >
+          <TabsTrigger value="home" className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium">
             Startseite {hasUnsavedChanges && <span className="ml-2 w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>}
           </TabsTrigger>
         </TabsList>
@@ -460,9 +471,7 @@ export default function AdminSettings() {
                   <Target className="h-4 w-4 text-secondary" />
                   Scouty AI Config
                 </CardTitle>
-                <CardDescription className="text-slate-400 text-xs">
-                  Konfiguriere deinen AI-Assistenten.
-                </CardDescription>
+                <CardDescription className="text-slate-400 text-xs">Konfiguriere deinen AI-Assistenten.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                  <div className="flex items-center justify-between">
@@ -471,14 +480,7 @@ export default function AdminSettings() {
                  </div>
                  <div className="space-y-2">
                     <Label className="text-white text-xs">High-Ticket / Easter-Egg URL</Label>
-                    <div className="flex gap-2">
-                        <Input 
-                        placeholder="https://..." 
-                        value={scoutyHighTicketUrl}
-                        onChange={(e) => setScoutyHighTicketUrl(e.target.value)}
-                        className="bg-slate-950 border-slate-800 text-xs h-9" 
-                        />
-                    </div>
+                    <Input placeholder="https://..." value={scoutyHighTicketUrl} onChange={(e) => setScoutyHighTicketUrl(e.target.value)} className="bg-slate-950 border-slate-800 text-xs h-9" />
                  </div>
                  <Button onClick={saveScoutyConfig} size="sm" className="w-full bg-secondary hover:bg-secondary/80 h-8">
                     <Save className="h-3 w-3 mr-2" /> Speichern
@@ -492,15 +494,11 @@ export default function AdminSettings() {
                   <Users className="h-4 w-4 text-green-500" />
                   Scouty Leads
                 </CardTitle>
-                <CardDescription className="text-slate-400 text-xs">
-                  Generierte Kontakte im Chat.
-                </CardDescription>
+                <CardDescription className="text-slate-400 text-xs">Generierte Kontakte im Chat.</CardDescription>
               </CardHeader>
               <CardContent className="flex items-center gap-4">
                 <div className="text-3xl font-extrabold text-white">{scoutyLeadsCount}</div>
-                <div className="text-xs text-slate-400 leading-tight">
-                  User haben ihre Mail<br/>hinterlassen.
-                </div>
+                <div className="text-xs text-slate-400 leading-tight">User haben ihre Mail<br/>hinterlassen.</div>
               </CardContent>
             </Card>
           </div>
@@ -526,14 +524,8 @@ export default function AdminSettings() {
                   <span className="w-1.5 h-1.5 rounded-full bg-blue-500"/> Google AdSense
                 </h4>
                 <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label>Publisher ID</Label>
-                    <Input value={adSenseClient} onChange={(e) => setAdSenseClient(e.target.value)} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Slot ID</Label>
-                    <Input value={adSenseSlot} onChange={(e) => setAdSenseSlot(e.target.value)} />
-                  </div>
+                  <div className="space-y-2"><Label>Publisher ID</Label><Input value={adSenseClient} onChange={(e) => setAdSenseClient(e.target.value)} /></div>
+                  <div className="space-y-2"><Label>Slot ID</Label><Input value={adSenseSlot} onChange={(e) => setAdSenseSlot(e.target.value)} /></div>
                 </div>
                 <Button size="sm" variant="outline" onClick={() => { saveSetting("ads_sense_client_id", adSenseClient); saveSetting("ads_sense_slot_id", adSenseSlot); }}>
                   <Save className="w-4 h-4 mr-2" /> AdSense speichern
@@ -594,7 +586,7 @@ export default function AdminSettings() {
           </Card>
 
           <Card className="bg-card border-border shadow-sm">
-             <CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5 text-orange-500" />Analytics</CardTitle></CardHeader>
+             <CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5 text-orange-500" />Analytics (Legacy)</CardTitle></CardHeader>
              <CardContent className="space-y-4">
                 <Textarea value={analyticsCode} onChange={(e) => { setAnalyticsCode(e.target.value); setAnalyticsStatus("idle"); }} rows={4} className="font-mono text-xs" />
                 <div className="flex gap-2"><Button onClick={() => saveSetting("global_analytics_code", analyticsCode)}><Save className="w-4 h-4 mr-2" />Speichern</Button><Button variant="outline" onClick={checkAnalyticsStatus} disabled={analyticsStatus === "checking"}>Status prüfen</Button></div>
@@ -609,42 +601,34 @@ export default function AdminSettings() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="navigation" className="space-y-6 mt-6">
-          
-          <Card className="bg-card border-border shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><MenuIcon className="w-5 h-5 text-primary" /> Header Navigation</CardTitle>
-              <CardDescription>Die Links im Hauptmenü (oben).</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                 {headerConfig.nav_links?.map((link: any, idx: number) => (
-                    <div key={idx} className="flex gap-3 items-end">
-                       <div className="flex-1 space-y-1">
-                          <Label className="text-xs">Beschriftung</Label>
-                          <Input value={link.label} onChange={e => updateNavLink(idx, 'label', e.target.value)} />
-                       </div>
-                       <div className="flex-1 space-y-1">
-                          <Label className="text-xs">Ziel-URL</Label>
-                          <Input value={link.url} onChange={e => updateNavLink(idx, 'url', e.target.value)} />
-                       </div>
-                       <Button variant="ghost" size="icon" onClick={() => removeNavLink(idx)} className="mb-0.5"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+        <TabsContent value="analytics_new">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><BarChart3 className="w-5 h-5 text-blue-600"/> Tracking & Reports</CardTitle>
+                    <CardDescription>Verbinde deine Google Dienste für maximale Einsicht.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="space-y-3">
+                        <Label className="text-base font-semibold">Google Analytics 4 (GA4)</Label>
+                        <p className="text-sm text-slate-500">Deine Mess-ID (z.B. G-12345678).</p>
+                        <Input value={ga4Id} onChange={e => setGa4Id(e.target.value)} placeholder="G-XXXXXXXXXX" className="font-mono" />
                     </div>
-                 ))}
-                 <Button variant="outline" size="sm" onClick={addNavLink}><Plus className="w-3 h-3 mr-2" /> Link hinzufügen</Button>
-              </div>
+                    <div className="space-y-3 pt-4 border-t">
+                        <Label className="text-base font-semibold">Google Search Console</Label>
+                        <p className="text-sm text-slate-500">Der Content des HTML-Tags für die Verifizierung.</p>
+                        <Input value={gscVerification} onChange={e => setGscVerification(e.target.value)} placeholder="..." className="font-mono" />
+                    </div>
+                    <div className="space-y-3 pt-4 border-t">
+                        <Label className="text-base font-semibold">Looker Studio Report URL</Label>
+                        <p className="text-sm text-slate-500">Bette deinen persönlichen Report direkt ins Dashboard ein.</p>
+                        <Input value={reportUrl} onChange={e => setReportUrl(e.target.value)} placeholder="https://lookerstudio.google.com/embed/..." className="font-mono" />
+                    </div>
+                    <Button onClick={saveAnalytics} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Analytics speichern</Button>
+                </CardContent>
+            </Card>
+        </TabsContent>
 
-              <div className="pt-6 border-t border-border space-y-4">
-                 <h4 className="font-medium text-sm text-muted-foreground">Header Button (CTA)</h4>
-                 <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Button Text</Label><Input value={headerConfig.button_text} onChange={e => setHeaderConfig({...headerConfig, button_text: e.target.value})} /></div>
-                    <div className="space-y-2"><Label>Button Ziel</Label><Input value={headerConfig.button_url} onChange={e => setHeaderConfig({...headerConfig, button_url: e.target.value})} /></div>
-                 </div>
-              </div>
-              <Button onClick={saveHeader} className="w-full mt-4 bg-primary"><Save className="w-4 h-4 mr-2" /> Navigation Speichern</Button>
-            </CardContent>
-          </Card>
-
+        <TabsContent value="navigation" className="space-y-6 mt-6">
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle className="flex items-center gap-2"><LinkIcon className="w-5 h-5 text-secondary" /> Top-Bar (Oben drüber)</CardTitle>
@@ -659,56 +643,53 @@ export default function AdminSettings() {
           </Card>
 
           <Card className="bg-card border-border shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><List className="w-5 h-5 text-green-500" /> Footer Links Steuerung</CardTitle>
-              <CardDescription>Verwalte die Link-Listen im unteren Bereich.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              
-              {/* SECTION: LEGAL LINKS */}
+            <CardHeader><CardTitle className="flex items-center gap-2"><MenuIcon className="w-5 h-5 text-primary" /> Header Navigation</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
               <div className="space-y-4">
-                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <ShieldCheck className="w-4 h-4" /> Rechtliches (Spalte 1)
-                 </h4>
+                 {headerConfig.nav_links?.map((link: any, idx: number) => (
+                    <div key={idx} className="flex gap-3 items-end">
+                       <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateNavLink(idx, 'label', e.target.value)} /></div>
+                       <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateNavLink(idx, 'url', e.target.value)} /></div>
+                       <Button variant="ghost" size="icon" onClick={() => removeNavLink(idx)} className="mb-0.5"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                    </div>
+                 ))}
+                 <Button variant="outline" size="sm" onClick={addNavLink}><Plus className="w-3 h-3 mr-2" /> Link hinzufügen</Button>
+              </div>
+              <div className="pt-6 border-t border-border space-y-4">
+                 <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2"><Label>Button Text</Label><Input value={headerConfig.button_text} onChange={e => setHeaderConfig({...headerConfig, button_text: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Button Ziel</Label><Input value={headerConfig.button_url} onChange={e => setHeaderConfig({...headerConfig, button_url: e.target.value})} /></div>
+                 </div>
+              </div>
+              <Button onClick={saveHeader} className="w-full mt-4 bg-primary"><Save className="w-4 h-4 mr-2" /> Header Speichern</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border shadow-sm">
+            <CardHeader><CardTitle className="flex items-center gap-2"><List className="w-5 h-5 text-green-500" /> Footer Links</CardTitle></CardHeader>
+            <CardContent className="space-y-8">
+              <div className="space-y-4">
+                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300"><ShieldCheck className="w-4 h-4" /> Rechtliches</h4>
                  {footerConfig.legal_links?.map((link: any, idx: number) => (
                     <div key={idx} className="flex gap-3 items-end">
-                       <div className="flex-1 space-y-1">
-                          <Label className="text-xs">Beschriftung</Label>
-                          <Input value={link.label} onChange={e => updateLegalLink(idx, 'label', e.target.value)} />
-                       </div>
-                       <div className="flex-1 space-y-1">
-                          <Label className="text-xs">Ziel-URL</Label>
-                          <Input value={link.url} onChange={e => updateLegalLink(idx, 'url', e.target.value)} />
-                       </div>
-                       <Button variant="ghost" size="icon" onClick={() => removeLegalLink(idx)} className="mb-0.5"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                       <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateLegalLink(idx, 'label', e.target.value)} /></div>
+                       <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateLegalLink(idx, 'url', e.target.value)} /></div>
+                       <Button variant="ghost" size="icon" onClick={() => removeLegalLink(idx)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                     </div>
                  ))}
-                 <Button variant="outline" size="sm" onClick={addLegalLink}><Plus className="w-3 h-3 mr-2" /> Rechtlichen Link hinzufügen</Button>
+                 <Button variant="outline" size="sm" onClick={addLegalLink}><Plus className="w-3 h-3 mr-2" /> Neu</Button>
               </div>
-
-              <div className="border-t border-border" />
-
-              {/* SECTION: POPULAR LINKS */}
-              <div className="space-y-4">
-                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                    <LinkIcon className="w-4 h-4" /> Vergleiche & Tools (Spalte 2)
-                 </h4>
+              <div className="space-y-4 border-t pt-6">
+                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300"><LinkIcon className="w-4 h-4" /> Vergleiche & Tools</h4>
                  {footerConfig.popular_links?.map((link: any, idx: number) => (
                     <div key={idx} className="flex gap-3 items-end">
-                       <div className="flex-1 space-y-1">
-                          <Label className="text-xs">Beschriftung</Label>
-                          <Input value={link.label} onChange={e => updatePopularLink(idx, 'label', e.target.value)} />
-                       </div>
-                       <div className="flex-1 space-y-1">
-                          <Label className="text-xs">Ziel-URL</Label>
-                          <Input value={link.url} onChange={e => updatePopularLink(idx, 'url', e.target.value)} />
-                       </div>
-                       <Button variant="ghost" size="icon" onClick={() => removePopularLink(idx)} className="mb-0.5"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                       <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updatePopularLink(idx, 'label', e.target.value)} /></div>
+                       <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updatePopularLink(idx, 'url', e.target.value)} /></div>
+                       <Button variant="ghost" size="icon" onClick={() => removePopularLink(idx)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
                     </div>
                  ))}
-                 <Button variant="outline" size="sm" onClick={addPopularLink}><Plus className="w-3 h-3 mr-2" /> Vergleichs-Link hinzufügen</Button>
+                 <Button variant="outline" size="sm" onClick={addPopularLink}><Plus className="w-3 h-3 mr-2" /> Neu</Button>
               </div>
-
               <Button onClick={saveFooter} className="w-full mt-2 bg-primary"><Save className="w-4 h-4 mr-2" /> Footer Links Speichern</Button>
             </CardContent>
           </Card>
@@ -735,44 +716,33 @@ export default function AdminSettings() {
               <Button onClick={saveFooter} className="w-full mt-2 bg-primary"><Save className="w-4 h-4 mr-2" /> Footer Texte Speichern</Button>
             </CardContent>
           </Card>
-
         </TabsContent>
 
         <TabsContent value="home" className="space-y-6 mt-6">
           <div className="sticky top-2 z-50 bg-background/95 backdrop-blur py-2 border-b border-border/50 flex justify-between items-center mb-6">
-            <div>
-              <h3 className="font-bold text-lg">Startseiten Editor</h3>
-              <p className="text-xs text-muted-foreground">Änderungen werden erst beim Klick auf "Speichern" wirksam.</p>
-            </div>
-            <Button 
-              onClick={saveContentManually} 
-              size="lg"
-              className={`transition-all ${hasUnsavedChanges ? 'bg-orange-600 hover:bg-orange-700 animate-pulse' : 'bg-primary'}`}
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {hasUnsavedChanges ? "Änderungen speichern *" : "Speichern"}
-            </Button>
+            <div><h3 className="font-bold text-lg">Startseiten Editor</h3></div>
+            <Button onClick={saveContentManually} size="lg" className={hasUnsavedChanges ? 'bg-orange-600 animate-pulse' : 'bg-primary'}><Save className="w-4 h-4 mr-2" /> Speichern</Button>
           </div>
 
+          <Card className="bg-card border-border shadow-sm border-l-4 border-l-blue-600">
+            <CardHeader><CardTitle className="font-display text-lg">SEO Deep Content</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <Textarea className="min-h-[400px] font-mono text-sm bg-slate-50" value={seoLongText} onChange={(e) => setSeoLongText(e.target.value)} />
+              <Button onClick={saveSeoText} className="w-full bg-blue-600 hover:bg-blue-700 text-white"><Save className="w-4 h-4 mr-2" /> SEO Text speichern</Button>
+            </CardContent>
+          </Card>
+
           <Card className="bg-card border-border shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5 text-primary" /> Layout Steuerung</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle><Layout className="w-5 h-5 text-primary" /> Layout Steuerung</CardTitle></CardHeader>
             <CardContent className="space-y-4">
                {Object.keys(defaultHomeLayout).map((key) => (
-                 <div key={key} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-900 p-2 rounded-lg transition-colors">
-                   <Label className="capitalize font-medium cursor-pointer" onClick={() => toggleSection(key as keyof typeof defaultHomeLayout)}>
-                      {key.replace('_', ' ')}
-                   </Label>
-                   <Switch 
-                     // @ts-ignore
-                     checked={layout[key]} 
-                     onCheckedChange={() => toggleSection(key as keyof typeof defaultHomeLayout)}
-                   />
+                 <div key={key} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 p-2 rounded-lg">
+                   <Label className="capitalize font-medium">{key.replace('_', ' ')}</Label>
+                   <Switch checked={(layout as any)[key]} onCheckedChange={() => toggleSection(key as any)} />
                  </div>
                ))}
 
-               {/* --- TICKER SETTINGS BLOCK --- */}
+               {/* --- TICKER SETTINGS BLOCK (WIEDERHERGESTELLT) --- */}
                <div className="space-y-4 pt-6 border-t mt-4">
                   <h3 className="text-sm font-bold uppercase text-muted-foreground">App-Ticker (Slider)</h3>
                   <div className="grid gap-4 md:grid-cols-2 p-4 bg-slate-50 rounded-lg">
@@ -812,184 +782,8 @@ export default function AdminSettings() {
 
             </CardContent>
           </Card>
-
-          {/* NEU: SEO CONTENT EDITOR CARD (PROMINENT PLATZIERT) */}
-          <Card className="bg-card border-border shadow-sm border-l-4 border-l-blue-600">
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="p-2 bg-blue-50 rounded-lg"><FileText className="w-5 h-5 text-blue-600" /></div>
-                <div>
-                  <CardTitle className="font-display text-lg">SEO Deep Content</CardTitle>
-                  <CardDescription>Der lange Text am Ende der Startseite (Accordion).</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label>Inhalt (HTML erlaubt)</Label>
-                  <span className="text-[10px] bg-slate-100 px-2 py-1 rounded text-slate-500 font-mono">variable: seo.long_text</span>
-                </div>
-                <Textarea 
-                  className="min-h-[400px] font-mono text-sm bg-slate-50 leading-relaxed" 
-                  placeholder="<h1>Dein SEO Text hier...</h1>"
-                  value={seoLongText}
-                  onChange={(e) => setSeoLongText(e.target.value)}
-                />
-                <p className="text-xs text-muted-foreground">Tipp: Schreibe hier deinen langen Content (1.000+ Wörter). HTML-Tags wie &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt; werden korrekt dargestellt.</p>
-              </div>
-              <Button onClick={saveSeoText} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                <Save className="w-4 h-4 mr-2" /> SEO Text speichern
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border shadow-sm">
-            <CardHeader><CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-secondary" /> Texte & Inhalte</CardTitle></CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="hero">
-                  <AccordionTrigger>Hero Section</AccordionTrigger>
-                  <AccordionContent className="space-y-4 pt-4 px-4">
-                    <div className="space-y-2"><Label>H1 Titel</Label><Input value={localContent.hero.title} onChange={(e) => updateContent('hero', 'title', e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Untertitel</Label><Textarea value={localContent.hero.subtitle} onChange={(e) => updateContent('hero', 'subtitle', e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Badge</Label><Input value={localContent.hero.badge} onChange={(e) => updateContent('hero', 'badge', e.target.value)} /></div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Search Label</Label><Input value={localContent.hero.search_label} onChange={(e) => updateContent('hero', 'search_label', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Search Placeholder</Label><Input value={localContent.hero.search_placeholder} onChange={(e) => updateContent('hero', 'search_placeholder', e.target.value)} /></div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="trust">
-                  <AccordionTrigger>Trust / Vorteile</AccordionTrigger>
-                  <AccordionContent className="space-y-4 pt-4 px-4">
-                    <div className="space-y-2"><Label>Überschrift</Label><Input value={localContent.trust.headline} onChange={(e) => updateContent('trust', 'headline', e.target.value)} /></div>
-                    <div className="space-y-2"><Label>Untertext</Label><Textarea value={localContent.trust.subheadline} onChange={(e) => updateContent('trust', 'subheadline', e.target.value)} /></div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Box Titel</Label><Input value={localContent.trust.box_title} onChange={(e) => updateContent('trust', 'box_title', e.target.value)} /></div>
-                        <div className="space-y-2"><Label>Box Text</Label><Textarea rows={4} value={localContent.trust.box_text} onChange={(e) => updateContent('trust', 'box_text', e.target.value)} /></div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="big_three">
-                  <AccordionTrigger>Big Three (Kategorien)</AccordionTrigger>
-                  <AccordionContent className="space-y-6 pt-4 px-4">
-                      <div className="space-y-2"><Label>Sektions-Überschrift</Label><Input value={localContent.big_three.headline} onChange={(e) => updateContent('big_three', 'headline', e.target.value)} /></div>
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center"><Label>Karten</Label><Button size="sm" variant="outline" onClick={addBigThreeItem}><Plus className="w-3 h-3 mr-2"/> Karte</Button></div>
-                        {safeBigThreeItems.map((item: any, idx: number) => (
-                            <div key={item.id || idx} className="border p-4 rounded-lg bg-slate-50 space-y-3 relative">
-                                <Button variant="destructive" size="icon" className="absolute right-2 top-2 h-6 w-6" onClick={() => removeBigThreeItem(idx)}><Trash2 className="w-3 h-3"/></Button>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Input value={item.title} onChange={e => updateBigThreeItem(idx, 'title', e.target.value)} className="h-8 text-sm" placeholder="Titel"/>
-                                    <Input value={item.button_text} onChange={e => updateBigThreeItem(idx, 'button_text', e.target.value)} className="h-8 text-sm" placeholder="Button"/>
-                                </div>
-                                <Textarea value={item.desc} onChange={e => updateBigThreeItem(idx, 'desc', e.target.value)} className="h-16 text-sm" placeholder="Beschreibung"/>
-                                
-                                {/* NEU: Bild URL Input */}
-                                <div className="space-y-1">
-                                    <Label className="text-[10px] uppercase font-bold text-slate-400 flex items-center gap-1">
-                                        <LinkIcon className="w-3 h-3" /> Bild URL (Freepik/Unsplash)
-                                    </Label>
-                                    <Input 
-                                        value={item.image_url || ""} 
-                                        onChange={e => updateBigThreeItem(idx, 'image_url', e.target.value)} 
-                                        className="h-8 text-sm font-mono" 
-                                        placeholder="https://..."
-                                    />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2">
-                                    <Input value={item.link} onChange={e => updateBigThreeItem(idx, 'link', e.target.value)} className="h-8 text-sm" placeholder="Link"/>
-                                    <Select value={item.theme} onValueChange={v => updateBigThreeItem(idx, 'theme', v)}>
-                                        <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
-                                        <SelectContent><SelectItem value="blue">Blau</SelectItem><SelectItem value="gold">Gold</SelectItem><SelectItem value="dark">Dark</SelectItem></SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                        ))}
-                      </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="news">
-                  <AccordionTrigger>Newsletter Bereich</AccordionTrigger>
-                  <AccordionContent className="space-y-4 pt-4 px-4">
-                      <div className="space-y-2"><Label>Überschrift</Label><Input value={localContent.news.headline} onChange={(e) => updateContent('news', 'headline', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Text</Label><Textarea value={localContent.news.subheadline} onChange={(e) => updateContent('news', 'subheadline', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Button Text</Label><Input value={localContent.news.button_text} onChange={(e) => updateContent('news', 'button_text', e.target.value)} /></div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="seo">
-                  <AccordionTrigger>Why Rank-Scout (SEO)</AccordionTrigger>
-                  <AccordionContent className="space-y-4 pt-4 px-4">
-                      <div className="space-y-2"><Label>Überschrift</Label><Input value={localContent.why_us?.headline} onChange={(e) => updateContent('why_us', 'headline', e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Intro</Label><Textarea value={localContent.why_us?.subheadline} onChange={(e) => updateContent('why_us', 'subheadline', e.target.value)} /></div>
-                      <div className="border-t pt-4">
-                          <Label className="mb-2 block font-bold text-xs uppercase text-muted-foreground">Die 4 Feature Karten</Label>
-                          <div className="grid grid-cols-1 gap-4">
-                              {safeFeatures.map((feat: any, idx: number) => (
-                                  <div key={idx} className="border p-3 rounded bg-slate-50">
-                                      <div className="text-xs font-mono text-slate-400 mb-1">Karte {idx + 1}</div>
-                                      <div className="grid grid-cols-1 gap-2">
-                                          <Input placeholder="Titel" value={feat.title} onChange={e => updateFeature(idx, 'title', e.target.value)} className="h-8"/>
-                                          <Textarea placeholder="Text" value={feat.text} onChange={e => updateFeature(idx, 'text', e.target.value)} className="h-16 text-sm"/>
-                                      </div>
-                                  </div>
-                              ))}
-                          </div>
-                      </div>
-                  </AccordionContent>
-                </AccordionItem>
-
-                <AccordionItem value="forum_ads">
-                    <AccordionTrigger>Forum Banner & Werbung</AccordionTrigger>
-                    <AccordionContent className="space-y-4 pt-4 px-4">
-                        <div className="flex justify-between items-center mb-4"><Label>Aktive Kampagnen</Label><Button size="sm" onClick={createAd}><Plus className="w-3 h-3 mr-2"/> Werbung</Button></div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            {forumAds?.map((ad: ForumAd) => (
-                                <Card key={ad.id} className="border-slate-200 shadow-none relative">
-                                    <CardHeader className="p-3 pb-0"><div className="flex justify-between items-center"><span className="font-bold text-sm">{ad.name}</span>{ad.enabled ? <span className="text-[10px] bg-green-100 text-green-700 px-1.5 rounded">Aktiv</span> : <span className="text-[10px] bg-slate-100 px-1.5 rounded">Inaktiv</span>}</div></CardHeader>
-                                    <CardContent className="p-3 pt-2">
-                                        <div className="text-xs text-muted-foreground mb-2 truncate">{ad.type}</div>
-                                        <div className="flex gap-2"><Button size="sm" variant="outline" className="h-7 text-xs flex-1" onClick={() => editAd(ad)}>Edit</Button><Button size="sm" variant="destructive" className="h-7 text-xs flex-1" onClick={() => deleteAd(ad.id)}>Del</Button></div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
-
-      <Dialog open={isAdDialogOpen} onOpenChange={setIsAdDialogOpen}>
-            <DialogContent className="max-w-xl">
-                <DialogHeader><DialogTitle>{currentAd.id ? "Werbung bearbeiten" : "Neue Werbung"}</DialogTitle></DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Name</Label><Input value={currentAd.name} onChange={e => setCurrentAd({...currentAd, name: e.target.value})} /></div>
-                        <div className="space-y-2"><Label>Typ</Label><Select value={currentAd.type} onValueChange={v => setCurrentAd({...currentAd, type: v as any})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="image">Bild Banner</SelectItem><SelectItem value="code">HTML Code</SelectItem></SelectContent></Select></div>
-                    </div>
-                    {currentAd.type === 'image' ? (
-                        <>
-                            <div className="space-y-2"><Label>Bild URL</Label><Input value={currentAd.image_url} onChange={e => setCurrentAd({...currentAd, image_url: e.target.value})} /></div>
-                            <div className="space-y-2"><Label>Ziel Link</Label><Input value={currentAd.link_url} onChange={e => setCurrentAd({...currentAd, link_url: e.target.value})} /></div>
-                            <div className="grid grid-cols-2 gap-4"><div className="space-y-2"><Label>Headline</Label><Input value={currentAd.headline} onChange={e => setCurrentAd({...currentAd, headline: e.target.value})} /></div><div className="space-y-2"><Label>Subheadline</Label><Input value={currentAd.subheadline} onChange={e => setCurrentAd({...currentAd, subheadline: e.target.value})} /></div></div>
-                        </>
-                    ) : (
-                        <div className="space-y-2"><Label>HTML / Script Code</Label><Textarea value={currentAd.html_code} onChange={e => setCurrentAd({...currentAd, html_code: e.target.value})} rows={6} className="font-mono text-xs"/></div>
-                    )}
-                    <div className="flex items-center justify-between border p-3 rounded-lg"><Label>Aktiv geschaltet</Label><Switch checked={currentAd.enabled} onCheckedChange={c => setCurrentAd({...currentAd, enabled: c})} /></div>
-                </div>
-                <DialogFooter><Button variant="outline" onClick={() => setIsAdDialogOpen(false)}>Abbrechen</Button><Button onClick={saveAd}>Speichern</Button></DialogFooter>
-            </DialogContent>
-        </Dialog>
     </div>
   );
 }

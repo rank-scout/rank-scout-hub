@@ -12,7 +12,7 @@ type Project = {
   is_active: boolean;
 };
 
-// Validate URL protocol to prevent open redirect attacks (javascript:, data:, file:, etc.)
+// Validate URL protocol
 function isValidRedirectUrl(url: string): boolean {
   try {
     const parsed = new URL(url);
@@ -29,13 +29,14 @@ export default function GoRedirect() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchProject() {
+    async function fetchProjectAndRedirect() {
       if (!slug) {
         setError("Kein Projekt angegeben.");
         setLoading(false);
         return;
       }
 
+      // 1. Projekt laden
       const { data, error: fetchError } = await supabase
         .from("projects")
         .select("id, slug, name, url, is_active")
@@ -51,22 +52,30 @@ export default function GoRedirect() {
       setProject(data);
 
       if (data.is_active && data.url) {
-        // Validate URL protocol before redirecting to prevent XSS via javascript:, data:, etc.
         if (!isValidRedirectUrl(data.url)) {
           setError("Ungültige Weiterleitungs-URL.");
           setLoading(false);
           return;
         }
-        // Redirect after a brief delay to show loading state
+
+        // 2. Klick zählen (Fire & Forget - wir warten nicht zwingend auf den Erfolg, um den User nicht zu bremsen)
+        // Wir nutzen await hier kurz, damit der Request sicher rausgeht bevor der Browser redirected
+        try {
+           await supabase.rpc('increment_project_click', { p_slug: slug });
+        } catch (err) {
+           console.error("Klick-Tracking Fehler:", err);
+        }
+
+        // 3. Weiterleitung
         setTimeout(() => {
           window.location.replace(data.url);
-        }, 500);
+        }, 500); // Kurzer Delay für UX (Loading Screen sehen)
       } else {
         setLoading(false);
       }
     }
 
-    fetchProject();
+    fetchProjectAndRedirect();
   }, [slug]);
 
   if (loading && !error && project?.is_active) {
@@ -80,16 +89,6 @@ export default function GoRedirect() {
           <p className="text-muted-foreground mb-6">
             Du wirst zu <span className="font-medium text-foreground">{project?.name}</span> weitergeleitet.
           </p>
-          
-          {project?.url && (
-            <a
-              href={project.url}
-              className="inline-flex items-center gap-2 text-primary hover:underline"
-            >
-              Falls nichts passiert, hier klicken
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          )}
         </div>
       </div>
     );
@@ -103,7 +102,6 @@ export default function GoRedirect() {
     );
   }
 
-  // Error or inactive project
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
       <div className="text-center max-w-md">
@@ -122,7 +120,7 @@ export default function GoRedirect() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link to="/kategorien">
+          <Link to="/categories">
             <Button variant="outline" className="gap-2">
               <ArrowLeft className="w-4 h-4" />
               Alle Kategorien

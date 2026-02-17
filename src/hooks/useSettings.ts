@@ -108,12 +108,11 @@ export const defaultHomeLayout = {
   news: true,
   forum_teaser: true,
   ads: false,
-  seo_text: true // <--- NEU: Layout Schalter für SEO Text
+  seo_text: true
 };
 
-// CONTENT DEFAULTS (Erweitert um SEO Fields für Home)
+// CONTENT DEFAULTS
 export const defaultHomeContent = {
-  // NEU: SEO Fields direkt im Content-Objekt
   seo_title: "",
   seo_description: "",
   
@@ -161,7 +160,6 @@ export const defaultHomeContent = {
     intro: "Willkommen bei Rank-Scout. Wir bringen Licht in den Dschungel digitaler Dienstleistungen.", 
     block1_title: "Warum Rank-Scout?", block1_text: "In einer Welt voller Fake-Bewertungen und intransparenter Affiliate-Modelle setzen wir einen neuen Standard.", 
     block2_title: "Zukunftssicherheit", block2_text: "Unsere Scouts scannen den globalen Markt permanent nach neuen Trends.",
-    // NEU: Hier speichern wir den langen HTML Text für das Accordion
     long_text: "" 
   },
   categories: { headline: "Alle Kategorien im Überblick", count: 6, button_more: "Alle Kategorien anzeigen", button_card: "Bereich erkunden" },
@@ -244,7 +242,6 @@ export function useHomeContent() {
   const { data: settings } = useSettings(); 
   const settingsContent = (settings?.home_content as any || {});
   
-  // Deep Merge: Wir stellen sicher, dass auch SEO und long_text existieren, selbst wenn die DB leer ist
   const content = { 
     ...defaultHomeContent, 
     ...settingsContent,
@@ -254,7 +251,6 @@ export function useHomeContent() {
     }
   }; 
   
-  // Deep Merge für Arrays und Unterobjekte
   content.big_three = { ...defaultHomeContent.big_three, ...(content.big_three || {}) };
   content.big_three.items = content.big_three.items || defaultHomeContent.big_three.items;
   
@@ -277,7 +273,6 @@ export function useForumAds() {
     return ads; 
 }
 
-// --- EXPORTS MIT FIX ---
 export function useSiteTitle() { return useSetting<string>("site_title", ""); }
 export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
 export function useSiteDescription() { return useSetting<string>("site_description", ""); }
@@ -292,7 +287,6 @@ export function useFooterCopyright() { const c = useFooterConfig(); return c.cop
 export function useFooterDesignerName() { return useSetting<string>("footer_designer_name", "Digital-Perfect"); }
 export function useFooterDesignerUrl() { return useSetting<string>("footer_designer_url", "https://digital-perfect.com"); }
 
-// --- TICKER SETTINGS ---
 export function useTickerConfig() {
   const { data: settings } = useSettings();
   return {

@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { HelmetProvider } from "react-helmet-async"; 
+import { HelmetProvider, Helmet } from "react-helmet-async"; 
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useSettings } from "@/hooks/useSettings"; 
 import { useEffect, useLayoutEffect } from "react"; 
@@ -72,6 +72,45 @@ const ThemeManager = () => {
   return null;
 };
 
+// --- ANALYTICS WRAPPER (GA4 & GSC) ---
+const AnalyticsWrapper = () => {
+  const { data: settings } = useSettings();
+  
+  useEffect(() => {
+    if (settings?.google_analytics_id) {
+      const scriptId = 'ga4-script';
+      if (!document.getElementById(scriptId)) {
+        // Load GA4 Script
+        const script = document.createElement('script');
+        script.id = scriptId;
+        script.async = true;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${settings.google_analytics_id}`;
+        document.head.appendChild(script);
+
+        // Init GA4
+        const inlineScript = document.createElement('script');
+        inlineScript.innerHTML = `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${settings.google_analytics_id}');
+        `;
+        document.head.appendChild(inlineScript);
+      }
+    }
+  }, [settings?.google_analytics_id]);
+
+  return (
+    <>
+      {settings?.google_search_console_verification && (
+        <Helmet>
+          <meta name="google-site-verification" content={settings.google_search_console_verification} />
+        </Helmet>
+      )}
+    </>
+  );
+};
+
 // --- SCOUTY WRAPPER ---
 const ScoutyWrapper = () => {
   const { data: settings } = useSettings();
@@ -95,6 +134,8 @@ const App = () => (
             <Toaster />
             <Sonner />
             
+            <AnalyticsWrapper /> {/* NEU: Analytics Injected Here */}
+
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <CookieBanner /> 
               <ScoutyWrapper /> 
