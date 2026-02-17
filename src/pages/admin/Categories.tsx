@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, type Category } from "@/hooks/useCategories";
 import { useCategoryProjects, useUpdateCategoryProjects } from "@/hooks/useCategoryProjects";
 import { useGenerateCategoryContent } from "@/hooks/useGenerateCategoryContent";
@@ -11,12 +11,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, UploadCloud, Database, Eye, Bot, Settings2, Code, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, UploadCloud, Database, Eye, Bot, Settings2, Code, FileText, Search, LayoutTemplate, Layers, Globe, Clock, CalendarDays } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor"; 
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,14 @@ import RichTextEditor from "@/components/ui/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+
+// --- HELPERS ---
+const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "Unbekannt";
+    return new Date(dateString).toLocaleDateString("de-DE", {
+        day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit"
+    });
+};
 
 // --- KI CONFIG DIALOG ---
 const AIConfigDialog = () => {
@@ -50,7 +58,7 @@ const AIConfigDialog = () => {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <Button variant="outline" onClick={() => setOpen(true)} className="gap-2 border-orange-200 hover:bg-orange-50 text-orange-700 shadow-sm">
+            <Button variant="outline" onClick={() => setOpen(true)} className="gap-2 border-orange-200 hover:bg-orange-50 text-orange-700 shadow-sm bg-white">
                 <Bot className="w-4 h-4" /> KI Settings
             </Button>
             <DialogContent className="sm:max-w-[425px]">
@@ -72,11 +80,7 @@ const AIConfigDialog = () => {
     );
 };
 
-// Helper
-function generateSlug(name: string): string {
-  return name.toLowerCase().replace(/ä/g, "ae").replace(/ö/g, "oe").replace(/ü/g, "ue").replace(/ß/g, "ss").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
-
+// Helper Upload
 async function uploadImageToSupabase(file: File): Promise<string | null> {
   try {
     const fileExt = file.name.split('.').pop();
@@ -92,6 +96,93 @@ async function uploadImageToSupabase(file: File): Promise<string | null> {
   }
 }
 
+// --- SUB-COMPONENT: CATEGORY TABLE ---
+const CategoryTable = ({ 
+    data, 
+    onEdit, 
+    onDelete, 
+    onView 
+}: { 
+    data: Category[], 
+    onEdit: (c: Category) => void, 
+    onDelete: (id: string) => void,
+    onView: (slug: string) => void
+}) => {
+    if (data.length === 0) {
+        return <div className="p-12 text-center text-slate-400 bg-slate-50/50 rounded-b-xl border-t border-slate-100">Keine Seiten in dieser Kategorie gefunden.</div>;
+    }
+
+    return (
+        <Table>
+            <TableHeader className="bg-slate-50/80">
+                <TableRow>
+                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead>Seite</TableHead>
+                    <TableHead>Typ</TableHead>
+                    <TableHead>Aktualisiert</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Aktionen</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {data.map((cat, index) => (
+                    <TableRow key={cat.id} className="hover:bg-slate-50/60 transition-colors group">
+                        <TableCell>
+                            <div className="flex items-center justify-center text-xs font-bold text-slate-300 w-6 h-6 rounded-full bg-slate-100">
+                                {index + 1}
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-slate-800 text-base">{cat.name}</span>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="outline" className="font-mono text-[10px] text-slate-500 border-slate-200 bg-slate-50">
+                                        /{cat.slug}
+                                    </Badge>
+                                </div>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex gap-2">
+                                {cat.template === 'hub_overview' ? (
+                                    <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-200 border-yellow-200 shadow-none"><Layers className="w-3 h-3 mr-1"/> Hub</Badge>
+                                ) : (cat.template === 'comparison' ? (
+                                    <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-200 border-blue-200 shadow-none"><LayoutTemplate className="w-3 h-3 mr-1"/> Vergleich</Badge>
+                                ) : (
+                                    <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200 shadow-none"><FileText className="w-3 h-3 mr-1"/> Artikel</Badge>
+                                ))}
+                                {(cat as any).comparison_widget_code && (
+                                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 shadow-none"><Code className="w-3 h-3 mr-1" /> Widget</Badge>
+                                )}
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex flex-col text-xs text-slate-500">
+                                <span className="flex items-center gap-1 font-medium text-slate-700"><CalendarDays className="w-3 h-3 text-slate-400"/> {(cat as any).updated_at ? formatDate((cat as any).updated_at) : 'Neu'}</span>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex items-center gap-2">
+                                <div className={`w-2 h-2 rounded-full ${cat.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                                <span className={`text-xs font-medium ${cat.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                    {cat.is_active ? 'Online' : 'Entwurf'}
+                                </span>
+                            </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <div className="flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                                <Button variant="ghost" size="sm" onClick={()=>onView(`/${cat.slug}`)} className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"><Eye className="w-4 h-4"/></Button>
+                                <Button variant="ghost" size="sm" onClick={() => onEdit(cat)} className="h-8 w-8 p-0 hover:bg-orange-50 hover:text-orange-600"><Pencil className="w-4 h-4"/></Button>
+                                <Button variant="ghost" size="sm" onClick={()=>onDelete(cat.id)} className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"><Trash2 className="w-4 h-4"/></Button>
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
+    );
+};
+
 export default function Categories() {
   const { data: categories = [] } = useCategories(true);
   const createCategory = useCreateCategory();
@@ -105,10 +196,43 @@ export default function Categories() {
   const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>([]);
   const [selectedHubSlugs, setSelectedHubSlugs] = useState<string[]>([]);
   const [topicPrompt, setTopicPrompt] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState("all");
   
   // HTML VIEW STATES
   const [showHtmlTop, setShowHtmlTop] = useState(false);
   const [showHtmlBottom, setShowHtmlBottom] = useState(false);
+
+  // Stats Calculation
+  const stats = useMemo(() => {
+    return {
+        total: categories.length,
+        active: categories.filter(c => c.is_active).length,
+        hubs: categories.filter(c => c.template === 'hub_overview').length,
+        comparisons: categories.filter(c => c.template === 'comparison').length
+    }
+  }, [categories]);
+
+  // Filtered & Sorted Categories Logic
+  const filteredCategories = useMemo(() => {
+    // 1. Sortieren: Neueste Updates zuerst (updated_at DESC)
+    const sorted = [...categories].sort((a, b) => {
+        // Wir nehmen updated_at, fallback created_at, fallback 0
+        const dateA = new Date((a as any).updated_at || (a as any).created_at || 0).getTime();
+        const dateB = new Date((b as any).updated_at || (b as any).created_at || 0).getTime();
+        return dateB - dateA; // Absteigend (Neueste oben)
+    });
+
+    // 2. Filter by Search
+    const searchFiltered = sorted.filter(cat => 
+        cat.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        cat.slug.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // 3. Filter by Type (Tab)
+    if (activeTab === "all") return searchFiltered;
+    return searchFiltered.filter(cat => cat.template === activeTab);
+  }, [categories, searchTerm, activeTab]);
 
   const { data: categoryProjects = [] } = useCategoryProjects(editingCategory?.id);
 
@@ -122,7 +246,7 @@ export default function Categories() {
 
   const form = useForm<CategoryInput>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { theme: "DATING", template: "comparison", is_active: true, sort_order: 0, faq_data: [], meta_title: "", meta_description: "" },
+    defaultValues: { theme: "DATING", template: "comparison", is_active: true, sort_order: 0, faq_data: [], meta_title: "", meta_description: "", comparison_widget_code: "" },
   });
 
   const { register, handleSubmit, setValue, watch, control } = form;
@@ -143,12 +267,13 @@ export default function Categories() {
         long_content_bottom: editingCategory.long_content_bottom || "",
         faq_data: editingCategory.faq_data || [],
         custom_html_override: editingCategory.custom_html_override || "",
+        comparison_widget_code: (editingCategory as any).comparison_widget_code || "",
       } as any);
       setTopicPrompt(`Content für ${editingCategory.name}`);
       const savedSlugs = (editingCategory as any).custom_css ? (editingCategory as any).custom_css.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
       setSelectedHubSlugs(savedSlugs);
     } else {
-      form.reset({ name: "", slug: "", theme: "GENERIC", template: "comparison", is_active: true, faq_data: [], meta_title: "", meta_description: "", sidebar_ad_html: '', sidebar_ad_image: '', hero_image_url: '', custom_css: '' } as any);
+      form.reset({ name: "", slug: "", theme: "GENERIC", template: "comparison", is_active: true, faq_data: [], meta_title: "", meta_description: "", sidebar_ad_html: '', sidebar_ad_image: '', hero_image_url: '', custom_css: '', comparison_widget_code: '' } as any);
       setSelectedProjectIds([]); setSelectedHubSlugs([]); setTopicPrompt("");
     }
     setShowHtmlTop(false);
@@ -222,124 +347,299 @@ export default function Categories() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div><h2 className="text-3xl font-bold flex items-center gap-3 text-slate-800"><Settings2 className="w-8 h-8 text-primary" /> Seiten-Manager</h2><p className="text-slate-500 mt-1">Erstelle Hubs, Vergleiche und Landingpages.</p></div>
-        <div className="flex gap-3"><AIConfigDialog /><Button onClick={() => { setEditingCategory(null); setIsDialogOpen(true); }} size="lg" className="shadow-lg"><Plus className="w-5 h-5 mr-2" /> Neue Seite erstellen</Button></div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      
+      {/* --- STATS CARDS --- */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gradient-to-br from-white to-slate-50 border-slate-200 shadow-sm">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-slate-500">Gesamt Seiten</CardTitle></CardHeader>
+            <CardContent><div className="text-3xl font-bold text-slate-900">{stats.total}</div></CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-white to-slate-50 border-slate-200 shadow-sm">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-emerald-600">Aktiv & Live</CardTitle></CardHeader>
+            <CardContent><div className="text-3xl font-bold text-emerald-600">{stats.active}</div></CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-white to-slate-50 border-slate-200 shadow-sm">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-blue-600">Vergleiche</CardTitle></CardHeader>
+            <CardContent><div className="text-3xl font-bold text-blue-600">{stats.comparisons}</div></CardContent>
+        </Card>
+        <Card className="bg-gradient-to-br from-white to-slate-50 border-slate-200 shadow-sm">
+            <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-yellow-600">Themen Hubs</CardTitle></CardHeader>
+            <CardContent><div className="text-3xl font-bold text-yellow-600">{stats.hubs}</div></CardContent>
+        </Card>
       </div>
 
-      <Card className="border shadow-sm overflow-hidden">
-        <CardContent className="p-0">
-            <Table>
-                <TableHeader className="bg-slate-50"><TableRow><TableHead className="w-[80px]">Pos</TableHead><TableHead>Name & URL</TableHead><TableHead>Typ</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Aktionen</TableHead></TableRow></TableHeader>
-                <TableBody>
-                    {categories.map((cat) => (
-                    <TableRow key={cat.id} className="hover:bg-slate-50/50">
-                        <TableCell><div className="flex flex-col gap-1 text-slate-400"><ArrowUp className="w-4 h-4 cursor-pointer" /><ArrowDown className="w-4 h-4 cursor-pointer" /></div></TableCell>
-                        <TableCell><div className="font-bold text-slate-800 text-base">{cat.name}</div><div className="text-xs text-slate-500 font-mono bg-slate-100 inline-block px-1.5 py-0.5 rounded mt-1">/{cat.slug}</div></TableCell>
-                        <TableCell>{cat.template === 'hub_overview' ? <Badge className="bg-yellow-500">Hub</Badge> : (cat.template === 'comparison' ? <Badge className="bg-blue-600">Vergleich</Badge> : <Badge className="bg-slate-600">Artikel</Badge>)}</TableCell>
-                        <TableCell><Switch checked={cat.is_active} /></TableCell>
-                        <TableCell className="text-right"><div className="flex justify-end gap-2">
-                                <Button variant="outline" size="sm" onClick={()=>open(`/${cat.slug}`, '_blank')}><Eye className="w-4 h-4"/></Button>
-                                <Button variant="outline" size="sm" onClick={() => { setEditingCategory(cat); setIsDialogOpen(true); }}><Pencil className="w-4 h-4"/></Button>
-                                <Button variant="outline" size="sm" onClick={()=>handleDelete(cat.id)}><Trash2 className="w-4 h-4"/></Button>
-                        </div></TableCell>
-                    </TableRow>))}
-                </TableBody>
-            </Table>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+        <div>
+            <h2 className="text-3xl font-bold flex items-center gap-3 text-slate-900 tracking-tight">
+                <Settings2 className="w-8 h-8 text-primary" /> Seiten-Manager
+            </h2>
+            <p className="text-slate-500 mt-1">Verwalte deine Landingpages, Hubs und Vergleiche.</p>
+        </div>
+        <div className="flex gap-3 w-full md:w-auto">
+            <div className="relative w-full md:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-500" />
+                <Input 
+                    placeholder="Suche..." 
+                    className="pl-9 bg-white shadow-sm border-slate-200" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+            <AIConfigDialog />
+            <Button onClick={() => { setEditingCategory(null); setIsDialogOpen(true); }} size="lg" className="shadow-lg hover:shadow-primary/20 transition-all">
+                <Plus className="w-5 h-5 mr-2" /> Neue Seite
+            </Button>
+        </div>
+      </div>
 
+      {/* --- MAIN TABS FOR OVERVIEW --- */}
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="flex items-center justify-between mb-4">
+            <TabsList className="bg-white border border-slate-200 shadow-sm h-12 p-1">
+                <TabsTrigger value="all" className="h-10 px-4 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900">Alle Seiten</TabsTrigger>
+                <TabsTrigger value="comparison" className="h-10 px-4 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700 flex gap-2"><LayoutTemplate className="w-4 h-4"/> Vergleiche</TabsTrigger>
+                <TabsTrigger value="hub_overview" className="h-10 px-4 data-[state=active]:bg-yellow-50 data-[state=active]:text-yellow-700 flex gap-2"><Layers className="w-4 h-4"/> Hubs</TabsTrigger>
+                <TabsTrigger value="review" className="h-10 px-4 data-[state=active]:bg-slate-100 data-[state=active]:text-slate-900 flex gap-2"><FileText className="w-4 h-4"/> Artikel</TabsTrigger>
+            </TabsList>
+        </div>
+
+        <Card className="border border-slate-200 shadow-sm overflow-hidden bg-white rounded-xl">
+            <CardContent className="p-0">
+                <TabsContent value="all" className="m-0">
+                    <CategoryTable 
+                        data={filteredCategories} 
+                        onEdit={(cat) => { setEditingCategory(cat); setIsDialogOpen(true); }}
+                        onDelete={handleDelete}
+                        onView={(slug) => window.open(slug, '_blank')}
+                    />
+                </TabsContent>
+                <TabsContent value="comparison" className="m-0">
+                    <CategoryTable 
+                        data={filteredCategories} 
+                        onEdit={(cat) => { setEditingCategory(cat); setIsDialogOpen(true); }}
+                        onDelete={handleDelete}
+                        onView={(slug) => window.open(slug, '_blank')}
+                    />
+                </TabsContent>
+                <TabsContent value="hub_overview" className="m-0">
+                    <CategoryTable 
+                        data={filteredCategories} 
+                        onEdit={(cat) => { setEditingCategory(cat); setIsDialogOpen(true); }}
+                        onDelete={handleDelete}
+                        onView={(slug) => window.open(slug, '_blank')}
+                    />
+                </TabsContent>
+                <TabsContent value="review" className="m-0">
+                    <CategoryTable 
+                        data={filteredCategories} 
+                        onEdit={(cat) => { setEditingCategory(cat); setIsDialogOpen(true); }}
+                        onDelete={handleDelete}
+                        onView={(slug) => window.open(slug, '_blank')}
+                    />
+                </TabsContent>
+            </CardContent>
+        </Card>
+      </Tabs>
+
+      {/* --- EDIT DIALOG (MODAL) --- */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-[95vw] w-[1200px] h-[90vh] flex flex-col p-0 bg-slate-50/50 rounded-2xl overflow-hidden border-0 shadow-2xl">
             <div className="px-8 py-5 border-b bg-white flex justify-between items-center shadow-sm z-10">
-                <div><DialogTitle className="text-2xl font-bold text-slate-900">{editingCategory ? "Bearbeiten" : "Neu"}</DialogTitle><DialogDescription>Seite konfigurieren</DialogDescription></div>
-                <div className="flex gap-3"><Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button><Button onClick={handleSubmit(onSubmit)} className="bg-primary text-white"><Database className="w-4 h-4 mr-2" /> Speichern</Button></div>
+                <div><DialogTitle className="text-2xl font-bold text-slate-900">{editingCategory ? "Seite bearbeiten" : "Neue Seite erstellen"}</DialogTitle><DialogDescription>Konfiguriere Layout, Content und Partner.</DialogDescription></div>
+                <div className="flex gap-3"><Button variant="outline" onClick={() => setIsDialogOpen(false)}>Abbrechen</Button><Button onClick={handleSubmit(onSubmit)} className="bg-primary text-white hover:bg-primary/90 shadow-md"><Database className="w-4 h-4 mr-2" /> Speichern</Button></div>
             </div>
             
-            <div className="flex-1 overflow-y-auto"><div className="max-w-6xl mx-auto p-8">
-                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm mb-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                            <div><Label className="text-lg font-bold text-slate-800 mb-2 block">Seitentyp</Label>
-                                <Controller control={control} name="template" render={({ field }) => (
-                                    <Select onValueChange={field.onChange} value={field.value || "comparison"}>
-                                        <SelectTrigger className="h-12 text-lg font-medium"><SelectValue placeholder="Wähle Typ..." /></SelectTrigger>
-                                        <SelectContent><SelectItem value="comparison">⚡ Vergleichsseite</SelectItem><SelectItem value="hub_overview">🌐 Themen-Hub</SelectItem><SelectItem value="review">📖 Ratgeber</SelectItem></SelectContent>
-                                    </Select>
-                                )} />
+            <div className="flex-1 overflow-y-auto custom-scrollbar"><div className="max-w-6xl mx-auto p-8">
+                    
+                    {/* --- TYPE SELECTION CARD --- */}
+                    <Card className="mb-8 border-slate-200 shadow-sm">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-lg font-bold flex items-center gap-2"><LayoutTemplate className="w-5 h-5 text-primary"/> Layout & Typ</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                                <div className="space-y-4">
+                                    <Label className="text-sm font-semibold text-slate-700">Wähle den Seitentyp</Label>
+                                    <Controller control={control} name="template" render={({ field }) => (
+                                        <Select onValueChange={field.onChange} value={field.value || "comparison"}>
+                                            <SelectTrigger className="h-12 text-base font-medium bg-slate-50 border-slate-200 focus:ring-primary/20"><SelectValue placeholder="Wähle Typ..." /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="comparison"><div className="flex items-center gap-2"><Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0">Vergleich</Badge> Für Top-Listen (Dating, Krypto, etc.)</div></SelectItem>
+                                                <SelectItem value="hub_overview"><div className="flex items-center gap-2"><Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-0">Hub</Badge> Sammelseite für Unterkategorien</div></SelectItem>
+                                                <SelectItem value="review"><div className="flex items-center gap-2"><Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 border-0">Artikel</Badge> Klassischer Content</div></SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    )} />
+                                </div>
                             </div>
-                        </div>
-                    </div>
+
+                            {/* --- WIDGET CODE EDITOR --- */}
+                            {currentTemplate === "comparison" && (
+                                <div className="mt-8 pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-top-4 duration-300">
+                                    <div className="bg-slate-900 rounded-xl p-6 border border-slate-800 shadow-inner">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <Label className="text-lg font-bold text-white flex items-center gap-2">
+                                                <Code className="w-5 h-5 text-green-400" /> Affiliate Widget Code
+                                            </Label>
+                                            <Badge variant="outline" className="border-slate-700 text-slate-400 bg-slate-800">Tarifcheck / Check24 / FinanceAds</Badge>
+                                        </div>
+                                        <p className="text-sm text-slate-400 mb-4">
+                                            Füge hier den <strong>kompletten Embed-Code</strong> ein (inkl. <code>&lt;script&gt;</code> Tags). Dieser überschreibt die manuelle Projektliste.
+                                        </p>
+                                        <Controller
+                                            name="comparison_widget_code"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <Textarea 
+                                                    {...field} 
+                                                    value={field.value || ""} 
+                                                    placeholder={'<div id="rechner"></div>\n<script src="..."></script>'}
+                                                    className="font-mono text-xs bg-black/50 text-green-400 min-h-[200px] p-4 border-slate-700 focus:ring-green-500/50 focus:border-green-500/50 placeholder:text-slate-600"
+                                                />
+                                            )}
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
 
                     <Tabs defaultValue="basis" className="w-full">
                         <TabsList className="w-full justify-start h-14 bg-white p-1 rounded-xl border border-slate-200 shadow-sm mb-6">
-                            <TabsTrigger value="basis" className="h-11 px-6 rounded-lg font-bold">Basis & SEO</TabsTrigger>
-                            <TabsTrigger value="content" className="h-11 px-6 rounded-lg font-bold">Inhalt</TabsTrigger>
-                            {currentTemplate === 'hub_overview' ? <TabsTrigger value="hub" className="h-11 px-6 rounded-lg font-bold bg-yellow-50 text-yellow-700">Hub Config</TabsTrigger> : <TabsTrigger value="projects" className="h-11 px-6 rounded-lg font-bold bg-blue-50 text-blue-700">Partner</TabsTrigger>}
-                            <TabsTrigger value="design" className="h-11 px-6 rounded-lg font-bold">Design & Ads</TabsTrigger>
+                            <TabsTrigger value="basis" className="h-11 px-6 rounded-lg font-bold data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Basis & SEO</TabsTrigger>
+                            <TabsTrigger value="content" className="h-11 px-6 rounded-lg font-bold data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Inhalt</TabsTrigger>
+                            {currentTemplate === 'hub_overview' ? <TabsTrigger value="hub" className="h-11 px-6 rounded-lg font-bold bg-yellow-50 text-yellow-700 data-[state=active]:bg-yellow-100">Hub Config</TabsTrigger> : <TabsTrigger value="projects" className="h-11 px-6 rounded-lg font-bold bg-blue-50 text-blue-700 data-[state=active]:bg-blue-100">Partner</TabsTrigger>}
+                            <TabsTrigger value="design" className="h-11 px-6 rounded-lg font-bold data-[state=active]:bg-primary/10 data-[state=active]:text-primary">Design & Ads</TabsTrigger>
                         </TabsList>
 
-                        <TabsContent value="basis" className="space-y-6"><div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                                <div className="grid grid-cols-2 gap-6">
-                                    <div className="space-y-2"><Label>Name *</Label><Input {...register("name")} /></div>
-                                    <div className="space-y-2"><Label>Slug *</Label><Input {...register("slug")} /></div>
-                                </div>
-                                <div className="space-y-2"><Label>H1 Titel</Label><Input {...register("h1_title")} /></div>
-                                <div className="space-y-4 pt-4 border-t"><div className="space-y-2"><Label>Meta Title</Label><Input {...register("meta_title")} /></div><div className="space-y-2"><Label>Meta Description</Label><Textarea {...register("meta_description")} /></div></div>
-                            </div></TabsContent>
+                        <TabsContent value="basis" className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <Card className="border-slate-200 shadow-sm h-fit">
+                                    <CardHeader><CardTitle>Allgemeine Daten</CardTitle></CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2"><Label>Seiten Name *</Label><Input {...register("name")} className="font-bold text-lg" placeholder="z.B. Kredit Vergleich" /></div>
+                                        <div className="space-y-2"><Label>URL Slug *</Label><div className="flex items-center"><span className="bg-slate-100 border border-r-0 border-slate-300 rounded-l-md px-3 py-2 text-sm text-slate-500">rank-scout.com/</span><Input {...register("slug")} className="rounded-l-none font-mono text-sm" placeholder="kredit-vergleich" /></div></div>
+                                        <div className="space-y-2"><Label>H1 Hauptüberschrift</Label><Input {...register("h1_title")} placeholder="Die große Headline auf der Seite" /></div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="border-slate-200 shadow-sm h-fit">
+                                    <CardHeader><CardTitle className="flex items-center gap-2"><Globe className="w-4 h-4 text-blue-500"/> Google SEO</CardTitle></CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2"><Label>Meta Title (Browser Tab)</Label><Input {...register("meta_title")} placeholder="Kreditvergleich 2026 | Top Zinsen..." /></div>
+                                        <div className="space-y-2"><Label>Meta Description (Google Snippet)</Label><Textarea {...register("meta_description")} className="min-h-[120px]" placeholder="Beschreibe die Seite für Google..." /></div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </TabsContent>
 
-                        <TabsContent value="content" className="space-y-6"><div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                                <div className="flex gap-2 mb-4"><Input value={topicPrompt} onChange={e=>setTopicPrompt(e.target.value)} placeholder="KI Thema (z.B. Beste Dating Apps im Vergleich)" /><Button onClick={handleGenerateContent} disabled={isGenContent}>KI Schreiben</Button></div>
-                                <div className="grid grid-cols-2 gap-8">
-                                    <div>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <Label>Oben</Label>
-                                            <Button variant="ghost" size="sm" onClick={()=>setShowHtmlTop(!showHtmlTop)} className="h-6 text-xs gap-1">
-                                                {showHtmlTop ? <><FileText className="w-3 h-3"/> Editor</> : <><Code className="w-3 h-3"/> HTML</>}
-                                            </Button>
+                        <TabsContent value="content" className="space-y-6">
+                            <Card className="border-slate-200 shadow-sm">
+                                <CardContent className="p-6">
+                                    <div className="flex gap-2 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                        <Bot className="w-5 h-5 text-purple-600 mt-2" />
+                                        <div className="flex-1 space-y-2">
+                                            <Label className="text-purple-900 font-bold">KI Content Generator</Label>
+                                            <div className="flex gap-2">
+                                                <Input value={topicPrompt} onChange={e=>setTopicPrompt(e.target.value)} placeholder="Thema eingeben (z.B. Beste Dating Apps)" className="bg-white" />
+                                                <Button onClick={handleGenerateContent} disabled={isGenContent} className="bg-purple-600 hover:bg-purple-700 text-white">Generieren</Button>
+                                            </div>
                                         </div>
-                                        <Controller name="long_content_top" control={control} render={({ field }) => (
-                                            showHtmlTop ? 
-                                            <Textarea value={field.value || ''} onChange={field.onChange} className="font-mono text-xs min-h-[400px]" /> :
-                                            <RichTextEditor value={field.value || ''} onChange={field.onChange} />
-                                        )}/>
                                     </div>
-                                    <div>
-                                        <div className="flex justify-between items-center mb-2">
-                                            <Label>Unten</Label>
-                                            <Button variant="ghost" size="sm" onClick={()=>setShowHtmlBottom(!showHtmlBottom)} className="h-6 text-xs gap-1">
-                                                {showHtmlBottom ? <><FileText className="w-3 h-3"/> Editor</> : <><Code className="w-3 h-3"/> HTML</>}
-                                            </Button>
-                                        </div>
-                                        <Controller name="long_content_bottom" control={control} render={({ field }) => (
-                                            showHtmlBottom ?
-                                            <Textarea value={field.value || ''} onChange={field.onChange} className="font-mono text-xs min-h-[400px]" /> :
-                                            <RichTextEditor value={field.value || ''} onChange={field.onChange} />
-                                        )}/>
-                                    </div>
-                                </div>
-                                <div className="pt-8 border-t"><CategoryFAQEditor form={form} /></div>
-                            </div></TabsContent>
 
-                        {/* ... Rest der Tabs (Hub, Projects, Design) wie zuvor ... */}
-                        <TabsContent value="hub" className="space-y-6"><div className="bg-white p-8 rounded-2xl border border-yellow-200 shadow-lg">
-                                <div className="flex items-center justify-between mb-4"><div><Label className="text-lg font-bold">Seiten auswählen</Label></div><Badge variant="secondary">{selectedHubSlugs.length} ausgewählt</Badge></div>
-                                <ScrollArea className="h-[400px] w-full border rounded-xl bg-slate-50 p-4 shadow-inner">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">{categories.filter(c => c.id !== editingCategory?.id).map((cat) => (
-                                            <div key={cat.id} className={`flex items-center space-x-3 p-3 rounded-lg border cursor-pointer hover:bg-white ${selectedHubSlugs.includes(cat.slug) ? 'bg-white border-primary shadow-sm' : 'border-transparent'}`} onClick={() => toggleHubSlug(cat.slug)}>
-                                                <Checkbox checked={selectedHubSlugs.includes(cat.slug)} onCheckedChange={() => toggleHubSlug(cat.slug)} /><Label className="font-bold cursor-pointer">{cat.name}</Label>
-                                            </div>))}</div>
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <Label className="text-lg font-bold">Content Oben (Einleitung)</Label>
+                                                <Button variant="ghost" size="sm" onClick={()=>setShowHtmlTop(!showHtmlTop)} className="h-6 text-xs gap-1 text-slate-400 hover:text-primary">
+                                                    {showHtmlTop ? <><FileText className="w-3 h-3"/> Editor</> : <><Code className="w-3 h-3"/> HTML</>}
+                                                </Button>
+                                            </div>
+                                            <Controller name="long_content_top" control={control} render={({ field }) => (
+                                                showHtmlTop ? 
+                                                <Textarea value={field.value || ''} onChange={field.onChange} className="font-mono text-xs min-h-[400px] bg-slate-50" /> :
+                                                <RichTextEditor value={field.value || ''} onChange={field.onChange} />
+                                            )}/>
+                                        </div>
+                                        <div>
+                                            <div className="flex justify-between items-center mb-2">
+                                                <Label className="text-lg font-bold">Content Unten (SEO Text)</Label>
+                                                <Button variant="ghost" size="sm" onClick={()=>setShowHtmlBottom(!showHtmlBottom)} className="h-6 text-xs gap-1 text-slate-400 hover:text-primary">
+                                                    {showHtmlBottom ? <><FileText className="w-3 h-3"/> Editor</> : <><Code className="w-3 h-3"/> HTML</>}
+                                                </Button>
+                                            </div>
+                                            <Controller name="long_content_bottom" control={control} render={({ field }) => (
+                                                showHtmlBottom ?
+                                                <Textarea value={field.value || ''} onChange={field.onChange} className="font-mono text-xs min-h-[400px] bg-slate-50" /> :
+                                                <RichTextEditor value={field.value || ''} onChange={field.onChange} />
+                                            )}/>
+                                        </div>
+                                    </div>
+                                    <div className="mt-8 pt-8 border-t"><CategoryFAQEditor form={form} /></div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
+
+                        <TabsContent value="hub" className="space-y-6">
+                            <div className="bg-white p-8 rounded-2xl border border-yellow-200 shadow-lg relative overflow-hidden">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-400/10 rounded-bl-full pointer-events-none"></div>
+                                <div className="flex items-center justify-between mb-6 relative z-10">
+                                    <div><Label className="text-2xl font-bold text-slate-900">Hub-Struktur</Label><p className="text-slate-500">Wähle die Unterseiten für diesen Hub.</p></div>
+                                    <Badge variant="secondary" className="text-lg px-4 py-1 bg-yellow-100 text-yellow-800">{selectedHubSlugs.length} ausgewählt</Badge>
+                                </div>
+                                <ScrollArea className="h-[500px] w-full border rounded-xl bg-slate-50/50 p-6 shadow-inner">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                        {categories.filter(c => c.id !== editingCategory?.id).map((cat) => (
+                                            <div key={cat.id} className={`flex items-center space-x-3 p-4 rounded-xl border transition-all duration-200 cursor-pointer ${selectedHubSlugs.includes(cat.slug) ? 'bg-white border-primary shadow-md scale-[1.02]' : 'bg-white border-transparent hover:border-slate-200'}`} onClick={() => toggleHubSlug(cat.slug)}>
+                                                <Checkbox checked={selectedHubSlugs.includes(cat.slug)} onCheckedChange={() => toggleHubSlug(cat.slug)} className="data-[state=checked]:bg-primary data-[state=checked]:border-primary" />
+                                                <div className="flex flex-col">
+                                                    <Label className="font-bold cursor-pointer text-base">{cat.name}</Label>
+                                                    <span className="text-xs text-slate-400">/{cat.slug}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </ScrollArea>
-                            </div></TabsContent>
+                            </div>
+                        </TabsContent>
 
-                        <TabsContent value="projects"><div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm"><ProjectCheckboxList selectedIds={selectedProjectIds} onChange={setSelectedProjectIds} /></div></TabsContent>
+                        <TabsContent value="projects">
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm">
+                                <ProjectCheckboxList selectedIds={selectedProjectIds} onChange={setSelectedProjectIds} />
+                            </div>
+                        </TabsContent>
 
-                        <TabsContent value="design" className="space-y-6"><div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
-                                <div className="grid grid-cols-2 gap-8">
-                                    <div><Label>Hero Bild</Label><div className="flex gap-2"><Input {...register("hero_image_url")} /><input type="file" className="hidden" id="upload-hero" onChange={(e)=>handleImageUpload(e,"hero_image_url")}/><Button variant="outline" type="button" onClick={()=>document.getElementById('upload-hero')?.click()}><UploadCloud className="w-4 h-4"/></Button></div>{watch("hero_image_url") && <img src={watch("hero_image_url") || ""} className="mt-2 h-32 w-full object-cover rounded" />}</div>
-                                    <div><Label>Sidebar Werbung (HTML)</Label><Textarea {...register("sidebar_ad_html")} rows={4} className="font-mono text-xs"/></div>
-                                </div>
-                            </div></TabsContent>
+                        <TabsContent value="design" className="space-y-6">
+                            <Card className="border-slate-200 shadow-sm">
+                                <CardHeader><CardTitle>Visuelle Gestaltung</CardTitle></CardHeader>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div>
+                                        <Label className="mb-2 block">Hero Hintergrundbild</Label>
+                                        <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors text-center">
+                                            {watch("hero_image_url") ? (
+                                                <div className="relative w-full h-40 mb-4 rounded-lg overflow-hidden group">
+                                                    <img src={watch("hero_image_url") || ""} className="w-full h-full object-cover" />
+                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button variant="secondary" size="sm" onClick={()=>setValue("hero_image_url", "", {shouldDirty: true})}>Entfernen</Button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div className="mb-4 text-slate-400"><UploadCloud className="w-12 h-12 mx-auto mb-2 opacity-50"/> Drag & Drop oder Klick</div>
+                                            )}
+                                            <div className="flex gap-2 w-full">
+                                                <Input {...register("hero_image_url")} placeholder="https://..." className="bg-white" />
+                                                <input type="file" className="hidden" id="upload-hero" onChange={(e)=>handleImageUpload(e,"hero_image_url")}/>
+                                                <Button variant="outline" type="button" onClick={()=>document.getElementById('upload-hero')?.click()}><UploadCloud className="w-4 h-4"/></Button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <Label className="mb-2 block">Sidebar Werbung (Custom HTML)</Label>
+                                        <Textarea {...register("sidebar_ad_html")} rows={8} className="font-mono text-xs bg-slate-50" placeholder="<div>Werbebanner Code...</div>"/>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </TabsContent>
                     </Tabs>
                 </div></div>
         </DialogContent>

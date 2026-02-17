@@ -10,7 +10,7 @@ export type LoginInput = z.infer<typeof loginSchema>;
 
 // Category schemas
 export const categoryThemeEnum = z.enum(["DATING", "ADULT", "CASINO", "GENERIC"]);
-export const categoryTemplateEnum = z.enum(["comparison", "review", "hub_overview"]); // Hub hinzugefügt
+export const categoryTemplateEnum = z.enum(["comparison", "review", "hub_overview"]); 
 export const colorThemeEnum = z.enum(["dark", "light", "neon"]);
 
 // Navigation settings
@@ -33,7 +33,7 @@ export const categorySchema = z.object({
   icon: z.string().optional().nullable(),
   theme: categoryThemeEnum.default("GENERIC"),
   color_theme: colorThemeEnum.default("light"),
-  template: z.string().default("comparison"), // String erlaubt mehr Flexibilität
+  template: z.string().default("comparison"),
   is_active: z.boolean().default(true),
   
   // SEO & Meta
@@ -59,10 +59,13 @@ export const categorySchema = z.object({
   analytics_code: z.string().optional().nullable(),
   banner_override: z.string().optional().nullable(),
   custom_html_override: z.string().optional().nullable(),
-  custom_html: z.string().optional().nullable(), // Legacy Support
+  custom_html: z.string().optional().nullable(), 
   
-  // HUB CONFIG (Das fehlende Puzzleteil!)
+  // HUB CONFIG
   custom_css: z.string().optional().nullable(), 
+
+  // --- NEU: AFFILIATE WIDGET CODE ---
+  comparison_widget_code: z.string().optional().nullable(),
   
   // Footer Data
   footer_site_name: z.string().optional().nullable(),
@@ -86,7 +89,7 @@ export const categorySchema = z.object({
   is_city: z.boolean().optional().default(false),
   sort_order: z.number().optional().default(0),
 
-  // Legacy / Loose Types um Validation Errors zu vermeiden
+  // Legacy / Loose Types
   faq_section: z.any().optional(),
   footer_links: z.any().optional(),
   legal_links: z.any().optional(),

@@ -17,8 +17,10 @@ import { HubTemplate } from "@/components/templates/HubTemplate";
 import { Helmet } from "react-helmet-async";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useForceSEO } from "@/hooks/useForceSEO";
+
+// --- NEU: IMPORT UNIVERSAL LOADER ---
+import { UniversalWidgetLoader } from "@/components/templates/UniversalWidgetLoader";
 
 const getCategoryHeroImage = (category: any) => {
     if (category.hero_image_url) return category.hero_image_url;
@@ -101,6 +103,7 @@ export default function CategoryDetail() {
   if (isInternalPage) {
     const updatedAt = new Date(category.updated_at || new Date()).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
     const heroImage = getCategoryHeroImage(category);
+    const hasWidgetCode = !!(category as any).comparison_widget_code;
 
     return (
       <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-[#FAFAFA]">
@@ -137,13 +140,30 @@ export default function CategoryDetail() {
                   <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-slate-50 rounded-2xl text-slate-900 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h3 className="font-bold text-slate-900 text-2xl mb-4 tracking-tight">Das Wichtigste in Kürze</h3><div className="text-slate-600 leading-loose text-lg">Wir haben die besten Anbieter für dich geprüft.</div></div></div>
                 </div>
                 {category.long_content_top && (<div className="bg-transparent mb-16 px-2"><article id="content-top" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-slate-900"><div dangerouslySetInnerHTML={{ __html: category.long_content_top }} /></article></div>)}
-                {projects.length > 0 && (<div id="vergleich" className="scroll-mt-32 mb-20"><div className="mb-8 px-2"><Badge variant="outline" className="mb-3 border-slate-200 text-slate-500 px-3 py-1">Testsieger 2026</Badge><h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">Alle Anbieter im Vergleich</h2></div><div className="space-y-6">{projects.map((proj, idx) => (<ProjectCard key={proj.id} project={proj} index={idx} />))}</div></div>)}
+                
+                {/* --- INTELLIGENTE WEICHE: WIDGET ODER PROJEKT-LISTE --- */}
+                {hasWidgetCode ? (
+                    <div id="vergleich" className="scroll-mt-32 mb-20">
+                        <div className="mb-8 px-2">
+                            <Badge variant="outline" className="mb-3 border-slate-200 text-slate-500 px-3 py-1">Live Rechner</Badge>
+                            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">Aktueller Vergleich</h2>
+                        </div>
+                        <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
+                            <UniversalWidgetLoader htmlCode={(category as any).comparison_widget_code} />
+                        </div>
+                        <p className="text-center text-xs text-slate-400 mt-4">Daten werden bereitgestellt durch unseren Partner.</p>
+                    </div>
+                ) : (
+                    projects.length > 0 && (<div id="vergleich" className="scroll-mt-32 mb-20"><div className="mb-8 px-2"><Badge variant="outline" className="mb-3 border-slate-200 text-slate-500 px-3 py-1">Testsieger 2026</Badge><h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">Alle Anbieter im Vergleich</h2></div><div className="space-y-6">{projects.map((proj, idx) => (<ProjectCard key={proj.id} project={proj} index={idx} />))}</div></div>)
+                )}
+
                 {category.long_content_bottom && (<div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/30 border border-slate-100 mb-16"><article id="content-bottom" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-900"><div dangerouslySetInnerHTML={{ __html: category.long_content_bottom }} /></article></div>)}
                 {category.faq_data && Array.isArray(category.faq_data) && (<section id="faq" className="scroll-mt-32 mb-24"><div className="mb-10 px-2"><h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">Häufige Fragen</h2></div><div className="space-y-4"><Accordion type="single" collapsible className="w-full space-y-4">{category.faq_data.map((faq: any, index: number) => (<AccordionItem key={index} value={`item-${index}`} className="bg-white border border-slate-100 shadow-sm rounded-2xl px-2"><AccordionTrigger className="text-left font-bold text-slate-800 px-6 py-5 text-lg hover:no-underline">{faq.question}</AccordionTrigger><AccordionContent className="text-slate-600 leading-loose px-6 pb-8 pt-2 text-base"><div dangerouslySetInnerHTML={{ __html: faq.answer.replace(/\n/g, '<br/>') }} /></AccordionContent></AccordionItem>))}</Accordion></div></section>)}
               </div>
               
               <aside className="lg:w-1/3 lg:sticky top-24 self-start hidden lg:block max-h-[calc(100vh-120px)] overflow-y-auto pr-2 pb-10 custom-scrollbar">
-                {topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-[#0a0a0a] text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">EMPFEHLUNG</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-slate-100 rounded-xl text-slate-900"><Trophy className="w-6 h-6" /></div><p className="font-bold text-slate-900 text-lg">Top Favorit</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-slate-900 leading-tight mb-1.5">{topPick.name}</p><div className="flex text-yellow-400 gap-0.5 mb-1">{[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}</div><span className="text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">Exzellent</span></div></div><Button asChild className="w-full font-bold bg-[#0a0a0a] hover:bg-slate-800 text-white h-14 rounded-xl"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen <ArrowRight className="w-5 h-5 ml-2" /></a></Button></div>)}
+                {/* Empfehlungs-Box nur zeigen wenn KEIN Widget da ist, da Widgets oft eigene Empfehlungen haben */}
+                {!hasWidgetCode && topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-[#0a0a0a] text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">EMPFEHLUNG</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-slate-100 rounded-xl text-slate-900"><Trophy className="w-6 h-6" /></div><p className="font-bold text-slate-900 text-lg">Top Favorit</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-slate-900 leading-tight mb-1.5">{topPick.name}</p><div className="flex text-yellow-400 gap-0.5 mb-1">{[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}</div><span className="text-xs font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded">Exzellent</span></div></div><Button asChild className="w-full font-bold bg-[#0a0a0a] hover:bg-slate-800 text-white h-14 rounded-xl"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen <ArrowRight className="w-5 h-5 ml-2" /></a></Button></div>)}
                 
                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30 mb-8">
                   <p className="font-bold text-slate-900 mb-6 flex items-center gap-2 text-sm uppercase tracking-widest"><Zap className="w-4 h-4 text-yellow-500"/> Inhalt</p>
