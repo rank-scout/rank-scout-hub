@@ -27,13 +27,19 @@ import { ForumSidebar } from "@/components/forum/ForumSidebar";
 import { Helmet } from "react-helmet-async"; 
 import { useForceSEO } from "@/hooks/useForceSEO"; 
 import { FadeIn } from "@/components/ui/FadeIn";
+// KYRA FIX: Import für Admin-Tracking
+import { useTrackView } from "@/hooks/useTrackView";
 
 export default function ForumThread() {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
-  // Ref um View-Increment nur 1x pro Session/Load zu feuern
+  // KYRA FIX: Admin-Tracking aktivieren (Wanze)
+  // Trackt parallel zum öffentlichen Counter für dein Dashboard
+  useTrackView(slug, "forum");
+  
+  // Ref um View-Increment nur 1x pro Session/Load zu feuern (Public Counter)
   const viewIncremented = useRef(false);
    
   useEffect(() => {
@@ -54,7 +60,7 @@ export default function ForumThread() {
   const toggleLike = useToggleLike();
   const incrementView = useIncrementThreadView(); // NEU: Hook nutzen
 
-  // --- VIEW COUNTING LOGIC ---
+  // --- VIEW COUNTING LOGIC (Public visible views) ---
   useEffect(() => {
     if (thread?.id && !viewIncremented.current) {
       incrementView.mutate(thread.id);
@@ -191,7 +197,7 @@ export default function ForumThread() {
                  </div>
             </div>
         </div>
-        {/* Rest der UI bleibt identisch */}
+        
         <section className="pb-24">
           <div className="container mx-auto px-4">
             <div className="flex flex-col lg:flex-row gap-12">
@@ -211,8 +217,8 @@ export default function ForumThread() {
                         <User className="w-5 h-5 text-primary" />
                       </div>
                       <div className="flex flex-col">
-                         <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Autor</span>
-                         <span className="font-bold text-slate-900">{thread.author_name}</span>
+                          <span className="text-xs text-slate-400 font-medium uppercase tracking-wider">Autor</span>
+                          <span className="font-bold text-slate-900">{thread.author_name}</span>
                       </div>
                     </span>
                     <div className="h-8 w-px bg-slate-100 mx-2"></div>
@@ -300,25 +306,25 @@ export default function ForumThread() {
                         <div className="grid gap-2">
                              <label className="text-sm font-bold text-slate-700 ml-1">Dein Name</label>
                              <Input 
-                                placeholder="Max Mustermann" 
-                                value={replyName} 
-                                onChange={(e) => setReplyName(e.target.value)} 
-                                maxLength={50} 
-                                required 
-                                className="bg-slate-50 border-slate-200 h-12 rounded-xl focus:ring-primary/20 focus:border-primary transition-all" 
-                             />
+                               placeholder="Max Mustermann" 
+                               value={replyName} 
+                               onChange={(e) => setReplyName(e.target.value)} 
+                               maxLength={50} 
+                               required 
+                               className="bg-slate-50 border-slate-200 h-12 rounded-xl focus:ring-primary/20 focus:border-primary transition-all" 
+                            />
                         </div>
                         <div className="grid gap-2">
                              <label className="text-sm font-bold text-slate-700 ml-1">Dein Kommentar</label>
                              <Textarea 
-                                placeholder="Schreibe deine Gedanken hier..." 
-                                value={replyContent} 
-                                onChange={(e) => setReplyContent(e.target.value)} 
-                                rows={5} 
-                                maxLength={1000} 
-                                required 
-                                className="bg-slate-50 border-slate-200 rounded-xl min-h-[150px] focus:ring-primary/20 focus:border-primary transition-all p-4" 
-                             />
+                               placeholder="Schreibe deine Gedanken hier..." 
+                               value={replyContent} 
+                               onChange={(e) => setReplyContent(e.target.value)} 
+                               rows={5} 
+                               maxLength={1000} 
+                               required 
+                               className="bg-slate-50 border-slate-200 rounded-xl min-h-[150px] focus:ring-primary/20 focus:border-primary transition-all p-4" 
+                            />
                         </div>
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-2">
                           <p className="text-xs text-slate-400 font-medium order-2 sm:order-1 flex items-center gap-1">

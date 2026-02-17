@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
+// KYRA FIX: Import für Tracking
+import { useTrackView } from "@/hooks/useTrackView";
 
 // --- HELPER ---
 const getCategoryStyle = (slug: string) => {
@@ -53,6 +55,9 @@ export default function Forum() {
   const location = useLocation(); 
   const [searchParams] = useSearchParams();
   const urlCategoryId = searchParams.get("category");
+  
+  // KYRA FIX: Wanze platziert. Trackt Kategorie oder Index.
+  useTrackView(categorySlug || "forum-index", "forum");
   
   const { data: threads, isLoading } = useForumThreads();
   const { data: categories, isLoading: categoriesLoading } = useForumCategories();

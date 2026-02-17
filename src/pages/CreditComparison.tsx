@@ -3,8 +3,13 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { TarifCheckCreditWidget } from "@/components/external/TarifCheckCreditWidget";
 import { CheckCircle2, Shield, Clock, Percent } from "lucide-react";
+// KYRA FIX: Import für Tracking
+import { useTrackView } from "@/hooks/useTrackView";
 
 export default function CreditComparison() {
+  // KYRA FIX: Tracking für Kreditvergleich
+  useTrackView("kredit-vergleich", "comparison");
+
   return (
     <div className="min-h-screen bg-background font-sans">
       <Helmet>

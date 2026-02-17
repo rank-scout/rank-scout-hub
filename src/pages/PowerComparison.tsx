@@ -3,8 +3,13 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Check24PowerWidget } from "@/components/external/Check24PowerWidget";
 import { Zap, Euro, ShieldCheck } from "lucide-react";
+// KYRA FIX: Import für Tracking
+import { useTrackView } from "@/hooks/useTrackView";
 
 export default function PowerComparison() {
+  // KYRA FIX: Tracking für Stromvergleich aktivieren
+  useTrackView("strom-vergleich", "comparison");
+
   return (
     <div className="min-h-screen bg-background font-sans">
       <Helmet>
@@ -33,7 +38,7 @@ export default function PowerComparison() {
             <div className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden p-4 md:p-6">
                <Check24PowerWidget />
             </div>
-            <p className="text-center text-xs text-muted-foreground mt-4">Ein Service von CHECK24</p>
+            <p className="text-center text-xs text-muted-foreground mt-4">Kooperation mit Check24</p>
           </div>
         </section>
       </main>

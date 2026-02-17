@@ -18,8 +18,12 @@ import { HowItWorksSection } from "@/components/home/HowItWorksSection";
 import { HomeSEOText } from "@/components/home/HomeSEOText"; 
 // KYRA FIX: Die Brechstange ist zurück.
 import { useForceSEO } from "@/hooks/useForceSEO"; 
+import { useTrackView } from "@/hooks/useTrackView";
 
 const Index = () => {
+  // KYRA FIX: Hier wird die Wanze aktiviert.
+  useTrackView("home", "page");
+
   const analyticsCode = useGlobalAnalyticsCode();
   const { data: settings, isLoading: isLoadingSettings } = useSettings();
   const siteTitle = useSiteTitle(); 

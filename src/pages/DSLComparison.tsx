@@ -3,8 +3,13 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Check24DSLWidget } from "@/components/external/Check24DSLWidget";
 import { Wifi, Zap, PiggyBank } from "lucide-react";
+// KYRA FIX: Import für Tracking
+import { useTrackView } from "@/hooks/useTrackView";
 
 export default function DSLComparison() {
+  // KYRA FIX: Tracking für DSL-Vergleich aktivieren
+  useTrackView("dsl-vergleich", "comparison");
+
   return (
     <div className="min-h-screen bg-background font-sans">
       <Helmet>
@@ -33,7 +38,7 @@ export default function DSLComparison() {
             <div className="bg-card border border-border rounded-2xl shadow-2xl overflow-hidden p-4 md:p-6">
                <Check24DSLWidget />
             </div>
-            <p className="text-center text-xs text-muted-foreground mt-4">Ein Service von CHECK24</p>
+            <p className="text-center text-xs text-muted-foreground mt-4">Kooperation mit Check24</p>
           </div>
         </section>
       </main>

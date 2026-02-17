@@ -21,6 +21,8 @@ import { useForceSEO } from "@/hooks/useForceSEO";
 
 // --- NEU: IMPORT UNIVERSAL LOADER ---
 import { UniversalWidgetLoader } from "@/components/templates/UniversalWidgetLoader";
+// KYRA FIX: Import für Tracking
+import { useTrackView } from "@/hooks/useTrackView";
 
 const getCategoryHeroImage = (category: any) => {
     if (category.hero_image_url) return category.hero_image_url;
@@ -55,6 +57,10 @@ const ProjectCard = ({ project, index }: { project: any, index: number }) => {
 
 export default function CategoryDetail() {
   const { slug } = useParams<{ slug: string }>();
+  
+  // KYRA FIX: Tracking aktivieren!
+  useTrackView(slug, "category");
+
   const { data: category, isLoading: isCatLoading } = useCategoryBySlug(slug || "");
   const { data: projectsData, isLoading: isProjLoading } = useProjects();
   const { data: categoryProjects } = useCategoryProjects(category?.id);

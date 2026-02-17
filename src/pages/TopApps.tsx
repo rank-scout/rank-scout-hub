@@ -20,6 +20,8 @@ import {
   SettingsMinimalistic,
   DollarMinimalistic
 } from "@solar-icons/react";
+// KYRA FIX: Import für Tracking
+import { useTrackView } from "@/hooks/useTrackView";
 
 // Hilfsfunktion für Tailwind-Klassen
 function cn(...classes: any[]) {
@@ -28,6 +30,9 @@ function cn(...classes: any[]) {
 
 export default function TopApps() {
   const { data: apps, isLoading } = useTop100Apps();
+
+  // KYRA FIX: Tracking für Top Apps Seite aktivieren
+  useTrackView("top-apps", "page");
 
   useForceSEO("Die Top 100 Apps im großen Vergleich 2026. Unabhängige Tests, echte Bewertungen und exklusive Deals. Rank-Scout ist deine Instanz für Software-Entscheidungen.");
 
