@@ -1,11 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Layers, Zap, Search, LayoutGrid, ListFilter } from "lucide-react";
+import { ArrowRight, Layers, Zap, Search, LayoutGrid, TrendingUp } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 interface HubTemplateProps {
   category: any;
@@ -76,44 +75,56 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
         <meta name="description" content={category?.meta_description} />
       </Helmet>
 
-      {/* PREMIUM HERO SECTION */}
-      <div className="relative pt-32 pb-32 overflow-hidden bg-[#0F172A] border-b border-slate-800">
+      {/* --- CINEMATIC HERO SECTION --- */}
+      <div className="relative min-h-[65vh] flex flex-col justify-center items-center overflow-hidden bg-slate-900 pb-32">
+        
+        {/* Background Image Layer */}
         <div className="absolute inset-0 z-0">
-            {category.hero_image_url && (
-                <img src={category.hero_image_url} className="w-full h-full object-cover opacity-20 mix-blend-overlay" alt="" />
+            {category.hero_image_url ? (
+                <img 
+                    src={category.hero_image_url} 
+                    className="w-full h-full object-cover opacity-70"
+                    alt="" 
+                />
+            ) : (
+                <div className="w-full h-full bg-slate-900" />
             )}
-            <div className="absolute inset-0 bg-gradient-to-b from-[#0F172A]/90 via-[#0F172A]/80 to-[#0F172A]"></div>
+            
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/40 to-slate-50"></div>
         </div>
         
-        {/* Background Blobs */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-orange-500/10 rounded-full blur-[120px] pointer-events-none -translate-y-1/2 translate-x-1/4"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none translate-y-1/2 -translate-x-1/4"></div>
+        {/* Animated Dust/Noise */}
+        <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-10 mix-blend-overlay pointer-events-none"></div>
         
-        <div className="container mx-auto px-4 relative z-10 text-center">
-            <div className="inline-flex items-center gap-2 py-1.5 px-4 rounded-full bg-white/10 border border-white/10 text-xs font-bold tracking-widest uppercase mb-8 text-white backdrop-blur-md shadow-xl">
-                <Layers className="w-3 h-3 text-orange-500" /> Rank-Scout Themen-Hub
+        {/* Content */}
+        <div className="container mx-auto px-4 relative z-10 text-center pt-20">
+            
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 py-2 px-5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-bold tracking-widest uppercase mb-8 text-white shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                <Layers className="w-3 h-3 text-orange-400" /> Rank-Scout Themen-Hub
             </div>
             
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 tracking-tight text-white drop-shadow-2xl">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-8 tracking-tight text-white drop-shadow-2xl leading-[1.1]">
                 {category?.h1_title || category?.name}
             </h1>
             
-            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed antialiased mb-10">
+            <p className="text-xl md:text-2xl text-slate-200 max-w-3xl mx-auto leading-relaxed antialiased font-medium mb-12 drop-shadow-md">
                 {category?.hero_headline || category?.description || "Wähle einen Bereich für den detaillierten Vergleich."}
             </p>
 
-            {/* Hub Search Bar */}
-            <div className="max-w-xl mx-auto relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-blue-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-                <div className="relative flex items-center bg-white rounded-xl shadow-2xl p-2">
-                    <Search className="w-5 h-5 text-slate-400 ml-3" />
+            {/* Search Bar */}
+            <div className="max-w-2xl mx-auto relative group z-20">
+                <div className="absolute -inset-1 bg-gradient-to-r from-orange-500 to-blue-600 rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-500"></div>
+                <div className="relative flex items-center bg-white rounded-xl shadow-2xl p-2 transition-transform transform group-hover:-translate-y-0.5">
+                    <Search className="w-6 h-6 text-slate-400 ml-4" />
                     <Input 
                         placeholder="Was möchtest du vergleichen?" 
-                        className="border-0 shadow-none focus-visible:ring-0 text-base h-12 bg-transparent"
+                        className="border-0 shadow-none focus-visible:ring-0 text-lg h-14 bg-transparent text-slate-900 placeholder:text-slate-400"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <Button size="sm" className="h-10 px-6 rounded-lg bg-[#0F172A] hover:bg-slate-800 text-white font-bold">
+                    <Button size="lg" className="h-12 px-8 rounded-lg bg-slate-900 hover:bg-orange-600 text-white font-bold transition-all shadow-lg">
                         Suchen
                     </Button>
                 </div>
@@ -121,90 +132,97 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
         </div>
       </div>
 
-      {/* CONTENT GRID */}
-      <div className="container mx-auto px-4 -mt-16 relative z-20 pb-24">
+      {/* --- CONTENT GRID --- */}
+      <div className="container mx-auto px-4 -mt-24 relative z-20 pb-16">
         {isLoading ? (
-            <div className="text-center py-20 bg-white rounded-3xl shadow-xl border border-slate-100 max-w-4xl mx-auto">
-                <div className="inline-block w-12 h-12 border-4 border-slate-100 border-t-orange-500 rounded-full animate-spin mb-4"></div>
-                <p className="text-slate-500 font-medium">Lade Themenbereiche...</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-96 bg-white rounded-[2rem] border border-slate-200 shadow-xl overflow-hidden animate-pulse"></div>
+                ))}
             </div>
         ) : (
             <>
-                {/* Results Count Bar */}
-                <div className="flex items-center justify-between mb-6 text-sm font-medium text-slate-500 px-2">
-                    <div className="flex items-center gap-2">
-                        <LayoutGrid className="w-4 h-4" /> 
-                        <span>{filteredCategories.length} Bereiche gefunden</span>
+                <div className="flex items-center justify-between mb-8 px-4">
+                    <div className="flex items-center gap-2 text-slate-500 font-bold bg-white/90 backdrop-blur-sm px-5 py-2 rounded-full shadow-sm border border-slate-200/50">
+                        <LayoutGrid className="w-4 h-4 text-orange-500" /> 
+                        <span>{filteredCategories.length} Kategorien</span>
                     </div>
                     {searchQuery && (
-                        <button onClick={() => setSearchQuery("")} className="text-orange-600 hover:underline">
-                            Filter zurücksetzen
+                        <button onClick={() => setSearchQuery("")} className="text-slate-500 hover:text-orange-600 hover:underline text-sm font-medium transition-colors">
+                            Filter löschen
                         </button>
                     )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredCategories.length > 0 ? (
                         filteredCategories.map((sub) => (
                         <Link to={`/${sub.slug}`} key={sub.id} className="group block h-full">
-                            <div className="bg-white rounded-3xl shadow-lg shadow-slate-200/50 hover:shadow-2xl hover:shadow-orange-500/10 border border-slate-100 hover:border-orange-500/30 transition-all duration-300 h-full flex flex-col relative overflow-hidden group-hover:-translate-y-1">
+                            
+                            <div className="bg-white rounded-[2.5rem] shadow-xl shadow-slate-200/40 hover:shadow-2xl hover:shadow-orange-500/10 border border-slate-100 hover:border-orange-500/20 transition-all duration-300 h-full flex flex-col relative isolate group-hover:-translate-y-2 overflow-hidden">
                                 
                                 {/* --- IMAGE CARD LOGIC --- */}
                                 {sub.card_image_url ? (
                                     <>
-                                        {/* Image Area */}
-                                        <div className="relative h-56 w-full overflow-hidden">
+                                        {/* Image Wrapper - NO ZOOM EFFECT */}
+                                        <div className="relative h-64 w-full overflow-hidden z-0">
                                             <img 
                                                 src={sub.card_image_url} 
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                                                className="w-full h-full object-cover" 
                                                 alt={sub.name} 
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                                            {/* Gradient Overlay */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-80 z-10"></div>
                                             
-                                            {/* Floating Badge on Image */}
-                                            <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-900 border border-white/20 shadow-sm">
-                                                Vergleich
+                                            {/* Top Badge */}
+                                            <div className="absolute top-5 left-5 z-20 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-900 shadow-sm border border-white/20 flex items-center gap-1.5">
+                                                <TrendingUp className="w-3 h-3 text-orange-500" /> Vergleich
                                             </div>
                                         </div>
 
-                                        <div className="p-8 flex flex-col flex-grow">
-                                            <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-orange-600 transition-colors leading-tight">
+                                        <div className="p-8 flex flex-col flex-grow relative z-10 bg-white">
+                                            {/* ICON REMOVED HERE - CLEAN LOOK */}
+
+                                            <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-orange-600 transition-colors leading-tight">
                                                 {sub.name}
                                             </h3>
                                             
-                                            <p className="text-slate-500 mb-6 line-clamp-3 leading-relaxed flex-grow text-sm group-hover:text-slate-600">
-                                                {sub.meta_description || "Klicke hier für den detaillierten Vergleich und Testbericht."}
+                                            <p className="text-slate-500 mb-8 line-clamp-3 leading-relaxed text-sm flex-grow font-medium">
+                                                {sub.meta_description || "Detaillierte Analyse, Konditionen und Experten-Meinung im Vergleich."}
                                             </p>
 
-                                            <div className="mt-auto flex items-center text-slate-900 font-bold text-sm pt-2 group-hover:text-orange-600">
-                                                Jetzt vergleichen <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                            <div className="mt-auto flex items-center justify-between border-t border-slate-50 pt-6">
+                                                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-orange-500 transition-colors">Jetzt prüfen</span>
+                                                <div className="w-10 h-10 rounded-full bg-slate-50 group-hover:bg-orange-500 flex items-center justify-center transition-all duration-300 shadow-sm group-hover:shadow-orange-200">
+                                                    <ArrowRight className="w-5 h-5 text-slate-900 group-hover:text-white -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
+                                                </div>
                                             </div>
                                         </div>
                                     </>
                                 ) : (
-                                    /* --- CLASSIC ICON CARD (FALLBACK) --- */
-                                    <div className="p-8 flex flex-col h-full">
-                                        <div className="flex items-start justify-between mb-6">
-                                            {/* Icon Box */}
-                                            <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-slate-100 group-hover:scale-110 transition-transform text-orange-500 font-bold group-hover:bg-orange-50">
+                                    /* --- NO IMAGE FALLBACK (Icon stays here) --- */
+                                    <div className="p-10 flex flex-col h-full relative overflow-hidden bg-white">
+                                        <div className="absolute top-0 right-0 w-40 h-40 bg-orange-50 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none group-hover:bg-orange-100 transition-colors"></div>
+                                        
+                                        <div className="flex items-start justify-between mb-8 relative z-10">
+                                            <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-slate-100 group-hover:scale-110 transition-transform text-orange-500">
                                                 {sub.icon ? <img src={sub.icon} alt="" className="w-8 h-8 object-contain" /> : getIcon(sub.slug)}
                                             </div>
-                                            <div className="bg-slate-50 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-slate-100">
-                                                Vergleich
+                                            <div className="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                                Analyse
                                             </div>
                                         </div>
                                         
-                                        <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-orange-600 transition-colors leading-tight">
+                                        <h3 className="text-2xl font-black text-slate-900 mb-4 group-hover:text-orange-600 transition-colors relative z-10">
                                             {sub.name}
                                         </h3>
                                         
-                                        <p className="text-slate-500 mb-8 line-clamp-3 leading-relaxed flex-grow text-sm group-hover:text-slate-600">
-                                            {sub.meta_description || "Klicke hier für den detaillierten Vergleich und Testbericht."}
+                                        <p className="text-slate-500 mb-8 line-clamp-3 leading-relaxed text-sm flex-grow relative z-10 font-medium">
+                                            {sub.meta_description || "Entdecke die besten Angebote und vergleiche Konditionen neutral."}
                                         </p>
                                         
-                                        {/* CTA */}
-                                        <div className="mt-auto flex items-center text-slate-900 font-bold text-sm border-t border-slate-50 pt-6 group-hover:text-orange-600">
-                                            Jetzt vergleichen <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                        <div className="mt-auto flex items-center text-slate-900 font-bold text-sm pt-4 group-hover:text-orange-600 relative z-10 cursor-pointer">
+                                            Zum Vergleich <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                                         </div>
                                     </div>
                                 )}
@@ -212,27 +230,50 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
                         </Link>
                         ))
                     ) : (
-                        <div className="col-span-full text-center py-20 px-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
-                            <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300"><Search className="w-10 h-10" /></div>
-                            <h3 className="text-xl font-bold text-slate-900 mb-2">Keine Ergebnisse</h3>
-                            <p className="text-slate-500 mb-6">Wir konnten für "{searchQuery}" leider keinen Bereich finden.</p>
-                            <Button onClick={() => setSearchQuery("")} variant="outline">Suche zurücksetzen</Button>
+                        <div className="col-span-full text-center py-24 px-6 bg-white rounded-[2.5rem] border border-slate-100 shadow-xl">
+                            <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300 animate-pulse"><Search className="w-10 h-10" /></div>
+                            <h3 className="text-2xl font-bold text-slate-900 mb-2">Kein Treffer</h3>
+                            <p className="text-slate-500 mb-8 max-w-md mx-auto">Für "{searchQuery}" haben wir nichts gefunden.</p>
+                            <Button onClick={() => setSearchQuery("")} variant="outline" className="border-slate-200 hover:bg-slate-50">Alles anzeigen</Button>
                         </div>
                     )}
                 </div>
             </>
         )}
       </div>
+
+      {/* --- PREMIUM AD BREAK (Styled EXACTLY like a Card) --- */}
+      {/* - min-w-[320px]: Damit es auch bei kleinen Ads (z.B. 300x250) wie eine Karte aussieht.
+          - w-fit mx-auto: Zentriert und wächst mit Leaderboards mit.
+          - Styling: 1:1 Kopie der Cards oben.
+      */}
+      {category?.sidebar_ad_html && (
+        <div className="container mx-auto px-4 pb-20 flex justify-center">
+            <div className="relative bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/40 p-6 flex flex-col items-center justify-center text-center overflow-hidden w-fit mx-auto min-w-[320px] animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {/* Ad Label - Clean & Subtle */}
+                <div className="absolute top-0 right-0 bg-slate-50 border-b border-l border-slate-100 text-slate-400 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-bl-2xl z-10">
+                    Anzeige
+                </div>
+                
+                {/* Content Container */}
+                <div 
+                    className="mt-4 flex justify-center items-center w-full h-full"
+                    dangerouslySetInnerHTML={{ __html: category.sidebar_ad_html }} 
+                />
+            </div>
+        </div>
+      )}
       
-      {/* SEO CONTENT SECTION */}
+      {/* --- SEO CONTENT SECTION --- */}
       {category?.long_content_bottom && (
-          <div className="bg-white border-t border-slate-200 py-20">
+          <div className="bg-white border-t border-slate-200 py-24">
             <div className="container mx-auto px-4 max-w-4xl">
-                <div className="bg-slate-50 rounded-3xl p-10 border border-slate-100 shadow-inner">
-                    <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-3">
-                        <Zap className="w-6 h-6 text-orange-500" /> Wissenswertes zum Thema {category.name}
+                <div className="bg-slate-50/50 rounded-[3rem] p-12 border border-slate-100 shadow-sm">
+                    <h2 className="text-3xl font-black text-slate-900 mb-8 flex items-center gap-3">
+                        <Zap className="w-8 h-8 text-orange-500 fill-orange-500" /> 
+                        Wissenswertes: {category.name}
                     </h2>
-                    <div className="prose prose-lg text-slate-600 max-w-none prose-headings:text-slate-900 prose-a:text-orange-600 hover:prose-a:text-orange-700 prose-img:rounded-2xl prose-strong:text-slate-800" dangerouslySetInnerHTML={{ __html: category.long_content_bottom }} />
+                    <div className="prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-3xl prose-strong:text-slate-900 font-medium" dangerouslySetInnerHTML={{ __html: category.long_content_bottom }} />
                 </div>
             </div>
           </div>
