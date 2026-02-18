@@ -174,14 +174,17 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
                                             {/* Gradient Overlay */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent opacity-80 z-10"></div>
                                             
-                                            {/* Top Badge */}
-                                            <div className="absolute top-5 left-5 z-20 bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-900 shadow-sm border border-white/20 flex items-center gap-1.5">
-                                                <TrendingUp className="w-3 h-3 text-orange-500" /> Vergleich
-                                            </div>
+                                            {/* BADGE REMOVED FROM HERE - TO AVOID COVERING TEXT */}
                                         </div>
 
                                         <div className="p-8 flex flex-col flex-grow relative z-10 bg-white">
-                                            {/* ICON REMOVED HERE - CLEAN LOOK */}
+                                            
+                                            {/* NEW BADGE POSITION: Above Title */}
+                                            <div className="mb-4">
+                                                 <span className="inline-flex items-center gap-1.5 bg-slate-50 text-slate-500 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full border border-slate-100">
+                                                    <TrendingUp className="w-3 h-3 text-orange-500" /> Vergleich
+                                                 </span>
+                                            </div>
 
                                             <h3 className="text-2xl font-black text-slate-900 mb-3 group-hover:text-orange-600 transition-colors leading-tight">
                                                 {sub.name}
@@ -243,19 +246,13 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
       </div>
 
       {/* --- PREMIUM AD BREAK (Styled EXACTLY like a Card) --- */}
-      {/* - min-w-[320px]: Damit es auch bei kleinen Ads (z.B. 300x250) wie eine Karte aussieht.
-          - w-fit mx-auto: Zentriert und wächst mit Leaderboards mit.
-          - Styling: 1:1 Kopie der Cards oben.
-      */}
       {category?.sidebar_ad_html && (
         <div className="container mx-auto px-4 pb-20 flex justify-center">
             <div className="relative bg-white border border-slate-100 rounded-[2.5rem] shadow-xl shadow-slate-200/40 p-6 flex flex-col items-center justify-center text-center overflow-hidden w-fit mx-auto min-w-[320px] animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* Ad Label - Clean & Subtle */}
-                <div className="absolute top-0 right-0 bg-slate-50 border-b border-l border-slate-100 text-slate-400 text-[10px] font-bold uppercase tracking-widest px-4 py-1.5 rounded-bl-2xl z-10">
+                <div className="absolute top-0 right-0 bg-slate-100 text-slate-400 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-bl-2xl z-10">
                     Anzeige
                 </div>
                 
-                {/* Content Container */}
                 <div 
                     className="mt-4 flex justify-center items-center w-full h-full"
                     dangerouslySetInnerHTML={{ __html: category.sidebar_ad_html }} 
@@ -264,13 +261,14 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
         </div>
       )}
       
-      {/* --- SEO CONTENT SECTION --- */}
+      {/* --- SEO CONTENT SECTION (FULL WIDTH & LEFT ALIGNED) --- */}
       {category?.long_content_bottom && (
           <div className="bg-white border-t border-slate-200 py-24">
-            <div className="container mx-auto px-4 max-w-4xl">
-                <div className="bg-slate-50/50 rounded-[3rem] p-12 border border-slate-100 shadow-sm">
-                    <h2 className="text-3xl font-black text-slate-900 mb-8 flex items-center gap-3">
-                        <Zap className="w-8 h-8 text-orange-500 fill-orange-500" /> 
+            {/* max-w-7xl macht es auf Desktop richtig breit */}
+            <div className="container mx-auto px-4 max-w-7xl">
+                <div className="bg-slate-50/50 rounded-[3rem] p-8 md:p-12 border border-slate-100 shadow-sm text-left">
+                    <h2 className="text-4xl font-black text-slate-900 mb-10 flex items-center gap-4 border-b border-slate-200 pb-6">
+                        <Zap className="w-10 h-10 text-orange-500 fill-orange-500" /> 
                         Wissenswertes: {category.name}
                     </h2>
                     <div className="prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-3xl prose-strong:text-slate-900 font-medium" dangerouslySetInnerHTML={{ __html: category.long_content_bottom }} />
