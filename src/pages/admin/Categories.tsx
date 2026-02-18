@@ -16,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, UploadCloud, Database, Eye, Bot, Settings2, Code, FileText, Search, LayoutTemplate, Layers, Globe, Clock, CalendarDays } from "lucide-react";
+import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, UploadCloud, Database, Eye, Bot, Settings2, Code, FileText, Search, LayoutTemplate, Layers, Globe, CalendarDays, Image as ImageIcon } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor"; 
 import { supabase } from "@/integrations/supabase/client";
@@ -246,7 +246,18 @@ export default function Categories() {
 
   const form = useForm<CategoryInput>({
     resolver: zodResolver(categorySchema),
-    defaultValues: { theme: "DATING", template: "comparison", is_active: true, sort_order: 0, faq_data: [], meta_title: "", meta_description: "", comparison_widget_code: "" },
+    defaultValues: { 
+        theme: "DATING", 
+        template: "comparison", 
+        is_active: true, 
+        sort_order: 0, 
+        faq_data: [], 
+        meta_title: "", 
+        meta_description: "", 
+        comparison_widget_code: "",
+        hero_image_url: "",
+        card_image_url: "" 
+    },
   });
 
   const { register, handleSubmit, setValue, watch, control } = form;
@@ -255,14 +266,20 @@ export default function Categories() {
   useEffect(() => {
     if (editingCategory) {
       form.reset({
-        name: editingCategory.name, slug: editingCategory.slug, description: editingCategory.description || "",
-        theme: editingCategory.theme || "GENERIC", template: editingCategory.template || "comparison",
-        is_active: editingCategory.is_active, meta_title: editingCategory.meta_title || "",
-        meta_description: editingCategory.meta_description || "", h1_title: editingCategory.h1_title || "",
+        name: editingCategory.name, 
+        slug: editingCategory.slug, 
+        description: editingCategory.description || "",
+        theme: editingCategory.theme || "GENERIC", 
+        template: editingCategory.template || "comparison",
+        is_active: editingCategory.is_active, 
+        meta_title: editingCategory.meta_title || "",
+        meta_description: editingCategory.meta_description || "", 
+        h1_title: editingCategory.h1_title || "",
         custom_css: (editingCategory as any).custom_css || "", 
         sidebar_ad_html: (editingCategory as any).sidebar_ad_html || "",
         sidebar_ad_image: (editingCategory as any).sidebar_ad_image || "",
         hero_image_url: (editingCategory as any).hero_image_url || "", 
+        card_image_url: (editingCategory as any).card_image_url || "", // Load from DB
         long_content_top: editingCategory.long_content_top || "",
         long_content_bottom: editingCategory.long_content_bottom || "",
         faq_data: editingCategory.faq_data || [],
@@ -273,7 +290,22 @@ export default function Categories() {
       const savedSlugs = (editingCategory as any).custom_css ? (editingCategory as any).custom_css.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
       setSelectedHubSlugs(savedSlugs);
     } else {
-      form.reset({ name: "", slug: "", theme: "GENERIC", template: "comparison", is_active: true, faq_data: [], meta_title: "", meta_description: "", sidebar_ad_html: '', sidebar_ad_image: '', hero_image_url: '', custom_css: '', comparison_widget_code: '' } as any);
+      form.reset({ 
+        name: "", 
+        slug: "", 
+        theme: "GENERIC", 
+        template: "comparison", 
+        is_active: true, 
+        faq_data: [], 
+        meta_title: "", 
+        meta_description: "", 
+        sidebar_ad_html: '', 
+        sidebar_ad_image: '', 
+        hero_image_url: '', 
+        card_image_url: '', // Reset
+        custom_css: '', 
+        comparison_widget_code: '' 
+      } as any);
       setSelectedProjectIds([]); setSelectedHubSlugs([]); setTopicPrompt("");
     }
     setShowHtmlTop(false);
@@ -612,28 +644,55 @@ export default function Categories() {
                         <TabsContent value="design" className="space-y-6">
                             <Card className="border-slate-200 shadow-sm">
                                 <CardHeader><CardTitle>Visuelle Gestaltung</CardTitle></CardHeader>
-                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <div>
-                                        <Label className="mb-2 block">Hero Hintergrundbild</Label>
-                                        <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors text-center">
-                                            {watch("hero_image_url") ? (
-                                                <div className="relative w-full h-40 mb-4 rounded-lg overflow-hidden group">
-                                                    <img src={watch("hero_image_url") || ""} className="w-full h-full object-cover" />
-                                                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button variant="secondary" size="sm" onClick={()=>setValue("hero_image_url", "", {shouldDirty: true})}>Entfernen</Button>
+                                <CardContent className="space-y-8">
+                                    {/* IMAGES ROW */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                        <div>
+                                            <Label className="mb-2 block flex items-center gap-2 font-bold"><UploadCloud className="w-4 h-4 text-slate-500" /> Hero Hintergrundbild (Banner)</Label>
+                                            <p className="text-xs text-slate-400 mb-3">Wird oben auf der Detailseite als Banner angezeigt.</p>
+                                            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors text-center">
+                                                {watch("hero_image_url") ? (
+                                                    <div className="relative w-full h-40 mb-4 rounded-lg overflow-hidden group">
+                                                        <img src={watch("hero_image_url") || ""} className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button variant="secondary" size="sm" onClick={()=>setValue("hero_image_url", "", {shouldDirty: true})}>Entfernen</Button>
+                                                        </div>
                                                     </div>
+                                                ) : (
+                                                    <div className="mb-4 text-slate-400"><UploadCloud className="w-12 h-12 mx-auto mb-2 opacity-50"/> Drag & Drop oder Klick</div>
+                                                )}
+                                                <div className="flex gap-2 w-full">
+                                                    <Input {...register("hero_image_url")} placeholder="https://..." className="bg-white" />
+                                                    <input type="file" className="hidden" id="upload-hero" onChange={(e)=>handleImageUpload(e,"hero_image_url")}/>
+                                                    <Button variant="outline" type="button" onClick={()=>document.getElementById('upload-hero')?.click()}><UploadCloud className="w-4 h-4"/></Button>
                                                 </div>
-                                            ) : (
-                                                <div className="mb-4 text-slate-400"><UploadCloud className="w-12 h-12 mx-auto mb-2 opacity-50"/> Drag & Drop oder Klick</div>
-                                            )}
-                                            <div className="flex gap-2 w-full">
-                                                <Input {...register("hero_image_url")} placeholder="https://..." className="bg-white" />
-                                                <input type="file" className="hidden" id="upload-hero" onChange={(e)=>handleImageUpload(e,"hero_image_url")}/>
-                                                <Button variant="outline" type="button" onClick={()=>document.getElementById('upload-hero')?.click()}><UploadCloud className="w-4 h-4"/></Button>
+                                            </div>
+                                        </div>
+                                        
+                                        <div>
+                                            <Label className="mb-2 block flex items-center gap-2 font-bold"><ImageIcon className="w-4 h-4 text-orange-500" /> Beitragsbild / Grid Image (NEU)</Label>
+                                            <p className="text-xs text-slate-400 mb-3">Wird im Hub als Vorschau-Karte angezeigt. Wenn leer, wird das Icon genutzt.</p>
+                                            <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors text-center border-orange-200 bg-orange-50/30">
+                                                {watch("card_image_url") ? (
+                                                    <div className="relative w-full h-40 mb-4 rounded-lg overflow-hidden group shadow-md">
+                                                        <img src={watch("card_image_url") || ""} className="w-full h-full object-cover" />
+                                                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button variant="secondary" size="sm" onClick={()=>setValue("card_image_url", "", {shouldDirty: true})}>Entfernen</Button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="mb-4 text-slate-400"><ImageIcon className="w-12 h-12 mx-auto mb-2 opacity-50 text-orange-300"/> Drag & Drop oder Klick</div>
+                                                )}
+                                                <div className="flex gap-2 w-full">
+                                                    <Input {...register("card_image_url")} placeholder="https://..." className="bg-white" />
+                                                    <input type="file" className="hidden" id="upload-card" onChange={(e)=>handleImageUpload(e,"card_image_url")}/>
+                                                    <Button variant="outline" type="button" onClick={()=>document.getElementById('upload-card')?.click()} className="border-orange-200 text-orange-700 hover:bg-orange-50"><UploadCloud className="w-4 h-4"/></Button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div>
+                                    
+                                    <div className="pt-6 border-t border-slate-100">
                                         <Label className="mb-2 block">Sidebar Werbung (Custom HTML)</Label>
                                         <Textarea {...register("sidebar_ad_html")} rows={8} className="font-mono text-xs bg-slate-50" placeholder="<div>Werbebanner Code...</div>"/>
                                     </div>

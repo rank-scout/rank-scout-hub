@@ -43,6 +43,7 @@ export const categorySchema = z.object({
   hero_cta_text: z.string().optional().nullable(),
   hero_badge_text: z.string().optional().nullable(),
   hero_image_url: z.string().optional().nullable(),
+  card_image_url: z.string().optional().nullable(), // NEU: Das Beitragsbild für Hubs
   long_content_top: z.string().optional().nullable(),
   long_content_bottom: z.string().optional().nullable(),
   analytics_code: z.string().optional().nullable(),
@@ -112,11 +113,9 @@ export const siteSettingsSchema = z.object({
   site_title: z.string().min(1).max(100),
   site_description: z.string().max(300),
   contact_email: z.string().email().optional().or(z.literal("")),
-  // --- NEUE GOOGLE FIELDS ---
   google_analytics_id: z.string().optional().or(z.literal("")),
   google_search_console_verification: z.string().optional().or(z.literal("")),
   custom_report_url: z.string().optional().or(z.literal("")),
-  // --------------------------
   social_links: z.object({
     facebook: z.string().url().optional().or(z.literal("")),
     twitter: z.string().url().optional().or(z.literal("")),

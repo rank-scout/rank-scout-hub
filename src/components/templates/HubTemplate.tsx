@@ -147,30 +147,67 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
                     {filteredCategories.length > 0 ? (
                         filteredCategories.map((sub) => (
                         <Link to={`/${sub.slug}`} key={sub.id} className="group block h-full">
-                            <div className="bg-white rounded-3xl p-8 shadow-lg shadow-slate-200/50 hover:shadow-2xl hover:shadow-orange-500/10 border border-slate-100 hover:border-orange-500/30 transition-all duration-300 h-full flex flex-col relative overflow-hidden group-hover:-translate-y-1">
+                            <div className="bg-white rounded-3xl shadow-lg shadow-slate-200/50 hover:shadow-2xl hover:shadow-orange-500/10 border border-slate-100 hover:border-orange-500/30 transition-all duration-300 h-full flex flex-col relative overflow-hidden group-hover:-translate-y-1">
                                 
-                                <div className="flex items-start justify-between mb-6">
-                                    {/* Icon Box */}
-                                    <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-slate-100 group-hover:scale-110 transition-transform text-orange-500 font-bold group-hover:bg-orange-50">
-                                        {sub.icon ? <img src={sub.icon} alt="" className="w-8 h-8 object-contain" /> : getIcon(sub.slug)}
+                                {/* --- IMAGE CARD LOGIC --- */}
+                                {sub.card_image_url ? (
+                                    <>
+                                        {/* Image Area */}
+                                        <div className="relative h-56 w-full overflow-hidden">
+                                            <img 
+                                                src={sub.card_image_url} 
+                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                                                alt={sub.name} 
+                                            />
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60"></div>
+                                            
+                                            {/* Floating Badge on Image */}
+                                            <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-900 border border-white/20 shadow-sm">
+                                                Vergleich
+                                            </div>
+                                        </div>
+
+                                        <div className="p-8 flex flex-col flex-grow">
+                                            <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-orange-600 transition-colors leading-tight">
+                                                {sub.name}
+                                            </h3>
+                                            
+                                            <p className="text-slate-500 mb-6 line-clamp-3 leading-relaxed flex-grow text-sm group-hover:text-slate-600">
+                                                {sub.meta_description || "Klicke hier für den detaillierten Vergleich und Testbericht."}
+                                            </p>
+
+                                            <div className="mt-auto flex items-center text-slate-900 font-bold text-sm pt-2 group-hover:text-orange-600">
+                                                Jetzt vergleichen <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                            </div>
+                                        </div>
+                                    </>
+                                ) : (
+                                    /* --- CLASSIC ICON CARD (FALLBACK) --- */
+                                    <div className="p-8 flex flex-col h-full">
+                                        <div className="flex items-start justify-between mb-6">
+                                            {/* Icon Box */}
+                                            <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-2xl shadow-inner border border-slate-100 group-hover:scale-110 transition-transform text-orange-500 font-bold group-hover:bg-orange-50">
+                                                {sub.icon ? <img src={sub.icon} alt="" className="w-8 h-8 object-contain" /> : getIcon(sub.slug)}
+                                            </div>
+                                            <div className="bg-slate-50 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-slate-100">
+                                                Vergleich
+                                            </div>
+                                        </div>
+                                        
+                                        <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-orange-600 transition-colors leading-tight">
+                                            {sub.name}
+                                        </h3>
+                                        
+                                        <p className="text-slate-500 mb-8 line-clamp-3 leading-relaxed flex-grow text-sm group-hover:text-slate-600">
+                                            {sub.meta_description || "Klicke hier für den detaillierten Vergleich und Testbericht."}
+                                        </p>
+                                        
+                                        {/* CTA */}
+                                        <div className="mt-auto flex items-center text-slate-900 font-bold text-sm border-t border-slate-50 pt-6 group-hover:text-orange-600">
+                                            Jetzt vergleichen <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                        </div>
                                     </div>
-                                    <div className="bg-slate-50 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-400 border border-slate-100">
-                                        Vergleich
-                                    </div>
-                                </div>
-                                
-                                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-orange-600 transition-colors leading-tight">
-                                    {sub.name}
-                                </h3>
-                                
-                                <p className="text-slate-500 mb-8 line-clamp-3 leading-relaxed flex-grow text-sm group-hover:text-slate-600">
-                                    {sub.meta_description || "Klicke hier für den detaillierten Vergleich und Testbericht."}
-                                </p>
-                                
-                                {/* CTA */}
-                                <div className="mt-auto flex items-center text-slate-900 font-bold text-sm border-t border-slate-50 pt-6 group-hover:text-orange-600">
-                                    Jetzt vergleichen <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                                </div>
+                                )}
                             </div>
                         </Link>
                         ))
