@@ -185,15 +185,15 @@ export default function CategoryDetail() {
     const comparisonTitle = category.comparison_title || "Alle Anbieter im Vergleich";
     const featuresTitle = category.features_title || "Inhalt";
 
-    return (
+return (
       <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-[#FAFAFA]">
         <Helmet><title>{category.meta_title || `${category.name}`}</title><meta name="description" content={category.meta_description || ""} /><link rel="canonical" href={currentUrl} /><script type="application/ld+json">{JSON.stringify(jsonLdSchema)}</script></Helmet>
         <Header />
         <main className="flex-1">
           {/* Breadcrumbs */}
-          <div className="border-b border-white/5 bg-[#0a0a0a] sticky top-[60px] z-30 shadow-md">
+          <div className="border-b border-white/5 bg-[#0a0a0a] sticky top-[65px] z-30 shadow-md">
             <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 h-12 flex items-center text-sm font-medium text-slate-400 overflow-hidden">
-                <Link to="/" className="hover:text-orange-500 flex items-center gap-1 transition-colors"><Home className="w-4 h-4"/> Home</Link>
+                <Link to="/" className="hover:text-orange-500 flex items-center gap-1 transition-colors"><Home className="w-4 h-4"/> Startseite</Link>
                 <span className="mx-2 text-slate-600">/</span>
                 <span className="text-white truncate font-semibold">{category.name}</span>
             </div>
@@ -202,7 +202,7 @@ export default function CategoryDetail() {
           {/* Hero */}
           <section className="relative w-full h-[50vh] md:h-[60vh] min-h-[500px] max-h-[800px] overflow-hidden rounded-b-[3.5rem] shadow-2xl shadow-slate-300/50 z-20 flex items-center justify-center bg-[#0a0a0a]">
             <div className="absolute inset-0 z-0"><img src={heroImage} alt="Background" className="w-full h-full object-cover object-center opacity-60" /><div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/50 to-transparent"></div></div>
-            <div className="container relative z-20 mx-auto px-4 max-w-5xl text-center py-10">
+            <div className="container relative z-20 mx-auto px-4 max-w-5xl text-center pt-28 pb-10 md:pt-36">
               <div className="flex justify-center mb-8"><div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 text-orange-400 px-5 py-2 rounded-full shadow-lg text-xs font-bold uppercase tracking-widest"><ShieldCheck className="w-4 h-4 text-orange-500" />{category.hero_pretitle || "Redaktionell geprüft"}</div></div>
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tighter mb-8 leading-[1.1] drop-shadow-2xl">{category.h1_title || category.name}</h1>
               {category.hero_headline && (<p className="text-xl md:text-2xl text-slate-300 font-medium mb-12 leading-relaxed max-w-3xl mx-auto antialiased">{category.hero_headline}</p>)}
