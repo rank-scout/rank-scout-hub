@@ -256,7 +256,16 @@ export default function Categories() {
         meta_description: "", 
         comparison_widget_code: "",
         hero_image_url: "",
-        card_image_url: "" 
+        card_image_url: "",
+        // NEUE FELDER
+        hero_pretitle: "",
+        hero_headline: "",
+        hero_cta_text: "",
+        hero_badge_text: "",
+        intro_title: "",
+        comparison_title: "",
+        project_cta_text: "",
+        features_title: ""
     },
   });
 
@@ -279,12 +288,21 @@ export default function Categories() {
         sidebar_ad_html: (editingCategory as any).sidebar_ad_html || "",
         sidebar_ad_image: (editingCategory as any).sidebar_ad_image || "",
         hero_image_url: (editingCategory as any).hero_image_url || "", 
-        card_image_url: (editingCategory as any).card_image_url || "", // Load from DB
+        card_image_url: (editingCategory as any).card_image_url || "", 
         long_content_top: editingCategory.long_content_top || "",
         long_content_bottom: editingCategory.long_content_bottom || "",
         faq_data: editingCategory.faq_data || [],
         custom_html_override: editingCategory.custom_html_override || "",
         comparison_widget_code: (editingCategory as any).comparison_widget_code || "",
+        // NEUE FELDER LADEN
+        hero_pretitle: editingCategory.hero_pretitle || "",
+        hero_headline: editingCategory.hero_headline || "",
+        hero_cta_text: editingCategory.hero_cta_text || "",
+        hero_badge_text: editingCategory.hero_badge_text || "",
+        intro_title: editingCategory.intro_title || "",
+        comparison_title: editingCategory.comparison_title || "",
+        project_cta_text: editingCategory.project_cta_text || "",
+        features_title: editingCategory.features_title || "",
       } as any);
       setTopicPrompt(`Content für ${editingCategory.name}`);
       const savedSlugs = (editingCategory as any).custom_css ? (editingCategory as any).custom_css.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
@@ -302,9 +320,18 @@ export default function Categories() {
         sidebar_ad_html: '', 
         sidebar_ad_image: '', 
         hero_image_url: '', 
-        card_image_url: '', // Reset
+        card_image_url: '', 
         custom_css: '', 
-        comparison_widget_code: '' 
+        comparison_widget_code: '',
+        // NEUE FELDER RESET
+        hero_pretitle: "",
+        hero_headline: "",
+        hero_cta_text: "",
+        hero_badge_text: "",
+        intro_title: "",
+        comparison_title: "",
+        project_cta_text: "",
+        features_title: ""
       } as any);
       setSelectedProjectIds([]); setSelectedHubSlugs([]); setTopicPrompt("");
     }
@@ -560,6 +587,28 @@ export default function Categories() {
                                     <CardContent className="space-y-4">
                                         <div className="space-y-2"><Label>Meta Title (Browser Tab)</Label><Input {...register("meta_title")} placeholder="Kreditvergleich 2026 | Top Zinsen..." /></div>
                                         <div className="space-y-2"><Label>Meta Description (Google Snippet)</Label><Textarea {...register("meta_description")} className="min-h-[120px]" placeholder="Beschreibe die Seite für Google..." /></div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            
+                            {/* --- NEUE KYRA HUB FELDER: CTAs & Custom Titles --- */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                <Card className="border-slate-200 shadow-sm h-fit border-l-4 border-l-primary bg-slate-50/50">
+                                    <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-lg"><LayoutTemplate className="w-5 h-5 text-primary"/> Hub & Listen Texte</CardTitle><CardDescription>Überschreibe die Standard-Texte des Templates.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2"><Label>Überschrift über Liste</Label><Input {...register("comparison_title")} className="bg-white" placeholder="z.B. Die besten Anbieter 2026" /></div>
+                                        <div className="space-y-2"><Label>Features Überschrift</Label><Input {...register("features_title")} className="bg-white" placeholder="z.B. Wichtige Funktionen" /></div>
+                                        <div className="space-y-2"><Label>Intro Titel</Label><Input {...register("intro_title")} className="bg-white" placeholder="z.B. Warum du vergleichen solltest" /></div>
+                                        <div className="space-y-2"><Label className="text-primary font-bold">Projekt Button-Text (CTA)</Label><Input {...register("project_cta_text")} className="bg-white border-primary/20" placeholder="z.B. Preis prüfen (überschreibt Standard)" /></div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="border-slate-200 shadow-sm h-fit bg-slate-50/50">
+                                    <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-lg"><Settings2 className="w-5 h-5 text-slate-500"/> Hero Banner Texte</CardTitle><CardDescription>Spezifische Anpassungen für den Kopfbereich.</CardDescription></CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <div className="space-y-2"><Label>Hero Pre-Title</Label><Input {...register("hero_pretitle")} className="bg-white" placeholder="z.B. Aktueller Test" /></div>
+                                        <div className="space-y-2"><Label>Hero Headline</Label><Input {...register("hero_headline")} className="bg-white" placeholder="z.B. Finde das beste Tool" /></div>
+                                        <div className="space-y-2"><Label>Hero CTA Button</Label><Input {...register("hero_cta_text")} className="bg-white" placeholder="z.B. Jetzt vergleichen" /></div>
+                                        <div className="space-y-2"><Label>Hero Badge</Label><Input {...register("hero_badge_text")} className="bg-white" placeholder="z.B. Update 2026" /></div>
                                     </CardContent>
                                 </Card>
                             </div>

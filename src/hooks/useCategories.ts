@@ -24,6 +24,14 @@ export type Category = {
   long_content_top: string | null;
   long_content_bottom: string | null;
   
+  // === NEUE HUB FELDER (Flexible Landingpages) ===
+  intro_title: string | null;
+  comparison_title: string | null;
+  project_cta_text: string | null;
+  features_title: string | null;
+  sticky_cta_text: string | null;
+  sticky_cta_link: string | null;
+  
   // KYRA UPDATE: Typ-Definition
   hero_image_url: string | null;
   

@@ -38,10 +38,19 @@ export const categorySchema = z.object({
   meta_description: z.string().optional().nullable(),
   h1_title: z.string().optional().nullable(),
   site_name: z.string().optional().nullable(),
+  
+  // HERO BANNER TEXTE
   hero_headline: z.string().optional().nullable(),
   hero_pretitle: z.string().optional().nullable(),
   hero_cta_text: z.string().optional().nullable(),
   hero_badge_text: z.string().optional().nullable(),
+  
+  // NEUE HUB & LISTEN TEXTE (Der Türsteher-Fix)
+  intro_title: z.string().optional().nullable(),
+  comparison_title: z.string().optional().nullable(),
+  project_cta_text: z.string().optional().nullable(),
+  features_title: z.string().optional().nullable(),
+  
   hero_image_url: z.string().optional().nullable(),
   card_image_url: z.string().optional().nullable(), // NEU: Das Beitragsbild für Hubs
   long_content_top: z.string().optional().nullable(),

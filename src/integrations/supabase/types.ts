@@ -67,70 +67,115 @@ export type Database = {
       }
       categories: {
         Row: {
+          analytics_code: string | null
+          banner_override: string | null
           color_theme: string | null
+          comparison_title: string | null
           created_at: string | null
           custom_css: string | null
           custom_html: string | null
           custom_html_override: string | null
           description: string | null
+          features_title: string | null
+          footer_copyright_text: string | null
+          footer_site_name: string | null
           h1_title: string | null
+          hero_badge_text: string | null
+          hero_cta_text: string | null
+          hero_headline: string | null
+          hero_pretitle: string | null
           icon: string | null
           id: string
+          intro_title: string | null
           is_active: boolean
           is_city: boolean | null
-          long_content_top: string | null
           long_content_bottom: string | null
+          long_content_top: string | null
           meta_description: string | null
           meta_title: string | null
           name: string
+          project_cta_text: string | null
+          site_name: string | null
           slug: string
           sort_order: number
+          sticky_cta_link: string | null
+          sticky_cta_text: string | null
           template: string | null
           theme: Database["public"]["Enums"]["category_theme"] | null
           updated_at: string | null
         }
         Insert: {
+          analytics_code?: string | null
+          banner_override?: string | null
           color_theme?: string | null
+          comparison_title?: string | null
           created_at?: string | null
           custom_css?: string | null
           custom_html?: string | null
           custom_html_override?: string | null
           description?: string | null
+          features_title?: string | null
+          footer_copyright_text?: string | null
+          footer_site_name?: string | null
           h1_title?: string | null
+          hero_badge_text?: string | null
+          hero_cta_text?: string | null
+          hero_headline?: string | null
+          hero_pretitle?: string | null
           icon?: string | null
           id?: string
+          intro_title?: string | null
           is_active?: boolean
           is_city?: boolean | null
-          long_content_top?: string | null
           long_content_bottom?: string | null
+          long_content_top?: string | null
           meta_description?: string | null
           meta_title?: string | null
           name: string
+          project_cta_text?: string | null
+          site_name?: string | null
           slug: string
           sort_order?: number
+          sticky_cta_link?: string | null
+          sticky_cta_text?: string | null
           template?: string | null
           theme?: Database["public"]["Enums"]["category_theme"] | null
           updated_at?: string | null
         }
         Update: {
+          analytics_code?: string | null
+          banner_override?: string | null
           color_theme?: string | null
+          comparison_title?: string | null
           created_at?: string | null
           custom_css?: string | null
           custom_html?: string | null
           custom_html_override?: string | null
           description?: string | null
+          features_title?: string | null
+          footer_copyright_text?: string | null
+          footer_site_name?: string | null
           h1_title?: string | null
+          hero_badge_text?: string | null
+          hero_cta_text?: string | null
+          hero_headline?: string | null
+          hero_pretitle?: string | null
           icon?: string | null
           id?: string
+          intro_title?: string | null
           is_active?: boolean
           is_city?: boolean | null
-          long_content_top?: string | null
           long_content_bottom?: string | null
+          long_content_top?: string | null
           meta_description?: string | null
           meta_title?: string | null
           name?: string
+          project_cta_text?: string | null
+          site_name?: string | null
           slug?: string
           sort_order?: number
+          sticky_cta_link?: string | null
+          sticky_cta_text?: string | null
           template?: string | null
           theme?: Database["public"]["Enums"]["category_theme"] | null
           updated_at?: string | null
