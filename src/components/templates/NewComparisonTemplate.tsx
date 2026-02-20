@@ -49,6 +49,10 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
       <head>
         <meta charSet="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="canonical" href={`https://dating.rank-scout.com/${category.slug}/`} />
+        
+        {/* KYRA FIX: Preload für das CSS-Background-Image (Unsplash) für LCP Boost */}
+        <link rel="preload" as="image" href="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=2574&auto=format&fit=crop" fetchPriority="high" />
+
         <link rel="icon" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon.ico" sizes="any" /><link rel="icon" type="image/png" sizes="16x16" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon-16x16.png" />
         <title>{(category.meta_title || `${category.name} im Test ${year} | Die Top Anbieter`).replace(/2026/g, year.toString())}</title>
         <meta name="description" content={(category.meta_description || `Der große Vergleich für ${category.name}.`).replace(/2026/g, year.toString())} />

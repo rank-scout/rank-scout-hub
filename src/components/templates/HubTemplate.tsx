@@ -85,6 +85,9 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
                     src={category.hero_image_url} 
                     className="w-full h-full object-cover opacity-70"
                     alt="" 
+                    fetchPriority="high"
+                    loading="eager"
+                    decoding="sync"
                 />
             ) : (
                 <div className="w-full h-full bg-slate-900" />
