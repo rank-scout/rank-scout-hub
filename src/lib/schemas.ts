@@ -92,7 +92,7 @@ export const countryScopeEnum = z.enum(["DACH", "DE", "AT", "CH"]);
 export const projectSchema = z.object({
   name: z.string().min(1, "Name erforderlich"),
   slug: z.string().min(1, "Slug erforderlich"),
-  short_description: z.string().max(150, "Kurzbeschreibung max 150 Zeichen").optional(),
+short_description: z.string().optional(),
   description: z.string().optional(),
   logo_url: z.string().url("Ungültige Logo-URL").optional().or(z.literal("")),
   affiliate_link: z.string().url("Ungültiger Affiliate-Link").optional().or(z.literal("")),

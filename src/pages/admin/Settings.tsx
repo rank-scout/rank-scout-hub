@@ -18,14 +18,14 @@ import { toast } from "@/hooks/use-toast";
 import { 
   Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
   CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
-  Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText
+  Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText,
+  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function AdminSettings() {
@@ -41,7 +41,7 @@ export default function AdminSettings() {
   const [localContent, setLocalContent] = useState<typeof defaultHomeContent | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  // SEO Text State (Lokal, Performance)
+  // SEO Text State (Lokal, Performance für langes Tippen)
   const [seoLongText, setSeoLongText] = useState("");
 
   // Bestehende States
@@ -57,7 +57,27 @@ export default function AdminSettings() {
   const [analyticsStatus, setAnalyticsStatus] = useState<"idle" | "checking" | "found" | "not-found">("idle");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
-  // --- NEUE ANALYTICS STATES ---
+  // --- THEME STATES ---
+  const [activeTheme, setActiveTheme] = useState("electric");
+  const [dashboardTheme, setDashboardTheme] = useState("dark");
+
+  // --- MARKETING STATES ---
+  const [newsletterActive, setNewsletterActive] = useState(true);
+  const [popupActive, setPopupActive] = useState(false);
+
+  // --- API & BRIDGE STATES ---
+  const [bridgeUrl, setBridgeUrl] = useState("");
+  const [bridgeKey, setBridgeKey] = useState("");
+
+  // --- FORUM BANNER CONFIG ---
+  const [forumBanner, setForumBanner] = useState({
+    title: "", ctaText: "", linkUrl: "", imageUrl: "", isActive: false, description: ""
+  });
+
+  // --- HOME SECTIONS (ERWEITERT) ---
+  const [homeSections, setHomeSections] = useState<any[]>([]);
+
+  // --- ANALYTICS STATES ---
   const [ga4Id, setGa4Id] = useState("");
   const [gscVerification, setGscVerification] = useState("");
   const [reportUrl, setReportUrl] = useState("");
@@ -73,12 +93,6 @@ export default function AdminSettings() {
   const [scoutyHighTicketUrl, setScoutyHighTicketUrl] = useState("");
   const [scoutyEnabled, setScoutyEnabled] = useState(true);
   const [scoutyLeadsCount, setScoutyLeadsCount] = useState(0);
-
-  const [isAdDialogOpen, setIsAdDialogOpen] = useState(false);
-  const [currentAd, setCurrentAd] = useState<ForumAd>({
-    id: "", name: "", type: "image", enabled: true, 
-    image_url: "", link_url: "", headline: "", subheadline: "", cta_text: "", html_code: ""
-  });
 
   // --- STANDARD CONFIG WERTE (DEFAULTS) ---
   const defaultHeaderConfig = { 
@@ -125,6 +139,27 @@ export default function AdminSettings() {
     setAnalyticsCode((settings.global_analytics_code as string) || "");
     setAdsEnabled((settings.ads_enabled as boolean) || false);
     
+    // Theme & Marketing Init
+    setActiveTheme((settings.active_theme as string) || "electric");
+    setDashboardTheme((settings.dashboard_theme as string) || "dark");
+    setNewsletterActive((settings.newsletter_active as boolean) ?? true);
+    setPopupActive((settings.popup_active as boolean) ?? false);
+
+    // API Bridge Init
+    setBridgeUrl((settings.bridge_url as string) || "");
+    setBridgeKey((settings.bridge_key as string) || "");
+
+    // Forum Banner Init
+    if (settings.forum_banner_config) {
+        setForumBanner((prev: any) => ({ ...prev, ...(settings.forum_banner_config as any) }));
+    }
+
+    // Home Sections Init
+    if (settings.home_sections) {
+        const sortedSections = [...(settings.home_sections as any[])].sort((a, b) => a.order - b.order);
+        setHomeSections(sortedSections);
+    }
+
     // Load Analytics
     setGa4Id((settings as any).google_analytics_id || "");
     setGscVerification((settings as any).google_search_console_verification || "");
@@ -203,6 +238,45 @@ export default function AdminSettings() {
     saveSetting("global_analytics_code", analyticsCode);
   };
 
+  const saveBridgeSettings = () => {
+    saveSetting("bridge_url", bridgeUrl);
+    saveSetting("bridge_key", bridgeKey);
+  };
+
+  const saveThemeSettings = () => {
+    saveSetting("active_theme", activeTheme);
+    saveSetting("dashboard_theme", dashboardTheme);
+  };
+
+  const saveMarketingSettings = () => {
+    saveSetting("newsletter_active", newsletterActive);
+    saveSetting("popup_active", popupActive);
+  };
+
+  const saveForumBannerConfig = () => {
+    saveSetting("forum_banner_config", forumBanner);
+  };
+
+  const moveHomeSection = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === homeSections.length - 1) return;
+    
+    const newSections = [...homeSections];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    [newSections[index], newSections[targetIndex]] = [newSections[targetIndex], newSections[index]];
+    newSections.forEach((sec, i) => sec.order = i);
+    setHomeSections(newSections);
+    saveSetting("home_sections", newSections);
+  };
+
+  const toggleHomeSectionEnabled = (index: number) => {
+    const newSections = [...homeSections];
+    newSections[index].enabled = !newSections[index].enabled;
+    setHomeSections(newSections);
+    saveSetting("home_sections", newSections);
+  };
+
   const toggleSection = (key: keyof typeof defaultHomeLayout) => {
     // @ts-ignore
     const newLayout = { ...layout, [key]: !layout[key] };
@@ -219,28 +293,23 @@ export default function AdminSettings() {
         [field]: value 
       } 
     };
-    setLocalContent(newContent);
+    setLocalContent(newContent as any);
     setHasUnsavedChanges(true);
   };
 
   const saveContentManually = () => {
     if (!localContent) return;
-    saveSetting("home_content", localContent);
-    setHasUnsavedChanges(false);
-  };
-
-  // SPEZIAL SAVE FÜR SEO TEXT
-  const saveSeoText = () => {
-    if (!localContent) return;
-    const newContent = {
+    // SEO-Text aus dem State noch ins localContent pushen, falls nicht passiert
+    const finalContentToSave = {
         ...localContent,
         seo: {
             ...localContent.seo,
             long_text: seoLongText
         }
     };
-    setLocalContent(newContent); // Update local for immediate UI feedback
-    saveSetting("home_content", newContent); // Push to DB
+    saveSetting("home_content", finalContentToSave);
+    setLocalContent(finalContentToSave);
+    setHasUnsavedChanges(false);
   };
 
   // --- BIG THREE DYNAMISCH ---
@@ -339,32 +408,6 @@ export default function AdminSettings() {
   const saveHeader = () => saveSetting("header_config", headerConfig);
   const saveFooter = () => saveSetting("footer_config", footerConfig);
 
-  const saveAd = async () => {
-    const newAds = currentAd.id 
-      ? forumAds?.map(ad => ad.id === currentAd.id ? currentAd : ad)
-      : [...(forumAds || []), { ...currentAd, id: crypto.randomUUID() }];
-    
-    try {
-      await updateSetting.mutateAsync({ key: "forum_ads", value: newAds });
-      toast({ title: "Werbung gespeichert" });
-      setIsAdDialogOpen(false);
-    } catch (e) { toast({ title: "Fehler", variant: "destructive" }); }
-  };
-
-  const deleteAd = async (id: string) => {
-    try {
-      const newAds = forumAds?.filter(ad => ad.id !== id);
-      await updateSetting.mutateAsync({ key: "forum_ads", value: newAds });
-      toast({ title: "Gelöscht" });
-    } catch (e) { toast({ title: "Fehler", variant: "destructive" }); }
-  };
-
-  const createAd = () => {
-    setCurrentAd({ id: "", name: "Neu", type: "image", enabled: true, image_url: "", link_url: "", headline: "", subheadline: "", cta_text: "", html_code: "" });
-    setIsAdDialogOpen(true);
-  };
-  const editAd = (ad: ForumAd) => { setCurrentAd(ad); setIsAdDialogOpen(true); };
-
   const handleAdsToggle = (enabled: boolean) => {
     setAdsEnabled(enabled);
     saveSetting("ads_enabled", enabled);
@@ -415,22 +458,6 @@ export default function AdminSettings() {
     toast({ title: "Admin-PIN geändert" });
   }
 
-  const checkAnalyticsStatus = async () => {
-    setAnalyticsStatus("checking");
-    const id = analyticsCode.match(/G-[A-Z0-9]+/)?.[0] || ga4Id;
-    try {
-      if (id) {
-        setAnalyticsStatus("found");
-        toast({ title: "Analytics aktiv", description: `Google Analytics ${id} ist konfiguriert.` });
-      } else {
-        setAnalyticsStatus("not-found");
-        toast({ title: "Kein Analytics Code", description: "Bitte füge deinen Code ein.", variant: "destructive" });
-      }
-    } catch (error) {
-      setAnalyticsStatus("not-found");
-    }
-  };
-
   if (isLoading || !localContent) {
     return <div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
   }
@@ -448,12 +475,15 @@ export default function AdminSettings() {
       </div>
 
       <Tabs defaultValue="global" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl h-auto">
+        <TabsList className="grid w-full grid-cols-5 bg-slate-200/50 dark:bg-slate-800 p-1 rounded-xl h-auto flex-wrap md:flex-nowrap">
           <TabsTrigger value="global" className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium">
-            Global & Branding
+            Global
+          </TabsTrigger>
+          <TabsTrigger value="marketing" className="py-3 rounded-lg data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium flex gap-2 items-center justify-center">
+            <Megaphone className="w-4 h-4 hidden sm:block"/> Marketing
           </TabsTrigger>
           <TabsTrigger value="analytics_new" className="py-3 rounded-lg data-[state=active]:bg-blue-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium flex gap-2 items-center justify-center">
-            <BarChart3 className="w-4 h-4"/> Analytics & API
+            <BarChart3 className="w-4 h-4 hidden sm:block"/> API
           </TabsTrigger>
           <TabsTrigger value="navigation" className="py-3 rounded-lg data-[state=active]:bg-secondary data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium">
             Navi & Footer
@@ -463,13 +493,15 @@ export default function AdminSettings() {
           </TabsTrigger>
         </TabsList>
 
+        {/* ==============================================================
+            GLOBAL TAB
+        ============================================================== */}
         <TabsContent value="global" className="space-y-6 mt-6">
           <div className="grid gap-6 md:grid-cols-2">
             <Card className="bg-slate-900 border-slate-800 text-slate-100">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base text-white">
-                  <Target className="h-4 w-4 text-secondary" />
-                  Scouty AI Config
+                  <Target className="h-4 w-4 text-secondary" /> Scouty AI Config
                 </CardTitle>
                 <CardDescription className="text-slate-400 text-xs">Konfiguriere deinen AI-Assistenten.</CardDescription>
               </CardHeader>
@@ -491,8 +523,7 @@ export default function AdminSettings() {
             <Card className="bg-slate-900 border-slate-800 text-slate-100">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-base text-white">
-                  <Users className="h-4 w-4 text-green-500" />
-                  Scouty Leads
+                  <Users className="h-4 w-4 text-green-500" /> Scouty Leads
                 </CardTitle>
                 <CardDescription className="text-slate-400 text-xs">Generierte Kontakte im Chat.</CardDescription>
               </CardHeader>
@@ -504,6 +535,106 @@ export default function AdminSettings() {
           </div>
 
           <Card className="bg-card border-border shadow-sm">
+            <CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><Globe className="w-5 h-5 text-secondary" /> Branding & Theme</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6 border-b border-border pb-6">
+                <div className="space-y-4">
+                  <Label>Logo</Label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative w-24 h-24 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden">
+                      {siteLogoUrl ? <img src={siteLogoUrl} className="w-full h-full object-contain p-2" /> : <ImageIcon className="w-8 h-8 text-muted-foreground/50" />}
+                      {isUploadingLogo && <div className="absolute inset-0 bg-background/80 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}
+                    </div>
+                    <div className="space-y-2 flex-1">
+                      <div className="flex flex-col gap-2">
+                        <Button variant="outline" className="relative cursor-pointer w-full text-xs" disabled={isUploadingLogo}>
+                          <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={handleLogoUpload} />
+                          <Upload className="w-3 h-3 mr-2" /> Upload
+                        </Button>
+                        {siteLogoUrl && <Button variant="destructive" size="sm" onClick={removeLogo}><Trash2 className="w-3 h-3 mr-2" /> Entfernen</Button>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-100">
+                  <h4 className="font-medium flex items-center gap-2 text-sm"><PaintBucket className="w-4 h-4 text-purple-500" /> Farbgebung</h4>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Aktives Theme (Frontend)</Label>
+                    <Select value={activeTheme} onValueChange={setActiveTheme}>
+                      <SelectTrigger><SelectValue placeholder="Theme auswählen" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="electric">Electric (Default)</SelectItem>
+                        <SelectItem value="dark">Dark Mode</SelectItem>
+                        <SelectItem value="light">Light Mode</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Dashboard Theme (Admin)</Label>
+                    <Select value={dashboardTheme} onValueChange={setDashboardTheme}>
+                      <SelectTrigger><SelectValue placeholder="Theme auswählen" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dark">Dark</SelectItem>
+                        <SelectItem value="light">Light</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button size="sm" onClick={saveThemeSettings} className="w-full mt-2"><Save className="w-3 h-3 mr-2" /> Theme Speichern</Button>
+                </div>
+              </div>
+
+              <div className="grid gap-4">
+                <div className="space-y-2"><Label>Website Titel</Label><Input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} /></div>
+                <div className="space-y-2"><Label>Meta Beschreibung</Label><Textarea value={siteDescription} onChange={(e) => setSiteDescription(e.target.value)} rows={2} /></div>
+              </div>
+              <Button onClick={() => { saveSetting("site_title", siteTitle); saveSetting("site_description", siteDescription); }} className="bg-primary hover:bg-primary/90"><Save className="w-4 h-4 mr-2" /> Globale Daten Speichern</Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border shadow-sm">
+             <CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-red-500" />Admin PIN</CardTitle></CardHeader>
+             <CardContent className="space-y-4">
+                <div className="flex gap-2"><Input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Neuer PIN" /><Button onClick={savePin} variant="outline">Ändern</Button></div>
+             </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ==============================================================
+            MARKETING TAB
+        ============================================================== */}
+        <TabsContent value="marketing" className="space-y-6 mt-6">
+           <Card className="bg-card border-border shadow-sm border-t-4 border-t-green-500">
+            <CardHeader>
+              <CardTitle className="font-display text-lg flex items-center gap-2">
+                <Mail className="w-5 h-5 text-green-600" /> Lead-Gen Steuerung
+              </CardTitle>
+              <CardDescription>Aktivieren oder Deaktivieren von Popups und Newsletter-Formularen.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100">
+                <div className="flex flex-col space-y-1">
+                  <Label className="font-medium text-base">Newsletter Box (Startseite)</Label>
+                  <span className="text-sm text-muted-foreground">Zeigt die Newsletter-Eintragung unten an.</span>
+                </div>
+                <Switch checked={newsletterActive} onCheckedChange={setNewsletterActive} />
+              </div>
+
+              <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100">
+                <div className="flex flex-col space-y-1">
+                  <Label className="font-medium text-base">Exit-Intent Popup</Label>
+                  <span className="text-sm text-muted-foreground">Erscheint, wenn der User die Seite verlassen will.</span>
+                </div>
+                <Switch checked={popupActive} onCheckedChange={setPopupActive} />
+              </div>
+              
+              <Button onClick={saveMarketingSettings} className="bg-green-600 hover:bg-green-700 text-white w-full">
+                <Save className="w-4 h-4 mr-2" /> Einstellungen Speichern
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border shadow-sm">
             <CardHeader>
               <CardTitle className="font-display text-lg flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-green-600" /> Monetarisierung
@@ -513,23 +644,32 @@ export default function AdminSettings() {
             <CardContent className="space-y-6">
               <div className="flex items-center justify-between space-x-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100">
                 <div className="flex flex-col space-y-1">
-                  <Label htmlFor="ads-toggle" className="font-medium text-base">Werbebanner anzeigen</Label>
-                  <span className="text-sm text-muted-foreground">Globaler Schalter für alle Anzeigen.</span>
+                  <Label htmlFor="ads-toggle" className="font-medium text-base">Globale Werbebanner</Label>
+                  <span className="text-sm text-muted-foreground">Hauptschalter für Adsense & Amazon Sektionen.</span>
                 </div>
                 <Switch id="ads-toggle" checked={adsEnabled} onCheckedChange={handleAdsToggle} />
               </div>
 
-              <div className="space-y-4 pt-2">
-                <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500"/> Google AdSense
+              <div className="space-y-4 pt-4 border-t border-border">
+                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                  <span className="w-1.5 h-1.5 rounded-full bg-purple-500"/> Forum Global Banner
                 </h4>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="space-y-2"><Label>Publisher ID</Label><Input value={adSenseClient} onChange={(e) => setAdSenseClient(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Slot ID</Label><Input value={adSenseSlot} onChange={(e) => setAdSenseSlot(e.target.value)} /></div>
+                <div className="space-y-3 bg-purple-50/50 dark:bg-purple-900/10 p-4 rounded-lg">
+                  <div className="flex justify-between items-center mb-2">
+                    <Label className="font-bold">Banner aktiv</Label>
+                    <Switch checked={forumBanner.isActive} onCheckedChange={(c) => setForumBanner({...forumBanner, isActive: c})} />
+                  </div>
+                  <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Titel</Label><Input value={forumBanner.title} onChange={(e) => setForumBanner({...forumBanner, title: e.target.value})} /></div>
+                      <div className="space-y-2"><Label>Link URL</Label><Input value={forumBanner.linkUrl} onChange={(e) => setForumBanner({...forumBanner, linkUrl: e.target.value})} /></div>
+                      <div className="space-y-2"><Label>Button Text</Label><Input value={forumBanner.ctaText} onChange={(e) => setForumBanner({...forumBanner, ctaText: e.target.value})} /></div>
+                      <div className="space-y-2"><Label>Bild URL</Label><Input value={forumBanner.imageUrl} onChange={(e) => setForumBanner({...forumBanner, imageUrl: e.target.value})} /></div>
+                  </div>
+                  <div className="space-y-2"><Label>Beschreibung</Label><Textarea value={forumBanner.description} onChange={(e) => setForumBanner({...forumBanner, description: e.target.value})} rows={2} /></div>
+                  <Button size="sm" onClick={saveForumBannerConfig} className="bg-purple-600 hover:bg-purple-700 text-white w-full mt-2">
+                    <Save className="w-4 h-4 mr-2" /> Forum Banner Speichern
+                  </Button>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => { saveSetting("ads_sense_client_id", adSenseClient); saveSetting("ads_sense_slot_id", adSenseSlot); }}>
-                  <Save className="w-4 h-4 mr-2" /> AdSense speichern
-                </Button>
               </div>
 
               <div className="space-y-4 pt-4 border-t border-border">
@@ -555,53 +695,31 @@ export default function AdminSettings() {
               </div>
             </CardContent>
           </Card>
-
-          <Card className="bg-card border-border shadow-sm">
-            <CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><Globe className="w-5 h-5 text-secondary" /> Branding</CardTitle></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4 border-b border-border pb-6">
-                <Label>Logo</Label>
-                <div className="flex items-center gap-6">
-                  <div className="relative w-24 h-24 rounded-lg border-2 border-dashed flex items-center justify-center overflow-hidden">
-                    {siteLogoUrl ? <img src={siteLogoUrl} className="w-full h-full object-contain p-2" /> : <ImageIcon className="w-8 h-8 text-muted-foreground/50" />}
-                    {isUploadingLogo && <div className="absolute inset-0 bg-background/80 flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div>}
-                  </div>
-                  <div className="space-y-2 flex-1">
-                    <div className="flex gap-2">
-                      <Button variant="outline" className="relative cursor-pointer" disabled={isUploadingLogo}>
-                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*" onChange={handleLogoUpload} />
-                        <Upload className="w-4 h-4 mr-2" /> Upload
-                      </Button>
-                      {siteLogoUrl && <Button variant="destructive" onClick={removeLogo}><Trash2 className="w-4 h-4" /></Button>}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="grid gap-4">
-                <div className="space-y-2"><Label>Website Titel</Label><Input value={siteTitle} onChange={(e) => setSiteTitle(e.target.value)} /></div>
-                <div className="space-y-2"><Label>Meta Beschreibung</Label><Textarea value={siteDescription} onChange={(e) => setSiteDescription(e.target.value)} rows={2} /></div>
-              </div>
-              <Button onClick={() => { saveSetting("site_title", siteTitle); saveSetting("site_description", siteDescription); }} className="bg-primary hover:bg-primary/90"><Save className="w-4 h-4 mr-2" /> Speichern</Button>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border shadow-sm">
-             <CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><BarChart3 className="w-5 h-5 text-orange-500" />Analytics (Legacy)</CardTitle></CardHeader>
-             <CardContent className="space-y-4">
-                <Textarea value={analyticsCode} onChange={(e) => { setAnalyticsCode(e.target.value); setAnalyticsStatus("idle"); }} rows={4} className="font-mono text-xs" />
-                <div className="flex gap-2"><Button onClick={() => saveSetting("global_analytics_code", analyticsCode)}><Save className="w-4 h-4 mr-2" />Speichern</Button><Button variant="outline" onClick={checkAnalyticsStatus} disabled={analyticsStatus === "checking"}>Status prüfen</Button></div>
-             </CardContent>
-          </Card>
-
-          <Card className="bg-card border-border shadow-sm">
-             <CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-red-500" />Admin PIN</CardTitle></CardHeader>
-             <CardContent className="space-y-4">
-                <div className="flex gap-2"><Input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Neuer PIN" /><Button onClick={savePin} variant="outline">Ändern</Button></div>
-             </CardContent>
-          </Card>
         </TabsContent>
 
-        <TabsContent value="analytics_new">
+        {/* ==============================================================
+            API & ANALYTICS TAB
+        ============================================================== */}
+        <TabsContent value="analytics_new" className="space-y-6 mt-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Key className="w-5 h-5 text-red-600"/> API Bridge & Security</CardTitle>
+                    <CardDescription>Verbindung zum Legacy Server (PHP).</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>Bridge URL</Label>
+                        <Input value={bridgeUrl} onChange={e => setBridgeUrl(e.target.value)} placeholder="https://rank-scout.com/rank-scout-bridge.php" className="font-mono bg-slate-50" />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Sicherheits-Schlüssel (Key Rotation)</Label>
+                        <Input type="password" value={bridgeKey} onChange={e => setBridgeKey(e.target.value)} placeholder="Geheimer Schlüssel" className="font-mono" />
+                        <p className="text-xs text-muted-foreground">Dieser Key muss mit dem in der PHP Datei übereinstimmen. Ändere ihn regelmäßig.</p>
+                    </div>
+                    <Button onClick={saveBridgeSettings} variant="destructive"><Lock className="w-4 h-4 mr-2" /> Bridge Sichern</Button>
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><BarChart3 className="w-5 h-5 text-blue-600"/> Tracking & Reports</CardTitle>
@@ -623,11 +741,23 @@ export default function AdminSettings() {
                         <p className="text-sm text-slate-500">Bette deinen persönlichen Report direkt ins Dashboard ein.</p>
                         <Input value={reportUrl} onChange={e => setReportUrl(e.target.value)} placeholder="https://lookerstudio.google.com/embed/..." className="font-mono" />
                     </div>
-                    <Button onClick={saveAnalytics} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Analytics speichern</Button>
+                    
+                    <div className="space-y-3 pt-4 border-t">
+                        <Label className="text-base font-semibold">AdSense Integration</Label>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2"><Label className="text-xs">Publisher ID</Label><Input value={adSenseClient} onChange={(e) => setAdSenseClient(e.target.value)} /></div>
+                          <div className="space-y-2"><Label className="text-xs">Slot ID</Label><Input value={adSenseSlot} onChange={(e) => setAdSenseSlot(e.target.value)} /></div>
+                        </div>
+                    </div>
+
+                    <Button onClick={() => {saveAnalytics(); saveSetting("ads_sense_client_id", adSenseClient); saveSetting("ads_sense_slot_id", adSenseSlot);}} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Analytics & Ads speichern</Button>
                 </CardContent>
             </Card>
         </TabsContent>
 
+        {/* ==============================================================
+            NAVIGATION TAB
+        ============================================================== */}
         <TabsContent value="navigation" className="space-y-6 mt-6">
           <Card className="bg-card border-border shadow-sm">
             <CardHeader>
@@ -718,69 +848,272 @@ export default function AdminSettings() {
           </Card>
         </TabsContent>
 
+        {/* ==============================================================
+            HOME TAB (Startseite) - INKLUSIVE CONTENT EDITOR
+        ============================================================== */}
         <TabsContent value="home" className="space-y-6 mt-6">
-          <div className="sticky top-2 z-50 bg-background/95 backdrop-blur py-2 border-b border-border/50 flex justify-between items-center mb-6">
-            <div><h3 className="font-bold text-lg">Startseiten Editor</h3></div>
-            <Button onClick={saveContentManually} size="lg" className={hasUnsavedChanges ? 'bg-orange-600 animate-pulse' : 'bg-primary'}><Save className="w-4 h-4 mr-2" /> Speichern</Button>
+          <div className="sticky top-2 z-50 bg-background/95 backdrop-blur py-3 border-b border-border/50 flex justify-between items-center mb-6">
+            <div>
+              <h3 className="font-bold text-lg">Startseiten Editor</h3>
+              <p className="text-xs text-muted-foreground">Struktur und Live-Texte der Homepage.</p>
+            </div>
+            <Button onClick={saveContentManually} size="lg" className={hasUnsavedChanges ? 'bg-orange-600 animate-pulse' : 'bg-primary'}>
+              <Save className="w-4 h-4 mr-2" /> Alle Änderungen Speichern
+            </Button>
           </div>
 
-          <Card className="bg-card border-border shadow-sm border-l-4 border-l-blue-600">
-            <CardHeader><CardTitle className="font-display text-lg">SEO Deep Content</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
-              <Textarea className="min-h-[400px] font-mono text-sm bg-slate-50" value={seoLongText} onChange={(e) => setSeoLongText(e.target.value)} />
-              <Button onClick={saveSeoText} className="w-full bg-blue-600 hover:bg-blue-700 text-white"><Save className="w-4 h-4 mr-2" /> SEO Text speichern</Button>
+          {/* --- STRUKTUR MANAGER --- */}
+          <Card className="bg-card border-border shadow-sm border-l-4 border-l-secondary">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5 text-secondary" /> Struktur Manager</CardTitle>
+                <CardDescription>Aktiviere und sortiere die Blöcke auf der Startseite (Top to Bottom).</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+               {homeSections.length > 0 ? homeSections.map((section, idx) => (
+                 <div key={section.id} className={`flex items-center justify-between border border-slate-200 dark:border-slate-800 p-3 rounded-lg ${section.enabled ? 'bg-slate-50 dark:bg-slate-900/50' : 'bg-slate-100 dark:bg-slate-950 opacity-50'}`}>
+                   <div className="flex items-center gap-4">
+                     <span className="font-mono text-xs text-slate-400 w-4">{idx + 1}.</span>
+                     <Label className="font-semibold text-sm cursor-pointer">{section.label}</Label>
+                   </div>
+                   <div className="flex items-center gap-3">
+                     <Switch checked={section.enabled} onCheckedChange={() => toggleHomeSectionEnabled(idx)} />
+                     <div className="flex flex-col ml-4">
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveHomeSection(idx, 'up')} disabled={idx === 0}><ArrowUp className="w-3 h-3" /></Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveHomeSection(idx, 'down')} disabled={idx === homeSections.length - 1}><ArrowDown className="w-3 h-3" /></Button>
+                     </div>
+                   </div>
+                 </div>
+               )) : (
+                 <div className="text-sm text-slate-500">Lade Layout-Daten aus der Datenbank...</div>
+               )}
             </CardContent>
           </Card>
 
+          {/* --- CONTENT EDITOR (AKKORDEON) --- */}
+          <Card className="bg-card border-border shadow-sm border-l-4 border-l-blue-500">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Type className="w-5 h-5 text-blue-500" /> Startseiten Inhalte (Texte)</CardTitle>
+                <CardDescription>Bearbeite die Live-Texte der einzelnen Sektionen. Vergiss nicht oben zu speichern!</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="single" collapsible className="w-full">
+                
+                {/* HERO SEKTION */}
+                <AccordionItem value="hero">
+                  <AccordionTrigger className="font-semibold">Hero Sektion (Ganz oben)</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Badge (z.B. NEU)</Label><Input value={localContent.hero?.badge || ""} onChange={e => updateContent("hero", "badge", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Haupt-Headline (SEO H1)</Label><Input value={localContent.hero?.headline || ""} onChange={e => updateContent("hero", "headline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Sichtbarer Titel</Label><Input value={localContent.hero?.title || ""} onChange={e => updateContent("hero", "title", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Untertitel (Fett)</Label><Input value={localContent.hero?.subtitle || ""} onChange={e => updateContent("hero", "subtitle", e.target.value)} /></div>
+                      <div className="space-y-2 md:col-span-2"><Label>Subheadline (Beschreibung)</Label><Textarea value={localContent.hero?.subheadline || ""} onChange={e => updateContent("hero", "subheadline", e.target.value)} rows={2} /></div>
+                      <div className="space-y-2"><Label>Suche Placeholder</Label><Input value={localContent.hero?.search_placeholder || ""} onChange={e => updateContent("hero", "search_placeholder", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Suche Button Label</Label><Input value={localContent.hero?.search_label || ""} onChange={e => updateContent("hero", "search_label", e.target.value)} /></div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* TRUST SEKTION */}
+                <AccordionItem value="trust">
+                  <AccordionTrigger className="font-semibold">Trust & Siegel Sektion</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="space-y-2"><Label>Headline</Label><Input value={localContent.trust?.headline || ""} onChange={e => updateContent("trust", "headline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Subheadline</Label><Input value={localContent.trust?.subheadline || ""} onChange={e => updateContent("trust", "subheadline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Live Badge Text</Label><Input value={localContent.trust?.live_badge || ""} onChange={e => updateContent("trust", "live_badge", e.target.value)} /></div>
+                    </div>
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg space-y-4">
+                      <h4 className="font-medium text-sm">Trust Karte 1</h4>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.card1_title || ""} onChange={e => updateContent("trust", "card1_title", e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Text</Label><Input value={localContent.trust?.card1_text || ""} onChange={e => updateContent("trust", "card1_text", e.target.value)} /></div>
+                      </div>
+                      <h4 className="font-medium text-sm mt-4">Trust Karte 2</h4>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.card2_title || ""} onChange={e => updateContent("trust", "card2_title", e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Text</Label><Input value={localContent.trust?.card2_text || ""} onChange={e => updateContent("trust", "card2_text", e.target.value)} /></div>
+                      </div>
+                      <h4 className="font-medium text-sm mt-4">Trust Karte 3</h4>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.card3_title || ""} onChange={e => updateContent("trust", "card3_title", e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Text</Label><Input value={localContent.trust?.card3_text || ""} onChange={e => updateContent("trust", "card3_text", e.target.value)} /></div>
+                      </div>
+                      <h4 className="font-medium text-sm mt-4 border-t pt-4">Rechte Seiten-Box</h4>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.box_title || ""} onChange={e => updateContent("trust", "box_title", e.target.value)} /></div>
+                        <div className="space-y-2"><Label>Text</Label><Textarea value={localContent.trust?.box_text || ""} onChange={e => updateContent("trust", "box_text", e.target.value)} rows={2}/></div>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* BIG THREE SEKTION */}
+                <AccordionItem value="big_three">
+                  <AccordionTrigger className="font-semibold">Big Three Sektion (Hauptlinks)</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Haupt-Headline</Label>
+                      <Input value={localContent.big_three?.headline || ""} onChange={e => updateContent("big_three", "headline", e.target.value)} />
+                    </div>
+                    <div className="space-y-4">
+                      <Label>Dynamische Blöcke (Die 3 großen Cards)</Label>
+                      {safeBigThreeItems.map((item: any, idx: number) => (
+                        <div key={item.id} className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg border relative">
+                          <Button variant="ghost" size="icon" onClick={() => removeBigThreeItem(idx)} className="absolute top-2 right-2 h-8 w-8 text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                          <div className="grid md:grid-cols-2 gap-4 mt-2">
+                            <div className="space-y-2"><Label>Titel</Label><Input value={item.title} onChange={e => updateBigThreeItem(idx, "title", e.target.value)} /></div>
+                            <div className="space-y-2"><Label>Link URL</Label><Input value={item.link} onChange={e => updateBigThreeItem(idx, "link", e.target.value)} /></div>
+                            <div className="space-y-2"><Label>Button Text</Label><Input value={item.button_text} onChange={e => updateBigThreeItem(idx, "button_text", e.target.value)} /></div>
+                            <div className="space-y-2"><Label>Bild URL</Label><Input value={item.image_url} onChange={e => updateBigThreeItem(idx, "image_url", e.target.value)} /></div>
+                            <div className="space-y-2 md:col-span-2"><Label>Beschreibung</Label><Input value={item.desc} onChange={e => updateBigThreeItem(idx, "desc", e.target.value)} /></div>
+                          </div>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" onClick={addBigThreeItem}><Plus className="w-3 h-3 mr-2" /> Neuer Block</Button>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* WHY US SEKTION */}
+                <AccordionItem value="why_us">
+                  <AccordionTrigger className="font-semibold">Features (Why Us) Sektion</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                      <div className="space-y-2"><Label>Headline</Label><Input value={localContent.why_us?.headline || ""} onChange={e => updateContent("why_us", "headline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Subheadline</Label><Input value={localContent.why_us?.subheadline || ""} onChange={e => updateContent("why_us", "subheadline", e.target.value)} /></div>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {safeFeatures.map((feat: any, idx: number) => (
+                        <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg space-y-2">
+                          <Label>Feature {idx + 1} Titel</Label>
+                          <Input value={feat.title} onChange={e => updateFeature(idx, "title", e.target.value)} />
+                          <Label>Text</Label>
+                          <Input value={feat.text} onChange={e => updateFeature(idx, "text", e.target.value)} />
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* CATEGORIES SEKTION */}
+                <AccordionItem value="categories">
+                  <AccordionTrigger className="font-semibold">Kategorien Slider Sektion</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Headline</Label><Input value={localContent.categories?.headline || ""} onChange={e => updateContent("categories", "headline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Anzahl anzuzeigender Kategorien</Label><Input type="number" value={localContent.categories?.count || 6} onChange={e => updateContent("categories", "count", parseInt(e.target.value))} /></div>
+                      <div className="space-y-2"><Label>Button ("Mehr laden")</Label><Input value={localContent.categories?.button_more || ""} onChange={e => updateContent("categories", "button_more", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Button auf Karte</Label><Input value={localContent.categories?.button_card || ""} onChange={e => updateContent("categories", "button_card", e.target.value)} /></div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* NEWS SEKTION */}
+                <AccordionItem value="news">
+                  <AccordionTrigger className="font-semibold">News & Magazin Sektion</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Headline</Label><Input value={localContent.news?.headline || ""} onChange={e => updateContent("news", "headline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Subheadline</Label><Input value={localContent.news?.subheadline || ""} onChange={e => updateContent("news", "subheadline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Anzahl Posts</Label><Input type="number" value={localContent.news?.count || 3} onChange={e => updateContent("news", "count", parseInt(e.target.value))} /></div>
+                      <div className="space-y-2"><Label>Top Button Text</Label><Input value={localContent.news?.button_text || ""} onChange={e => updateContent("news", "button_text", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Link Text (Karte)</Label><Input value={localContent.news?.read_more || ""} onChange={e => updateContent("news", "read_more", e.target.value)} /></div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* FORUM TEASER */}
+                <AccordionItem value="forum_teaser">
+                  <AccordionTrigger className="font-semibold">Forum Teaser Sektion</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Headline</Label><Input value={localContent.forum_teaser?.headline || ""} onChange={e => updateContent("forum_teaser", "headline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Link Text (Alle Foren)</Label><Input value={localContent.forum_teaser?.link_text || ""} onChange={e => updateContent("forum_teaser", "link_text", e.target.value)} /></div>
+                      <div className="space-y-2 md:col-span-2"><Label>Subheadline</Label><Textarea value={localContent.forum_teaser?.subheadline || ""} onChange={e => updateContent("forum_teaser", "subheadline", e.target.value)} rows={2} /></div>
+                      <div className="space-y-2 md:col-span-2"><Label>Mobile Button</Label><Input value={localContent.forum_teaser?.mobile_button || ""} onChange={e => updateContent("forum_teaser", "mobile_button", e.target.value)} /></div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                {/* SEO TEXTE */}
+                <AccordionItem value="seo">
+                  <AccordionTrigger className="font-semibold">SEO Texte (Unten)</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>SEO Headline</Label><Input value={localContent.seo?.headline || ""} onChange={e => updateContent("seo", "headline", e.target.value)} /></div>
+                      <div className="space-y-2 md:col-span-2"><Label>Intro Text</Label><Textarea value={localContent.seo?.intro || ""} onChange={e => updateContent("seo", "intro", e.target.value)} rows={2} /></div>
+                      
+                      <div className="space-y-2"><Label>Block 1 Titel</Label><Input value={localContent.seo?.block1_title || ""} onChange={e => updateContent("seo", "block1_title", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Block 1 Text</Label><Textarea value={localContent.seo?.block1_text || ""} onChange={e => updateContent("seo", "block1_text", e.target.value)} rows={2} /></div>
+
+                      <div className="space-y-2"><Label>Block 2 Titel</Label><Input value={localContent.seo?.block2_title || ""} onChange={e => updateContent("seo", "block2_title", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Block 2 Text</Label><Textarea value={localContent.seo?.block2_text || ""} onChange={e => updateContent("seo", "block2_text", e.target.value)} rows={2} /></div>
+                    </div>
+                    
+                    <div className="space-y-2 pt-4 border-t">
+                      <Label>Deep Content (Langer SEO Text)</Label>
+                      <Textarea className="min-h-[400px] font-mono text-sm bg-slate-50" value={seoLongText} onChange={(e) => {
+                          setSeoLongText(e.target.value);
+                          updateContent("seo", "long_text", e.target.value);
+                      }} />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </CardContent>
+          </Card>
+
+          {/* --- LEGACY LAYOUT & TICKER --- */}
           <Card className="bg-card border-border shadow-sm">
-            <CardHeader><CardTitle><Layout className="w-5 h-5 text-primary" /> Layout Steuerung</CardTitle></CardHeader>
-            <CardContent className="space-y-4">
+            <CardHeader><CardTitle>Legacy Layout (Backup)</CardTitle><CardDescription>Primitive Steuerung älterer Module.</CardDescription></CardHeader>
+            <CardContent className="space-y-4 opacity-75">
                {Object.keys(defaultHomeLayout).map((key) => (
                  <div key={key} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 p-2 rounded-lg">
                    <Label className="capitalize font-medium">{key.replace('_', ' ')}</Label>
                    <Switch checked={(layout as any)[key]} onCheckedChange={() => toggleSection(key as any)} />
                  </div>
                ))}
-
-               {/* --- TICKER SETTINGS BLOCK (WIEDERHERGESTELLT) --- */}
-               <div className="space-y-4 pt-6 border-t mt-4">
-                  <h3 className="text-sm font-bold uppercase text-muted-foreground">App-Ticker (Slider)</h3>
-                  <div className="grid gap-4 md:grid-cols-2 p-4 bg-slate-50 rounded-lg">
-                    <div className="space-y-2">
-                      <Label htmlFor="ticker_headline">Ticker Überschrift</Label>
-                      <Input 
-                        id="ticker_headline" 
-                        name="ticker_headline" 
-                        placeholder="Top Apps & Deals"
-                        defaultValue={settings?.ticker_headline as string || "Top Apps & Deals"} 
-                        onChange={(e) => saveSetting("ticker_headline", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="ticker_badge_text">Badge Text (rot)</Label>
-                      <Input 
-                        id="ticker_badge_text" 
-                        name="ticker_badge_text" 
-                        placeholder="Live Trends (24h)"
-                        defaultValue={settings?.ticker_badge_text as string || "Live Trends (24h)"} 
-                        onChange={(e) => saveSetting("ticker_badge_text", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="ticker_link_text">Button Text (Link zur Topliste)</Label>
-                      <Input 
-                        id="ticker_link_text" 
-                        name="ticker_link_text" 
-                        placeholder="Alle Top 100 ansehen →"
-                        defaultValue={settings?.ticker_link_text as string || "Alle Top 100 ansehen →"} 
-                        onChange={(e) => saveSetting("ticker_link_text", e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </div>
-               {/* ----------------------------- */}
-
             </CardContent>
+          </Card>
+          
+          {/* --- TICKER SETTINGS BLOCK --- */}
+          <Card className="bg-card border-border shadow-sm">
+              <CardHeader><CardTitle>App-Ticker Sektion</CardTitle></CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
+                <div className="space-y-2">
+                    <Label htmlFor="ticker_headline">Ticker Überschrift</Label>
+                    <Input 
+                    id="ticker_headline" 
+                    name="ticker_headline" 
+                    placeholder="Top Apps & Deals"
+                    defaultValue={settings?.ticker_headline as string || "Top Apps & Deals"} 
+                    onChange={(e) => saveSetting("ticker_headline", e.target.value)}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="ticker_badge_text">Badge Text (rot)</Label>
+                    <Input 
+                    id="ticker_badge_text" 
+                    name="ticker_badge_text" 
+                    placeholder="Live Trends (24h)"
+                    defaultValue={settings?.ticker_badge_text as string || "Live Trends (24h)"} 
+                    onChange={(e) => saveSetting("ticker_badge_text", e.target.value)}
+                    />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="ticker_link_text">Button Text (Link zur Topliste)</Label>
+                    <Input 
+                    id="ticker_link_text" 
+                    name="ticker_link_text" 
+                    placeholder="Alle Top 100 ansehen →"
+                    defaultValue={settings?.ticker_link_text as string || "Alle Top 100 ansehen →"} 
+                    onChange={(e) => saveSetting("ticker_link_text", e.target.value)}
+                    />
+                </div>
+                </div>
+              </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

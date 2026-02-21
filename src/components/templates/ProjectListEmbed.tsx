@@ -115,10 +115,18 @@ export default function ProjectListEmbed({ projects, categoryName = "", theme = 
                     )}
                   </div>
 
+                  {/* 1. Kurzbeschreibung: line-clamp entfernt, damit der Text VOLLSTÄNDIG angezeigt wird */}
                   {project.short_description && (
-                    <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
+                    <p className="text-muted-foreground text-sm mb-3">
                       {project.short_description}
                     </p>
+                  )}
+
+                  {/* 2. Ausführliche Beschreibung: SEO-Content wird korrekt als HTML gerendert */}
+                  {project.description && (
+                    <div className="mt-4 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-600 leading-relaxed text-left">
+                      <div dangerouslySetInnerHTML={{ __html: project.description }} />
+                    </div>
                   )}
 
                   {project.pros_list && project.pros_list.length > 0 && (
