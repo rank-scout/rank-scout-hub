@@ -100,7 +100,13 @@ export default function AdminSettings() {
         { label: "Software Vergleich", url: "/categories/software" },
         { label: "Finanz-Tools", url: "/categories/finance" },
         { label: "Agentur Finder", url: "/categories/agency" }
-    ], 
+    ],
+    hub_links: [
+        { label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, 
+        { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, 
+        { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, 
+        { label: "Community", url: "/forum", icon: "Users" }
+    ],
     button_text: "Jetzt vergleichen", 
     button_url: "/categories" 
   };
@@ -358,7 +364,7 @@ export default function AdminSettings() {
     updateContent("why_us", "features", newFeatures);
   };
 
-  // --- HEADER LINKS ---
+  // --- HEADER LINKS (Desktop) ---
   const addNavLink = () => {
     const newLinks = [...(headerConfig.nav_links || []), { label: "Neuer Link", url: "/" }];
     setHeaderConfig({ ...headerConfig, nav_links: newLinks });
@@ -372,6 +378,27 @@ export default function AdminSettings() {
     const newLinks = [...(headerConfig.nav_links || [])];
     newLinks[index] = { ...newLinks[index], [field]: value };
     setHeaderConfig({ ...headerConfig, nav_links: newLinks });
+  };
+
+  // --- HEADER LINKS (Mobile Hub) ---
+  const updateHubLink = (index: number, field: string, value: string) => {
+    const newLinks = [...(headerConfig.hub_links || [])];
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setHeaderConfig({ ...headerConfig, hub_links: newLinks });
+  };
+
+  const toggleHubLink = (index: number) => {
+    const newLinks = [...(headerConfig.hub_links || [])];
+    const currentStatus = newLinks[index].enabled !== false; 
+    newLinks[index] = { ...newLinks[index], enabled: !currentStatus };
+    setHeaderConfig({ ...headerConfig, hub_links: newLinks });
+  };
+
+  const toggleHubLinkComingSoon = (index: number) => {
+    const newLinks = [...(headerConfig.hub_links || [])];
+    const currentStatus = newLinks[index].isComingSoon === true; 
+    newLinks[index] = { ...newLinks[index], isComingSoon: !currentStatus };
+    setHeaderConfig({ ...headerConfig, hub_links: newLinks });
   };
 
   // --- FOOTER LINKS ---
@@ -775,7 +802,9 @@ export default function AdminSettings() {
           <Card className="bg-card border-border shadow-sm">
             <CardHeader><CardTitle className="flex items-center gap-2"><MenuIcon className="w-5 h-5 text-primary" /> Header Navigation</CardTitle></CardHeader>
             <CardContent className="space-y-6">
+              
               <div className="space-y-4">
+                 <h4 className="font-medium text-sm text-slate-500 mb-2">Desktop Navigation</h4>
                  {headerConfig.nav_links?.map((link: any, idx: number) => (
                     <div key={idx} className="flex gap-3 items-end">
                        <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateNavLink(idx, 'label', e.target.value)} /></div>
@@ -785,6 +814,29 @@ export default function AdminSettings() {
                  ))}
                  <Button variant="outline" size="sm" onClick={addNavLink}><Plus className="w-3 h-3 mr-2" /> Link hinzufügen</Button>
               </div>
+
+              {/* ERWEITERT: Steuerung der mobilen Hub Links inkl. "Bald verfügbar" */}
+              <div className="pt-6 border-t border-border space-y-4">
+                 <h4 className="font-medium text-sm text-slate-500 mb-2">Mobile Hub Links (Grid)</h4>
+                 {headerConfig.hub_links?.map((link: any, idx: number) => (
+                    <div key={idx} className="flex flex-col md:flex-row gap-3 md:items-end p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100">
+                       <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateHubLink(idx, 'label', e.target.value)} /></div>
+                       <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateHubLink(idx, 'url', e.target.value)} /></div>
+                       
+                       <div className="flex items-center gap-4 justify-end pb-2 px-2 mt-2 md:mt-0">
+                          <div className="flex flex-col items-center space-y-2">
+                             <Label className="text-xs text-orange-600 font-bold whitespace-nowrap">Bald verfügbar</Label>
+                             <Switch checked={link.isComingSoon === true} onCheckedChange={() => toggleHubLinkComingSoon(idx)} />
+                          </div>
+                          <div className="flex flex-col items-center space-y-2 border-l border-slate-200 pl-4">
+                             <Label className="text-xs">Aktiv</Label>
+                             <Switch checked={link.enabled !== false} onCheckedChange={() => toggleHubLink(idx)} />
+                          </div>
+                       </div>
+                    </div>
+                 ))}
+              </div>
+
               <div className="pt-6 border-t border-border space-y-4">
                  <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Button Text</Label><Input value={headerConfig.button_text} onChange={e => setHeaderConfig({...headerConfig, button_text: e.target.value})} /></div>

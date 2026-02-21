@@ -131,7 +131,6 @@ export const Header = ({ transparent = false }: HeaderProps) => {
             </Link>
           </nav>
 
-          {/* FIX: Aria-Label hinzugefügt für Accessibility Score */}
           <button 
             className={`md:hidden p-2 rounded-lg transition-colors ${style.toggleBtn}`} 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -150,20 +149,41 @@ export const Header = ({ transparent = false }: HeaderProps) => {
           <nav className="container mx-auto px-4 py-6 flex flex-col gap-6 pb-24">
             
             <div className="grid grid-cols-2 gap-4 mb-2">
-                {hubLinks.map((link: any) => {
+                {hubLinks.filter((link: any) => link.enabled !== false).map((link: any) => {
                   const Icon = iconMap[link.icon] || LayoutGrid;
+                  const isComingSoon = link.isComingSoon === true;
+
                   return (
-                    <Link
-                        key={link.label}
-                        to={link.url}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-secondary/50 hover:bg-white transition-all group shadow-sm active:scale-95 duration-200"
-                    >
-                        <div className="mb-2 text-secondary group-hover:scale-110 transition-transform">
-                           <Icon className="w-6 h-6" />
+                    <div key={link.label} className="relative">
+                      {isComingSoon && (
+                        <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-md z-10 whitespace-nowrap">
+                          Bald verfügbar
                         </div>
-                        <span className="text-xs font-bold text-slate-700 uppercase tracking-wide text-center">{link.label}</span>
-                    </Link>
+                      )}
+                      <Link
+                          to={isComingSoon ? "#" : link.url}
+                          onClick={(e) => {
+                            if (isComingSoon) {
+                              e.preventDefault();
+                              return;
+                            }
+                            setIsMobileMenuOpen(false);
+                          }}
+                          className={`flex flex-col items-center justify-center p-4 bg-slate-50 rounded-xl border border-slate-100 transition-all group shadow-sm duration-200 h-full
+                            ${isComingSoon 
+                              ? "opacity-60 grayscale cursor-default" 
+                              : "hover:border-secondary/50 hover:bg-white active:scale-95"
+                            }
+                          `}
+                      >
+                          <div className={`mb-2 transition-transform ${isComingSoon ? "text-slate-400" : "text-secondary group-hover:scale-110"}`}>
+                             <Icon className="w-6 h-6" />
+                          </div>
+                          <span className={`text-xs font-bold uppercase tracking-wide text-center ${isComingSoon ? "text-slate-500" : "text-slate-700"}`}>
+                            {link.label}
+                          </span>
+                      </Link>
+                    </div>
                   );
                 })}
             </div>
