@@ -101,12 +101,14 @@ const CategoryTable = ({
     data, 
     onEdit, 
     onDelete, 
-    onView 
+    onView,
+    onToggleActive
 }: { 
     data: Category[], 
     onEdit: (c: Category) => void, 
     onDelete: (id: string) => void,
-    onView: (slug: string) => void
+    onView: (slug: string) => void,
+    onToggleActive: (id: string, currentStatus: boolean) => void
 }) => {
     if (data.length === 0) {
         return <div className="p-12 text-center text-slate-400 bg-slate-50/50 rounded-b-xl border-t border-slate-100">Keine Seiten in dieser Kategorie gefunden.</div>;
@@ -163,7 +165,11 @@ const CategoryTable = ({
                         </TableCell>
                         <TableCell>
                             <div className="flex items-center gap-2">
-                                <div className={`w-2 h-2 rounded-full ${cat.is_active ? 'bg-emerald-500' : 'bg-slate-300'}`}></div>
+                                <Switch 
+                                    checked={cat.is_active} 
+                                    onCheckedChange={() => onToggleActive(cat.id, cat.is_active)}
+                                    className="data-[state=checked]:bg-emerald-500"
+                                />
                                 <span className={`text-xs font-medium ${cat.is_active ? 'text-emerald-600' : 'text-slate-400'}`}>
                                     {cat.is_active ? 'Online' : 'Entwurf'}
                                 </span>
@@ -257,7 +263,6 @@ export default function Categories() {
         comparison_widget_code: "",
         hero_image_url: "",
         card_image_url: "",
-        // NEUE FELDER
         hero_pretitle: "",
         hero_headline: "",
         hero_cta_text: "",
@@ -294,7 +299,6 @@ export default function Categories() {
         faq_data: editingCategory.faq_data || [],
         custom_html_override: editingCategory.custom_html_override || "",
         comparison_widget_code: (editingCategory as any).comparison_widget_code || "",
-        // NEUE FELDER LADEN
         hero_pretitle: editingCategory.hero_pretitle || "",
         hero_headline: editingCategory.hero_headline || "",
         hero_cta_text: editingCategory.hero_cta_text || "",
@@ -323,7 +327,6 @@ export default function Categories() {
         card_image_url: '', 
         custom_css: '', 
         comparison_widget_code: '',
-        // NEUE FELDER RESET
         hero_pretitle: "",
         hero_headline: "",
         hero_cta_text: "",
@@ -405,6 +408,15 @@ export default function Categories() {
       if(confirm("Wirklich löschen?")) await deleteCategory.mutateAsync(id);
   };
 
+  const handleToggleActive = async (id: string, currentStatus: boolean) => {
+      try {
+          await updateCategory.mutateAsync({ id, is_active: !currentStatus });
+          toast({ title: "Status aktualisiert", description: `Die Seite ist nun ${!currentStatus ? 'Online' : 'Offline'}.` });
+      } catch (error: any) {
+          toast({ title: "Fehler beim Status Update", description: error.message, variant: "destructive" });
+      }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
@@ -471,6 +483,7 @@ export default function Categories() {
                         onEdit={(cat) => { setEditingCategory(cat); setIsDialogOpen(true); }}
                         onDelete={handleDelete}
                         onView={(slug) => window.open(slug, '_blank')}
+                        onToggleActive={handleToggleActive}
                     />
                 </TabsContent>
                 <TabsContent value="comparison" className="m-0">
@@ -479,6 +492,7 @@ export default function Categories() {
                         onEdit={(cat) => { setEditingCategory(cat); setIsDialogOpen(true); }}
                         onDelete={handleDelete}
                         onView={(slug) => window.open(slug, '_blank')}
+                        onToggleActive={handleToggleActive}
                     />
                 </TabsContent>
                 <TabsContent value="hub_overview" className="m-0">
@@ -487,6 +501,7 @@ export default function Categories() {
                         onEdit={(cat) => { setEditingCategory(cat); setIsDialogOpen(true); }}
                         onDelete={handleDelete}
                         onView={(slug) => window.open(slug, '_blank')}
+                        onToggleActive={handleToggleActive}
                     />
                 </TabsContent>
                 <TabsContent value="review" className="m-0">
@@ -495,6 +510,7 @@ export default function Categories() {
                         onEdit={(cat) => { setEditingCategory(cat); setIsDialogOpen(true); }}
                         onDelete={handleDelete}
                         onView={(slug) => window.open(slug, '_blank')}
+                        onToggleActive={handleToggleActive}
                     />
                 </TabsContent>
             </CardContent>

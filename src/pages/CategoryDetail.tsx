@@ -147,7 +147,6 @@ export default function CategoryDetail() {
   
   const topPick = projects[0];
   const contentTopRef = useRef<HTMLDivElement | null>(null);
-  const isInternalPage = (category as any)?.is_internal_generated === true;
 
   useForceSEO(category?.meta_description || "");
 
@@ -162,8 +161,23 @@ export default function CategoryDetail() {
   }, [category, projects]);
 
   if (isCatLoading || isProjLoading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="w-12 h-12 animate-spin text-[#0A0F1C]" /></div>;
-  if (!category) return <div className="flex flex-col h-screen items-center justify-center space-y-4 bg-slate-50"><h1 className="text-3xl font-bold text-[#0A0F1C]">404</h1><Link to="/"><Button variant="outline">Home</Button></Link></div>;
+  
+  // KYRA UPDATE: Harte 404 und noindex für Offline-Seiten!
+  if (!category || category.is_active === false) {
+      return (
+          <div className="flex flex-col h-screen items-center justify-center space-y-4 bg-slate-50">
+              <Helmet>
+                  <title>404 - Seite nicht gefunden | Rank-Scout</title>
+                  <meta name="robots" content="noindex, nofollow" />
+              </Helmet>
+              <h1 className="text-4xl font-black text-[#0A0F1C]">404</h1>
+              <p className="text-slate-500 font-medium">Diese Seite existiert nicht oder ist derzeit offline.</p>
+              <Link to="/"><Button variant="outline" className="mt-4">Zurück zur Startseite</Button></Link>
+          </div>
+      );
+  }
 
+  const isInternalPage = (category as any)?.is_internal_generated === true;
   const currentUrl = `https://rank-scout.com/${category.slug}`;
   const jsonLdSchema = { "@context": "https://schema.org", "@type": "Product", "name": category.name, "description": category.meta_description, "brand": { "@type": "Brand", "name": "Rank-Scout" } };
 

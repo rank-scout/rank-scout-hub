@@ -29,12 +29,9 @@ const supabase = createClient(supabaseUrl, supabaseKey, {
   global: { fetch: fetch }
 });
 
-// --- KYRA FIX ---
-// Wir nutzen jetzt "" statt "/kategorien", da die App Short-URLs nutzt!
 const DYNAMIC_SOURCES = [
-  { table: 'categories', prefix: '' }, // Kein Prefix mehr!
+  { table: 'categories', prefix: '' }, 
   { table: 'forum_threads', prefix: '/forum' }
-  // { table: 'top_lists', prefix: '/top-100' } // Entfernt, da Tabelle fehlt
 ];
 
 const STATIC_PAGES = [
@@ -56,9 +53,13 @@ async function generateSitemap() {
     for (const source of DYNAMIC_SOURCES) {
       console.log(`🔎 Scanne Tabelle: ${source.table}...`);
       
-      const { data, error } = await supabase
-        .from(source.table)
-        .select('slug');
+      // KYRA FIX: Nur die Einträge holen, die WIRKLICH online sind!
+      let query = supabase.from(source.table).select('slug');
+      if (source.table === 'categories') {
+          query = query.eq('is_active', true);
+      }
+      
+      const { data, error } = await query;
 
       if (error) {
         console.error(`❌ API-Fehler bei "${source.table}":`, error.message);
@@ -66,18 +67,15 @@ async function generateSitemap() {
       }
 
       if (data && data.length > 0) {
-        // Generiert URLs wie https://rank-scout.com/dating (ohne Zwischenpfad)
-        // KYRA FIX: "/" nur hinzufügen, wenn Prefix existiert oder Slug nicht mit / beginnt
         const paths = data.map(item => {
             const prefix = source.prefix;
             const slug = item.slug;
-            // Verhindert doppelte Slashes, falls Prefix leer ist
             return prefix ? `${prefix}/${slug}` : `/${slug}`;
         });
         allUrls = [...allUrls, ...paths];
         console.log(`✅ ${data.length} Einträge gefunden.`);
       } else {
-        console.warn(`⚠️ Tabelle "${source.table}" ist leer (oder Zugriff verweigert).`);
+        console.warn(`⚠️ Tabelle "${source.table}" ist leer (oder alle Einträge sind offline).`);
       }
     }
 
