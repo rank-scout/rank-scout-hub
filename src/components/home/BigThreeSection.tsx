@@ -43,10 +43,7 @@ const getThemeClasses = (theme: string) => {
 };
 
 const getOptimizedImageUrl = (url: string | undefined, title: string, width = 800) => {
-  // KYRA FIX: 1. Priorität: Der Link aus dem Admin Panel
-  // 2. Priorität: Das Elite-Fallback-Bild basierend auf dem Titel
   const finalUrl = url && url.trim() !== "" ? url : (CATEGORY_IMAGES[title] || "");
-  
   if (finalUrl.includes("images.unsplash.com")) {
     const separator = finalUrl.includes("?") ? "&" : "?";
     return `${finalUrl}${separator}w=${width}&q=80&auto=format&fit=crop`;
@@ -59,8 +56,6 @@ export const BigThreeSection = () => {
   if (!content) return null;
 
   let items = content.big_three.items || [];
-  
-  // Fallback (Legacy Support)
   if (items.length === 0) {
     items = [
       { id: "f1", title: "Finanzen & Krypto", desc: "Broker & Kredite im Härtetest.", link: "/finanzen", button_text: "Vergleichen", theme: "blue", image_url: "", icon: "trending" },
@@ -70,7 +65,7 @@ export const BigThreeSection = () => {
   }
 
   return (
-    <section className="py-32 relative overflow-hidden bg-white">
+    <section id="bereiche" className="py-32 relative overflow-hidden bg-white">
       <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent" />
       
       <div className="container px-4 mx-auto relative z-10">
@@ -81,11 +76,9 @@ export const BigThreeSection = () => {
           <div className="w-24 h-1.5 bg-secondary mx-auto rounded-full" />
         </div>
 
-        {/* Stabiles 4-Spalten Grid */}
         <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8`}>
           {items.map((item: any) => {
             const theme = getThemeClasses(item.theme);
-            
             return (
               <Link 
                 key={item.id} 
@@ -97,10 +90,8 @@ export const BigThreeSection = () => {
                     src={getOptimizedImageUrl(item.image_url, item.title, 800)}
                     alt={item.title} 
                     loading="lazy"
-                    // Deckkraft auf 90% (Elite-Sichtbarkeit)
                     className="w-full h-full object-cover opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700"
                     onError={(e) => {
-                        // Falls der Admin-Link oder das WebP-Bild auf dem Server nicht gefunden wird
                         (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab";
                     }}
                   />
