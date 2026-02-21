@@ -9,7 +9,7 @@ export type Category = {
   description: string | null;
   icon: string | null;
   theme: "DATING" | "ADULT" | "CASINO" | "GENERIC";
-  template: "comparison" | "review";
+  template: "comparison" | "review" | "hub_overview";
   color_theme: "dark" | "light" | "neon";
   
   // Content & SEO
@@ -32,155 +32,83 @@ export type Category = {
   sticky_cta_text: string | null;
   sticky_cta_link: string | null;
   
-  // KYRA UPDATE: Typ-Definition
-  hero_image_url: string | null;
+  // Stats
+  views: number;
+  avg_rating: number;
+  review_count: number;
   
-  // Tech & Override
-  analytics_code: string | null;
-  banner_override: string | null;
-  custom_html_override: string | null;
-  
-  // Footer
-  footer_site_name: string | null;
-  footer_copyright_text: string | null;
-  footer_designer_name: string | null;
-  footer_designer_url: string | null;
-  
-  // JSONB / Complex Objects
-  navigation_settings: NavigationSettings | null;
-  faq_data: any; 
-  
-  // Sidebar Ads (Zur Sicherheit auch hier)
-  sidebar_ad_html: string | null;
-  sidebar_ad_image: string | null;
-
-  // Flags & Meta
+  // System
   is_active: boolean;
-  is_city: boolean;
   is_internal_generated: boolean;
   sort_order: number;
-  created_at: string;
-  updated_at: string;
+  faq_data: any;
+  navigation_settings?: NavigationSettings;
+  
+  // Design & Media
+  hero_image_url?: string;
+  card_image_url?: string;
+  custom_css?: string;
+  sidebar_ad_html?: string;
+  sidebar_ad_image?: string;
+  comparison_widget_code?: string;
+  custom_html_override?: string;
 };
 
-export function useCategories(refetchOnMount = false) {
+export const useCategories = (includeInactive: boolean = false) => {
   return useQuery({
-    queryKey: ["categories"],
+    queryKey: ["categories", includeInactive],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .order("sort_order", { ascending: true });
-
+      let query = supabase.from("categories").select("*").order("sort_order");
+      if (!includeInactive) { query = query.eq("is_active", true); }
+      const { data, error } = await query;
       if (error) throw error;
       return data as Category[];
     },
-    refetchOnMount,
   });
-}
+};
 
-export function useCategory(id: string) {
-  return useQuery({
-    queryKey: ["categories", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .eq("id", id)
-        .single();
-
-      if (error) throw error;
-      return data as Category;
-    },
-    enabled: !!id,
-  });
-}
-
-export function useCategoryBySlug(slug: string) {
+export const useCategoryBySlug = (slug: string) => {
   return useQuery({
     queryKey: ["category", slug],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("*")
-        .eq("slug", slug)
-        .maybeSingle();
-
+      const { data, error } = await supabase.from("categories").select("*").eq("slug", slug).single();
       if (error) throw error;
-      return data as Category | null;
+      return data as Category;
     },
     enabled: !!slug,
   });
-}
+};
 
-export function useCreateCategory() {
+export const useCreateCategory = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (input: CategoryInput) => {
-      const { data: existing } = await supabase
-        .from("categories")
-        .select("sort_order")
-        .order("sort_order", { ascending: false })
-        .limit(1)
-        .single();
-      const nextOrder = (existing?.sort_order ?? 0) + 1;
-
-      const { data, error } = await supabase
-        .from("categories")
-        .insert({
-          ...input,
-          description: input.description || null,
-          icon: input.icon || "📊",
-          color_theme: input.color_theme || "dark",
-          is_active: input.is_active ?? true,
-          is_city: input.is_city ?? false,
-          is_internal_generated: (input as any).is_internal_generated ?? false,
-          faq_data: input.faq_data || [],
-          sort_order: nextOrder,
-        })
-        .select()
-        .single();
-
+    mutationFn: async (category: CategoryInput) => {
+      const { data, error } = await supabase.from("categories").insert([category]).select().single();
       if (error) throw error;
-      return data as Category;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
-}
+};
 
-export function useUpdateCategory() {
+export const useUpdateCategory = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CategoryInput>) => {
-      const { data, error } = await supabase
-        .from("categories")
-        .update({
-            ...updates,
-            updated_at: new Date().toISOString()
-        })
-        .eq("id", id)
-        .select()
-        .single();
-
+    mutationFn: async ({ id, ...updates }: Partial<Category> & { id: string }) => {
+      const { error } = await supabase.from("categories").update(updates).eq("id", id);
       if (error) throw error;
-      return data as Category;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
-      if (data.slug) {
-          queryClient.invalidateQueries({ queryKey: ["category", data.slug] });
-      }
+      queryClient.invalidateQueries({ queryKey: ["category"] });
     },
   });
-}
+};
 
-export function useDeleteCategory() {
+export const useDeleteCategory = () => {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("categories").delete().eq("id", id);
@@ -190,39 +118,68 @@ export function useDeleteCategory() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
-}
+};
 
-export function useDuplicateCategory() {
+// KYRA UPDATE: Hochperformante Duplizier-Engine für Hubs & Seiten
+export const useDuplicateCategory = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (category: Category) => {
-      const { id, created_at, updated_at, ...rest } = category;
-      const newSlug = `${rest.slug}-copy-${Math.floor(Math.random() * 1000)}`;
+      const { id, created_at, updated_at, views, avg_rating, review_count, ...rest } = category as any;
       
+      // Eindeutigen Slug und Namen generieren
+      const uniqueSuffix = Math.floor(Math.random() * 900) + 100;
+      const newSlug = `${rest.slug}-kopie-${uniqueSuffix}`;
+      const newName = `${rest.name} (Kopie)`;
+      
+      // 1. Haupt-Kategorie duplizieren
       const { data: newCat, error: catError } = await supabase
         .from("categories")
         .insert({
           ...rest,
           slug: newSlug,
-          name: `${rest.name} (Kopie)`,
-          is_active: false,
+          name: newName,
+          is_active: false, // Standardmäßig offline für Review
         })
         .select()
         .single();
 
       if (catError) throw catError;
 
+      // 2. Partner-Verknüpfungen (Projects) kopieren
       const { data: links } = await supabase.from("category_projects").select("*").eq("category_id", id);
       if (links && links.length > 0) {
-        const newLinks = links.map(l => ({ category_id: newCat.id, project_id: l.project_id, sort_order: l.sort_order }));
+        const newLinks = links.map(l => ({ 
+          category_id: newCat.id, 
+          project_id: l.project_id, 
+          sort_order: l.sort_order 
+        }));
         await supabase.from("category_projects").insert(newLinks);
       }
       
+      // 3. Footer Links kopieren (Popular)
       const { data: footerLinks } = await supabase.from("popular_footer_links").select("*").eq("category_id", id);
       if (footerLinks && footerLinks.length > 0) {
-         const newFooterLinks = footerLinks.map(l => ({ category_id: newCat.id, label: l.label, url: l.url, sort_order: l.sort_order, is_active: l.is_active }));
-         try { await supabase.from("popular_footer_links").insert(newFooterLinks); } catch(e) {}
+         const newFooterLinks = footerLinks.map(l => ({ 
+           category_id: newCat.id, 
+           label: l.label, 
+           url: l.url, 
+           sort_order: l.sort_order 
+         }));
+         await supabase.from("popular_footer_links").insert(newFooterLinks);
+      }
+
+      // 4. Legal Links kopieren
+      const { data: legalLinks } = await supabase.from("legal_footer_links").select("*").eq("category_id", id);
+      if (legalLinks && legalLinks.length > 0) {
+         const newLegalLinks = legalLinks.map(l => ({ 
+           category_id: newCat.id, 
+           label: l.label, 
+           url: l.url, 
+           sort_order: l.sort_order 
+         }));
+         await supabase.from("legal_footer_links").insert(newLegalLinks);
       }
 
       return newCat;
@@ -231,4 +188,4 @@ export function useDuplicateCategory() {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
-}
+};

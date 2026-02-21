@@ -1,5 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, type Category } from "@/hooks/useCategories";
+import { 
+    useCategories, 
+    useCreateCategory, 
+    useUpdateCategory, 
+    useDeleteCategory, 
+    useDuplicateCategory, // Neu hinzugefügt
+    type Category 
+} from "@/hooks/useCategories";
 import { useCategoryProjects, useUpdateCategoryProjects } from "@/hooks/useCategoryProjects";
 import { useGenerateCategoryContent } from "@/hooks/useGenerateCategoryContent";
 import { useForm, Controller } from "react-hook-form";
@@ -16,7 +23,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, UploadCloud, Database, Eye, Bot, Settings2, Code, FileText, Search, LayoutTemplate, Layers, Globe, CalendarDays, Image as ImageIcon } from "lucide-react";
+import { 
+    Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, UploadCloud, Database, 
+    Eye, Bot, Settings2, Code, FileText, Search, LayoutTemplate, Layers, 
+    Globe, CalendarDays, Image as ImageIcon 
+} from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor"; 
 import { supabase } from "@/integrations/supabase/client";
@@ -102,13 +113,15 @@ const CategoryTable = ({
     onEdit, 
     onDelete, 
     onView,
-    onToggleActive
+    onToggleActive,
+    onDuplicate // Neu hinzugefügt
 }: { 
     data: Category[], 
     onEdit: (c: Category) => void, 
     onDelete: (id: string) => void,
     onView: (slug: string) => void,
-    onToggleActive: (id: string, currentStatus: boolean) => void
+    onToggleActive: (id: string, currentStatus: boolean) => void,
+    onDuplicate: (cat: Category) => void // Neu hinzugefügt
 }) => {
     if (data.length === 0) {
         return <div className="p-12 text-center text-slate-400 bg-slate-50/50 rounded-b-xl border-t border-slate-100">Keine Seiten in dieser Kategorie gefunden.</div>;
@@ -177,9 +190,11 @@ const CategoryTable = ({
                         </TableCell>
                         <TableCell className="text-right">
                             <div className="flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                                <Button variant="ghost" size="sm" onClick={()=>onView(`/${cat.slug}`)} className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600"><Eye className="w-4 h-4"/></Button>
-                                <Button variant="ghost" size="sm" onClick={() => onEdit(cat)} className="h-8 w-8 p-0 hover:bg-orange-50 hover:text-orange-600"><Pencil className="w-4 h-4"/></Button>
-                                <Button variant="ghost" size="sm" onClick={()=>onDelete(cat.id)} className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600"><Trash2 className="w-4 h-4"/></Button>
+                                <Button variant="ghost" size="sm" onClick={()=>onView(`/${cat.slug}`)} className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600" title="Vorschau"><Eye className="w-4 h-4"/></Button>
+                                {/* KYRA ADD: Duplizier-Button */}
+                                <Button variant="ghost" size="sm" onClick={() => onDuplicate(cat)} className="h-8 w-8 p-0 hover:bg-purple-50 hover:text-purple-600" title="Duplizieren"><Copy className="w-4 h-4"/></Button>
+                                <Button variant="ghost" size="sm" onClick={() => onEdit(cat)} className="h-8 w-8 p-0 hover:bg-orange-50 hover:text-orange-600" title="Bearbeiten"><Pencil className="w-4 h-4"/></Button>
+                                <Button variant="ghost" size="sm" onClick={()=>onDelete(cat.id)} className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600" title="Löschen"><Trash2 className="w-4 h-4"/></Button>
                             </div>
                         </TableCell>
                     </TableRow>
@@ -194,6 +209,7 @@ export default function Categories() {
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
+  const duplicateCategory = useDuplicateCategory(); // Neu
   const updateCategoryProjects = useUpdateCategoryProjects();
   const { generateCategoryContent, isGenerating: isGenContent } = useGenerateCategoryContent();
     
@@ -221,21 +237,17 @@ export default function Categories() {
 
   // Filtered & Sorted Categories Logic
   const filteredCategories = useMemo(() => {
-    // 1. Sortieren: Neueste Updates zuerst (updated_at DESC)
     const sorted = [...categories].sort((a, b) => {
-        // Wir nehmen updated_at, fallback created_at, fallback 0
         const dateA = new Date((a as any).updated_at || (a as any).created_at || 0).getTime();
         const dateB = new Date((b as any).updated_at || (b as any).created_at || 0).getTime();
-        return dateB - dateA; // Absteigend (Neueste oben)
+        return dateB - dateA;
     });
 
-    // 2. Filter by Search
     const searchFiltered = sorted.filter(cat => 
         cat.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         cat.slug.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    // 3. Filter by Type (Tab)
     if (activeTab === "all") return searchFiltered;
     return searchFiltered.filter(cat => cat.template === activeTab);
   }, [categories, searchTerm, activeTab]);
@@ -417,6 +429,16 @@ export default function Categories() {
       }
   };
 
+  // KYRA ADD: Duplizier-Handler
+  const handleDuplicate = async (cat: Category) => {
+      try {
+          await duplicateCategory.mutateAsync(cat);
+          toast({ title: "Seite dupliziert", description: "Die Kopie wurde erfolgreich erstellt und ist als Entwurf gespeichert." });
+      } catch (error: any) {
+          toast({ title: "Fehler beim Duplizieren", description: error.message, variant: "destructive" });
+      }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
@@ -484,6 +506,7 @@ export default function Categories() {
                         onDelete={handleDelete}
                         onView={(slug) => window.open(slug, '_blank')}
                         onToggleActive={handleToggleActive}
+                        onDuplicate={handleDuplicate} // Neu
                     />
                 </TabsContent>
                 <TabsContent value="comparison" className="m-0">
@@ -493,6 +516,7 @@ export default function Categories() {
                         onDelete={handleDelete}
                         onView={(slug) => window.open(slug, '_blank')}
                         onToggleActive={handleToggleActive}
+                        onDuplicate={handleDuplicate} // Neu
                     />
                 </TabsContent>
                 <TabsContent value="hub_overview" className="m-0">
@@ -502,6 +526,7 @@ export default function Categories() {
                         onDelete={handleDelete}
                         onView={(slug) => window.open(slug, '_blank')}
                         onToggleActive={handleToggleActive}
+                        onDuplicate={handleDuplicate} // Neu
                     />
                 </TabsContent>
                 <TabsContent value="review" className="m-0">
@@ -511,6 +536,7 @@ export default function Categories() {
                         onDelete={handleDelete}
                         onView={(slug) => window.open(slug, '_blank')}
                         onToggleActive={handleToggleActive}
+                        onDuplicate={handleDuplicate} // Neu
                     />
                 </TabsContent>
             </CardContent>
@@ -607,7 +633,6 @@ export default function Categories() {
                                 </Card>
                             </div>
                             
-                            {/* --- NEUE KYRA HUB FELDER: CTAs & Custom Titles --- */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
                                 <Card className="border-slate-200 shadow-sm h-fit border-l-4 border-l-primary bg-slate-50/50">
                                     <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-lg"><LayoutTemplate className="w-5 h-5 text-primary"/> Hub & Listen Texte</CardTitle><CardDescription>Überschreibe die Standard-Texte des Templates.</CardDescription></CardHeader>
@@ -710,7 +735,6 @@ export default function Categories() {
                             <Card className="border-slate-200 shadow-sm">
                                 <CardHeader><CardTitle>Visuelle Gestaltung</CardTitle></CardHeader>
                                 <CardContent className="space-y-8">
-                                    {/* IMAGES ROW */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                         <div>
                                             <Label className="mb-2 block flex items-center gap-2 font-bold"><UploadCloud className="w-4 h-4 text-slate-500" /> Hero Hintergrundbild (Banner)</Label>
@@ -735,8 +759,8 @@ export default function Categories() {
                                         </div>
                                         
                                         <div>
-                                            <Label className="mb-2 block flex items-center gap-2 font-bold"><ImageIcon className="w-4 h-4 text-orange-500" /> Beitragsbild / Grid Image (NEU)</Label>
-                                            <p className="text-xs text-slate-400 mb-3">Wird im Hub als Vorschau-Karte angezeigt. Wenn leer, wird das Icon genutzt.</p>
+                                            <Label className="mb-2 block flex items-center gap-2 font-bold"><ImageIcon className="w-4 h-4 text-orange-500" /> Beitragsbild / Grid Image</Label>
+                                            <p className="text-xs text-slate-400 mb-3">Wird im Hub als Vorschau-Karte angezeigt.</p>
                                             <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 flex flex-col items-center justify-center bg-slate-50 hover:bg-slate-100 transition-colors text-center border-orange-200 bg-orange-50/30">
                                                 {watch("card_image_url") ? (
                                                     <div className="relative w-full h-40 mb-4 rounded-lg overflow-hidden group shadow-md">

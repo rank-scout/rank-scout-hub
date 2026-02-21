@@ -36,7 +36,7 @@ import {
   DollarSign, 
   Megaphone, 
   Link as LinkIcon,
-  Search as SearchIcon // Für SEO Tab
+  Search as SearchIcon
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -74,7 +74,6 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-// FIX: Alle Felder initialisieren
 const EMPTY_THREAD = {
   title: "",
   slug: "",
@@ -105,10 +104,8 @@ const EMPTY_CATEGORY = {
   description: "",
   sort_order: 0,
   is_active: true,
-  // NEU: SEO Felder für Kategorien
   seo_title: "",
   seo_description: "",
-  // Ad Defaults
   ad_enabled: false,
   assigned_ad_id: "",
   ad_image_url: "",
@@ -120,7 +117,8 @@ const EMPTY_CATEGORY = {
 };
 
 export default function AdminForum() {
-  const { data: threads, isLoading } = useForumThreads();
+  // KYRA FIX: useForumThreads wird jetzt mit includeInactive=true aufgerufen!
+  const { data: threads, isLoading } = useForumThreads(undefined, true);
   const { data: allReplies } = useAllReplies();
   const { data: categories } = useForumCategories(true);
   const adsPool = useForumAds(); 
@@ -159,7 +157,6 @@ export default function AdminForum() {
 
   const pendingReplies = allReplies?.filter((r) => !r.is_active && !r.is_spam);
 
-  // Helper: Image Auto-Crop
   const processImage = (file: File): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -182,7 +179,6 @@ export default function AdminForum() {
     });
   };
 
-  // --- THREAD HANDLERS ---
   const handleNewThread = () => { setEditingThread(null); setFormData(EMPTY_THREAD); setEditorOpen(true); };
   
   const handleEditThread = (thread: ForumThread) => {
@@ -248,7 +244,6 @@ export default function AdminForum() {
   
   const handleDeleteThread = async () => { if (!threadToDelete) return; try { await deleteThread.mutateAsync(threadToDelete); toast.success("Beitrag gelöscht"); } catch (error) { toast.error("Fehler beim Löschen"); } finally { setDeleteDialogOpen(false); setThreadToDelete(null); } };
 
-  // --- CATEGORY HANDLERS ---
   const handleNewCategory = () => { 
       setEditingCategory(null); 
       setCategoryFormData(EMPTY_CATEGORY); 
@@ -264,20 +259,18 @@ export default function AdminForum() {
       description: category.description || "", 
       sort_order: category.sort_order, 
       is_active: category.is_active,
-      // NEU: SEO Felder laden (Type Cast falls Typescript meckert, da DB Spalte neu ist)
       seo_title: (category as any).seo_title || "",
       seo_description: (category as any).seo_description || "",
-      
-      ad_enabled: category.ad_enabled || false,
-      assigned_ad_id: category.assigned_ad_id || "",
-      ad_image_url: category.ad_image_url || "",
-      ad_link_url: category.ad_link_url || "",
-      ad_html_code: category.ad_html_code || "",
-      ad_headline: category.ad_headline || "",
-      ad_subheadline: category.ad_subheadline || "",
-      ad_cta_text: category.ad_cta_text || "",
+      ad_enabled: (category as any).ad_enabled || false,
+      assigned_ad_id: (category as any).assigned_ad_id || "",
+      ad_image_url: (category as any).ad_image_url || "",
+      ad_link_url: (category as any).ad_link_url || "",
+      ad_html_code: (category as any).ad_html_code || "",
+      ad_headline: (category as any).ad_headline || "",
+      ad_subheadline: (category as any).ad_subheadline || "",
+      ad_cta_text: (category as any).ad_cta_text || "",
     });
-    setManualAdType(category.ad_html_code ? "code" : "image");
+    setManualAdType((category as any).ad_html_code ? "code" : "image");
     setCategoryEditorOpen(true);
   };
   const handleCategoryNameChange = (name: string) => { setCategoryFormData((prev) => ({ ...prev, name, slug: !editingCategory ? generateSlug(name) : prev.slug, })); };
@@ -312,12 +305,12 @@ export default function AdminForum() {
 
         <TabsContent value="threads" className="space-y-4">
           <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Beiträge suchen..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" /></div>
-          {isLoading ? (<p>Laden...</p>) : (<div className="space-y-3">{filteredThreads?.map((thread) => (<Card key={thread.id} className="hover:shadow-md transition-shadow"><CardContent className="p-4"><div className="flex items-start justify-between gap-4"><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-1 flex-wrap">{thread.is_pinned && (<Pin className="w-3 h-3 text-secondary" />)}{thread.is_locked && (<Lock className="w-3 h-3 text-muted-foreground" />)}{thread.is_answered && (<CheckCircle className="w-3 h-3 text-green-500" />)}{!thread.is_active && (<Badge variant="outline">Entwurf</Badge>)}{thread.category_id && (<Badge variant="secondary" className="text-xs">{getCategoryName(thread.category_id)}</Badge>)}</div><h3 className="font-semibold truncate">{thread.title}</h3><div className="flex items-center gap-4 text-xs text-muted-foreground mt-1"><span>{thread.author_name}</span><span>{formatDate(thread.created_at || "")}</span><span className="flex items-center gap-1"><Eye className="w-3 h-3" />{thread.view_count || 0}</span></div></div><div className="flex gap-2"><Button variant="outline" size="sm" asChild title="Beitrag ansehen"><a href={`/forum/${thread.slug}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-4 h-4 text-blue-500" /></a></Button><Button variant="outline" size="sm" onClick={() => handleEditThread(thread)} title="Bearbeiten"><Edit className="w-4 h-4" /></Button><Button variant="outline" size="sm" onClick={() => { setThreadToDelete(thread.id); setDeleteDialogOpen(true); }} title="Löschen"><Trash2 className="w-4 h-4 text-destructive" /></Button></div></div></CardContent></Card>))}{filteredThreads?.length === 0 && (<Card><CardContent className="py-12 text-center"><FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground">Keine Beiträge gefunden</p></CardContent></Card>)}</div>)}
+          {isLoading ? (<p>Laden...</p>) : (<div className="space-y-3">{filteredThreads?.map((thread) => (<Card key={thread.id} className="hover:shadow-md transition-shadow"><CardContent className="p-4"><div className="flex items-start justify-between gap-4"><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-1 flex-wrap">{thread.is_pinned && (<Pin className="w-3 h-3 text-secondary" />)}{thread.is_locked && (<Lock className="w-3 h-3 text-muted-foreground" />)}{thread.is_answered && (<CheckCircle className="w-3 h-3 text-green-500" />)}{!thread.is_active && (<Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-red-200">Offline</Badge>)}{thread.category_id && (<Badge variant="secondary" className="text-xs">{getCategoryName(thread.category_id)}</Badge>)}</div><h3 className={`font-semibold truncate ${!thread.is_active ? 'text-muted-foreground' : ''}`}>{thread.title}</h3><div className="flex items-center gap-4 text-xs text-muted-foreground mt-1"><span>{thread.author_name}</span><span>{formatDate(thread.created_at || "")}</span><span className="flex items-center gap-1"><Eye className="w-3 h-3" />{thread.view_count || 0}</span></div></div><div className="flex gap-2"><Button variant="outline" size="sm" asChild title="Beitrag ansehen"><a href={`/forum/${thread.slug}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-4 h-4 text-blue-500" /></a></Button><Button variant="outline" size="sm" onClick={() => handleEditThread(thread)} title="Bearbeiten"><Edit className="w-4 h-4" /></Button><Button variant="outline" size="sm" onClick={() => { setThreadToDelete(thread.id); setDeleteDialogOpen(true); }} title="Löschen"><Trash2 className="w-4 h-4 text-destructive" /></Button></div></div></CardContent></Card>))}{filteredThreads?.length === 0 && (<Card><CardContent className="py-12 text-center"><FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground">Keine Beiträge gefunden</p></CardContent></Card>)}</div>)}
         </TabsContent>
 
         <TabsContent value="categories" className="space-y-4">
           <div className="flex justify-end"><Button onClick={handleNewCategory}><Plus className="w-4 h-4 mr-2" />Neue Kategorie</Button></div>
-          <div className="space-y-3">{categories?.map((category) => (<Card key={category.id} className="hover:shadow-md transition-shadow"><CardContent className="p-4"><div className="flex items-center justify-between gap-4"><div className="flex-1"><div className="flex items-center gap-2 mb-1"><h3 className="font-semibold">{category.name}</h3>{!category.is_active && (<Badge variant="outline">Inaktiv</Badge>)}{category.ad_enabled && (<Badge variant="secondary" className="bg-green-100 text-green-700">Mit Werbung</Badge>)}</div><p className="text-sm text-muted-foreground">/{category.slug} • Reihenfolge: {category.sort_order}</p>{category.description && (<p className="text-sm text-muted-foreground mt-1">{category.description}</p>)}</div><div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => handleEditCategory(category)}><Edit className="w-4 h-4" /></Button><Button variant="outline" size="sm" onClick={() => { setCategoryToDelete(category.id); setDeleteCategoryDialogOpen(true); }}><Trash2 className="w-4 h-4 text-destructive" /></Button></div></div></CardContent></Card>))}{categories?.length === 0 && (<Card><CardContent className="py-12 text-center"><FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground">Noch keine Kategorien</p></CardContent></Card>)}</div>
+          <div className="space-y-3">{categories?.map((category) => (<Card key={category.id} className="hover:shadow-md transition-shadow"><CardContent className="p-4"><div className="flex items-center justify-between gap-4"><div className="flex-1"><div className="flex items-center gap-2 mb-1"><h3 className="font-semibold">{category.name}</h3>{!category.is_active && (<Badge variant="outline">Inaktiv</Badge>)}{(category as any).ad_enabled && (<Badge variant="secondary" className="bg-green-100 text-green-700">Mit Werbung</Badge>)}</div><p className="text-sm text-muted-foreground">/{category.slug} • Reihenfolge: {category.sort_order}</p>{category.description && (<p className="text-sm text-muted-foreground mt-1">{category.description}</p>)}</div><div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => handleEditCategory(category)}><Edit className="w-4 h-4" /></Button><Button variant="outline" size="sm" onClick={() => { setCategoryToDelete(category.id); setDeleteCategoryDialogOpen(true); }}><Trash2 className="w-4 h-4 text-destructive" /></Button></div></div></CardContent></Card>))}{categories?.length === 0 && (<Card><CardContent className="py-12 text-center"><FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground">Noch keine Kategorien</p></CardContent></Card>)}</div>
         </TabsContent>
 
         <TabsContent value="moderation" className="space-y-4">
@@ -325,9 +318,8 @@ export default function AdminForum() {
         </TabsContent>
       </Tabs>
 
-      {/* THREAD EDITOR DIALOG */}
       <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto custom-scrollbar">
           <DialogHeader><DialogTitle>{editingThread ? "Beitrag bearbeiten" : "Neuer Beitrag"}</DialogTitle><DialogDescription>Erstelle oder bearbeite Magazin-Beiträge mit SEO-Optimierung</DialogDescription></DialogHeader>
           <div className="space-y-6">
             <Card><CardHeader className="pb-3"><CardTitle className="text-base">SEO Suite</CardTitle></CardHeader><CardContent className="space-y-4"><div><Label>Meta Title ({formData.seo_title?.length || 0}/60)</Label><Input value={formData.seo_title} onChange={(e) => setFormData((p) => ({ ...p, seo_title: e.target.value }))} maxLength={60} placeholder="SEO Titel für Suchergebnisse" /><div className="h-1 bg-muted rounded mt-1"><div className={`h-full rounded transition-all ${(formData.seo_title?.length || 0) > 50 ? "bg-green-500" : "bg-yellow-500"}`} style={{ width: `${Math.min(((formData.seo_title?.length || 0) / 60) * 100, 100)}%`, }} /></div></div><div><Label>Meta Description ({formData.seo_description?.length || 0}/155)</Label><Textarea value={formData.seo_description} onChange={(e) => setFormData((p) => ({ ...p, seo_description: e.target.value, }))} maxLength={155} rows={2} placeholder="Beschreibung für Suchergebnisse" /><div className="h-1 bg-muted rounded mt-1"><div className={`h-full rounded transition-all ${(formData.seo_description?.length || 0) > 120 ? "bg-green-500" : "bg-yellow-500"}`} style={{ width: `${Math.min(((formData.seo_description?.length || 0) / 155) * 100, 100)}%`, }} /></div></div></CardContent></Card>
@@ -339,7 +331,7 @@ export default function AdminForum() {
                 <div className="flex items-center gap-2"><Switch checked={formData.is_pinned} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_pinned: v }))} /><Label>Angepinnt</Label></div>
                 <div className="flex items-center gap-2"><Switch checked={formData.is_locked} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_locked: v }))} /><Label>Geschlossen</Label></div>
                 <div className="flex items-center gap-2"><Switch checked={formData.is_answered} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_answered: v }))} /><Label>Beantwortet</Label></div>
-                <div className="flex items-center gap-2"><Switch checked={formData.is_active} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_active: v }))} /><Label>Veröffentlicht</Label></div>
+                <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200"><Switch checked={formData.is_active} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_active: v }))} className="data-[state=checked]:bg-emerald-500" /><Label className="font-bold text-slate-800">Veröffentlicht / Online</Label></div>
                 
                 <div className="flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full border border-orange-200">
                     <Megaphone className="w-4 h-4 text-orange-600" />
@@ -411,7 +403,6 @@ export default function AdminForum() {
         </DialogContent>
       </Dialog>
 
-      {/* CATEGORY EDITOR DIALOG */}
       <Dialog open={categoryEditorOpen} onOpenChange={setCategoryEditorOpen}>
         <DialogContent className="max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{editingCategory ? "Kategorie bearbeiten" : "Neue Kategorie"}</DialogTitle><DialogDescription>Kategorien helfen beim Organisieren der Magazin-Beiträge</DialogDescription></DialogHeader>
@@ -430,7 +421,6 @@ export default function AdminForum() {
                 <div className="flex items-center gap-2"><Switch checked={categoryFormData.is_active} onCheckedChange={(v) => setCategoryFormData((p) => ({ ...p, is_active: v }))} /><Label>Aktiv</Label></div>
             </TabsContent>
 
-            {/* NEU: SEO TAB */}
             <TabsContent value="seo" className="space-y-4 pt-4">
                 <Card>
                     <CardHeader className="pb-3"><CardTitle className="text-base">Kategorie SEO Einstellungen</CardTitle></CardHeader>

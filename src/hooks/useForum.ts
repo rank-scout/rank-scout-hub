@@ -11,8 +11,8 @@ export interface ForumThread {
   content: string;
   author_name: string;
   category_id: string | null;
-  views: number; // Geändert von view_count auf views (wie in DB)
-  view_count?: number; // Fallback für Legacy Code
+  views: number; 
+  view_count?: number; 
   is_pinned: boolean;
   is_locked: boolean;
   is_answered: boolean;
@@ -66,16 +66,20 @@ export interface ForumReplyWithLikes extends ForumReply {
 
 // --- HOOKS ---
 
-export const useForumCategories = () => {
+export const useForumCategories = (includeInactive: boolean = false) => {
   return useQuery({
-    queryKey: ["forum-categories"],
+    queryKey: ["forum-categories", includeInactive],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let query = supabase
         .from("forum_categories")
         .select("*, forum_threads(count)")
-        .eq("is_active", true)
         .order("sort_order");
+        
+      if (!includeInactive) {
+          query = query.eq("is_active", true);
+      }
       
+      const { data, error } = await query;
       if (error) throw error;
       
       return data.map(cat => ({
@@ -86,16 +90,20 @@ export const useForumCategories = () => {
   });
 };
 
-export const useForumThreads = (categorySlug?: string) => {
+// KYRA FIX: Parameter includeInactive hinzugefügt, damit das Admin-Panel ALLE Beiträge (auch Offline) laden kann.
+export const useForumThreads = (categorySlug?: string, includeInactive: boolean = false) => {
   return useQuery({
-    queryKey: ["forum-threads", categorySlug],
+    queryKey: ["forum-threads", categorySlug, includeInactive],
     queryFn: async () => {
       let query = supabase
         .from("forum_threads")
         .select("*, forum_replies(count)")
-        .eq("is_active", true)
         .order("is_pinned", { ascending: false })
         .order("created_at", { ascending: false });
+
+      if (!includeInactive) {
+          query = query.eq("is_active", true);
+      }
 
       if (categorySlug) {
         const { data: cat } = await supabase.from("forum_categories").select("id").eq("slug", categorySlug).single();
@@ -111,7 +119,7 @@ export const useForumThreads = (categorySlug?: string) => {
 
       return data.map(thread => ({
         ...thread,
-        views: thread.views || 0, // Mapping sicherstellen
+        views: thread.views || 0,
         reply_count: thread.forum_replies?.[0]?.count || 0
       })) as ForumThread[];
     },
@@ -135,7 +143,6 @@ export const useForumThread = (slug: string) => {
   });
 };
 
-// --- NEW: INCREMENT VIEW COUNT ---
 export const useIncrementThreadView = () => {
   return useMutation({
     mutationFn: async (threadId: string) => {
@@ -144,7 +151,6 @@ export const useIncrementThreadView = () => {
     }
   });
 };
-// --------------------------------
 
 export const useThreadReplies = (threadId: string, userId?: string) => {
   return useQuery({
@@ -161,15 +167,12 @@ export const useThreadReplies = (threadId: string, userId?: string) => {
 
       if (error) throw error;
 
-      // Fetch likes
       const replyIds = replies.map(r => r.id);
       
-      // Get counts
       const { data: counts } = await supabase
         .from("forum_reply_likes")
         .select("reply_id");
         
-      // Get user likes
       let userLikes: string[] = [];
       if (userId) {
         const { data: ul } = await supabase
@@ -192,10 +195,6 @@ export const useThreadReplies = (threadId: string, userId?: string) => {
     enabled: !!threadId,
   });
 };
-
-// ... Rest der Hooks (CreateThread, UpdateThread etc.) bleiben gleich, 
-// ich kürze hier ab, da sie sich nicht ändern, aber der Vollständigkeit halber
-// sollten sie im File bleiben. Da du Copy-Paste willst, hier die wichtigsten:
 
 export const useCreateThread = () => {
   const queryClient = useQueryClient();
@@ -268,12 +267,10 @@ export const useToggleLike = () => {
   });
 };
 
-// Utils
 export const generateSlug = (text: string) => {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 };
 
-// Placeholder Hooks für Kategorien-Management (da in useForum.ts referenziert)
 export const useCreateCategory = () => { const qc = useQueryClient(); return useMutation({ mutationFn: async (c:any) => supabase.from("forum_categories").insert([c]), onSuccess: () => qc.invalidateQueries({ queryKey: ["forum-categories"] }) }) };
 export const useUpdateCategory = () => { const qc = useQueryClient(); return useMutation({ mutationFn: async ({id, ...u}:any) => supabase.from("forum_categories").update(u).eq("id", id), onSuccess: () => qc.invalidateQueries({ queryKey: ["forum-categories"] }) }) };
 export const useDeleteCategory = () => { const qc = useQueryClient(); return useMutation({ mutationFn: async (id:string) => supabase.from("forum_categories").delete().eq("id", id), onSuccess: () => qc.invalidateQueries({ queryKey: ["forum-categories"] }) }) };
