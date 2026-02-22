@@ -28,7 +28,7 @@ type HybridFeedItem = {
   slug: string;
   image: string | null;
   date: string;
-  type: "category" | "forum";
+  type: "category" | "ExpertenChecks";
   categoryName: string;
 };
 
@@ -206,7 +206,7 @@ export function NewsSection() {
 
           <div className="hidden md:flex gap-4">
               <Button size="sm" variant="outline" className="rounded-xl font-bold border-slate-300 hover:bg-slate-50" asChild>
-                 <Link to="/forum">Alle Vergleiche Ansehen</Link>
+                 <Link to="/experten-checks">Alle Vergleiche Ansehen</Link>
               </Button>
           </div>
         </FadeIn>
@@ -255,7 +255,7 @@ export function NewsSection() {
           
           <div className="mt-6 text-center md:hidden">
               <Button size="lg" variant="outline" className="w-full rounded-xl font-bold border-slate-200 text-slate-700 bg-white" asChild>
-                 <Link to="/forum">Alle Beiträge ansehen</Link>
+                 <Link to="/experten-checks">Alle Beiträge ansehen</Link>
               </Button>
           </div>
         </div>
