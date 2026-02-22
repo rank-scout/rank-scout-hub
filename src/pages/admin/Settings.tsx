@@ -19,7 +19,7 @@ import {
   Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
   CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
   Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText,
-  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type
+  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type, Rocket, X
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
@@ -93,6 +93,11 @@ export default function AdminSettings() {
   const [scoutyHighTicketUrl, setScoutyHighTicketUrl] = useState("");
   const [scoutyEnabled, setScoutyEnabled] = useState(true);
   const [scoutyLeadsCount, setScoutyLeadsCount] = useState(0);
+
+  // --- GOOGLE INDEXING STATES ---
+  const [pingUrls, setPingUrls] = useState("");
+  const [pinging, setPinging] = useState(false);
+  const [pingResults, setPingResults] = useState<{url: string, success: boolean, message: string}[] | null>(null);
 
   // --- STANDARD CONFIG WERTE (DEFAULTS) ---
   const defaultHeaderConfig = { 
@@ -229,6 +234,33 @@ export default function AdminSettings() {
       toast({ title: "Fehler", description: "Speichern fehlgeschlagen", variant: "destructive" });
     }
   }
+
+  const handlePingUrls = async () => {
+    const urls = pingUrls.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
+    if (urls.length === 0) {
+      toast({ title: "Fehler", description: "Bitte gültige URLs (mit https://) eingeben.", variant: "destructive" });
+      return;
+    }
+    
+    setPinging(true);
+    setPingResults(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('google-ping', {
+        body: { urls }
+      });
+      
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
+      setPingResults(data.results || []);
+      toast({ title: "Ping abgeschlossen", description: `${data.results?.length || 0} URLs verarbeitet.` });
+    } catch (err: any) {
+      toast({ title: "API Fehler", description: err.message, variant: "destructive" });
+    } finally {
+      setPinging(false);
+    }
+  };
 
   const saveScoutyConfig = () => {
     saveSetting("scouty_config", { 
@@ -728,6 +760,47 @@ export default function AdminSettings() {
             API & ANALYTICS TAB
         ============================================================== */}
         <TabsContent value="analytics_new" className="space-y-6 mt-6">
+
+            {/* NEU: GOOGLE INDEXING WIDGET */}
+            <Card className="border-t-4 border-t-orange-500 shadow-md">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Rocket className="w-5 h-5 text-orange-500"/> Google Turbo-Indexing API</CardTitle>
+                    <CardDescription>Pushe neue Landingpages per Knopfdruck direkt an den Google Crawler (v3). Max 200 pro Tag.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>URLs (Eine pro Zeile, zwingend inkl. https://)</Label>
+                        <Textarea 
+                          value={pingUrls} 
+                          onChange={e => setPingUrls(e.target.value)} 
+                          placeholder="https://rank-scout.com/hundekrankenversicherung-vergleich&#10;https://rank-scout.com/forum/neues-thema" 
+                          rows={6} 
+                          className="font-mono text-sm bg-slate-50 dark:bg-slate-900 border-slate-200"
+                        />
+                    </div>
+                    <Button onClick={handlePingUrls} disabled={pinging || pingUrls.trim().length === 0} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-12">
+                        {pinging ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Rocket className="w-5 h-5 mr-2" />}
+                        {pinging ? "Sende an Google Server..." : "URLs jetzt sofort anpingen"}
+                    </Button>
+
+                    {pingResults && (
+                      <div className="mt-4 space-y-2 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto">
+                        <Label className="text-xs text-muted-foreground mb-3 block border-b pb-2">Status Bericht ({pingResults.length} URLs)</Label>
+                        {pingResults.map((res, i) => (
+                          <div key={i} className="flex items-start gap-2 text-sm border-b border-border/50 pb-2 last:border-0 last:pb-0">
+                            {res.success ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" /> : <X className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
+                            <div className="flex-1 break-all">
+                              <span className={res.success ? "text-slate-700 dark:text-slate-300 font-medium" : "text-red-600 font-medium"}>{res.url}</span>
+                              {!res.success && <div className="text-xs text-red-500 mt-1 font-mono">Google Error: {res.message}</div>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                </CardContent>
+            </Card>
+            {/* ENDE NEUES WIDGET */}
+
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Key className="w-5 h-5 text-red-600"/> API Bridge & Security</CardTitle>
