@@ -73,7 +73,19 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://rank-scout.com/experten-checks</loc>
+    <lastmod>2026-02-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://rank-scout.com/stromvergleich</loc>
+    <lastmod>2026-02-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://rank-scout.com/kfz-versicherung-vergleich</loc>
     <lastmod>2026-02-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -121,12 +133,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://rank-scout.com/pkv-vollversicherung</loc>
-    <lastmod>2026-02-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://rank-scout.com/lebensversicherung-vergleich</loc>
     <lastmod>2026-02-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -151,6 +157,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://rank-scout.com/motorradversicherung-vergleich</loc>
+    <lastmod>2026-02-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://rank-scout.com/rentenversicherung-vergleich</loc>
     <lastmod>2026-02-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -158,6 +170,12 @@
   </url>
   <url>
     <loc>https://rank-scout.com/pkv-beamte-vergleich</loc>
+    <lastmod>2026-02-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://rank-scout.com/pkv-vollversicherung</loc>
     <lastmod>2026-02-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

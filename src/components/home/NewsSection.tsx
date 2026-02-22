@@ -206,7 +206,7 @@ export function NewsSection() {
 
           <div className="hidden md:flex gap-4">
               <Button size="sm" variant="outline" className="rounded-xl font-bold border-slate-300 hover:bg-slate-50" asChild>
-                 <Link to="/forum">Alle Beiträge</Link>
+                 <Link to="/forum">Alle Vergleiche Ansehen</Link>
               </Button>
           </div>
         </FadeIn>
