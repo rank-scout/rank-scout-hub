@@ -40,8 +40,13 @@ export const HeroSection = () => {
     }
   };
 
-  const newTitle = "Software & Services: Transparent. Unabhängig. Geprüft.";
-  const newSubtitle = "Wir analysieren hunderte Anbieter, damit du in Sekunden die richtige Wahl triffst. Spare Zeit, Geld und Nerven.";
+  // --- HIER IST DIE ÄNDERUNG: Daten kommen jetzt aus der Datenbank (Supabase) ---
+  // Falls im Admin nichts steht, wird dein Standard-Text als Fallback genutzt.
+  const newTitle = content.hero?.title || "Software & Services: Transparent. Unabhängig. Geprüft.";
+  const newSubtitle = content.hero?.subtitle || "Wir analysieren hunderte Anbieter, damit du in Sekunden die richtige Wahl triffst. Spare Zeit, Geld und Nerven.";
+  const badgeText = content.hero?.badge || "Update 2026";
+  const searchPlaceholder = content.hero?.search_placeholder || "Was möchtest du vergleichen?";
+  const searchButtonLabel = content.hero?.search_label || "Vergleichen";
 
   const showDropdown = isSearchFocused && searchQuery.length >= 2;
 
@@ -91,7 +96,7 @@ export const HeroSection = () => {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
                 <Star weight="Bold" className="relative w-3.5 h-3.5 text-secondary" />
             </span>
-            <span className="text-sm font-medium text-slate-100 tracking-wide group-hover:text-white transition-colors">{content.hero.badge}</span>
+            <span className="text-sm font-medium text-slate-100 tracking-wide group-hover:text-white transition-colors">{badgeText}</span>
           </div>
 
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight leading-[1.1] animate-fade-in animation-delay-100 drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
@@ -110,7 +115,7 @@ export const HeroSection = () => {
                 <Magnifer weight="Bold" className="w-5 h-5 text-slate-300 mr-3 shrink-0" />
                 <Input 
                   type="text" 
-                  placeholder={content.hero.search_placeholder} 
+                  placeholder={searchPlaceholder} 
                   className="bg-transparent border-none h-full w-full text-white placeholder:text-slate-400 focus-visible:ring-0 focus-visible:ring-offset-0 text-lg p-0 font-medium"
                   value={searchQuery}
                   onChange={(e) => {
@@ -122,7 +127,7 @@ export const HeroSection = () => {
                 {isSearching && <Loader2 className="w-5 h-5 text-secondary animate-spin ml-2" />}
               </div>
               <Button type="submit" size="lg" className="rounded-xl sm:rounded-full h-14 px-8 bg-secondary hover:bg-secondary/90 text-white font-bold text-base shadow-lg shadow-secondary/20 hover:shadow-secondary/40 transition-all shrink-0">
-                {content.hero.search_label}
+                {searchButtonLabel}
               </Button>
             </form>
 

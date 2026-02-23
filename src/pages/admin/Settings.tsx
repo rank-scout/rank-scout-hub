@@ -19,7 +19,7 @@ import {
   Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
   CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
   Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText,
-  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type, Rocket, X
+  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
@@ -31,12 +31,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 export default function AdminSettings() {
   const { data: settings, isLoading } = useSettings();
   const updateSetting = useUpdateSetting();
-  
+   
   // Hooks für Home-Steuerung & Ads
   const { layout } = useHomeLayout();
   const { content: serverContent } = useHomeContent();
   const { data: forumAds } = useForumAds();
-  
+   
   // Lokaler State
   const [localContent, setLocalContent] = useState<typeof defaultHomeContent | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -54,7 +54,6 @@ export default function AdminSettings() {
   const [analyticsCode, setAnalyticsCode] = useState("");
   const [adsEnabled, setAdsEnabled] = useState(false);
   const [initialized, setInitialized] = useState(false);
-  const [analyticsStatus, setAnalyticsStatus] = useState<"idle" | "checking" | "found" | "not-found">("idle");
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   // --- THEME STATES ---
@@ -93,11 +92,6 @@ export default function AdminSettings() {
   const [scoutyHighTicketUrl, setScoutyHighTicketUrl] = useState("");
   const [scoutyEnabled, setScoutyEnabled] = useState(true);
   const [scoutyLeadsCount, setScoutyLeadsCount] = useState(0);
-
-  // --- GOOGLE INDEXING STATES ---
-  const [pingUrls, setPingUrls] = useState("");
-  const [pinging, setPinging] = useState(false);
-  const [pingResults, setPingResults] = useState<{url: string, success: boolean, message: string}[] | null>(null);
 
   // --- STANDARD CONFIG WERTE (DEFAULTS) ---
   const defaultHeaderConfig = { 
@@ -234,33 +228,6 @@ export default function AdminSettings() {
       toast({ title: "Fehler", description: "Speichern fehlgeschlagen", variant: "destructive" });
     }
   }
-
-  const handlePingUrls = async () => {
-    const urls = pingUrls.split('\n').map(u => u.trim()).filter(u => u.startsWith('http'));
-    if (urls.length === 0) {
-      toast({ title: "Fehler", description: "Bitte gültige URLs (mit https://) eingeben.", variant: "destructive" });
-      return;
-    }
-    
-    setPinging(true);
-    setPingResults(null);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('google-ping', {
-        body: { urls }
-      });
-      
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      
-      setPingResults(data.results || []);
-      toast({ title: "Ping abgeschlossen", description: `${data.results?.length || 0} URLs verarbeitet.` });
-    } catch (err: any) {
-      toast({ title: "API Fehler", description: err.message, variant: "destructive" });
-    } finally {
-      setPinging(false);
-    }
-  };
 
   const saveScoutyConfig = () => {
     saveSetting("scouty_config", { 
@@ -448,7 +415,7 @@ export default function AdminSettings() {
     newLinks[index] = { ...newLinks[index], [field]: value };
     setFooterConfig({ ...footerConfig, legal_links: newLinks });
   };
-  
+   
   const addPopularLink = () => {
     const newLinks = [...(footerConfig.popular_links || []), { label: "Neuer Link", url: "/" }];
     setFooterConfig({ ...footerConfig, popular_links: newLinks });
@@ -480,7 +447,7 @@ export default function AdminSettings() {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `logo-${Date.now()}.${fileExt}`;
-      
+       
       const { error: uploadError } = await supabase.storage
         .from('branding')
         .upload(fileName, file, { upsert: true });
@@ -760,47 +727,6 @@ export default function AdminSettings() {
             API & ANALYTICS TAB
         ============================================================== */}
         <TabsContent value="analytics_new" className="space-y-6 mt-6">
-
-            {/* NEU: GOOGLE INDEXING WIDGET */}
-            <Card className="border-t-4 border-t-orange-500 shadow-md">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Rocket className="w-5 h-5 text-orange-500"/> Google Turbo-Indexing API</CardTitle>
-                    <CardDescription>Pushe neue Landingpages per Knopfdruck direkt an den Google Crawler (v3). Max 200 pro Tag.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>URLs (Eine pro Zeile, zwingend inkl. https://)</Label>
-                        <Textarea 
-                          value={pingUrls} 
-                          onChange={e => setPingUrls(e.target.value)} 
-                          placeholder="https://rank-scout.com/hundekrankenversicherung-vergleich&#10;https://rank-scout.com/forum/neues-thema" 
-                          rows={6} 
-                          className="font-mono text-sm bg-slate-50 dark:bg-slate-900 border-slate-200"
-                        />
-                    </div>
-                    <Button onClick={handlePingUrls} disabled={pinging || pingUrls.trim().length === 0} className="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold h-12">
-                        {pinging ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <Rocket className="w-5 h-5 mr-2" />}
-                        {pinging ? "Sende an Google Server..." : "URLs jetzt sofort anpingen"}
-                    </Button>
-
-                    {pingResults && (
-                      <div className="mt-4 space-y-2 bg-slate-50 dark:bg-slate-900 p-4 rounded-lg border border-slate-100 dark:border-slate-800 max-h-60 overflow-y-auto">
-                        <Label className="text-xs text-muted-foreground mb-3 block border-b pb-2">Status Bericht ({pingResults.length} URLs)</Label>
-                        {pingResults.map((res, i) => (
-                          <div key={i} className="flex items-start gap-2 text-sm border-b border-border/50 pb-2 last:border-0 last:pb-0">
-                            {res.success ? <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0 mt-0.5" /> : <X className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
-                            <div className="flex-1 break-all">
-                              <span className={res.success ? "text-slate-700 dark:text-slate-300 font-medium" : "text-red-600 font-medium"}>{res.url}</span>
-                              {!res.success && <div className="text-xs text-red-500 mt-1 font-mono">Google Error: {res.message}</div>}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                </CardContent>
-            </Card>
-            {/* ENDE NEUES WIDGET */}
-
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Key className="w-5 h-5 text-red-600"/> API Bridge & Security</CardTitle>
@@ -1023,18 +949,41 @@ export default function AdminSettings() {
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 
-                {/* HERO SEKTION */}
+                {/* HERO SEKTION - OPTIMIERT FÜR NEUES DESIGN */}
                 <AccordionItem value="hero">
                   <AccordionTrigger className="font-semibold">Hero Sektion (Ganz oben)</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
                     <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Badge (z.B. NEU)</Label><Input value={localContent.hero?.badge || ""} onChange={e => updateContent("hero", "badge", e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Haupt-Headline (SEO H1)</Label><Input value={localContent.hero?.headline || ""} onChange={e => updateContent("hero", "headline", e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Sichtbarer Titel</Label><Input value={localContent.hero?.title || ""} onChange={e => updateContent("hero", "title", e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Untertitel (Fett)</Label><Input value={localContent.hero?.subtitle || ""} onChange={e => updateContent("hero", "subtitle", e.target.value)} /></div>
-                      <div className="space-y-2 md:col-span-2"><Label>Subheadline (Beschreibung)</Label><Textarea value={localContent.hero?.subheadline || ""} onChange={e => updateContent("hero", "subheadline", e.target.value)} rows={2} /></div>
-                      <div className="space-y-2"><Label>Suche Placeholder</Label><Input value={localContent.hero?.search_placeholder || ""} onChange={e => updateContent("hero", "search_placeholder", e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Suche Button Label</Label><Input value={localContent.hero?.search_label || ""} onChange={e => updateContent("hero", "search_label", e.target.value)} /></div>
+                      
+                      <div className="space-y-2">
+                          <Label className="text-green-600 font-bold">Badge Text</Label>
+                          <Input placeholder="Update 2026: Neue Vergleiche" value={localContent.hero?.badge || ""} onChange={e => updateContent("hero", "badge", e.target.value)} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label>H1 Titel (Groß / Shadow)</Label>
+                          <Input placeholder="Vergleiche Finanzen..." value={localContent.hero?.title || ""} onChange={e => updateContent("hero", "title", e.target.value)} />
+                          <p className="text-xs text-muted-foreground">Der fette, große Haupttitel.</p>
+                      </div>
+
+                      <div className="space-y-2">
+                          <Label>Zusatz-Headline (Unter H1)</Label>
+                          <Input placeholder="Die besten Angebote..." value={localContent.hero?.headline || ""} onChange={e => updateContent("hero", "headline", e.target.value)} />
+                      </div>
+                      
+                      <div className="space-y-2 md:col-span-2">
+                          <Label>Beschreibungstext (Intro)</Label>
+                          <Textarea placeholder="Wir analysieren über 500 Anbieter..." value={localContent.hero?.subtitle || ""} onChange={e => updateContent("hero", "subtitle", e.target.value)} rows={3} />
+                      </div>
+
+                      <div className="space-y-2">
+                          <Label>Button Text</Label>
+                          <Input placeholder="Jetzt vergleichen" value={localContent.hero?.button_text || ""} onChange={e => updateContent("hero", "button_text", e.target.value)} />
+                      </div>
+
+                      <div className="space-y-2">
+                          <Label>Suchfeld Platzhalter</Label>
+                          <Input placeholder="z.B. Kredit, VPN..." value={localContent.hero?.search_placeholder || ""} onChange={e => updateContent("hero", "search_placeholder", e.target.value)} />
+                      </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -1168,14 +1117,14 @@ export default function AdminSettings() {
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2"><Label>SEO Headline</Label><Input value={localContent.seo?.headline || ""} onChange={e => updateContent("seo", "headline", e.target.value)} /></div>
                       <div className="space-y-2 md:col-span-2"><Label>Intro Text</Label><Textarea value={localContent.seo?.intro || ""} onChange={e => updateContent("seo", "intro", e.target.value)} rows={2} /></div>
-                      
+                       
                       <div className="space-y-2"><Label>Block 1 Titel</Label><Input value={localContent.seo?.block1_title || ""} onChange={e => updateContent("seo", "block1_title", e.target.value)} /></div>
                       <div className="space-y-2"><Label>Block 1 Text</Label><Textarea value={localContent.seo?.block1_text || ""} onChange={e => updateContent("seo", "block1_text", e.target.value)} rows={2} /></div>
 
                       <div className="space-y-2"><Label>Block 2 Titel</Label><Input value={localContent.seo?.block2_title || ""} onChange={e => updateContent("seo", "block2_title", e.target.value)} /></div>
                       <div className="space-y-2"><Label>Block 2 Text</Label><Textarea value={localContent.seo?.block2_text || ""} onChange={e => updateContent("seo", "block2_text", e.target.value)} rows={2} /></div>
                     </div>
-                    
+                     
                     <div className="space-y-2 pt-4 border-t">
                       <Label>Deep Content (Langer SEO Text)</Label>
                       <Textarea className="min-h-[400px] font-mono text-sm bg-slate-50" value={seoLongText} onChange={(e) => {
@@ -1201,7 +1150,7 @@ export default function AdminSettings() {
                ))}
             </CardContent>
           </Card>
-          
+           
           {/* --- TICKER SETTINGS BLOCK --- */}
           <Card className="bg-card border-border shadow-sm">
               <CardHeader><CardTitle>App-Ticker Sektion</CardTitle></CardHeader>
