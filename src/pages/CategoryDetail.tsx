@@ -179,31 +179,6 @@ export default function CategoryDetail() {
 
   const isInternalPage = (category as any)?.is_internal_generated === true;
   const currentUrl = `https://rank-scout.com/${category.slug}`;
-  const jsonLdSchema = { 
-    "@context": "https://schema.org", 
-    "@type": "Product", 
-    "name": category.meta_title || category.name, 
-    "description": category.meta_description, 
-    "image": getCategoryHeroImage(category),
-    "brand": { 
-      "@type": "Brand", 
-      "name": "Rank-Scout" 
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "bestRating": "5",
-      "worstRating": "1",
-      "ratingCount": "1142"
-    },
-    "offers": {
-      "@type": "Offer",
-      "priceCurrency": "EUR",
-      "price": "0.00",
-      "availability": "https://schema.org/InStock",
-      "url": currentUrl
-    }
-  };
 
   if (category.template === 'hub_overview') {
       return (
@@ -225,7 +200,11 @@ export default function CategoryDetail() {
 
 return (
       <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-[#FAFAFA]">
-        <Helmet><title>{category.meta_title || `${category.name}`}</title><meta name="description" content={category.meta_description || ""} /><link rel="canonical" href={currentUrl} /><script type="application/ld+json">{JSON.stringify(jsonLdSchema)}</script></Helmet>
+        <Helmet>
+          <title>{category.meta_title || `${category.name}`}</title>
+          <meta name="description" content={category.meta_description || ""} />
+          <link rel="canonical" href={currentUrl} />
+        </Helmet>
         <Header />
         <main className="flex-1">
           {/* Breadcrumbs */}
