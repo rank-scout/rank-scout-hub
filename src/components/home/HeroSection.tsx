@@ -52,18 +52,18 @@ export const HeroSection = () => {
       {/* --- BG EFFECTS WRAPPER (3D Space & Image) --- */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
           
-          {/* 1. HINTERGRUNDBILD */}
+          {/* 1. HINTERGRUNDBILD - Knackscharf auf 100% */}
           <div 
-            className="absolute inset-0 z-0 opacity-80 bg-cover bg-center bg-no-repeat"
+            className="absolute inset-0 z-0 opacity-100 bg-cover bg-center bg-no-repeat"
             style={{ 
               backgroundImage: 'url("https://rank-scout.com/big-threes/forum_magazin_herobild_rank-scout.webp")',
-              maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)', 
-              WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' 
+              maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', 
+              WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' 
             }}
           />
 
-          {/* 2. DUNKLES OVERLAY (Für Lesbarkeit der Suche) */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1c]/10 via-[#0a0f1c]/30 to-[#0a0f1c] z-0" />
+          {/* 2. DUNKLES OVERLAY - Mobil fast unsichtbar (transparent/5%), Desktop moderat */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0f1c]/5 to-[#0a0f1c] md:from-[#0a0f1c]/5 md:via-[#0a0f1c]/15 z-0" />
 
           {/* 3. DIE 3D-STERNE (Animiertes Funkeln) */}
           <div className="absolute inset-0 z-0 opacity-80" 
@@ -94,11 +94,11 @@ export const HeroSection = () => {
             <span className="text-sm font-medium text-slate-100 tracking-wide group-hover:text-white transition-colors">{content.hero.badge}</span>
           </div>
 
-          <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight leading-[1.1] animate-fade-in animation-delay-100 drop-shadow-2xl">
+          <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-bold text-white mb-6 tracking-tight leading-[1.1] animate-fade-in animation-delay-100 drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)] [text-shadow:0_2px_4px_rgba(0,0,0,0.5)]">
             {newTitle}
           </h1>
           
-          <p className="text-lg md:text-xl text-slate-200 mb-12 max-w-2xl mx-auto leading-relaxed animate-fade-in animation-delay-200 font-light">
+          <p className="text-lg md:text-xl text-white/95 mb-12 max-w-2xl mx-auto leading-relaxed animate-fade-in animation-delay-200 font-medium drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)] [text-shadow:0_1px_2px_rgba(0,0,0,0.5)]">
             {newSubtitle}
           </p>
 
