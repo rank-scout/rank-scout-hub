@@ -47,27 +47,38 @@ export const HeroSection = () => {
 
   return (
     // FIX 1: z-40 hinzugefügt. Die komplette Sektion liegt jetzt über dem App-Ticker und restlichem Content
-    <section className="relative pt-32 pb-20 md:pt-48 md:pb-10 bg-primary selection:bg-secondary/30 z-40">
+    <section className="relative pt-32 pb-20 md:pt-48 md:pb-10 bg-[#0a0f1c] selection:bg-secondary/30 z-40">
       
-      {/* --- BG EFFECTS WRAPPER (Damit Hintergründe nicht rauslaufen) --- */}
+      {/* --- BG EFFECTS WRAPPER (3D Space & Image) --- */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {/* 1. Base Gradient */}
-          <div className="absolute inset-0 bg-gradient-to-b from-primary via-primary to-primary z-0" />
-
-          {/* 2. Cyber Dot Grid */}
+          
+          {/* 1. HINTERGRUNDBILD */}
           <div 
-            className="absolute inset-0 z-0 opacity-[0.35]" 
-            style={{
-              backgroundImage: `radial-gradient(rgba(255,255,255,0.9) 1.5px, transparent 1.5px)`,
-              backgroundSize: '40px 40px',
-              maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)', 
-              WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)'
+            className="absolute inset-0 z-0 opacity-80 bg-cover bg-center bg-no-repeat"
+            style={{ 
+              backgroundImage: 'url("https://rank-scout.com/big-threes/forum_magazin_herobild_rank-scout.webp")',
+              maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)', 
+              WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' 
             }}
           />
 
-          {/* 3. Ambient Glow Orbs */}
-          <div className="absolute top-[-20%] right-[-10%] w-[1000px] h-[1000px] bg-secondary/10 rounded-full blur-[120px] mix-blend-screen" />
-          <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-[120px]" />
+          {/* 2. DUNKLES OVERLAY (Für Lesbarkeit der Suche) */}
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1c]/10 via-[#0a0f1c]/30 to-[#0a0f1c] z-0" />
+
+          {/* 3. DIE 3D-STERNE (Animiertes Funkeln) */}
+          <div className="absolute inset-0 z-0 opacity-80" 
+               style={{ maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)' }}>
+            <div className="absolute inset-0 animate-[pulse_4s_ease-in-out_infinite]"
+                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='3' cy='3' r='0.5'/%3E%3Ccircle cx='33' cy='21' r='0.5'/%3E%3Ccircle cx='48' cy='48' r='0.5'/%3E%3Ccircle cx='18' cy='52' r='0.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
+            <div className="absolute inset-0 animate-[pulse_2.5s_ease-in-out_infinite] [animation-delay:1s]"
+                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.8'%3E%3Ccircle cx='15' cy='15' r='1'/%3E%3Ccircle cx='75' cy='45' r='1'/%3E%3Ccircle cx='105' cy='105' r='1'/%3E%3Ccircle cx='45' cy='85' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
+            <div className="absolute inset-0 animate-[pulse_3.5s_ease-in-out_infinite] [animation-delay:0.5s]"
+                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='240' height='240' viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Ccircle cx='50' cy='50' r='1.5'/%3E%3Ccircle cx='180' cy='90' r='1.5'/%3E%3Ccircle cx='120' cy='200' r='1.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
+          </div>
+
+          {/* 4. GLOW ORBS (Behält das farbige Leuchten bei) */}
+          <div className="absolute top-[-20%] right-[-10%] w-[1000px] h-[1000px] bg-secondary/20 rounded-full blur-[120px] mix-blend-screen" />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-500/20 rounded-full blur-[100px]" />
       </div>
 
       {/* --- CONTENT --- */}
