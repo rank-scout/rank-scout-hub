@@ -19,7 +19,7 @@ import {
   Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
   CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
   Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText,
-  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type
+  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type, Rocket
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
@@ -92,6 +92,52 @@ export default function AdminSettings() {
   const [scoutyHighTicketUrl, setScoutyHighTicketUrl] = useState("");
   const [scoutyEnabled, setScoutyEnabled] = useState(true);
   const [scoutyLeadsCount, setScoutyLeadsCount] = useState(0);
+
+  // --- GOOGLE INDEXING STATE (NEU) ---
+  const [indexingUrls, setIndexingUrls] = useState("");
+  const [isPinging, setIsPinging] = useState(false);
+
+  const handleIndexPing = async () => {
+    if (!indexingUrls.trim()) return;
+    
+    setIsPinging(true);
+    try {
+      const urls = indexingUrls.split('\n').map(u => u.trim()).filter(u => u.length > 0);
+      
+      if (urls.length === 0) {
+        toast({ title: "Keine gültigen URLs gefunden", variant: "destructive" });
+        setIsPinging(false);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('google-ping', {
+        body: { urls }
+      });
+
+      if (error) throw error;
+
+      // Ergebnis auswerten
+      const results = data.results || [];
+      const successCount = results.filter((r: any) => r.success).length;
+      const failCount = results.length - successCount;
+
+      toast({ 
+        title: "Indexing Request gesendet", 
+        description: `${successCount} erfolgreich, ${failCount} fehlgeschlagen.`,
+        variant: failCount > 0 ? "destructive" : "default"
+      });
+      
+      if (successCount === urls.length) {
+          setIndexingUrls(""); // Reset bei vollem Erfolg
+      }
+
+    } catch (error: any) {
+      console.error(error);
+      toast({ title: "Fehler beim Pingen", description: error.message || "Unbekannter Fehler", variant: "destructive" });
+    } finally {
+      setIsPinging(false);
+    }
+  };
 
   // --- STANDARD CONFIG WERTE (DEFAULTS) ---
   const defaultHeaderConfig = { 
@@ -777,6 +823,34 @@ export default function AdminSettings() {
                     </div>
 
                     <Button onClick={() => {saveAnalytics(); saveSetting("ads_sense_client_id", adSenseClient); saveSetting("ads_sense_slot_id", adSenseSlot);}} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Analytics & Ads speichern</Button>
+                </CardContent>
+            </Card>
+
+            {/* --- GOOGLE INDEXING TOOL --- */}
+            <Card className="border-yellow-500/20 bg-yellow-50/10">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-yellow-500"/> Google Indexing API</CardTitle>
+                    <CardDescription>Manuelles Pingen von URLs an den Google Index (via Indexing API).</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                        <Label>URLs (Eine pro Zeile)</Label>
+                        <Textarea 
+                            placeholder="https://rank-scout.com/kategorie/..." 
+                            className="font-mono text-xs min-h-[150px] bg-slate-50 dark:bg-slate-900"
+                            value={indexingUrls}
+                            onChange={(e) => setIndexingUrls(e.target.value)}
+                        />
+                        <p className="text-xs text-muted-foreground">Maximal 200 URLs pro Tag (Google Quota beachten).</p>
+                    </div>
+                    <Button 
+                        onClick={handleIndexPing} 
+                        disabled={isPinging || !indexingUrls.trim()} 
+                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+                    >
+                        {isPinging ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Rocket className="w-4 h-4 mr-2" />}
+                        Jetzt Indexierung beantragen
+                    </Button>
                 </CardContent>
             </Card>
         </TabsContent>
