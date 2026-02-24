@@ -16,7 +16,7 @@ import {
 
 export function ForumSection() {
   
-  // Wir holen die neuesten 3 Beiträge (Magazine Style)
+  // Wir holen die neuesten Beiträge (Limit erhöht für Slider-Futter)
   const { data: latestPosts, isLoading } = useQuery({
     queryKey: ["home-latest-posts"],
     queryFn: async () => {
@@ -36,7 +36,7 @@ export function ForumSection() {
         .eq("is_active", true)
         .eq("status", "published")
         .order('created_at', { ascending: false })
-        .limit(6); // Limit etwas erhöht, damit der Slider mehr Futter hat (falls vorhanden)
+        .limit(6); 
       
       if (error) throw error;
       return data;
@@ -51,14 +51,14 @@ export function ForumSection() {
     });
   };
 
-  // Helper Component für die Karte, damit wir den Code nicht doppelt schreiben müssen
+  // Die Karte als Komponente für Wiederverwendung
   const PostCard = ({ post }: { post: any }) => (
     <Link to={`/forum/${post.slug}`} className="group h-full block">
-      {/* KYRA DESIGN: "Inset Card" Look - Rund, Weich, Schatten */}
+      {/* KYRA DESIGN: "Inset Card" Look */}
       <Card className="h-full bg-white border border-slate-100 shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-500 rounded-[2rem] overflow-hidden group-hover:-translate-y-2 flex flex-col p-3">
         
-        {/* Bild Container */}
-        <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-inner">
+        {/* Bild Container: 3:2 Ratio (1536x1024) */}
+        <div className="relative aspect-[3/2] overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-inner">
           {post.featured_image_url ? (
             <img 
               src={post.featured_image_url} 
@@ -160,46 +160,47 @@ export function ForumSection() {
           </Button>
         </div>
 
-        {/* --- DESKTOP VIEW (Grid) --- */}
-        <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {/* --- DESKTOP VIEW (Grid ab LG) --- */}
+        <div className="hidden lg:grid grid-cols-3 gap-8">
           {latestPosts.slice(0, 3).map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
         </div>
 
-        {/* --- MOBILE VIEW (Slider 1:1 wie NewsSection) --- */}
-        <div className="md:hidden -mx-4 px-4">
+        {/* --- MOBILE/TABLET VIEW (Slider 1:1 NewsSection Style) --- */}
+        <div className="block lg:hidden">
           <Carousel
-            opts={{
-              align: "start",
-              loop: true,
-            }}
-            className="w-full"
+            opts={{ align: "start", loop: false }}
+            className="w-full pb-4"
           >
             <CarouselContent className="-ml-4">
               {latestPosts.map((post) => (
-                // basis-[85%] sorgt für den "Peek"-Effekt, damit man sieht, dass man swipen kann
-                <CarouselItem key={post.id} className="pl-4 basis-[85%] sm:basis-[70%]">
-                  <div className="h-full py-2"> {/* Padding für den Hover-Schatten */}
+                // Exakte Basis-Werte aus der NewsSection für identisches Swipe-Gefühl
+                <CarouselItem key={post.id} className="pl-4 basis-[85%] sm:basis-[60%] md:basis-[45%] h-full">
+                  <div className="h-full py-2"> 
                     <PostCard post={post} />
                   </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
-            {/* Optional: Controls if needed, usually hidden on mobile for cleaner look */}
-            {/* <CarouselPrevious className="left-2" />
-            <CarouselNext className="right-2" /> */}
+            
+            {/* Controls unter dem Slider (1:1 NewsSection) */}
+            <div className="flex justify-center gap-4 mt-8">
+              <CarouselPrevious className="static translate-y-0 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 w-14 h-14 shadow-sm rounded-xl transition-all" />
+              <CarouselNext className="static translate-y-0 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 w-14 h-14 shadow-sm rounded-xl transition-all" />
+            </div>
           </Carousel>
+
+          {/* Mobile CTA */}
+          <div className="mt-6 text-center md:hidden">
+            <Button asChild className="w-full rounded-xl font-bold h-12 text-base" size="lg">
+              <Link to="/forum">
+                Zum Magazin
+              </Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Mobile CTA */}
-        <div className="mt-8 text-center md:hidden">
-          <Button asChild className="w-full rounded-full" size="lg">
-            <Link to="/forum">
-              Zum Magazin
-            </Link>
-          </Button>
-        </div>
       </div>
     </section>
   );

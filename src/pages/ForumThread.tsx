@@ -12,14 +12,13 @@ import {
 } from "@/hooks/useForum";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  MessageSquare, Pin, Clock, ArrowLeft, Send, User, Lock, CheckCircle, ThumbsUp, ShieldCheck
+  MessageSquare, Pin, Clock, ArrowLeft, Send, Lock, CheckCircle, ThumbsUp, ShieldCheck
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import DOMPurify from "dompurify";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
@@ -189,7 +188,7 @@ export default function ForumThread() {
       <Header />
       
       <main className="flex-grow">
-       {/* Sticky Top Bar - RANK-SCOUT BRANDING (Transparent & Mobile First) */}
+       {/* Sticky Top Bar */}
         <div className="sticky top-[65px] z-30 w-full bg-primary/95 backdrop-blur-md border-b border-white/10 shadow-lg transition-all duration-300">
             <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 h-14 flex items-center justify-between">
                  <Link to="/forum" className="inline-flex items-center gap-1.5 md:gap-2 text-xs md:text-sm font-bold text-slate-200 hover:text-orange-500 transition-colors group">
@@ -203,7 +202,7 @@ export default function ForumThread() {
             </div>
         </div>
         
-        <section className="py-12 md:py-16">
+        <section className="py-6 md:py-16">
           <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
               
@@ -211,8 +210,8 @@ export default function ForumThread() {
               <div className="flex-1 lg:w-[70%]">
                 
                 {/* Die Haupt-Frage / Der Beitrag */}
-                <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100 mb-10 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
+                <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100 mb-10 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1 md:w-1.5 h-full bg-orange-500"></div>
                   
                   <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <div className="flex items-center gap-2 mb-6 flex-wrap">
@@ -221,35 +220,43 @@ export default function ForumThread() {
                       {thread.is_answered && <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 gap-1.5 px-3 py-1 text-xs hover:bg-emerald-100"><CheckCircle className="w-3 h-3" /> Beantwortet</Badge>}
                     </div>
                     
-                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-extrabold mb-8 leading-[1.15] text-[#0A0F1C] tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-6 md:mb-8 leading-[1.15] text-[#0A0F1C] tracking-tight">
                       {thread.title}
                     </h1>
                     
-                    <div className="flex items-center gap-6 text-sm text-slate-500 border-b border-slate-100 pb-8 mb-8">
+                    <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm text-slate-500 border-b border-slate-100 pb-6 md:pb-8 mb-8">
                       <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-full bg-[#0A0F1C] flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                        <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-[#0A0F1C] flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-sm">
                           {getInitial(thread.author_name)}
                         </div>
                         <div className="flex flex-col">
                             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Autor</span>
-                            <span className="font-bold text-[#0A0F1C]">{thread.author_name}</span>
+                            <span className="font-bold text-[#0A0F1C] text-sm">{thread.author_name}</span>
                         </div>
                       </div>
-                      <div className="h-8 w-px bg-slate-200"></div>
+                      <div className="hidden sm:block h-8 w-px bg-slate-200"></div>
                       <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400">
-                               <Clock className="w-5 h-5" />
+                          <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400">
+                               <Clock className="w-4 h-4 md:w-5 md:h-5" />
                           </div>
                           <div className="flex flex-col">
                               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Veröffentlicht</span>
-                              <span className="font-bold text-[#0A0F1C]">{formatDate(thread.created_at || "")}</span>
+                              <span className="font-bold text-[#0A0F1C] text-sm">{formatDate(thread.created_at || "")}</span>
                           </div>
                       </div>
                     </div>
                   </div>
                   
                   <FadeIn>
-                      <div className="prose prose-lg max-w-none prose-slate prose-headings:font-extrabold prose-headings:text-[#0A0F1C] prose-headings:tracking-tight prose-p:text-slate-600 prose-p:leading-loose prose-a:text-orange-500 prose-a:font-bold prose-a:no-underline hover:prose-a:underline prose-strong:text-[#0A0F1C] prose-strong:font-bold prose-img:rounded-3xl prose-img:shadow-xl prose-img:border prose-img:border-slate-100 prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700" 
+                      {/* PROSE OPTIMIZATION FOR MOBILE */}
+                      <div className="prose prose-base md:prose-lg max-w-none prose-slate 
+                        prose-headings:font-extrabold prose-headings:text-[#0A0F1C] prose-headings:tracking-tight 
+                        prose-p:text-slate-600 prose-p:leading-loose 
+                        prose-a:text-orange-500 prose-a:font-bold prose-a:no-underline hover:prose-a:underline 
+                        prose-strong:text-[#0A0F1C] prose-strong:font-bold 
+                        prose-img:rounded-3xl prose-img:shadow-xl prose-img:border prose-img:border-slate-100 prose-img:w-full
+                        prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
+                        prose-table:w-full prose-table:text-sm md:prose-table:text-base prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3" 
                            dangerouslySetInnerHTML={renderContent()} 
                       />
                   </FadeIn>
@@ -261,7 +268,7 @@ export default function ForumThread() {
                     <div className="p-3 bg-orange-50 rounded-2xl text-orange-500 shrink-0">
                         <MessageSquare className="w-6 h-6" /> 
                     </div>
-                    <h2 className="text-3xl font-extrabold text-[#0A0F1C] tracking-tight">
+                    <h2 className="text-2xl md:text-3xl font-extrabold text-[#0A0F1C] tracking-tight">
                       Antworten <span className="text-slate-400 font-medium ml-1">({replies?.length || 0})</span>
                     </h2>
                   </div>
@@ -273,7 +280,7 @@ export default function ForumThread() {
                       {replies.map((reply) => (
                         <div key={reply.id} className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
                             <div className="flex items-start gap-4 md:gap-6">
-                              <div className="w-12 h-12 rounded-full bg-slate-100 shadow-inner flex items-center justify-center flex-shrink-0 text-slate-500 font-bold text-lg">
+                              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-100 shadow-inner flex items-center justify-center flex-shrink-0 text-slate-500 font-bold text-base md:text-lg">
                                 {getInitial(reply.author_name)}
                               </div>
                               <div className="flex-1 min-w-0 pt-1">
@@ -282,7 +289,7 @@ export default function ForumThread() {
                                   <span className="hidden sm:inline text-slate-300">•</span>
                                   <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{formatDate(reply.created_at || "")}</span>
                                 </div>
-                                <div className="text-slate-600 leading-relaxed text-base mb-6">{reply.content}</div>
+                                <div className="text-slate-600 leading-relaxed text-base mb-6 break-words">{reply.content}</div>
                                 
                                 <div className="flex items-center gap-4">
                                   <Button 
@@ -316,10 +323,10 @@ export default function ForumThread() {
                 {/* Reply Form */}
                 {!thread.is_locked ? (
                   <div className="bg-white border border-slate-100 shadow-xl shadow-slate-200/40 rounded-3xl overflow-hidden mt-8">
-                    <div className="bg-slate-50/50 border-b border-slate-100 px-8 py-6">
+                    <div className="bg-slate-50/50 border-b border-slate-100 px-6 md:px-8 py-6">
                         <h3 className="text-xl font-extrabold text-[#0A0F1C]">Deine Meinung zählt</h3>
                     </div>
-                    <div className="p-8">
+                    <div className="p-6 md:p-8">
                       <form onSubmit={handleSubmitReply} className="space-y-6">
                         <div className="grid gap-2">
                              <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Dein Name</label>
