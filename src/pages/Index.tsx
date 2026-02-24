@@ -16,12 +16,10 @@ import { Helmet } from "react-helmet-async";
 import { AppTicker } from "@/components/home/AppTicker"; 
 import { HowItWorksSection } from "@/components/home/HowItWorksSection"; 
 import { HomeSEOText } from "@/components/home/HomeSEOText"; 
-// KYRA FIX: Die Brechstange ist zurück.
 import { useForceSEO } from "@/hooks/useForceSEO"; 
 import { useTrackView } from "@/hooks/useTrackView";
 
 const Index = () => {
-  // KYRA FIX: Hier wird die Wanze aktiviert.
   useTrackView("home", "page");
 
   const analyticsCode = useGlobalAnalyticsCode();
@@ -30,7 +28,6 @@ const Index = () => {
   const siteDescription = useSiteDescription();
   const { layout, sections, isLoading: isLoadingLayout } = useHomeLayout();
 
-  // --- SAFE SEO DATA CONSTRUCTION ---
   const safeTitle = (typeof siteTitle === 'string' && siteTitle.length > 0) 
     ? siteTitle 
     : "Rank-Scout | Dein Vergleichsportal";
@@ -39,75 +36,42 @@ const Index = () => {
     ? siteDescription 
     : "Finde die besten Tools, Software und Finanzprodukte im unabhängigen Vergleich.";
 
-  // Keywords: Versuche aus Settings zu laden, sonst Fallback
-  // HINWEIS: Prüfe im Admin-Panel, ob der Key 'seo_keywords' wirklich gefüllt ist!
   const safeKeywords = (settings?.seo_keywords as string) || "Vergleich, Finanzen, Software, Testsieger, Rank-Scout, Erfahrungen, Test";
 
-  // --- KYRA FIX: USE FORCE SEO ---
-  // Wir rufen den Hook auf, um die Description hart in den DOM zu schreiben.
-  // Das löst das Problem, dass Tools die Description manchmal "übersehen".
   useForceSEO(safeDescription);
 
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setMinTimeElapsed(true);
-    }, 500); 
+    const timer = setTimeout(() => { setMinTimeElapsed(true); }, 500); 
     return () => clearTimeout(timer);
   }, []);
 
   const seoHead = (
     <Helmet>
-      {/* 1. Titel (Description wird zusätzlich durch useForceSEO gesetzt) */}
       <title>{safeTitle}</title>
-      
-      {/* Helmet Description als Backup/Standard React Weg */}
       <meta name="description" content={safeDescription} />
-      
-      {/* 2. Canonical (Fest auf Production Domain) */}
       <link rel="canonical" href="https://rank-scout.com/" />
-      
-      {/* 3. Robots */}
       <meta name="robots" content="index, follow" />
-      
-      {/* 4. Keywords & Autor */}
       <meta name="keywords" content={safeKeywords} />
       <meta name="author" content="Rank-Scout" />
       <meta name="publisher" content="Rank-Scout" />
-      
-      {/* 5. Open Graph */}
       <meta property="og:title" content={safeTitle} />
       <meta property="og:description" content={safeDescription} />
       <meta property="og:url" content="https://rank-scout.com/" />
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="Rank-Scout" />
       <meta property="og:locale" content="de_DE" />
-
-      {/* Analytics */}
       {analyticsCode && <script async src={`https://www.googletagmanager.com/gtag/js?id=${analyticsCode}`}></script>}
-      {analyticsCode && (
-        <script>
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${analyticsCode}');
-          `}
-        </script>
-      )}
+      {analyticsCode && (<script>{`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${analyticsCode}');`}</script>)}
     </Helmet>
   );
 
   if (isLoadingLayout || !minTimeElapsed || isLoadingSettings) {
-      return (
-        <>
-          {seoHead}
-          <LoadingScreen />
-        </>
-      );
+      return (<><>{seoHead}</><LoadingScreen /></>);
   }
 
+  // Dictionary update: forum is removed here because we place it manually!
   const sectionComponents: Record<string, React.ReactNode> = {
     hero: <HeroSection />,
     amazon_top: <AmazonBanner format="horizontal" />,
@@ -116,27 +80,31 @@ const Index = () => {
     big_three: <BigThreeSection />,
     adsense_middle: <AdSenseBanner slotId="placeholder-1" />,
     categories: <CategoriesSection />,
-    forum: <ForumSection />,
     news: <NewsSection />,
+    // forum: <ForumSection />,  <-- REMOVED from dynamic map to place explicitly
   };
 
   return (
     <div className="min-h-screen flex flex-col relative bg-white animate-in fade-in duration-500">
       {seoHead}
-       
       <Header />
-       
       <main className="flex-grow">
         <HeroSection />
         <AppTicker />
         <HowItWorksSection /> 
 
+        {/* Neueste Vergleiche (News) */}
         {sections.find(s => s.id === 'news')?.enabled && <NewsSection />}
 
+        {/* Top 3 Vergleiche */}
         <BigThreeSection />
+
+        {/* KYRA UPDATE: Magazin Section hier fest verankert unter den Vergleichen */}
+        <ForumSection />
 
         {layout.seo_text && <HomeSEOText />}
 
+        {/* Dynamic Sections (Alles andere was noch übrig ist) */}
         {sections
           .filter(section => 
             section.enabled && 
@@ -145,7 +113,8 @@ const Index = () => {
             section.id !== 'trust' &&
             section.id !== 'big_three' &&
             section.id !== 'how_it_works' && 
-            section.id !== 'news' 
+            section.id !== 'news' &&
+            section.id !== 'forum' // Filter forum out to avoid duplicate
           )
           .map((section) => (
             <div key={section.id} className="w-full">
@@ -154,7 +123,6 @@ const Index = () => {
           ))
         }
       </main>
-
       <Footer />
       <ScrollToTop />
     </div>

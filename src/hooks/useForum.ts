@@ -45,6 +45,17 @@ export interface ForumCategory {
   is_active: boolean;
   created_at: string;
   thread_count?: number;
+  // SEO & Ads
+  seo_title?: string;
+  seo_description?: string;
+  ad_enabled?: boolean;
+  assigned_ad_id?: string;
+  ad_image_url?: string;
+  ad_link_url?: string;
+  ad_html_code?: string;
+  ad_headline?: string;
+  ad_subheadline?: string;
+  ad_cta_text?: string;
 }
 
 export interface ForumReply {
@@ -90,7 +101,6 @@ export const useForumCategories = (includeInactive: boolean = false) => {
   });
 };
 
-// KYRA FIX: Parameter includeInactive hinzugefügt, damit das Admin-Panel ALLE Beiträge (auch Offline) laden kann.
 export const useForumThreads = (categorySlug?: string, includeInactive: boolean = false) => {
   return useQuery({
     queryKey: ["forum-threads", categorySlug, includeInactive],
