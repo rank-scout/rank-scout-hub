@@ -12,11 +12,11 @@ import { AmazonBanner } from "@/components/ads/AmazonBanner";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
-import { Helmet } from "react-helmet-async"; 
-import { AppTicker } from "@/components/home/AppTicker"; 
-import { HowItWorksSection } from "@/components/home/HowItWorksSection"; 
-import { HomeSEOText } from "@/components/home/HomeSEOText"; 
-import { useForceSEO } from "@/hooks/useForceSEO"; 
+import { Helmet } from "react-helmet-async";
+import { AppTicker } from "@/components/home/AppTicker";
+import { HowItWorksSection } from "@/components/home/HowItWorksSection";
+import { HomeSEOText } from "@/components/home/HomeSEOText";
+import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
 
 const Index = () => {
@@ -24,16 +24,16 @@ const Index = () => {
 
   const analyticsCode = useGlobalAnalyticsCode();
   const { data: settings, isLoading: isLoadingSettings } = useSettings();
-  const siteTitle = useSiteTitle(); 
+  const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   const { layout, sections, isLoading: isLoadingLayout } = useHomeLayout();
 
-  const safeTitle = (typeof siteTitle === 'string' && siteTitle.length > 0) 
-    ? siteTitle 
+  const safeTitle = (typeof siteTitle === 'string' && siteTitle.length > 0)
+    ? siteTitle
     : "Rank-Scout | Dein Vergleichsportal";
     
-  const safeDescription = (typeof siteDescription === 'string' && siteDescription.length > 0) 
-    ? siteDescription 
+  const safeDescription = (typeof siteDescription === 'string' && siteDescription.length > 0)
+    ? siteDescription
     : "Finde die besten Tools, Software und Finanzprodukte im unabhängigen Vergleich.";
 
   const safeKeywords = (settings?.seo_keywords as string) || "Vergleich, Finanzen, Software, Testsieger, Rank-Scout, Erfahrungen, Test";
@@ -43,7 +43,7 @@ const Index = () => {
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => { setMinTimeElapsed(true); }, 500); 
+    const timer = setTimeout(() => { setMinTimeElapsed(true); }, 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -76,7 +76,7 @@ const Index = () => {
     hero: <HeroSection />,
     amazon_top: <AmazonBanner format="horizontal" />,
     trust: <AppTicker />,
-    how_it_works: <HowItWorksSection />, 
+    how_it_works: <HowItWorksSection />,
     big_three: <BigThreeSection />,
     adsense_middle: <AdSenseBanner slotId="placeholder-1" />,
     categories: <CategoriesSection />,
@@ -90,8 +90,9 @@ const Index = () => {
       <Header />
       <main className="flex-grow">
         <HeroSection />
-        <AppTicker />
-        <HowItWorksSection /> 
+        {/* VORHER: Hier war der AppTicker */}
+        
+        <HowItWorksSection />
 
         {/* Neueste Vergleiche (News) */}
         {sections.find(s => s.id === 'news')?.enabled && <NewsSection />}
@@ -102,17 +103,20 @@ const Index = () => {
         {/* KYRA UPDATE: Magazin Section hier fest verankert unter den Vergleichen */}
         <ForumSection />
 
+        {/* NACHHER: Jetzt hier unten platziert */}
+        <AppTicker />
+
         {layout.seo_text && <HomeSEOText />}
 
         {/* Dynamic Sections (Alles andere was noch übrig ist) */}
         {sections
-          .filter(section => 
-            section.enabled && 
-            section.id !== 'mascot' && 
-            section.id !== 'hero' && 
+          .filter(section =>
+            section.enabled &&
+            section.id !== 'mascot' &&
+            section.id !== 'hero' &&
             section.id !== 'trust' &&
             section.id !== 'big_three' &&
-            section.id !== 'how_it_works' && 
+            section.id !== 'how_it_works' &&
             section.id !== 'news' &&
             section.id !== 'forum' // Filter forum out to avoid duplicate
           )
