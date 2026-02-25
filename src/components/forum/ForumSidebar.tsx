@@ -83,7 +83,7 @@ export function ForumSidebar() {
         <p className="text-sm text-slate-400 mb-4 leading-relaxed">
           Platziere deine Produkte in unseren Premium-Vergleichen.
         </p>
-        <Link to="/kontakt">
+        <Link to="https://rank-scout.com/kontakt">
           <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold border-none">
             Jetzt anfragen
           </Button>
