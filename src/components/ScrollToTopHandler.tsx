@@ -2,61 +2,106 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 export const ScrollToTopHandler = () => {
-  const location = useLocation();
-  const navType = useNavigationType();
-  const lastPath = useRef(location.pathname);
+  const { pathname } = useLocation();
+  const navigationType = useNavigationType();
+  const scrollPosRef = useRef<{ [key: string]: number }>({});
+  
+  // WICHTIG: Wir merken uns, ob wir gerade versuchen wiederherzustellen
+  const isRestoring = useRef(false);
 
-  // 1. Manuelle Kontrolle
+  // 1. Browser-Automatik hart deaktivieren
   useEffect(() => {
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
     }
   }, []);
 
-  // 2. Speichern BEVOR der Pfad wechselt (Component Will Unmount Logik simuliert)
+  // 2. Position speichern (bevor wir die Seite verlassen)
   useEffect(() => {
-    const save = () => {
-      sessionStorage.setItem(`pos:${lastPath.current}`, window.scrollY.toString());
-    };
-    // Cleanup function runs before the effect runs again (on path change)
-    return () => {
-        save();
-        lastPath.current = location.pathname;
-    };
-  }, [location.pathname]);
-
-  // 3. Restore
-  useEffect(() => {
-    const key = `pos:${location.pathname}`;
-    
-    if (navType === "POP") {
-      const saved = sessionStorage.getItem(key);
-      if (saved) {
-        const y = parseInt(saved, 10);
-        
-        // Loop mit requestAnimationFrame (besser für Mobile Battery/Performance)
-        let frames = 0;
-        const forceScroll = () => {
-            // Nur scrollen, wenn wir noch nicht da sind
-            if (Math.abs(window.scrollY - y) > 10) {
-                window.scrollTo(0, y);
-            }
-            
-            frames++;
-            // Versuche es für ca 60 Frames (1 Sekunde)
-            if (frames < 60) {
-                requestAnimationFrame(forceScroll);
-            }
-        };
-        
-        forceScroll();
-        return;
+    const savePos = () => {
+      // Nur speichern, wenn wir NICHT gerade am Wiederherstellen sind
+      if (!isRestoring.current) {
+        const pos = window.scrollY;
+        sessionStorage.setItem(`scroll-pos-${pathname}`, pos.toString());
       }
-    } else {
-        // Bei PUSH/REPLACE hart nach oben
+    };
+
+    // Event Listener für "echtes" Scrollen
+    const onScroll = () => {
+        if(!isRestoring.current) {
+             // Debounce könnte hier hin, aber für Quick-Fix lassen wir es direkt
+             scrollPosRef.current[pathname] = window.scrollY;
+        }
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    // Cleanup: Beim Unmounten (Seite verlassen) final speichern
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      savePos();
+    };
+  }, [pathname]);
+
+  // 3. Die intelligente Wiederherstellung mit ResizeObserver
+  useEffect(() => {
+    const restoreScroll = async () => {
+      if (navigationType === "POP") {
+        const savedPos = sessionStorage.getItem(`scroll-pos-${pathname}`);
+        const yTarget = savedPos ? parseInt(savedPos, 10) : 0;
+
+        if (yTarget > 0) {
+          isRestoring.current = true; // LOCK: Nicht überschreiben beim Scrollen!
+
+          // Sofortiger Versuch (falls Daten im Cache sind)
+          window.scrollTo(0, yTarget);
+
+          // OBSERVER: Wir beobachten den Body. Wenn Supabase Daten lädt,
+          // wird der Body größer. Jedes Mal wenn er wächst, prüfen wir,
+          // ob wir jetzt zum Ziel scrollen können.
+          const observer = new ResizeObserver(() => {
+            const currentHeight = document.documentElement.scrollHeight;
+            const viewportHeight = window.innerHeight;
+
+            // Kann man überhaupt schon so weit scrollen?
+            if (currentHeight >= (yTarget + viewportHeight)) {
+               window.scrollTo(0, yTarget);
+               
+               // Wenn wir exakt da sind (oder sehr nah), sind wir fertig
+               if (Math.abs(window.scrollY - yTarget) < 50) {
+                   observer.disconnect();
+                   // Kurzer Timeout um sicherzugehen, dass keine Nachlader kommen
+                   setTimeout(() => { isRestoring.current = false; }, 200);
+               }
+            } else {
+                // Falls die Seite noch wächst aber wir noch nicht beim Target sind,
+                // scrollen wir so weit wie möglich nach unten
+                window.scrollTo(0, currentHeight);
+            }
+          });
+
+          observer.observe(document.body);
+
+          // Sicherheits-Timeout: Nach 3 Sekunden hören wir auf zu versuchen (Fallback)
+          const safetyTimeout = setTimeout(() => {
+            observer.disconnect();
+            isRestoring.current = false;
+          }, 3000);
+
+          return () => {
+            observer.disconnect();
+            clearTimeout(safetyTimeout);
+          };
+        }
+      } else {
+        // PUSH (Neue Seite) -> Nach oben
         window.scrollTo(0, 0);
-    }
-  }, [location.pathname, navType]);
+        isRestoring.current = false;
+      }
+    };
+
+    restoreScroll();
+  }, [pathname, navigationType]);
 
   return null;
 };
