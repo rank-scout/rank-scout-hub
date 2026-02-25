@@ -23,6 +23,7 @@ export function ForumSidebar() {
 
   return (
     <div className="space-y-6">
+      {/* TRENDING CARD */}
       <Card className="border-none shadow-md bg-gradient-to-br from-white to-slate-50 overflow-hidden">
         <div className="h-1 w-full bg-primary" />
         <CardHeader className="pb-3">
@@ -45,6 +46,7 @@ export function ForumSidebar() {
         </CardContent>
       </Card>
 
+      {/* RECENT CARD */}
       <Card className="border shadow-sm">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -75,19 +77,25 @@ export function ForumSidebar() {
         </CardContent>
       </Card>
 
-      {/* NEUER PARTNER BLOCK */}
+      {/* PARTNER BLOCK (FIXED) */}
       <div className="bg-[#0A0F1C] rounded-xl p-6 border border-slate-800 text-center relative overflow-hidden group">
+        {/* Background Effect */}
         <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        <Handshake className="w-10 h-10 text-orange-400 mx-auto mb-3" />
-        <h4 className="font-bold text-white mb-2">Partner werden?</h4>
-        <p className="text-sm text-slate-400 mb-4 leading-relaxed">
-          Platziere deine Produkte in unseren Premium-Vergleichen.
-        </p>
-        <Link to="https://rank-scout.com/kontakt">
-          <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold border-none">
-            Jetzt anfragen
-          </Button>
-        </Link>
+        
+        {/* Content Wrapper (Clickable Fix) */}
+        <div className="relative z-10">
+          <Handshake className="w-10 h-10 text-orange-400 mx-auto mb-3" />
+          <h4 className="font-bold text-white mb-2">Partner werden?</h4>
+          <p className="text-sm text-slate-400 mb-4 leading-relaxed">
+            Platziere deine Produkte in unseren Premium-Vergleichen.
+          </p>
+          
+          <Link to="/kontakt">
+            <Button className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold border-none cursor-pointer">
+              Jetzt anfragen
+            </Button>
+          </Link>
+        </div>
       </div>
     </div>
   );
