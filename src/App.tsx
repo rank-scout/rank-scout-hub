@@ -18,6 +18,7 @@ import GoRedirect from "./pages/GoRedirect";
 import NotFound from "./pages/NotFound";
 import Welcome from "./pages/Welcome";
 import C4FRegistration from "./components/external/C4FRegistration";
+import Contact from "./pages/Contact"; // NEU IMPORTIERT
 
 // Forum Pages
 import Forum from "./pages/Forum";
@@ -141,7 +142,7 @@ const App = () => (
               <ScoutyWrapper /> 
               
               <ScrollToTopHandler /> 
-              <ScrollToAnchor /> 
+               
               
               <Routes>
                 {/* Public Routes */}
@@ -152,7 +153,8 @@ const App = () => (
                 <Route path="/welcome" element={<Welcome />} />
                 <Route path="/test-register" element={<C4FRegistration />} />
                 
-                {/* NEUE PUBLIC ROUTE: Top Apps */}
+                {/* NEUE PUBLIC ROUTE: Kontakt & Top Apps */}
+                <Route path="/kontakt" element={<Contact />} />
                 <Route path="/top-apps" element={<TopApps />} />
                 
                 {/* Forum Routes */}
@@ -180,14 +182,10 @@ const App = () => (
                   <Route path="apps" element={<AdminApps />} />
                 </Route>
                 
-                {/* WICHTIG: Catch-All für Interne Seiten (Root-Level Slugs) 
-                    Dies muss VOR dem 404 stehen. Es fängt alles ab, was oben nicht definiert ist (z.B. /krypto-vergleich)
-                    und versucht es als Kategorie/Interne Seite zu laden. */}
+                {/* WICHTIG: Catch-All für Interne Seiten (Root-Level Slugs) */}
                 <Route path="/:slug" element={<CategoryDetail />} />
 
-                {/* 404 Not Found - Wenn auch CategoryDetail nichts findet (oder es kein Slug ist), 
-                    wird dort ggf. Fehler angezeigt oder wir landen hier, falls Route nicht matcht. 
-                    Da /:slug fast alles matcht, regelt CategoryDetail.tsx jetzt oft den 404er Inhalt für ungültige Slugs. */}
+                {/* 404 Not Found */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

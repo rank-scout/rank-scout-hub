@@ -1,35 +1,32 @@
 import { useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
-export function ScrollToTopHandler() {
+export const ScrollToTopHandler = () => {
   const { pathname, hash } = useLocation();
-  const navigationType = useNavigationType(); // Sagt uns: PUSH, REPLACE oder POP
+  const navigationType = useNavigationType();
 
   useEffect(() => {
-    // Wenn der User auf den "Zurück"-Button im Browser klickt (POP),
-    // brechen wir hier ab und lassen den Browser die Scroll-Position wiederherstellen.
+    // Wenn der User "Zurück" drückt (POP), stoppen wir hier sofort.
+    // Der Browser stellt die Position dann automatisch wieder her.
     if (navigationType === "POP") {
       return;
     }
 
-    // Szenario 1: Es gibt einen Anker (z.B. #forum)
+    // Wenn ein Anker-Link (#...) vorhanden ist, scrolle dorthin
     if (hash) {
-      // Das # entfernen, um die ID zu bekommen
       const id = hash.replace("#", "");
       const element = document.getElementById(id);
-      
       if (element) {
-        // Kleiner Timeout hilft, falls React das Element erst noch rendern muss
         setTimeout(() => {
           element.scrollIntoView({ behavior: "smooth", block: "start" });
         }, 100);
+        return;
       }
-    } 
-    // Szenario 2: Normaler Seitenwechsel (Neuer Klick) ohne Anker -> Nach oben
-    else {
-      window.scrollTo(0, 0);
     }
-  }, [pathname, hash, navigationType]); 
+
+    // Nur bei einem NEUEN Link-Klick (PUSH/REPLACE) nach oben scrollen
+    window.scrollTo(0, 0);
+  }, [pathname, hash, navigationType]);
 
   return null;
-}
+};

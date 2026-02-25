@@ -196,9 +196,6 @@ export default function ForumThread() {
                     <span className="hidden sm:inline">Zurück zur Übersicht</span>
                     <span className="sm:hidden">Zurück</span>
                  </Link>
-                 <div className="text-[10px] md:text-xs font-bold text-slate-300 flex items-center gap-1.5 bg-white/10 px-3 md:px-4 py-1 md:py-1.5 rounded-full border border-white/5 shadow-inner">
-                    <span className="text-white text-xs md:text-sm">{thread.views}</span> Aufrufe
-                 </div>
             </div>
         </div>
         

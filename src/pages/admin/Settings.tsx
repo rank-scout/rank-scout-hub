@@ -19,7 +19,7 @@ import {
   Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
   CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
   Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText,
-  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type, Rocket
+  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type, Rocket, X
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
@@ -476,7 +476,25 @@ export default function AdminSettings() {
     newLinks[index] = { ...newLinks[index], [field]: value };
     setFooterConfig({ ...footerConfig, popular_links: newLinks });
   };
+// --- HEADER SUB-LINKS LOGIC ---
+  const addSubLink = (parentIdx: number) => {
+    const newLinks = [...(headerConfig.nav_links || [])];
+    if (!newLinks[parentIdx].items) newLinks[parentIdx].items = [];
+    newLinks[parentIdx].items.push({ label: "Neuer Unterpunkt", url: "/" });
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
+  };
 
+  const removeSubLink = (parentIdx: number, subIdx: number) => {
+    const newLinks = [...(headerConfig.nav_links || [])];
+    newLinks[parentIdx].items.splice(subIdx, 1);
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
+  };
+
+  const updateSubLink = (parentIdx: number, subIdx: number, field: string, value: string) => {
+    const newLinks = [...(headerConfig.nav_links || [])];
+    newLinks[parentIdx].items[subIdx] = { ...newLinks[parentIdx].items[subIdx], [field]: value };
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
+  };
   const saveHeader = () => saveSetting("header_config", headerConfig);
   const saveFooter = () => saveSetting("footer_config", footerConfig);
 
@@ -856,7 +874,7 @@ export default function AdminSettings() {
         </TabsContent>
 
         {/* ==============================================================
-            NAVIGATION TAB
+            NAVIGATION TAB (MIT SUB-MENUS)
         ============================================================== */}
         <TabsContent value="navigation" className="space-y-6 mt-6">
           <Card className="bg-card border-border shadow-sm">
@@ -876,21 +894,63 @@ export default function AdminSettings() {
             <CardHeader><CardTitle className="flex items-center gap-2"><MenuIcon className="w-5 h-5 text-primary" /> Header Navigation</CardTitle></CardHeader>
             <CardContent className="space-y-6">
               
-              <div className="space-y-4">
-                 <h4 className="font-medium text-sm text-slate-500 mb-2">Desktop Navigation</h4>
+              <div className="space-y-6">
+                 <h4 className="font-medium text-sm text-slate-500 mb-2">Desktop & Mobile Menüstruktur</h4>
                  {headerConfig.nav_links?.map((link: any, idx: number) => (
-                    <div key={idx} className="flex gap-3 items-end">
-                       <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateNavLink(idx, 'label', e.target.value)} /></div>
-                       <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateNavLink(idx, 'url', e.target.value)} /></div>
-                       <Button variant="ghost" size="icon" onClick={() => removeNavLink(idx)} className="mb-0.5"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                    <div key={idx} className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-900/50">
+                        {/* Haupt-Link */}
+                        <div className="flex gap-3 items-end mb-4">
+                            <div className="flex-1 space-y-1"><Label className="text-xs font-bold text-primary">Haupt-Link</Label><Input value={link.label} onChange={e => updateNavLink(idx, 'label', e.target.value)} className="bg-white dark:bg-slate-950 font-bold" /></div>
+                            <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateNavLink(idx, 'url', e.target.value)} className="bg-white dark:bg-slate-950" /></div>
+                            <Button variant="ghost" size="icon" onClick={() => removeNavLink(idx)} className="mb-0.5 hover:bg-red-100 hover:text-red-600"><Trash2 className="w-4 h-4" /></Button>
+                        </div>
+                        
+                        {/* Sub-Links Bereich (MEGA MENU EDITOR) */}
+                            <div className="pl-4 ml-2 border-l-2 border-slate-200 dark:border-slate-700 space-y-3">
+                                <Label className="text-xs text-slate-400 uppercase tracking-widest">Untermenü (Mega Dropdown)</Label>
+                                {link.items?.map((subLink: any, subIdx: number) => (
+                                    <div key={subIdx} className="flex flex-col gap-2 p-3 bg-white dark:bg-slate-950 border rounded-lg mb-2 shadow-sm relative group/edit">
+                                        <div className="flex gap-2 items-center justify-between mb-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-3 h-3 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{subIdx + 1}</div>
+                                                <span className="text-xs font-semibold text-slate-500">Eintrag #{subIdx + 1}</span>
+                                            </div>
+                                            <Button variant="ghost" size="sm" onClick={() => removeSubLink(idx, subIdx)} className="h-6 w-6 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50"><X className="w-3 h-3" /></Button>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] text-slate-500 uppercase">Titel *</Label>
+                                                <Input value={subLink.label} onChange={e => updateSubLink(idx, subIdx, 'label', e.target.value)} className="h-8 text-xs font-medium" placeholder="z.B. VPN Vergleich" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] text-slate-500 uppercase">Ziel-URL *</Label>
+                                                <Input value={subLink.url} onChange={e => updateSubLink(idx, subIdx, 'url', e.target.value)} className="h-8 text-xs font-mono" placeholder="/kategorien/vpn" />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] text-slate-500 uppercase">Bild/Icon URL (Optional)</Label>
+                                                <div className="flex gap-2">
+                                                    <Input value={subLink.image_url || ""} onChange={e => updateSubLink(idx, subIdx, 'image_url', e.target.value)} className="h-8 text-xs" placeholder="https://..." />
+                                                    {subLink.image_url && <div className="w-8 h-8 rounded border bg-slate-50 flex-shrink-0 overflow-hidden"><img src={subLink.image_url} className="w-full h-full object-cover" /></div>}
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-[10px] text-slate-500 uppercase">Beschreibung (Optional)</Label>
+                                                <Input value={subLink.description || ""} onChange={e => updateSubLink(idx, subIdx, 'description', e.target.value)} className="h-8 text-xs" placeholder="z.B. Top 10 Anbieter 2026" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                <Button variant="outline" size="sm" onClick={() => addSubLink(idx)} className="mt-2 text-xs h-8 w-full border-dashed"><Plus className="w-3 h-3 mr-1" /> Weiteren Unterpunkt hinzufügen</Button>
+                            </div>
                     </div>
                  ))}
-                 <Button variant="outline" size="sm" onClick={addNavLink}><Plus className="w-3 h-3 mr-2" /> Link hinzufügen</Button>
+                 <Button onClick={addNavLink} className="w-full border-dashed border-2 bg-transparent text-slate-500 hover:bg-slate-50 hover:text-primary"><Plus className="w-4 h-4 mr-2" /> Neuen Haupt-Menüpunkt anlegen</Button>
               </div>
 
-              {/* ERWEITERT: Steuerung der mobilen Hub Links inkl. "Bald verfügbar" */}
-              <div className="pt-6 border-t border-border space-y-4">
-                 <h4 className="font-medium text-sm text-slate-500 mb-2">Mobile Hub Links (Grid)</h4>
+              {/* Mobile Hub Links */}
+              <div className="pt-8 mt-8 border-t border-border space-y-4">
+                 <h4 className="font-medium text-sm text-slate-500 mb-2">Mobile Hub Grid (App-Style)</h4>
                  {headerConfig.hub_links?.map((link: any, idx: number) => (
                     <div key={idx} className="flex flex-col md:flex-row gap-3 md:items-end p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100">
                        <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateHubLink(idx, 'label', e.target.value)} /></div>
@@ -916,7 +976,7 @@ export default function AdminSettings() {
                     <div className="space-y-2"><Label>Button Ziel</Label><Input value={headerConfig.button_url} onChange={e => setHeaderConfig({...headerConfig, button_url: e.target.value})} /></div>
                  </div>
               </div>
-              <Button onClick={saveHeader} className="w-full mt-4 bg-primary"><Save className="w-4 h-4 mr-2" /> Header Speichern</Button>
+              <Button onClick={saveHeader} className="w-full mt-4 bg-primary"><Save className="w-4 h-4 mr-2" /> Header Konfiguration Speichern</Button>
             </CardContent>
           </Card>
 

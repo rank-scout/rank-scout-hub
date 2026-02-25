@@ -75,6 +75,17 @@ export const Footer = () => {
           <div>
             <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Rechtliches</h4>
             <ul className="space-y-3">
+              {/* NEUER KONTAKT LINK */}
+              <li>
+                  <Link 
+                    to="/kontakt" 
+                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                  >
+                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                    Kontakt
+                  </Link>
+              </li>
+
               {legalLinks.map((link: any, i: number) => (
                  <li key={i}>
                   <Link 
