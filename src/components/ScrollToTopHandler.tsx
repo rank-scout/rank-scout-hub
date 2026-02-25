@@ -1,81 +1,58 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 export const ScrollToTopHandler = () => {
   const { pathname, hash } = useLocation();
   const navigationType = useNavigationType();
   
-  // Flag, um zu verhindern, dass wir "0" speichern, während wir noch versuchen wiederherzustellen
-  const isRestoring = useRef(false);
+  // Ref für die aktuelle Position, damit wir sie beim Cleanup haben
+  const scrollPosRef = useRef(0);
 
-  // 1. Browser-Automatik killen
-  useEffect(() => {
-    if ('scrollRestoration' in window.history) {
-      window.history.scrollRestoration = 'manual';
-    }
+  // Scroll-Position tracken (ohne State-Rerender)
+  useLayoutEffect(() => {
+    const updatePos = () => {
+      scrollPosRef.current = window.scrollY;
+    };
+    window.addEventListener("scroll", updatePos);
+    return () => window.removeEventListener("scroll", updatePos);
   }, []);
 
-  // 2. Scroll-Position speichern (aber NICHT während des Wiederherstellens)
-  useEffect(() => {
-    const handleScroll = () => {
-      if (isRestoring.current) return; // Blockiere Speichern beim Laden
-      
-      // Speichere unter dem spezifischen Pfad
-      sessionStorage.setItem(`scroll-pos-${pathname}`, window.scrollY.toString());
+  // Speichern beim Cleanup (Unmount)
+  useLayoutEffect(() => {
+    return () => {
+      sessionStorage.setItem(`scroll-pos-${pathname}`, scrollPosRef.current.toString());
     };
-
-    // 'passive' für Performance
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
   }, [pathname]);
 
-  // 3. Die aggressive "Brute Force" Wiederherstellung
-  useEffect(() => {
-    // A: Bei Anker-Links (#)
-    if (hash) {
-      const id = hash.replace("#", "");
-      const element = document.getElementById(id);
-      if (element) {
-        setTimeout(() => element.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
-        return;
-      }
+  // Restore Logik
+  useLayoutEffect(() => {
+    if ("scrollRestoration" in window.history) {
+      window.history.scrollRestoration = "manual";
     }
 
-    // B: Wenn User "Zurück" drückt (POP)
+    if (hash) {
+      const element = document.getElementById(hash.replace("#", ""));
+      if (element) element.scrollIntoView();
+      return;
+    }
+
     if (navigationType === "POP") {
       const savedPos = sessionStorage.getItem(`scroll-pos-${pathname}`);
-      
       if (savedPos) {
-        const yTarget = parseInt(savedPos, 10);
-        isRestoring.current = true; // LOCK: Nicht speichern, wir arbeiten noch!
-
-        // INTERVALL: Wir hämmern den Scroll-Befehl alle 50ms rein, bis es klappt
-        // (Das fängt den Moment ab, wo Supabase die Daten noch lädt)
-        let attempts = 0;
-        const intervalId = setInterval(() => {
-          attempts++;
-          
-          // Versuch zu scrollen
-          window.scrollTo(0, yTarget);
-
-          // Check: Sind wir da? (Toleranz von 10px) oder Timeout (nach 2 Sek)
-          const arrived = Math.abs(window.scrollY - yTarget) < 20;
-          const pageIsTooShortButWeTried = document.documentElement.scrollHeight < yTarget && attempts > 40;
-
-          if (arrived || pageIsTooShortButWeTried || attempts > 50) {
-            clearInterval(intervalId);
-            // Schloss wieder öffnen nach kurzem Delay
-            setTimeout(() => { isRestoring.current = false; }, 200);
-          }
-        }, 50);
-
+        const y = parseInt(savedPos, 10);
+        // Sofort hart setzen vor dem Paint
+        window.scrollTo(0, y);
+        
+        // Sicherungsschuss nach kurzem Delay für Mobile Safari
+        requestAnimationFrame(() => {
+             window.scrollTo(0, y);
+        });
         return;
       }
     }
 
-    // C: Normale Navigation -> Nach oben
+    // PUSH
     window.scrollTo(0, 0);
-    
   }, [pathname, hash, navigationType]);
 
   return null;
