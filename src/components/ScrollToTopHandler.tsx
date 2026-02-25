@@ -2,82 +2,61 @@ import { useEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
 export const ScrollToTopHandler = () => {
-  const { pathname, hash } = useLocation();
-  const navigationType = useNavigationType();
-  const isRestoring = useRef(false);
+  const location = useLocation();
+  const navType = useNavigationType();
+  const lastPath = useRef(location.pathname);
 
-  // 1. Browser-Automatik deaktivieren
+  // 1. Manuelle Kontrolle
   useEffect(() => {
-    if ("scrollRestoration" in window.history) {
-      window.history.scrollRestoration = "manual";
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
     }
   }, []);
 
-  // 2. Speichern beim Verlassen (Besser als Scroll-Listener!)
-  // Wir speichern die Position, kurz bevor sich der Pfad ändert.
+  // 2. Speichern BEVOR der Pfad wechselt (Component Will Unmount Logik simuliert)
   useEffect(() => {
-    const savePos = () => {
-      if (!isRestoring.current) {
-        sessionStorage.setItem(`scroll-pos-${pathname}`, window.scrollY.toString());
-      }
+    const save = () => {
+      sessionStorage.setItem(`pos:${lastPath.current}`, window.scrollY.toString());
     };
-    // Speichern bevor die Komponente unmountet (also Seite gewechselt wird)
-    return () => savePos();
-  }, [pathname]);
+    // Cleanup function runs before the effect runs again (on path change)
+    return () => {
+        save();
+        lastPath.current = location.pathname;
+    };
+  }, [location.pathname]);
 
-  // 3. Intelligente Wiederherstellung
+  // 3. Restore
   useEffect(() => {
-    const handleRestore = async () => {
-      // A: Hash / Anker
-      if (hash) {
-        const id = hash.replace("#", "");
-        const element = document.getElementById(id);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "start" });
-        }
+    const key = `pos:${location.pathname}`;
+    
+    if (navType === "POP") {
+      const saved = sessionStorage.getItem(key);
+      if (saved) {
+        const y = parseInt(saved, 10);
+        
+        // Loop mit requestAnimationFrame (besser für Mobile Battery/Performance)
+        let frames = 0;
+        const forceScroll = () => {
+            // Nur scrollen, wenn wir noch nicht da sind
+            if (Math.abs(window.scrollY - y) > 10) {
+                window.scrollTo(0, y);
+            }
+            
+            frames++;
+            // Versuche es für ca 60 Frames (1 Sekunde)
+            if (frames < 60) {
+                requestAnimationFrame(forceScroll);
+            }
+        };
+        
+        forceScroll();
         return;
       }
-
-      // B: Back-Button (POP)
-      if (navigationType === "POP") {
-        const savedPos = sessionStorage.getItem(`scroll-pos-${pathname}`);
-        const yTarget = savedPos ? parseInt(savedPos, 10) : 0;
-
-        if (yTarget > 0) {
-          isRestoring.current = true;
-          
-          let attempts = 0;
-          const maxAttempts = 50; // ca. 2.5 Sekunden
-
-          const checkAndScroll = setInterval(() => {
-            attempts++;
-            
-            // WICHTIG: Prüfen, ob die Seite überhaupt schon lang genug ist!
-            const currentDocHeight = document.documentElement.scrollHeight;
-            const viewportHeight = window.innerHeight;
-
-            // Wir können nur scrollen, wenn der Content da ist
-            if (currentDocHeight >= yTarget + viewportHeight || attempts > 40) {
-                window.scrollTo(0, yTarget);
-            }
-
-            // Haben wir das Ziel erreicht? (Mit Toleranz für Mobile Bars)
-            if (Math.abs(window.scrollY - yTarget) < 50 || attempts >= maxAttempts) {
-              clearInterval(checkAndScroll);
-              isRestoring.current = false;
-            }
-          }, 50);
-          
-          return; 
-        }
-      }
-
-      // C: Neuer Seitenaufruf (PUSH)
-      window.scrollTo(0, 0);
-    };
-
-    handleRestore();
-  }, [pathname, hash, navigationType]);
+    } else {
+        // Bei PUSH/REPLACE hart nach oben
+        window.scrollTo(0, 0);
+    }
+  }, [location.pathname, navType]);
 
   return null;
 };
