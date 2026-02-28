@@ -47,7 +47,16 @@ const ScriptAd = ({ code }: { code: string }) => {
   }, [code]);
   return (<div className="w-full flex justify-center bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-4"><iframe ref={iframeRef} title="Advertisement" style={{ width: '100%', height: '100%', minHeight: '250px', border: 'none' }} scrolling="no" /></div>);
 };
-
+const generateExcerpt = (htmlString: string) => {
+  if (!htmlString) return "";
+  const doc = new DOMParser().parseFromString(htmlString, 'text/html');
+  // Entfernt Code-Blöcke, Styles und Scripte komplett aus dem virtuellen DOM
+  const elementsToRemove = doc.querySelectorAll('script, style, pre, code');
+  elementsToRemove.forEach(el => el.remove());
+  
+  const text = doc.body.textContent || "";
+  return text.replace(/\s+/g, ' ').trim();
+};
 export default function Forum() {
   const { categorySlug } = useParams();
   const navigate = useNavigate();
@@ -345,8 +354,8 @@ export default function Forum() {
                               {thread.title}
                             </h3>
                             <p className="text-slate-500 text-base line-clamp-2 mb-5 leading-relaxed">
-                              {thread.content.replace(/<[^>]*>/g, "").substring(0, 180)}...
-                            </p>
+  {generateExcerpt(thread.content).substring(0, 180)}...
+</p>
                             
                             {/* Footer Meta */}
                             <div className="flex items-center justify-between text-xs font-bold text-slate-400 border-t border-slate-100 pt-4 mt-auto">

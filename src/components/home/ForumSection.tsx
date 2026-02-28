@@ -16,7 +16,7 @@ import {
 
 export function ForumSection() {
   
-  // Wir holen die neuesten Beiträge (Limit erhöht für Slider-Futter)
+  // Wir holen die neuesten Beiträge (Limit für Slider-Futter)
   const { data: latestPosts, isLoading } = useQuery({
     queryKey: ["home-latest-posts"],
     queryFn: async () => {
@@ -36,7 +36,7 @@ export function ForumSection() {
         .eq("is_active", true)
         .eq("status", "published")
         .order('created_at', { ascending: false })
-        .limit(6); 
+        .limit(9); // Limit leicht erhöht für ein besseres Slider-Erlebnis am Desktop
       
       if (error) throw error;
       return data;
@@ -63,7 +63,7 @@ export function ForumSection() {
             <img 
               src={post.featured_image_url} 
               alt={post.title}
-              className="w-full h-full object-cover transition-transform duration-700" 
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
               loading="lazy"
             />
           ) : (
@@ -139,8 +139,8 @@ export function ForumSection() {
   if (!latestPosts || latestPosts.length === 0) return null;
 
   return (
-    <section className="py-24 bg-slate-50 border-t border-slate-200 overflow-hidden">
-      <div className="container mx-auto px-4">
+    <section className="py-24 bg-slate-50 border-t border-slate-200 overflow-hidden relative">
+      <div className="container mx-auto px-4 relative z-10">
         
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-4">
           <div className="max-w-2xl">
@@ -160,23 +160,16 @@ export function ForumSection() {
           </Button>
         </div>
 
-        {/* --- DESKTOP VIEW (Grid ab LG) --- */}
-        <div className="hidden lg:grid grid-cols-3 gap-8">
-          {latestPosts.slice(0, 3).map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-
-        {/* --- MOBILE/TABLET VIEW (Slider 1:1 NewsSection Style) --- */}
-        <div className="block lg:hidden">
+        {/* --- UNIFIED SLIDER (Mobile & Desktop) --- */}
+        <div className="relative px-0 lg:px-10 xl:px-14 w-full">
           <Carousel
             opts={{ align: "start", loop: false }}
             className="w-full pb-4"
           >
             <CarouselContent className="-ml-4">
               {latestPosts.map((post) => (
-                // Exakte Basis-Werte aus der NewsSection für identisches Swipe-Gefühl
-                <CarouselItem key={post.id} className="pl-4 basis-[85%] sm:basis-[60%] md:basis-[45%] h-full">
+                // lg:basis-1/3 sichert exakt 3 Items nebeneinander am Desktop
+                <CarouselItem key={post.id} className="pl-4 basis-[85%] sm:basis-[60%] md:basis-[45%] lg:basis-1/3 h-full">
                   <div className="h-full py-2"> 
                     <PostCard post={post} />
                   </div>
@@ -184,8 +177,14 @@ export function ForumSection() {
               ))}
             </CarouselContent>
             
-            {/* Controls unter dem Slider (1:1 NewsSection) */}
-            <div className="flex justify-center gap-4 mt-8">
+            {/* Desktop Controls (Seitlich ausgelagert für bestes UI) */}
+            <div className="hidden lg:block">
+              <CarouselPrevious className="absolute -left-4 xl:-left-8 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
+              <CarouselNext className="absolute -right-4 xl:-right-8 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
+            </div>
+
+            {/* Mobile Controls (Unter dem Slider platziert) */}
+            <div className="flex lg:hidden justify-center gap-4 mt-8">
               <CarouselPrevious className="static translate-y-0 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 w-14 h-14 shadow-sm rounded-xl transition-all" />
               <CarouselNext className="static translate-y-0 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 w-14 h-14 shadow-sm rounded-xl transition-all" />
             </div>
