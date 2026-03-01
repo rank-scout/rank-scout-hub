@@ -11,19 +11,20 @@ export default {
   prefix: "",
   // KYRA: Safelist sorgt dafür, dass dynamische Klassen aus der DB nicht gelöscht werden
   safelist: [
-    'bg-slate-900',
-    'text-[#FF8400]',
-    'border-[#FF8400]',
-    'bg-[#FF8400]',
-    'hover:bg-[#FF8400]/90',
-    'text-orange-50',
-    'bg-orange-50',
-    'border-orange-100',
-    'prose',
-    'prose-lg',
-    'prose-xl',
-    'prose-slate',
-    'max-w-none'
+    // Bestehende Orange-Klassen
+    'bg-slate-900', 'text-[#FF8400]', 'border-[#FF8400]', 'bg-[#FF8400]', 
+    'hover:bg-[#FF8400]/90', 'text-orange-50', 'bg-orange-50', 'border-orange-100',
+    'prose', 'prose-lg', 'prose-xl', 'prose-slate', 'max-w-none',
+    
+    // NEU: Rank-Scout Content-Hub Standard-Klassen (Sicherstellung für Supabase)
+    'bg-slate-50', 'bg-slate-100',
+    'text-slate-500', 'text-slate-600', 'text-slate-700', 'text-slate-800', 'text-slate-950',
+    'bg-blue-50', 'bg-blue-100', 'bg-blue-600', 'bg-blue-700', 'bg-blue-900',
+    'text-blue-100', 'text-blue-200', 'text-blue-600', 'text-blue-800', 'text-blue-900',
+    'border-blue-100', 'border-blue-200', 'border-blue-500', 'border-blue-800',
+    
+    // NEU: Unsere exakten Brand-Klassen
+    'text-rsblue', 'bg-rsblue', 'border-rsblue', 'text-[#003366]', 'bg-[#003366]'
   ],
   theme: {
     container: {
@@ -39,6 +40,11 @@ export default {
         body: ['Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
+        // NEU: Das offizielle Rank-Scout Blau
+        rsblue: {
+          DEFAULT: '#003366',
+          light: '#e6f0fa', // Ein perfekt passendes, sehr helles Blau für Hintergründe
+        },
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

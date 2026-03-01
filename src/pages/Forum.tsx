@@ -321,15 +321,16 @@ export default function Forum() {
                           {thread.is_pinned && <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500" />}
                           
                           {/* BILD / THUMBNAIL (Wenn vorhanden) */}
-                          {thread.featured_image_url && (
-                             <div className="w-full md:w-48 h-48 md:h-auto flex-shrink-0 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-                                <img 
-                                  src={thread.featured_image_url} 
-                                  alt={thread.title} 
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                                />
-                             </div>
-                          )}
+{thread.featured_image_url && (
+   <div className="w-full md:w-[280px] lg:w-[360px] aspect-[3/2] flex-shrink-0 rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 relative">
+      <img 
+        src={thread.featured_image_url} 
+        alt={thread.title} 
+        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+        loading="lazy"
+      />
+   </div>
+)}
 
                           {/* AVATAR (Nur wenn kein Bild da ist) */}
                           {!thread.featured_image_url && (
