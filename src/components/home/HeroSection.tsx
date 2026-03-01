@@ -23,6 +23,13 @@ export const HeroSection = () => {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsSearchFocused(false);
       }
+// Diese Funktion sucht die Section mit der ID "bereiche" und scrollt weich dorthin
+const scrollToComparison = () => {
+  const target = document.getElementById('bereiche');
+  if (target) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+};
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -109,6 +116,7 @@ export const HeroSection = () => {
 
           <div ref={searchRef} className="relative group max-w-2xl mx-auto animate-fade-in animation-delay-300 z-[100]">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-secondary/40 to-blue-500/40 rounded-full blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+
             
             <form onSubmit={handleSearch} className="relative flex flex-col sm:flex-row gap-2 p-2 bg-primary/95 border border-white/20 backdrop-blur-xl rounded-2xl sm:rounded-full shadow-[0_8px_32px_rgba(0,0,0,0.5)] transition-all duration-300 focus-within:border-white/40 hover:border-white/30">
               <div className="flex-grow flex items-center px-4 h-14">
