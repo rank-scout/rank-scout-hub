@@ -68,7 +68,7 @@ export function ForumSection() {
         <div className="relative aspect-[3/2] overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-inner">
           {post.featured_image_url ? (
             <img 
-              src={post.featured_image_url} 
+              src={optimizeImageUrl(post.featured_image_url, 600)} 
               alt={post.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
               loading="lazy"
