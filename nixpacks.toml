@@ -3,5 +3,11 @@ providers = ["node"]
 [variables]
 NIXPACKS_NODE_VERSION = "22"
 
+[phases.install]
+cmds = ["npm install"]
+
 [phases.build]
-cmds = ["npm install", "npm run build"]
+cmds = ["npm run build"]
+
+[phases.start]
+cmds = ["npx serve -s dist"]
