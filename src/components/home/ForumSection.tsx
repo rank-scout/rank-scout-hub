@@ -50,7 +50,14 @@ export function ForumSection() {
       year: "numeric"
     });
   };
-
+// KYRA UPDATE: Supabase Bild-Kompressor
+  const optimizeImageUrl = (url: string, width = 600) => {
+    if (!url) return "";
+    if (url.includes(".supabase.co/storage/v1/object/public/")) {
+      return url.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=80`;
+    }
+    return url;
+  };
   // Die Karte als Komponente für Wiederverwendung
   const PostCard = ({ post }: { post: any }) => (
     <Link to={`/forum/${post.slug}`} className="group h-full block">
@@ -61,7 +68,7 @@ export function ForumSection() {
         <div className="relative aspect-[3/2] overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-inner">
           {post.featured_image_url ? (
             <img 
-              src={post.featured_image_url} 
+              src={optimizeImageUrl(post.featured_image_url, 600)} 
               alt={post.title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
               loading="lazy"

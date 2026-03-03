@@ -44,10 +44,19 @@ const getThemeClasses = (theme: string) => {
 
 const getOptimizedImageUrl = (url: string | undefined, title: string, width = 800) => {
   const finalUrl = url && url.trim() !== "" ? url : (CATEGORY_IMAGES[title] || "");
+  
+  // 1. Unsplash Optimierung (War schon da)
   if (finalUrl.includes("images.unsplash.com")) {
     const separator = finalUrl.includes("?") ? "&" : "?";
     return `${finalUrl}${separator}w=${width}&q=80&auto=format&fit=crop`;
   }
+  
+  // 2. NEU: Supabase Image Transformation
+  if (finalUrl.includes(".supabase.co/storage/v1/object/public/")) {
+    // Wandelt den normalen Pfad in den Render-Pfad um und erzwingt WebP/Kompression
+    return finalUrl.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=80`;
+  }
+  
   return finalUrl;
 };
 
