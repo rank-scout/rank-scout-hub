@@ -8,3 +8,6 @@ cmds = ["npm install"]
 
 [phases.build]
 cmds = ["npm run build"]
+
+[phases.start]
+cmd = "npx serve@latest -s dist"
