@@ -9,5 +9,6 @@ cmds = ["npm install"]
 [phases.build]
 cmds = ["npm run build"]
 
-[phases.start]
-cmds = ["npx serve -s dist"]
+[start]
+# Wir kopieren deine Konfiguration über die Standard-Nginx-Konfig
+cmd = "cp nginx.conf /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
