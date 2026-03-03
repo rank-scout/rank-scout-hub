@@ -13,25 +13,28 @@ export const AppTicker = () => {
   
   // Refs & States für das Hybrid-Scroll-System
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+const contentWidthRef = useRef<number>(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [scrollLeft, setScrollLeft] = useState(0);
 
-  // Auto-Scroll Logik
+  // Optimierte Auto-Scroll Logik
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container || apps?.length === 0) return;
 
+    // Wir messen die Breite nur EINMAL, wenn die Daten geladen sind
+    contentWidthRef.current = container.scrollWidth;
+
     let animationFrameId: number;
 
     const scroll = () => {
-      // Wenn nicht pausiert und nicht gerade mit der Maus gezogen wird -> Fahren!
       if (!isPaused && !isDragging) {
-        container.scrollLeft += 1.2; // Speed des Tickers (höher = schneller)
+        container.scrollLeft += 1.2; // Speed
         
-        // Nahtloser Reset für Endlos-Loop
-        if (container.scrollLeft >= container.scrollWidth / 2) {
+        // Nutze den gespeicherten Wert aus dem Ref statt jedes Mal neu zu messen
+        if (container.scrollLeft >= contentWidthRef.current / 2) {
           container.scrollLeft = 0;
         }
       }

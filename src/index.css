@@ -1,5 +1,6 @@
 /* --- LOKALE FONTS (Kyra Performance Fix) --- */
-/* inter-regular - latin */
+
+/* Inter (Body) - v20 */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -7,7 +8,6 @@
   font-display: swap;
   src: url('/fonts/inter-v20-latin-regular.woff2') format('woff2');
 }
-/* inter-500 - latin */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -15,7 +15,6 @@
   font-display: swap;
   src: url('/fonts/inter-v20-latin-500.woff2') format('woff2');
 }
-/* inter-600 - latin */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -23,7 +22,6 @@
   font-display: swap;
   src: url('/fonts/inter-v20-latin-600.woff2') format('woff2');
 }
-/* inter-700 - latin */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -31,7 +29,6 @@
   font-display: swap;
   src: url('/fonts/inter-v20-latin-700.woff2') format('woff2');
 }
-/* inter-800 - latin */
 @font-face {
   font-family: 'Inter';
   font-style: normal;
@@ -40,37 +37,37 @@
   src: url('/fonts/inter-v20-latin-800.woff2') format('woff2');
 }
 
-/* outfit-500 - latin */
+/* Outfit (Headlines) - BRIDGE FIX
+   Wir nutzen Inter-Dateien für den Namen 'Outfit', damit keine 404-Fehler entstehen,
+   bis du die echten Outfit-Files hinzufügst.
+*/
 @font-face {
   font-family: 'Outfit';
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url('/fonts/outfit-v11-latin-500.woff2') format('woff2');
+  src: url('/fonts/inter-v20-latin-500.woff2') format('woff2');
 }
-/* outfit-600 - latin */
 @font-face {
   font-family: 'Outfit';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/fonts/outfit-v11-latin-600.woff2') format('woff2');
+  src: url('/fonts/inter-v20-latin-600.woff2') format('woff2');
 }
-/* outfit-700 - latin */
 @font-face {
   font-family: 'Outfit';
   font-style: normal;
   font-weight: 700;
   font-display: swap;
-  src: url('/fonts/outfit-v11-latin-700.woff2') format('woff2');
+  src: url('/fonts/inter-v20-latin-700.woff2') format('woff2');
 }
-/* outfit-800 - latin */
 @font-face {
   font-family: 'Outfit';
   font-style: normal;
   font-weight: 800;
   font-display: swap;
-  src: url('/fonts/outfit-v11-latin-800.woff2') format('woff2');
+  src: url('/fonts/inter-v20-latin-800.woff2') format('woff2');
 }
 
 @tailwind base;
@@ -79,17 +76,13 @@
 
 @layer base {
   :root {
-    /* --- BASIS FARBEN (DEFAULT: DEEP NAVY #0E1F53) --- */
-    --background: 210 20% 98%; /* Subtle Gray-Blue */
+    --background: 210 20% 98%;
     --foreground: 229 88% 13%;
-    
-    --primary: 225 71% 19%; /* Deep Navy */
+    --primary: 225 71% 19%;
     --primary-foreground: 0 0% 100%;
-    
-    --secondary: 20 90% 55%; /* Amber Gold */
+    --secondary: 20 90% 55%;
     --secondary-foreground: 0 0% 100%;
-    
-    --card: 0 0% 100%; /* White */
+    --card: 0 0% 100%;
     --card-foreground: 229 88% 13%;
     --popover: 0 0% 100%;
     --popover-foreground: 229 88% 13%;
