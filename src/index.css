@@ -1,4 +1,77 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
+/* --- LOKALE FONTS (Kyra Performance Fix) --- */
+/* inter-regular - latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/inter-v20-latin-regular.woff2') format('woff2');
+}
+/* inter-500 - latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/inter-v20-latin-500.woff2') format('woff2');
+}
+/* inter-600 - latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/inter-v20-latin-600.woff2') format('woff2');
+}
+/* inter-700 - latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/inter-v20-latin-700.woff2') format('woff2');
+}
+/* inter-800 - latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/inter-v20-latin-800.woff2') format('woff2');
+}
+
+/* outfit-500 - latin */
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/outfit-v11-latin-500.woff2') format('woff2');
+}
+/* outfit-600 - latin */
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/outfit-v11-latin-600.woff2') format('woff2');
+}
+/* outfit-700 - latin */
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/outfit-v11-latin-700.woff2') format('woff2');
+}
+/* outfit-800 - latin */
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/outfit-v11-latin-800.woff2') format('woff2');
+}
 
 @tailwind base;
 @tailwind components;
@@ -43,8 +116,6 @@
   }
 
   /* --- THEME PRESETS --- */
-
-  /* 1. ROYAL BLUE */
   [data-theme="royal"] {
     --primary: 224 76% 28%;
     --ring: 224 76% 28%;
@@ -53,7 +124,6 @@
     --sidebar-accent: 224 76% 25%;
   }
 
-  /* 2. ELECTRIC INDIGO */
   [data-theme="electric"] {
     --primary: 237 95% 23%;
     --ring: 237 95% 23%;
@@ -62,7 +132,6 @@
     --sidebar-accent: 237 95% 20%;
   }
 
-  /* 3. MIDNIGHT */
   [data-theme="midnight"] {
     --primary: 240 100% 18%;
     --ring: 240 100% 18%;
@@ -71,7 +140,6 @@
     --sidebar-accent: 240 80% 18%;
   }
 
-  /* 4. OBSIDIAN ORANGE */
   [data-theme="obsidian"] {
     --primary: 0 0% 9%;
     --secondary: 25 95% 53%;
@@ -82,7 +150,6 @@
     --sidebar-primary: 25 95% 53%;
   }
 
-  /* 5. CRIMSON BLACK */
   [data-theme="crimson"] {
     --primary: 0 0% 0%;
     --secondary: 346 84% 61%;
@@ -93,7 +160,6 @@
     --sidebar-primary: 346 84% 61%;
   }
 
-  /* 6. CYBER EMERALD */
   [data-theme="emerald"] {
     --primary: 160 100% 15%;
     --secondary: 160 60% 45%;
@@ -104,7 +170,6 @@
     --sidebar-primary: 160 60% 45%;
   }
 
-  /* 7. SLATE MINIMAL */
   [data-theme="slate"] {
     --primary: 215 25% 27%;
     --secondary: 215 16% 47%;
@@ -115,7 +180,6 @@
     --sidebar-primary: 210 40% 98%;
   }
 
-  /* 8. LUXURY GOLD */
   [data-theme="gold"] {
     --primary: 0 0% 5%;
     --secondary: 43 74% 49%;
@@ -126,7 +190,6 @@
     --sidebar-primary: 43 74% 49%;
   }
 
-  /* DARK MODE */
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
@@ -156,7 +219,6 @@
     --sidebar-ring: 20 100% 55%;
   }
 
-  /* Dark Mode Overrides */
   .dark[data-theme="royal"] { --primary: 224 76% 60%; --ring: 224 76% 60%; }
   .dark[data-theme="electric"] { --primary: 237 95% 65%; --ring: 237 95% 65%; }
   .dark[data-theme="midnight"] { --primary: 240 100% 65%; --ring: 240 100% 65%; }
@@ -196,7 +258,6 @@
 }
 .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
 
-/* Stagger Delays für nacheinander einblendende Elemente */
 .animation-delay-100 { animation-delay: 100ms; }
 .animation-delay-200 { animation-delay: 200ms; }
 .animation-delay-300 { animation-delay: 300ms; }
@@ -216,13 +277,12 @@
   animation-play-state: paused;
 }
 
-/* Maske für weiches Ausblenden links/rechts */
 .mask-gradient-x {
   mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 }
+
 /* --- FIX FÜR BUTTONS IM FORUM --- */
-/* Das überschreibt die Standard-Link-Farbe von Tailwind Typography */
 .prose a.text-white {
   color: #ffffff !important;
   text-decoration: none !important;
