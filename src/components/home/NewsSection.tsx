@@ -127,7 +127,7 @@ export function NewsSection() {
       // KYRA FIX: content zur Abfrage hinzugefügt
       const { data: threads, error: threadError } = await supabase
         .from("forum_threads")
-        .select("id, title, seo_description, content, slug, created_at, featured_image, featured_image_url")
+        .select("id, title, seo_description, content, slug, created_at, featured_image_url")
         .eq("is_active", true)
         .order("created_at", { ascending: false })
         .limit(fetchLimit);
