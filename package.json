@@ -10,7 +10,8 @@
     "ping": "node scripts/turbo-ping.js",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "npx serve -s dist"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
