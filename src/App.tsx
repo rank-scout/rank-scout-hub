@@ -1,3 +1,4 @@
+import { lazy, Suspense, useEffect, useLayoutEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -7,51 +8,46 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { HelmetProvider, Helmet } from "react-helmet-async"; 
 import { ThemeProvider } from "@/hooks/useTheme";
 import { useSettings } from "@/hooks/useSettings"; 
-import { useEffect, useLayoutEffect } from "react"; 
-import TopApps from "./pages/TopApps"; 
+import { LoadingScreen } from "./components/ui/LoadingScreen";
+import { supabase } from "@/integrations/supabase/client"; // Hebel C Import
 
-// Pages
-import Index from "./pages/Index";
-import Categories from "./pages/Categories";
-import CategoryDetail from "./pages/CategoryDetail";
-import GoRedirect from "./pages/GoRedirect";
-import NotFound from "./pages/NotFound";
-import Welcome from "./pages/Welcome";
-import C4FRegistration from "./components/external/C4FRegistration";
-import Contact from "./pages/Contact"; // NEU IMPORTIERT
-
-// Forum Pages
-import Forum from "./pages/Forum";
-import ForumThread from "./pages/ForumThread";
-
-// Legal Pages
-import Impressum from "./pages/Impressum";
-import AGB from "./pages/AGB";
-import Datenschutz from "./pages/Datenschutz";
-
-// Admin Pages
-import AdminLogin from "./pages/admin/Login";
-import AdminLayout from "./pages/admin/Layout";
-import AdminDashboard from "./pages/admin/Dashboard";
-import AdminCategories from "./pages/admin/Categories";
-import AdminProjects from "./pages/admin/Projects";
-import AdminRedirects from "./pages/admin/Redirects";
-import AdminFooterLinks from "./pages/admin/FooterLinks";
-import AdminLeads from "./pages/admin/Leads";
-import AdminSettings from "./pages/admin/Settings";
-import AdminForum from "./pages/admin/Forum";
-import AdminPublisher from "./pages/admin/MultiPublisher";
-import AdminApps from "./pages/admin/Apps"; 
-
-// Components
+// --- LAYOUT KOMPONENTEN ---
 import { CookieBanner } from "./components/layout/CookieBanner";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
 import { MascotWidget } from "@/components/layout/MascotWidget"; 
-import { ScrollToAnchor } from "@/components/ScrollToAnchor";
+
+// --- KRITISCHE SEITE ---
+import Index from "./pages/Index";
+
+// --- LAZY LOADED SEITEN ---
+const Categories = lazy(() => import("./pages/Categories"));
+const CategoryDetail = lazy(() => import("./pages/CategoryDetail"));
+const TopApps = lazy(() => import("./pages/TopApps"));
+const Forum = lazy(() => import("./pages/Forum"));
+const ForumThread = lazy(() => import("./pages/ForumThread"));
+const AdminLogin = lazy(() => import("./pages/admin/Login"));
+const AdminLayout = lazy(() => import("./pages/admin/Layout"));
+const AdminDashboard = lazy(() => import("./pages/admin/Dashboard"));
+const AdminCategories = lazy(() => import("./pages/admin/Categories"));
+const AdminProjects = lazy(() => import("./pages/admin/Projects"));
+const AdminRedirects = lazy(() => import("./pages/admin/Redirects"));
+const AdminFooterLinks = lazy(() => import("./pages/admin/FooterLinks"));
+const AdminLeads = lazy(() => import("./pages/admin/Leads"));
+const AdminSettings = lazy(() => import("./pages/admin/Settings"));
+const AdminForum = lazy(() => import("./pages/admin/Forum"));
+const AdminPublisher = lazy(() => import("./pages/admin/MultiPublisher"));
+const AdminApps = lazy(() => import("./pages/admin/Apps"));
+const Contact = lazy(() => import("./pages/Contact"));
+const Impressum = lazy(() => import("./pages/Impressum"));
+const AGB = lazy(() => import("./pages/AGB"));
+const Datenschutz = lazy(() => import("./pages/Datenschutz"));
+const GoRedirect = lazy(() => import("./pages/GoRedirect"));
+const Welcome = lazy(() => import("./pages/Welcome"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
 
-// --- THEME MANAGER COMPONENT ---
+// --- THEME MANAGER ---
 const ThemeManager = () => {
   const { data: settings, isLoading } = useSettings();
   const activeTheme = settings?.active_theme as string;
@@ -73,7 +69,7 @@ const ThemeManager = () => {
   return null;
 };
 
-// --- ANALYTICS WRAPPER (GA4 & GSC) ---
+// --- ANALYTICS WRAPPER ---
 const AnalyticsWrapper = () => {
   const { data: settings } = useSettings();
   
@@ -81,14 +77,12 @@ const AnalyticsWrapper = () => {
     if (settings?.google_analytics_id) {
       const scriptId = 'ga4-script';
       if (!document.getElementById(scriptId)) {
-        // Load GA4 Script
         const script = document.createElement('script');
         script.id = scriptId;
         script.async = true;
         script.src = `https://www.googletagmanager.com/gtag/js?id=${settings.google_analytics_id}`;
         document.head.appendChild(script);
 
-        // Init GA4
         const inlineScript = document.createElement('script');
         inlineScript.innerHTML = `
           window.dataLayer = window.dataLayer || [];
@@ -123,77 +117,100 @@ const ScoutyWrapper = () => {
 };
 
 // --- MAIN APP ---
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <ThemeProvider defaultTheme="dark">
-        <ThemeManager /> 
-        
-        {/* WICHTIG: Hier nutzen wir den originalen HelmetProvider. */}
-        <HelmetProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            
-            <AnalyticsWrapper /> {/* NEU: Analytics Injected Here */}
+const App = () => {
+  // HEBEL C: PARALLEL LOADING LOGIK
+  useEffect(() => {
+    // 1. Settings sofort parallel ziehen
+    queryClient.prefetchQuery({
+      queryKey: ["settings"],
+      queryFn: async () => {
+        const { data, error } = await supabase.from("settings").select("*");
+        if (error) throw error;
+        const settings: Record<string, any> = {};
+        data?.forEach((row) => { settings[row.key] = row.value; });
+        return settings;
+      }
+    });
 
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <CookieBanner /> 
-              <ScoutyWrapper /> 
-              
-              <ScrollToTopHandler /> 
-               
-              
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/" element={<Index />} />
-                <Route path="/kategorien" element={<Categories />} />
-                <Route path="/kategorien/:slug" element={<CategoryDetail />} />
-                <Route path="/go/:slug" element={<GoRedirect />} />
-                <Route path="/welcome" element={<Welcome />} />
-                <Route path="/test-register" element={<C4FRegistration />} />
-                
-                {/* NEUE PUBLIC ROUTE: Kontakt & Top Apps */}
-                <Route path="/kontakt" element={<Contact />} />
-                <Route path="/top-apps" element={<TopApps />} />
-                
-                {/* Forum Routes */}
-                <Route path="/forum" element={<Forum />} />
-                <Route path="/forum/kategorie/:categorySlug" element={<Forum />} />
-                <Route path="/forum/:slug" element={<ForumThread />} />
-                
-                {/* Legal Routes */}
-                <Route path="/impressum" element={<Impressum />} />
-                <Route path="/agb" element={<AGB />} />
-                <Route path="/datenschutz" element={<Datenschutz />} />
-                
-                {/* Admin Routes */}
-                <Route path="/admin/login" element={<AdminLogin />} />
-                <Route path="/admin" element={<AdminLayout />}>
-                  <Route index element={<AdminDashboard />} />
-                  <Route path="categories" element={<AdminCategories />} />
-                  <Route path="projects" element={<AdminProjects />} />
-                  <Route path="redirects" element={<AdminRedirects />} />
-                  <Route path="footer-links" element={<AdminFooterLinks />} />
-                  <Route path="leads" element={<AdminLeads />} />
-                  <Route path="settings" element={<AdminSettings />} />
-                  <Route path="forum" element={<AdminForum />} />
-                  <Route path="multi-publisher" element={<AdminPublisher />} />
-                  <Route path="apps" element={<AdminApps />} />
-                </Route>
-                
-                {/* WICHTIG: Catch-All für Interne Seiten (Root-Level Slugs) */}
-                <Route path="/:slug" element={<CategoryDetail />} />
+    // 2. Kategorien sofort parallel ziehen
+    queryClient.prefetchQuery({
+      queryKey: ["categories", false],
+      queryFn: async () => {
+        const { data, error } = await supabase.from("categories").select("*").eq("is_active", true).order("sort_order");
+        if (error) throw error;
+        return data;
+      }
+    });
 
-                {/* 404 Not Found */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
-        </HelmetProvider>
-      </ThemeProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+    // 3. Promoted Apps sofort parallel ziehen (Limit 15 wie im Ticker)
+    queryClient.prefetchQuery({
+      queryKey: ["promoted-apps-weighted", 15],
+      queryFn: async () => {
+        const { data, error } = await supabase.from("promoted_apps").select("*").eq("is_active", true);
+        if (error) throw error;
+        return data; 
+      }
+    });
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <ThemeProvider defaultTheme="dark">
+          <ThemeManager /> 
+          <HelmetProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <AnalyticsWrapper /> 
+
+              <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                <CookieBanner /> 
+                <ScoutyWrapper /> 
+                <ScrollToTopHandler /> 
+                
+                <Suspense fallback={<LoadingScreen />}>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/kategorien" element={<Categories />} />
+                    <Route path="/top-apps" element={<TopApps />} />
+                    <Route path="/go/:slug" element={<GoRedirect />} />
+                    <Route path="/welcome" element={<Welcome />} />
+                    
+                    <Route path="/forum" element={<Forum />} />
+                    <Route path="/forum/kategorie/:categorySlug" element={<Forum />} />
+                    <Route path="/forum/:slug" element={<ForumThread />} />
+                    
+                    <Route path="/kontakt" element={<Contact />} />
+                    <Route path="/impressum" element={<Impressum />} />
+                    <Route path="/agb" element={<AGB />} />
+                    <Route path="/datenschutz" element={<Datenschutz />} />
+                    
+                    <Route path="/admin/login" element={<AdminLogin />} />
+                    <Route path="/admin" element={<AdminLayout />}>
+                      <Route index element={<AdminDashboard />} />
+                      <Route path="categories" element={<AdminCategories />} />
+                      <Route path="projects" element={<AdminProjects />} />
+                      <Route path="redirects" element={<AdminRedirects />} />
+                      <Route path="footer-links" element={<AdminFooterLinks />} />
+                      <Route path="leads" element={<AdminLeads />} />
+                      <Route path="settings" element={<AdminSettings />} />
+                      <Route path="forum" element={<AdminForum />} />
+                      <Route path="multi-publisher" element={<AdminPublisher />} />
+                      <Route path="apps" element={<AdminApps />} />
+                    </Route>
+                    
+                    <Route path="/:slug" element={<CategoryDetail />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </TooltipProvider>
+          </HelmetProvider>
+        </ThemeProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
