@@ -58,70 +58,60 @@ export function ForumSection() {
     }
     return url;
   };
-  // Die Karte als Komponente für Wiederverwendung
+  // 1:1 Parität mit der NewsSection (Magazin Edge-to-Edge Kartendesign)
   const PostCard = ({ post }: { post: any }) => (
-    <Link to={`/forum/${post.slug}`} className="group h-full block">
-      {/* KYRA DESIGN: "Inset Card" Look */}
-      <Card className="h-full bg-white border border-slate-100 shadow-[0_2px_20px_rgba(0,0,0,0.04)] hover:shadow-[0_20px_40px_rgba(0,0,0,0.08)] transition-all duration-500 rounded-[2rem] overflow-hidden group-hover:-translate-y-2 flex flex-col p-3">
+    <Link 
+      to={`/forum/${post.slug}`} 
+      className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200 h-full shadow-sm hover:shadow-xl hover:border-orange-500/40 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-orange-500/20"
+    >
+      {/* Bild Container: Edge-to-Edge 3:2 Ratio */}
+      <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 border-b border-slate-100 flex items-center justify-center">
+        {post.featured_image_url ? (
+          <img 
+            src={optimizeImageUrl(post.featured_image_url, 600)} 
+            alt={post.title}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+            <BookOpen className="w-10 h-10 opacity-20" />
+          </div>
+        )}
+      </div>
+
+      {/* Content Wrapper (Padding 5 wie in NewsCard) */}
+      <div className="p-5 flex flex-col flex-grow">
+        <div className="flex items-center justify-between mb-3">
+           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+              <Calendar className="w-3.5 h-3.5" />
+              {formatDate(post.created_at)}
+           </div>
+           
+           {post.forum_categories && (
+             <div className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-md">
+               <BookOpen className="w-3 h-3 text-orange-500" />
+               {/* @ts-ignore */}
+               {post.forum_categories.name}
+             </div>
+           )}
+        </div>
+
+        <h3 className="text-lg font-bold text-slate-900 mb-2 leading-tight group-hover:text-orange-500 transition-colors line-clamp-2 min-h-[3rem]">
+          {post.title}
+        </h3>
         
-        {/* Bild Container: 3:2 Ratio (1536x1024) */}
-        <div className="relative aspect-[3/2] overflow-hidden rounded-[1.5rem] bg-slate-100 shadow-inner">
-          {post.featured_image_url ? (
-            <img 
-              src={optimizeImageUrl(post.featured_image_url, 600)} 
-              alt={post.title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-300">
-              <BookOpen className="w-12 h-12" />
-            </div>
-          )}
+        <p className="text-slate-500 text-sm leading-relaxed line-clamp-2 mb-4 flex-grow min-h-[2.5rem]">
+          {post.seo_description || "Lies den ganzen Artikel in unserem Magazin..."}
+        </p>
+
+        <div className="mt-auto pt-2 border-t border-slate-50">
+           <div className="flex items-center justify-center w-full bg-slate-50 group-hover:bg-orange-500 text-slate-700 group-hover:text-white py-2.5 rounded-lg text-sm font-bold transition-all duration-300">
+             Artikel lesen
+             <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+           </div>
         </div>
-
-        {/* Content Wrapper */}
-        <div className="flex flex-col flex-grow px-2 pt-2">
-            <CardHeader className="p-0 pt-4 pb-2 space-y-3">
-              {/* Badge */}
-              {post.forum_categories && (
-                <div className="mb-1">
-                  <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase">
-                    {/* @ts-ignore */}
-                    {post.forum_categories.name}
-                  </Badge>
-                </div>
-              )}
-
-              <div className="flex items-center text-xs font-medium text-slate-400 gap-4 uppercase tracking-wider">
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" />
-                  {formatDate(post.created_at)}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5" />
-                  {post.author_name || "Redaktion"}
-                </span>
-              </div>
-              
-              <h3 className="font-bold text-xl text-slate-900 leading-snug group-hover:text-secondary transition-colors line-clamp-2">
-                {post.title}
-              </h3>
-            </CardHeader>
-
-            <CardContent className="p-0 py-2 flex-grow">
-              <p className="text-slate-500 line-clamp-3 text-sm leading-relaxed">
-                {post.seo_description || "Lies den ganzen Artikel in unserem Magazin..."}
-              </p>
-            </CardContent>
-
-            <CardFooter className="p-0 pt-4 mt-auto pb-2">
-              <span className="text-sm font-bold text-secondary flex items-center group-hover:underline">
-                Artikel lesen <ArrowRight className="ml-1 w-4 h-4" />
-              </span>
-            </CardFooter>
-        </div>
-      </Card>
+      </div>
     </Link>
   );
 

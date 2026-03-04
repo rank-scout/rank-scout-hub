@@ -292,6 +292,10 @@ return (
   }
 
   return (
-    <><Helmet><title>{category.meta_title || category.name}</title><link rel="canonical" href={currentUrl} /></Helmet>{category.custom_html_override ? (<><Header /><CustomHtmlRenderer html={category.custom_html_override} /><Footer /></>) : (category.template === 'comparison' && category.theme === 'DATING' && category.slug.includes('stadt')) ? (<><Header /><CityLandingTemplate category={category} projects={projects} /><Footer /></>) : (<div className="min-h-screen bg-[#0a0a0a] text-white"><Header /><ReviewTemplate category={category} projects={projects} /></div>)}</>
+    <><Helmet><title>{category.meta_title || category.name}</title><link rel="canonical" href={currentUrl} /></Helmet>{category.custom_html_override ? (<><Header /><CustomHtmlRenderer 
+  category={category} 
+  projects={projects} 
+  htmlContent={category.custom_html_override} 
+/><Footer /></>) : (category.template === 'comparison' && category.theme === 'DATING' && category.slug.includes('stadt')) ? (<><Header /><CityLandingTemplate category={category} projects={projects} /><Footer /></>) : (<div className="min-h-screen bg-[#0a0a0a] text-white"><Header /><ReviewTemplate category={category} projects={projects} /></div>)}</>
   );
 }

@@ -14,21 +14,20 @@ import {
   ArrowRight, 
   Calendar, 
   Layers,
-  MessageSquare,
   Newspaper
 } from "lucide-react";
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { FadeIn } from "@/components/ui/FadeIn";
 
-type HybridFeedItem = {
+type FeedItem = {
   id: string;
   title: string;
   description: string;
   slug: string;
   image: string | null;
   date: string;
-  type: "category" | "ExpertenChecks";
+  type: "category";
   categoryName: string;
 };
 
@@ -52,7 +51,7 @@ const getExcerpt = (primary: string | null, secondary: string | null, fallback: 
   return fallback;
 };
 
-const NewsCard = ({ item }: { item: HybridFeedItem }) => {
+const NewsCard = ({ item }: { item: FeedItem }) => {
   const dateFormatted = format(new Date(item.date), "d. MMM yyyy", { locale: de });
   
   return (
@@ -70,7 +69,7 @@ const NewsCard = ({ item }: { item: HybridFeedItem }) => {
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-slate-400">
-            {item.type === "category" ? <Layers className="w-10 h-10 opacity-20" /> : <MessageSquare className="w-10 h-10 opacity-20" />}
+            <Layers className="w-10 h-10 opacity-20" />
           </div>
         )}
       </div>
@@ -82,7 +81,7 @@ const NewsCard = ({ item }: { item: HybridFeedItem }) => {
               {dateFormatted}
            </div>
            <div className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-md">
-             {item.type === "category" ? <Layers className="w-3 h-3 text-primary" /> : <MessageSquare className="w-3 h-3 text-primary" />}
+             <Layers className="w-3 h-3 text-primary" />
              {item.categoryName}
            </div>
         </div>
@@ -97,7 +96,7 @@ const NewsCard = ({ item }: { item: HybridFeedItem }) => {
 
         <div className="mt-auto pt-2 border-t border-slate-50 dark:border-slate-800">
            <div className="flex items-center justify-center w-full bg-slate-50 dark:bg-slate-800 group-hover:bg-primary text-slate-700 dark:text-slate-300 group-hover:text-white py-2.5 rounded-lg text-sm font-bold transition-all duration-300">
-             {item.type === "category" ? "Vergleich ansehen" : "Beitrag lesen"}
+             Vergleich ansehen
              <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
            </div>
         </div>
@@ -111,9 +110,8 @@ export function NewsSection() {
   const fetchLimit = 18; 
 
   const { data: feedItems, isLoading } = useQuery({
-    queryKey: ["hybrid-news-feed", fetchLimit],
+    queryKey: ["latest-comparisons-feed", fetchLimit],
     queryFn: async () => {
-      // KYRA FIX: meta_description und long_content_top zur Abfrage hinzugefügt
       const { data: categories, error: catError } = await supabase
         .from("categories")
         .select("id, name, description, meta_description, long_content_top, slug, created_at, icon, banner_override, card_image_url")
@@ -124,24 +122,13 @@ export function NewsSection() {
 
       if (catError) console.error("Fehler beim Laden der Kategorien:", catError);
 
-      // KYRA FIX: content zur Abfrage hinzugefügt
-      const { data: threads, error: threadError } = await supabase
-        .from("forum_threads")
-        .select("id, title, seo_description, content, slug, created_at, featured_image_url")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(fetchLimit);
-
-      if (threadError) console.error("Fehler beim Laden der Forum-Threads:", threadError);
-
-      const items: HybridFeedItem[] = [];
+      const items: FeedItem[] = [];
 
       if (categories) {
         categories.forEach(cat => {
           items.push({
             id: `cat-${cat.id}`,
             title: cat.name,
-            // KYRA FIX: Dynamische Text-Generierung
             description: getExcerpt(
                 cat.description || cat.meta_description, 
                 cat.long_content_top, 
@@ -152,26 +139,6 @@ export function NewsSection() {
             date: cat.created_at || new Date().toISOString(),
             type: "category",
             categoryName: "Vergleich"
-          });
-        });
-      }
-
-      if (threads) {
-        threads.forEach(thread => {
-          items.push({
-            id: `forum-${thread.id}`,
-            title: thread.title,
-            // KYRA FIX: Dynamische Text-Generierung
-            description: getExcerpt(
-                thread.seo_description, 
-                thread.content, 
-                "Spannende Einblicke und Analysen aus unserer Community."
-            ),
-            slug: `/forum/${thread.slug}`,
-            image: thread.featured_image || thread.featured_image_url || null, 
-            date: thread.created_at || new Date().toISOString(),
-            type: "forum",
-            categoryName: "Community"
           });
         });
       }

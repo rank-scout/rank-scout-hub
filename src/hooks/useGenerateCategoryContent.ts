@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 type AIProvider = "google" | "openai";
 
@@ -109,55 +110,19 @@ export const useGenerateCategoryContent = () => {
     `;
 
     try {
-      let rawText = "";
-
-      // --- GOOGLE ---
-      if (config.provider === "google") {
-        if (!config.googleKey) throw new Error("Google Key fehlt.");
-        const modelName = await findBestGoogleModel(config.googleKey);
-        
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${modelName}:generateContent?key=${config.googleKey}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: systemPrompt }] }],
-            generationConfig: { responseMimeType: "application/json" },
-            safetySettings: [
-                { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-            ]
-          }),
-        });
-
-        if (!response.ok) {
-           const err = await response.json();
-           throw new Error(`Google Fehler: ${err.error?.message || response.statusText}`);
+      // Wir schießen den Payload direkt sicher an unsere Edge Function
+      const { data, error } = await supabase.functions.invoke("rank-scout-ai", {
+        body: { 
+          topic: finalTopic,
+          systemPrompt: systemPrompt
         }
-        const data = await response.json();
-        rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
-      } 
-      
-      // --- OPENAI ---
-      else if (config.provider === "openai") {
-        if (!config.openaiKey) throw new Error("OpenAI Key fehlt.");
-        const response = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${config.openaiKey}` },
-          body: JSON.stringify({
-            model: "gpt-4o",
-            messages: [{ role: "system", content: "Output JSON only." }, { role: "user", content: systemPrompt }],
-            response_format: { type: "json_object" }
-          }),
-        });
-        if (!response.ok) throw new Error("OpenAI API Fehler");
-        const data = await response.json();
-        rawText = data.choices?.[0]?.message?.content || "";
-      }
+      });
 
-      if (!rawText) throw new Error("Keine Antwort erhalten.");
+      if (error) throw new Error(`Server API Fehler: ${error.message}`);
+      if (!data || !data.contentTop) throw new Error("Keine Textantwort von der KI erhalten.");
 
+      // Die KI liefert unseren JSON-String innerhalb von contentTop zurück
+      const rawText = data.contentTop;
       const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
       const parsedData = JSON.parse(cleanJson);
 
@@ -169,7 +134,7 @@ export const useGenerateCategoryContent = () => {
 
     } catch (error: any) {
       console.error("KI Fehler:", error);
-      toast({ title: "Fehler", description: error.message, variant: "destructive" });
+      toast({ title: "Fehler bei der KI-Generierung", description: error.message, variant: "destructive" });
       return null;
     } finally {
       setIsGenerating(false);

@@ -100,7 +100,7 @@ export default function CityLandingTemplate({ category, projects }: CityLandingT
     "@type": "CollectionPage",
     "name": category.hero_headline || category.name,
     "description": category.description,
-    "url": `https://rank-scout.com/category/${category.slug}`,
+    "url": `https://rank-scout.com/${category.slug}`,
     "mainEntity": {
       "@type": "ItemList",
       "itemListElement": projects.map((project, index) => ({

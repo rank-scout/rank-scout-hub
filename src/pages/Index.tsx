@@ -62,8 +62,6 @@ const Index = () => {
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="Rank-Scout" />
       <meta property="og:locale" content="de_DE" />
-      {analyticsCode && <script async src={`https://www.googletagmanager.com/gtag/js?id=${analyticsCode}`}></script>}
-      {analyticsCode && (<script>{`window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', '${analyticsCode}');`}</script>)}
     </Helmet>
   );
 

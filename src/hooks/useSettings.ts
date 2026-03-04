@@ -221,7 +221,7 @@ export function useHomeLayout() {
       else if (s.id === 'categories') isEnabled = layout.categories;
       else if (s.id === 'news') isEnabled = layout.news;
       else if (s.id === 'forum') isEnabled = layout.forum_teaser;
-      else if (s.id === 'seo') isEnabled = layout.why_us;
+      else if (s.id === 'seo') isEnabled = layout.seo_text;
       else if (s.id === 'amazon_top' || s.id === 'adsense_middle') isEnabled = layout.ads;
       
       return { ...s, enabled: isEnabled };
