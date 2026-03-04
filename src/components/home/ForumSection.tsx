@@ -68,11 +68,13 @@ export function ForumSection() {
       <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 border-b border-slate-100 flex items-center justify-center">
         {post.featured_image_url ? (
           <img 
-            src={optimizeImageUrl(post.featured_image_url, 600)} 
-            alt={post.title}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
-            loading="lazy"
-          />
+  src={optimizeImageUrl(post.featured_image_url, 1536)} 
+  alt={post.title}
+  /* KYRA FIX: Zurück zu object-cover für volle Kartenfüllung. 
+     Wir nutzen top-center, damit Texte am oberen Bildrand eher erhalten bleiben. */
+  className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" 
+  loading="lazy"
+/>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-slate-400">
             <BookOpen className="w-10 h-10 opacity-20" />

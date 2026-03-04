@@ -332,7 +332,41 @@ export default function AdminForum() {
             <div className="grid md:grid-cols-3 gap-4">
                 <div><Label>Autor</Label><Input value={formData.author_name} onChange={(e) => setFormData((p) => ({ ...p, author_name: e.target.value }))} /></div>
                 <div><Label>Kategorie</Label><Select value={formData.category_id || "none"} onValueChange={(value) => setFormData((p) => ({ ...p, category_id: value === "none" ? null : value, }))}><SelectTrigger><SelectValue placeholder="Kategorie wählen" /></SelectTrigger><SelectContent><SelectItem value="none">Keine Kategorie</SelectItem>{categories?.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent></Select></div>
-                <div><Label>Featured Image (1536x1024)</Label><div className="flex gap-2"><Input value={formData.featured_image_url} onChange={(e) => setFormData((p) => ({ ...p, featured_image_url: e.target.value, }))} placeholder="Bild-URL" className="flex-1" /><Button variant="outline" asChild disabled={imageUploading}><label className="cursor-pointer">{imageUploading ? (<Loader2 className="w-4 h-4 animate-spin" />) : (<ImageIcon className="w-4 h-4" />)}<input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} /></label></Button></div><p className="text-xs text-muted-foreground mt-1">Wird automatisch auf 1536x1024px zugeschnitten.</p></div>
+                <div>
+                  <Label className="font-bold text-slate-900">Beitragsbild (Zuschnitt auf 1536x1024px)</Label>
+                  <div className="flex flex-col gap-2 mt-1">
+                    <Button 
+                      variant={formData.featured_image_url ? "secondary" : "outline"} 
+                      asChild 
+                      disabled={imageUploading} 
+                      className="w-full relative overflow-hidden h-12"
+                    >
+                      <label className="cursor-pointer flex items-center justify-center gap-2">
+                        {imageUploading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Verarbeite Bild...</>
+                        ) : (
+                          <><ImageIcon className="w-4 h-4" /> {formData.featured_image_url ? "Bild ändern / Überschreiben" : "Bild vom PC hochladen"}</>
+                        )}
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                      </label>
+                    </Button>
+                    
+                    {formData.featured_image_url && (
+                      <div className="flex items-center justify-between bg-green-50 px-3 py-2 rounded-xl border border-green-100 shadow-sm">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Status</span>
+                          <span className="text-[11px] text-green-600 font-medium truncate max-w-[200px]">Bild liegt sicher in Supabase</span>
+                        </div>
+                        <div className="h-10 w-15 overflow-hidden rounded-lg border-2 border-white shadow-sm">
+                          <img src={formData.featured_image_url} alt="Preview" className="h-full w-full object-cover" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2 leading-tight">
+                    <strong>Image-Performance-Gesetz:</strong> Wir erlauben nur noch Uploads. So wird jedes Bild automatisch optimiert und über unsere Render-API blitzschnell geladen.
+                  </p>
+                </div>
             </div>
             <div><div className="flex items-center justify-between mb-2"><Label>Inhalt *</Label><div className="flex gap-1"><Button variant={editorMode === "visual" ? "secondary" : "ghost"} size="sm" onClick={() => setEditorMode("visual")}><FileText className="w-4 h-4 mr-1" />Visual</Button><Button variant={editorMode === "code" ? "secondary" : "ghost"} size="sm" onClick={() => setEditorMode("code")}><Code className="w-4 h-4 mr-1" />HTML</Button></div></div>{editorMode === "visual" ? (<Textarea value={formData.content} onChange={(e) => setFormData((p) => ({ ...p, content: e.target.value }))} rows={10} placeholder="Beitragsinhalt..." />) : (<Textarea value={formData.raw_html_content} onChange={(e) => setFormData((p) => ({ ...p, raw_html_content: e.target.value, }))} rows={10} className="font-mono text-sm" placeholder="<p>Raw HTML Content...</p>" />)}</div>
             
