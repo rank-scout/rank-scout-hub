@@ -14,40 +14,39 @@ serve(async (req) => {
     const { topic, keyword, systemPrompt } = body;
     const finalTopic = topic || keyword || "Allgemeines Thema";
 
-    // 1. API Key
-    let apiKey = Deno.env.get('GOOGLE_API_KEY');
-    if (!apiKey) throw new Error("GOOGLE_API_KEY fehlt.");
-    apiKey = apiKey.trim();
+    // 1. Lokale API Config (via Deno Env, Fallback auf unsere Werte)
+    const ollamaUrl = Deno.env.get('OLLAMA_API_URL') || "https://rank-scout.com/ollama/api/generate";
+    const ollamaKey = Deno.env.get('OLLAMA_API_KEY') || "RankScout-Secret-Key-2026";
 
-    console.log(`[NEU] Rank-Scout AI für: ${finalTopic}`);
+    console.log(`[LOKAL] Rank-Scout AI (Llama 3) für: ${finalTopic}`);
 
     // 2. Prompt
     const defaultSystem = "Du bist Redakteur. Schreibe HTML.";
     const combinedPrompt = `${systemPrompt || defaultSystem}\n\nAUFGABE: Schreibe über "${finalTopic}". Nur HTML.`;
 
-    // 3. Request (Gemini Flash)
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // 3. Request (Lokal Ollama)
+    const response = await fetch(ollamaUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${ollamaKey}`
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: combinedPrompt }] }],
-        safetySettings: [
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-        ]
+        model: "llama3:8b",
+        prompt: combinedPrompt,
+        stream: false
       }),
     });
 
     if (!response.ok) {
       const err = await response.text();
-      throw new Error(`Google API Error: ${err}`);
+      throw new Error(`Ollama API Error: ${err}`);
     }
 
     const data = await response.json();
-    let content = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!content) throw new Error("Kein Text erhalten.");
+    let content = data.response;
+    
+    if (!content) throw new Error("Kein Text von Llama 3 erhalten.");
 
     content = content.replace(/```html/g, '').replace(/```/g, '').trim();
 
