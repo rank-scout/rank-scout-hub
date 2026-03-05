@@ -68,7 +68,7 @@ export function ForumSection() {
       <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 border-b border-slate-100 flex items-center justify-center">
         {post.featured_image_url ? (
           <img 
-  src={optimizeImageUrl(post.featured_image_url, 1536)} 
+  src={optimizeImageUrl(post.featured_image_url, 600)} 
   alt={post.title}
   /* KYRA FIX: Zurück zu object-cover für volle Kartenfüllung. 
      Wir nutzen top-center, damit Texte am oberen Bildrand eher erhalten bleiben. */

@@ -19,6 +19,7 @@ import {
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { FadeIn } from "@/components/ui/FadeIn";
+import { optimizeSupabaseImage } from "@/lib/utils";
 
 type FeedItem = {
   id: string;
@@ -62,7 +63,7 @@ const NewsCard = ({ item }: { item: FeedItem }) => {
       <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-b border-slate-100 dark:border-slate-800">
         {item.image ? (
           <img 
-            src={item.image} 
+            src={optimizeSupabaseImage(item.image, 600)} 
             alt={item.title}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
