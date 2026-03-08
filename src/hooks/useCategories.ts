@@ -31,6 +31,7 @@ export type Category = {
   features_title: string | null;
   sticky_cta_text: string | null;
   sticky_cta_link: string | null;
+  button_text: string | null; // KYRA FIX: Ist hier sauber typisiert
   
   // Stats
   views: number;
@@ -56,7 +57,8 @@ export type Category = {
 
 export const useCategories = (includeInactive: boolean = false) => {
   return useQuery({
-    queryKey: ["categories", includeInactive],
+    // KYRA FIX: Cache-Buster! Durch '_v2' vergisst der Browser den alten LocalStorage sofort.
+    queryKey: ["categories_v2", includeInactive],
     queryFn: async () => {
       let query = supabase.from("categories").select("*").order("sort_order");
       if (!includeInactive) { query = query.eq("is_active", true); }
@@ -69,7 +71,7 @@ export const useCategories = (includeInactive: boolean = false) => {
 
 export const useCategoryBySlug = (slug: string) => {
   return useQuery({
-    queryKey: ["category", slug],
+    queryKey: ["category_v2", slug], // KYRA FIX: Cache-Buster
     queryFn: async () => {
       const { data, error } = await supabase.from("categories").select("*").eq("slug", slug).single();
       if (error) throw error;
@@ -88,7 +90,7 @@ export const useCreateCategory = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories_v2"] });
     },
   });
 };
@@ -101,8 +103,8 @@ export const useUpdateCategory = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-      queryClient.invalidateQueries({ queryKey: ["category"] });
+      queryClient.invalidateQueries({ queryKey: ["categories_v2"] });
+      queryClient.invalidateQueries({ queryKey: ["category_v2"] });
     },
   });
 };
@@ -115,7 +117,7 @@ export const useDeleteCategory = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories_v2"] });
     },
   });
 };
@@ -128,64 +130,45 @@ export const useDuplicateCategory = () => {
     mutationFn: async (category: Category) => {
       const { id, created_at, updated_at, views, avg_rating, review_count, ...rest } = category as any;
       
-      // Eindeutigen Slug und Namen generieren
       const uniqueSuffix = Math.floor(Math.random() * 900) + 100;
       const newSlug = `${rest.slug}-kopie-${uniqueSuffix}`;
       const newName = `${rest.name} (Kopie)`;
       
-      // 1. Haupt-Kategorie duplizieren
       const { data: newCat, error: catError } = await supabase
         .from("categories")
         .insert({
           ...rest,
           slug: newSlug,
           name: newName,
-          is_active: false, // Standardmäßig offline für Review
+          is_active: false,
         })
         .select()
         .single();
 
       if (catError) throw catError;
 
-      // 2. Partner-Verknüpfungen (Projects) kopieren
       const { data: links } = await supabase.from("category_projects").select("*").eq("category_id", id);
       if (links && links.length > 0) {
-        const newLinks = links.map(l => ({ 
-          category_id: newCat.id, 
-          project_id: l.project_id, 
-          sort_order: l.sort_order 
-        }));
+        const newLinks = links.map(l => ({ category_id: newCat.id, project_id: l.project_id, sort_order: l.sort_order }));
         await supabase.from("category_projects").insert(newLinks);
       }
       
-      // 3. Footer Links kopieren (Popular)
       const { data: footerLinks } = await supabase.from("popular_footer_links").select("*").eq("category_id", id);
       if (footerLinks && footerLinks.length > 0) {
-         const newFooterLinks = footerLinks.map(l => ({ 
-           category_id: newCat.id, 
-           label: l.label, 
-           url: l.url, 
-           sort_order: l.sort_order 
-         }));
+         const newFooterLinks = footerLinks.map(l => ({ category_id: newCat.id, label: l.label, url: l.url, sort_order: l.sort_order }));
          await supabase.from("popular_footer_links").insert(newFooterLinks);
       }
 
-      // 4. Legal Links kopieren
       const { data: legalLinks } = await supabase.from("legal_footer_links").select("*").eq("category_id", id);
       if (legalLinks && legalLinks.length > 0) {
-         const newLegalLinks = legalLinks.map(l => ({ 
-           category_id: newCat.id, 
-           label: l.label, 
-           url: l.url, 
-           sort_order: l.sort_order 
-         }));
+         const newLegalLinks = legalLinks.map(l => ({ category_id: newCat.id, label: l.label, url: l.url, sort_order: l.sort_order }));
          await supabase.from("legal_footer_links").insert(newLegalLinks);
       }
 
       return newCat;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["categories_v2"] });
     },
   });
 };

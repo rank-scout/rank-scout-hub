@@ -29,6 +29,7 @@ type FeedItem = {
   date: string;
   type: "category";
   categoryName: string;
+  button_text?: string | null;
 };
 
 // Hilfsfunktion: Teilt ein Array in Blöcke (für den Desktop Grid-Slider)
@@ -96,7 +97,7 @@ const NewsCard = ({ item }: { item: FeedItem }) => {
 
         <div className="mt-auto pt-2 border-t border-slate-50 dark:border-slate-800">
            <div className="flex items-center justify-center w-full bg-slate-50 dark:bg-slate-800 group-hover:bg-primary text-slate-700 dark:text-slate-300 group-hover:text-white py-2.5 rounded-lg text-sm font-bold transition-all duration-300">
-             Vergleich ansehen
+             {item.button_text?.trim() || "Vergleich ansehen"}
              <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
            </div>
         </div>
@@ -114,7 +115,7 @@ export function NewsSection() {
     queryFn: async () => {
       const { data: categories, error: catError } = await supabase
         .from("categories")
-        .select("id, name, description, meta_description, long_content_top, slug, created_at, icon, banner_override, card_image_url")
+        .select("id, name, description, meta_description, long_content_top, slug, created_at, icon, banner_override, card_image_url, button_text")
         .eq("is_active", true)
         .in("template", ["comparison", "review"])
         .order("created_at", { ascending: false })
@@ -138,7 +139,8 @@ export function NewsSection() {
             image: cat.card_image_url || cat.banner_override || cat.icon || null,
             date: cat.created_at || new Date().toISOString(),
             type: "category",
-            categoryName: "Vergleich"
+            categoryName: "Vergleich",
+button_text: cat.button_text ?? null
           });
         });
       }

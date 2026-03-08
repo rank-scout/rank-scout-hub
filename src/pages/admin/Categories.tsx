@@ -282,7 +282,8 @@ export default function Categories() {
         intro_title: "",
         comparison_title: "",
         project_cta_text: "",
-        features_title: ""
+        features_title: "",
+        button_text: "Vergleich ansehen" // KYRA FIX: hinzugefügt
     },
   });
 
@@ -319,6 +320,7 @@ export default function Categories() {
         comparison_title: editingCategory.comparison_title || "",
         project_cta_text: editingCategory.project_cta_text || "",
         features_title: editingCategory.features_title || "",
+        button_text: (editingCategory as any).button_text || "Vergleich ansehen",
       } as any);
       setTopicPrompt(`Content für ${editingCategory.name}`);
       const savedSlugs = (editingCategory as any).custom_css ? (editingCategory as any).custom_css.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
@@ -346,7 +348,8 @@ export default function Categories() {
         intro_title: "",
         comparison_title: "",
         project_cta_text: "",
-        features_title: ""
+        features_title: "",
+        button_text: "Vergleich ansehen" // KYRA FIX: hinzugefügt
       } as any);
       setSelectedProjectIds([]); setSelectedHubSlugs([]); setTopicPrompt("");
     }
@@ -641,6 +644,7 @@ export default function Categories() {
                                         <div className="space-y-2"><Label>Features Überschrift</Label><Input {...register("features_title")} className="bg-white" placeholder="z.B. Wichtige Funktionen" /></div>
                                         <div className="space-y-2"><Label>Intro Titel</Label><Input {...register("intro_title")} className="bg-white" placeholder="z.B. Warum du vergleichen solltest" /></div>
                                         <div className="space-y-2"><Label className="text-primary font-bold">Projekt Button-Text (CTA)</Label><Input {...register("project_cta_text")} className="bg-white border-primary/20" placeholder="z.B. Preis prüfen (überschreibt Standard)" /></div>
+<div className="space-y-2"><Label className="text-primary font-bold">Startseiten Button-Text (Card)</Label><Input {...register("button_text")} className="bg-white border-primary/20" placeholder="z.B. Jetzt berechnen (Standard: Vergleich ansehen)" /></div>
                                     </CardContent>
                                 </Card>
                                 <Card className="border-slate-200 shadow-sm h-fit bg-slate-50/50">

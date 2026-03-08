@@ -76,6 +76,18 @@ export const CategoriesSection = () => {
             {mainCategories.slice(0, limit).map((category) => {
               const CategoryIcon = getIconForCategory(category.slug);
               
+              // KYRA FIX: Wasserdichte Prüfung für den Button-Text & Console-Log für Fehlersuche
+              const customText = (category as any).button_text;
+              const globalFallback = content.categories.button_card;
+              
+              // Striktes Prüfen: Nur wenn ein eigener Text existiert und NICHT leer ist, wird er benutzt!
+              const finalButtonText = (customText && customText.trim() !== "") 
+                                      ? customText 
+                                      : (globalFallback || "Vergleich ansehen");
+              
+              // Dieser Log zeigt dir in den Entwicklertools, was wirklich bei der Startseite ankommt
+              console.log(`[DEBUG] Kategorie: ${category.name} | DB-Text: "${customText}" | Finale Ausgabe: "${finalButtonText}"`);
+              
               return (
                 <Link
                   key={category.id}
@@ -98,7 +110,7 @@ export const CategoriesSection = () => {
                   
                   {/* Footer CTA: Blau -> Orange */}
                   <div className="mt-auto flex items-center text-xs font-bold text-primary/60 group-hover:text-secondary group-hover:gap-3 gap-2 transition-all uppercase tracking-widest">
-                    {content.categories.button_card || "Vergleich ansehen"} 
+                    {finalButtonText}
                     <AltArrowRight weight="Bold" className="h-5 w-5 transition-transform" />
                   </div>
                 </Link>

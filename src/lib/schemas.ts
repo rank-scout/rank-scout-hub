@@ -26,6 +26,7 @@ export const navigationSettingsSchema = z.object({
 export type NavigationSettings = z.infer<typeof navigationSettingsSchema>;
 
 export const categorySchema = z.object({
+  button_text: z.string().optional().nullable(),
   slug: z.string().min(1, "Slug erforderlich").regex(/^[a-z0-9-]+$/, "Nur Kleinbuchstaben, Zahlen und Bindestriche"),
   name: z.string().min(1, "Name erforderlich"),
   description: z.string().optional().nullable(),
