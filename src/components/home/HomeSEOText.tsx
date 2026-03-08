@@ -9,15 +9,15 @@ export const HomeSEOText = () => {
     <h2>Rank-Scout: Dein Kompass im digitalen Dschungel</h2>
     <p>
       Die digitale Welt ist riesig. Täglich poppen neue <strong>SaaS-Tools</strong>, <strong>Finanz-Apps</strong> und <strong>Agenturen</strong> auf. 
-      Wer soll da den Überblick behalten? Ganz einfach: Wir machen das für dich.
+      Wer soll da den Überblick behalten? Rank-Scout bündelt Vergleiche, Rechner und Ratgeber in einer einheitlichen Struktur.
     </p>
     <p>
-      Rank-Scout ist nicht einfach nur eine Liste. Wir sind deine Intelligence-Plattform. Wir wühlen uns durch die Daten, checken das Kleingedruckte und testen die Usability – damit du es nicht tun musst.
+      Wir bereiten Informationen zu Funktionen, Kosten und Modellen übersichtlich auf.
     </p>
-    <h3>Deine Entscheidungshilfe für 2026</h3>
+    <h3>Vergleiche und Ratgeber für 2026</h3>
     <p>
-      Egal ob du das perfekte <strong>Girokonto</strong> suchst oder eine <strong>SEO-Agentur</strong> brauchst: Wir liefern dir Fakten statt Bauchgefühl. 
-      Unsere Vergleiche sind radikal unabhängig und werden täglich aktualisiert.
+      Egal ob du Informationen zu einem <strong>Girokonto</strong> oder einer <strong>SEO-Agentur</strong> suchst: Wir bündeln Informationen, Modelle und Unterschiede in übersichtlicher Form. 
+      Unsere Inhalte sind redaktionell aufgebaut und werden fortlaufend gepflegt.
     </p>
   `;
 

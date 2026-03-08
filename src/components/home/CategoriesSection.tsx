@@ -60,7 +60,7 @@ export const CategoriesSection = () => {
             {content.categories.title || "Wähle deinen Bereich"}
           </h2>
           <p className="text-lg text-slate-500 leading-relaxed font-light">
-            {content.categories.subtitle || "Detaillierte Vergleiche und Bestenlisten für jede Branche."}
+            {content.categories.subtitle || "Detaillierte Vergleiche und Übersichten für verschiedene Branchen."}
           </p>
         </div>
 
@@ -105,7 +105,7 @@ export const CategoriesSection = () => {
                   </h3>
                   
                   <p className="text-slate-500 leading-relaxed text-sm mb-8 flex-grow font-light">
-                    {category.description || `Finde die besten Anbieter und Tools im Bereich ${category.name}. Unabhängig getestet.`}
+                    {category.description || `Vergleiche Anbieter, Tools und Modelle im Bereich ${category.name} im Überblick.`}
                   </p>
                   
                   {/* Footer CTA: Blau -> Orange */}

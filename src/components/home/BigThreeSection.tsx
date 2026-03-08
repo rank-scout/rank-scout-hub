@@ -67,8 +67,8 @@ export const BigThreeSection = () => {
   let items = content.big_three.items || [];
   if (items.length === 0) {
     items = [
-      { id: "f1", title: "Finanzen & Krypto", desc: "Broker & Kredite im Härtetest.", link: "/finanzen", button_text: "Vergleichen", theme: "blue", image_url: "", icon: "trending" },
-      { id: "s1", title: "KI & Software", desc: "Die besten Tools im Vergleich.", link: "/software", button_text: "Tools finden", theme: "gold", image_url: "", icon: "bot" },
+      { id: "f1", title: "Finanzen & Krypto", desc: "Broker, Kredite und Finanzthemen im Überblick.", link: "/finanzen", button_text: "Vergleichen", theme: "blue", image_url: "", icon: "trending" },
+      { id: "s1", title: "KI & Software", desc: "Tools und Softwarelösungen im Überblick.", link: "/software", button_text: "Tools finden", theme: "gold", image_url: "", icon: "bot" },
       { id: "d1", title: "Dienstleistungen", desc: "Agenturen & B2B Services.", link: "/dienstleistungen", button_text: "Suchen", theme: "dark", image_url: "", icon: "briefcase" }
     ];
   }

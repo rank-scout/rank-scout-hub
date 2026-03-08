@@ -133,7 +133,7 @@ export function NewsSection() {
             description: getExcerpt(
                 cat.description || cat.meta_description, 
                 cat.long_content_top, 
-                "Detaillierter Vergleich und Experten-Ratgeber."
+                "Detaillierter Vergleich und redaktioneller Überblick."
             ),
             slug: `/${cat.slug}`,
             image: cat.card_image_url || cat.banner_override || cat.icon || null,
@@ -169,7 +169,7 @@ button_text: cat.button_text ?? null
               {content?.news?.subheadline || "Aktuelles & Ratgeber"}
             </h2>
             <p className="text-base text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
-              Die neuesten Vergleiche, Artikel und Experten-Tipps aus unserer Redaktion.
+              Die neuesten Vergleiche, Artikel und Ratgeber aus unserer Redaktion.
             </p>
           </div>
 

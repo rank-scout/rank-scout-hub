@@ -34,9 +34,9 @@ const Index = () => {
     
   const safeDescription = (typeof siteDescription === 'string' && siteDescription.length > 0)
     ? siteDescription
-    : "Finde die besten Tools, Software und Finanzprodukte im unabhängigen Vergleich.";
+    : "Vergleiche, Rechner und Ratgeber zu Tools, Software und Finanzthemen im Überblick.";
 
-  const safeKeywords = (settings?.seo_keywords as string) || "Vergleich, Finanzen, Software, Testsieger, Rank-Scout, Erfahrungen, Test";
+  const safeKeywords = (settings?.seo_keywords as string) || "Vergleich, Finanzen, Software, Rank-Scout, Erfahrungen, Ratgeber, Überblick";
 
   useForceSEO(safeDescription);
 

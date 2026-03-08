@@ -8,10 +8,10 @@ export const SEOContentSection = () => {
 
   // Defaults falls noch nichts in DB ist
   const features = content.why_us?.features || [
-    { title: "Extreme Performance", text: "Keine Ladezeiten, nur Fakten.", icon: "zap" },
-    { title: "100% Unabhängig", text: "Maximale Neutralität.", icon: "shield" },
+    { title: "Schnelle Übersicht", text: "Keine Ladezeiten, nur Fakten.", icon: "zap" },
+    { title: "Redaktionell aufbereitet", text: "Übersichtlich dargestellt.", icon: "shield" },
     { title: "Global & Lokal", text: "Von International bis Regional.", icon: "globe" },
-    { title: "Echtzeit Updates", text: "Täglich frische Daten.", icon: "chart" }
+    { title: "Regelmäßige Updates", text: "Regelmäßig aktualisiert.", icon: "chart" }
   ];
 
   return (
@@ -26,7 +26,7 @@ export const SEOContentSection = () => {
             {content.why_us?.headline || "Warum Rank-Scout?"}
           </h2>
           <p className="text-lg text-slate-500 leading-relaxed">
-            {content.why_us?.subheadline || "Wir sind deine intelligente Entscheidungshilfe."}
+            {content.why_us?.subheadline || "Wir bieten dir eine strukturierte Übersicht über Vergleiche und Ratgeber."}
           </p>
         </div>
 

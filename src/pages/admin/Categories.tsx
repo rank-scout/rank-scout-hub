@@ -569,7 +569,7 @@ export default function Categories() {
                                         <Select onValueChange={field.onChange} value={field.value || "comparison"}>
                                             <SelectTrigger className="h-12 text-base font-medium bg-slate-50 border-slate-200 focus:ring-primary/20"><SelectValue placeholder="Wähle Typ..." /></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="comparison"><div className="flex items-center gap-2"><Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0">Vergleich</Badge> Für Top-Listen (Dating, Krypto, etc.)</div></SelectItem>
+                                                <SelectItem value="comparison"><div className="flex items-center gap-2"><Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-0">Vergleich</Badge> Für Vergleichs- und Übersichtsseiten</div></SelectItem>
                                                 <SelectItem value="hub_overview"><div className="flex items-center gap-2"><Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-0">Hub</Badge> Sammelseite für Unterkategorien</div></SelectItem>
                                                 <SelectItem value="review"><div className="flex items-center gap-2"><Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 border-0">Artikel</Badge> Klassischer Content</div></SelectItem>
                                             </SelectContent>
@@ -640,7 +640,7 @@ export default function Categories() {
                                 <Card className="border-slate-200 shadow-sm h-fit border-l-4 border-l-primary bg-slate-50/50">
                                     <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-lg"><LayoutTemplate className="w-5 h-5 text-primary"/> Hub & Listen Texte</CardTitle><CardDescription>Überschreibe die Standard-Texte des Templates.</CardDescription></CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="space-y-2"><Label>Überschrift über Liste</Label><Input {...register("comparison_title")} className="bg-white" placeholder="z.B. Die besten Anbieter 2026" /></div>
+                                        <div className="space-y-2"><Label>Überschrift über Liste</Label><Input {...register("comparison_title")} className="bg-white" placeholder="z.B. Anbieter und Modelle im Überblick" /></div>
                                         <div className="space-y-2"><Label>Features Überschrift</Label><Input {...register("features_title")} className="bg-white" placeholder="z.B. Wichtige Funktionen" /></div>
                                         <div className="space-y-2"><Label>Intro Titel</Label><Input {...register("intro_title")} className="bg-white" placeholder="z.B. Warum du vergleichen solltest" /></div>
                                         <div className="space-y-2"><Label className="text-primary font-bold">Projekt Button-Text (CTA)</Label><Input {...register("project_cta_text")} className="bg-white border-primary/20" placeholder="z.B. Preis prüfen (überschreibt Standard)" /></div>
@@ -650,8 +650,8 @@ export default function Categories() {
                                 <Card className="border-slate-200 shadow-sm h-fit bg-slate-50/50">
                                     <CardHeader className="pb-3"><CardTitle className="flex items-center gap-2 text-lg"><Settings2 className="w-5 h-5 text-slate-500"/> Hero Banner Texte</CardTitle><CardDescription>Spezifische Anpassungen für den Kopfbereich.</CardDescription></CardHeader>
                                     <CardContent className="space-y-4">
-                                        <div className="space-y-2"><Label>Hero Pre-Title</Label><Input {...register("hero_pretitle")} className="bg-white" placeholder="z.B. Aktueller Test" /></div>
-                                        <div className="space-y-2"><Label>Hero Headline</Label><Input {...register("hero_headline")} className="bg-white" placeholder="z.B. Finde das beste Tool" /></div>
+                                        <div className="space-y-2"><Label>Hero Pre-Title</Label><Input {...register("hero_pretitle")} className="bg-white" placeholder="z.B. Aktueller Überblick" /></div>
+                                        <div className="space-y-2"><Label>Hero Headline</Label><Input {...register("hero_headline")} className="bg-white" placeholder="z.B. Tools und Funktionen im Überblick" /></div>
                                         <div className="space-y-2"><Label>Hero CTA Button</Label><Input {...register("hero_cta_text")} className="bg-white" placeholder="z.B. Jetzt vergleichen" /></div>
                                         <div className="space-y-2"><Label>Hero Badge</Label><Input {...register("hero_badge_text")} className="bg-white" placeholder="z.B. Update 2026" /></div>
                                     </CardContent>
