@@ -187,30 +187,43 @@ export default function CategoryDetail() {
     fetchRating();
   }, [category?.slug]);
 
-  // Dynamisches JSON-LD generieren
+ // Dynamisches JSON-LD generieren (Google Rich Snippet Safe)
   const jsonLd = useMemo(() => {
     if (!category) return null;
-    const schema: any = {
+
+    if (dynamicRating) {
+      // Mit Rating: MUSS "Product" sein für Google Sterne
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        "name": category.meta_title || `${category.name} Vergleich`,
+        "description": category.meta_description || `Die besten Anbieter für ${category.name} im unabhängigen Vergleich.`,
+        "image": category.hero_image_url || "https://rank-scout.com/Rank-Scout-Logo.webp",
+        "brand": {
+          "@type": "Brand",
+          "name": "Rank-Scout"
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": dynamicRating.stars,
+          "reviewCount": dynamicRating.count,
+          "bestRating": "5",
+          "worstRating": "1"
+        }
+      };
+      return JSON.stringify(schema);
+    }
+
+    // Ohne Rating: Normale WebPage
+    return JSON.stringify({
       "@context": "https://schema.org",
       "@type": "WebPage",
       "name": category.meta_title || category.name,
       "description": category.meta_description,
       "url": `https://rank-scout.com/${category.slug}`
-    };
-
-    if (dynamicRating) {
-      schema.aggregateRating = {
-        "@type": "AggregateRating",
-        "ratingValue": dynamicRating.stars,
-        "reviewCount": dynamicRating.count,
-        "bestRating": "5",
-        "worstRating": "1"
-      };
-    }
-    return JSON.stringify(schema);
+    });
   }, [category, dynamicRating]);
   // --- ENDE NEU ---
-
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => { if (entry.isIntersecting) setActiveSection(entry.target.id); });
