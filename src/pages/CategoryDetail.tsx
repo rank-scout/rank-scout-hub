@@ -7,7 +7,13 @@ import { useProjects } from "@/hooks/useProjects";
 import { useCategoryProjects } from "@/hooks/useCategoryProjects";
 import { Button } from "@/components/ui/button";
 import { 
-    Loader2, ShieldCheck, Clock, Users, Lock, Trophy, Star, CheckCircle2, ArrowRight, Home, Lightbulb, Zap
+    Loader2, ShieldCheck, Clock, Users, Lock, Trophy, Star, CheckCircle2, ArrowRight, Home, Lightbulb, Zap,
+    ActivityIcon,
+    Scale3DIcon,
+    ScaleIcon,
+    BookOpenCheckIcon,
+    BookOpenIcon,
+    BookOpenTextIcon
 } from "lucide-react"; 
 
 import CustomHtmlRenderer from "@/components/templates/CustomHtmlRenderer";
@@ -248,7 +254,7 @@ export default function CategoryDetail() {
   }
 
   if (isInternalPage) {
-    const updatedAt = new Date(category.updated_at || new Date()).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    const currentMonthYear = new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
     const heroImage = getCategoryHeroImage(category);
     const hasWidgetCode = !!(category as any).comparison_widget_code;
 
@@ -284,8 +290,27 @@ return (
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tighter mb-6 md:mb-8 leading-tight md:leading-[1.1] drop-shadow-2xl px-2">{category.h1_title || category.name}</h1>
               {category.hero_headline && (<p className="text-lg sm:text-xl md:text-2xl text-slate-300 font-medium mb-10 md:mb-12 leading-relaxed max-w-3xl mx-auto antialiased px-4">{category.hero_headline}</p>)}
               <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 md:gap-4 bg-white/5 backdrop-blur-sm p-3 rounded-3xl border border-white/10 shadow-2xl max-w-4xl mx-auto w-full sm:w-auto">
-                <div className="flex items-center gap-3 px-5 md:px-6 py-3 rounded-2xl bg-white border border-slate-100 shadow-sm w-full sm:w-auto"><div className="p-2 bg-orange-50 rounded-full text-orange-600"><ShieldCheck className="w-5 h-5" /></div><div className="text-left text-slate-800"><div className="text-[10px] text-slate-400 font-bold uppercase">Status</div><div className="text-sm font-bold">Aktuell</div></div></div>
-                <div className="flex items-center gap-3 px-5 md:px-6 py-3 rounded-2xl bg-white border border-slate-100 shadow-sm w-full sm:w-auto"><div className="p-2 bg-orange-50 rounded-full text-orange-600"><Clock className="w-5 h-5" /></div><div className="text-left text-slate-800"><div className="text-[10px] text-slate-400 font-bold uppercase">Update</div><div className="text-sm font-bold">{updatedAt}</div></div></div>
+                {/* Box 1: Das "Geprüft" Siegel */}
+                <div className="flex items-center gap-3 px-5 md:px-6 py-3 rounded-2xl bg-white border border-slate-100 shadow-sm w-full sm:w-auto">
+                  <div className="p-2 bg-green-50 rounded-full text-green-600">
+                    <ShieldCheck className="w-5 h-5" />
+                  </div>
+                  <div className="text-left text-slate-800">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Markt-Analyse</div>
+                    <div className="text-sm font-bold">Tagesaktuell</div>
+                  </div>
+                </div>
+
+                {/* Box 2: Der "Immer-Frisch" Zeitstempel */}
+                <div className="flex items-center gap-3 px-5 md:px-6 py-3 rounded-2xl bg-white border border-slate-100 shadow-sm w-full sm:w-auto">
+                  <div className="p-2 bg-blue-50 rounded-full text-blue-600">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                  <div className="text-left text-slate-800">
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Letzter Check</div>
+                    <div className="text-sm font-bold">{currentMonthYear}</div>
+                  </div>
+                </div>
               </div>
             </div>
           </section>
@@ -357,14 +382,15 @@ return (
                   <p className="font-bold text-[#0A0F1C] mb-6 flex items-center gap-2 text-sm uppercase tracking-widest"><Zap className="w-4 h-4 text-orange-500"/> {featuresTitle}</p>
                   <ul className="text-sm space-y-4 font-medium">
                     {category.long_content_top && (<li><a href="#content-top" className={`flex items-center gap-3 transition-colors ${activeSection==='content-top'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='content-top'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Einleitung</a></li>)}
-                    <li><a href="#vergleich" className={`flex items-center gap-3 transition-colors ${activeSection==='vergleich'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='vergleich'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Vergleichstabelle</a></li>
-                    {category.long_content_bottom && (<li><a href="#content-bottom" className={`flex items-center gap-3 transition-colors ${activeSection==='content-bottom'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='content-bottom'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Details</a></li>)}
+                    <li><a href="#vergleich" className={`flex items-center gap-3 transition-colors ${activeSection==='vergleich'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='vergleich'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Anbieter & Tarife</a></li>
+                    {category.long_content_bottom && (<li><a href="#content-bottom" className={`flex items-center gap-3 transition-colors ${activeSection==='content-bottom'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='content-bottom'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Ratgeber & Analyse</a></li>)}
                     {category.faq_data && (<li><a href="#faq" className={`flex items-center gap-3 transition-colors ${activeSection==='faq'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='faq'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> FAQ</a></li>)}
                   </ul>
                 </div>
 
                 {((category as any).sidebar_ad_html || (category as any).sidebar_ad_image) && (
                     <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-lg shadow-slate-200/30 mb-8 flex flex-col items-center justify-center overflow-hidden">
+
                         <span className="text-[9px] uppercase tracking-widest text-slate-300 font-bold mb-4 w-full text-center">Anzeige</span>
                         {(category as any).sidebar_ad_html ? (
                             <div className="w-full flex justify-center items-center"><div dangerouslySetInnerHTML={{ __html: (category as any).sidebar_ad_html }} /></div>
@@ -374,7 +400,7 @@ return (
                     </div>
                 )}
                 
-                <div className="bg-gradient-to-b from-white to-slate-50 rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30"><p className="font-bold text-[#0A0F1C] mb-6 text-[10px] uppercase tracking-widest text-center">Rank-Scout Garantie</p><div className="space-y-4 text-sm text-slate-600 font-medium"><div className="flex items-center gap-4"><ShieldCheck className="w-5 h-5 text-green-600" /><span>Redaktionell geprüft</span></div><div className="flex items-center gap-4"><Users className="w-5 h-5 text-[#0A0F1C]" /><span>100% Unabhängig</span></div><div className="flex items-center gap-4"><Lock className="w-5 h-5 text-blue-600" /><span>SSL Verschlüsselt</span></div></div></div>
+                <div className="bg-gradient-to-b from-white to-slate-50 rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30"><p className="font-bold text-[#0A0F1C] mb-6 text-[10px] uppercase tracking-widest text-center">Unser Qualitäts-Versprechen</p><div className="space-y-4 text-sm text-slate-600 font-medium"><div className="flex items-center gap-4"><BookOpenTextIcon className="w-5 h-5 text-blue-600" /><span>Redaktioneller Ratgeber</span></div><div className="flex items-center gap-4"><ScaleIcon className="w-5 h-5 text-blue-600" /><span>Transparente Kriterien</span></div><div className="flex items-center gap-4"><ActivityIcon className="w-5 h-5 text-blue-600" /><span>Laufend aktualisiert</span></div></div></div>
               </aside>
           </div>
         </main>

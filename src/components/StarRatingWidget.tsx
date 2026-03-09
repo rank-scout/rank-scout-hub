@@ -16,7 +16,6 @@ export function StarRatingWidget({ slug }: StarRatingWidgetProps) {
   const [stats, setStats] = useState({ avg: 0, count: 0 });
 
   useEffect(() => {
-    // Reset Zustand beim Wechsel der Seite (wichtig für SPA)
     const voted = localStorage.getItem(`rs_voted_${slug}`);
     setHasVoted(!!voted); 
     fetchStats();
@@ -36,7 +35,6 @@ export function StarRatingWidget({ slug }: StarRatingWidgetProps) {
     }
 
     if (data) {
-      // Rechnet Admin-Basis (Seed) + Echte Klicks (Real) zusammen
       const totalStars = Number(data.seed_total_stars || 0) + Number(data.real_total_stars || 0);
       const totalVotes = Number(data.seed_vote_count || 0) + Number(data.real_vote_count || 0);
       
@@ -68,14 +66,27 @@ export function StarRatingWidget({ slug }: StarRatingWidgetProps) {
       localStorage.setItem(`rs_voted_${slug}`, "true");
       setHasVoted(true);
       toast.success("Vielen Dank für dein Feedback!");
-      
-      fetchStats(); // Lädt die neuen, kombinierten Stats nach dem Vote
+      fetchStats();
     } catch (error) {
       console.error('[StarRatingWidget] Error:', error);
       toast.error("Fehler beim Speichern deiner Bewertung.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Hilfsfunktion zur Berechnung der Füllung pro Stern
+  const getStarFill = (starIndex: number) => {
+    // Wenn gehovered wird, zeigen wir volle Sterne für das Feedback-Gefühl
+    if (hoveredStar !== null) {
+      return hoveredStar >= starIndex ? 100 : 0;
+    }
+    
+    // Ansonsten berechnen wir die Füllung basierend auf dem Durchschnitt
+    const diff = stats.avg - (starIndex - 1);
+    if (diff >= 1) return 100; // Voller Stern
+    if (diff <= 0) return 0;   // Leerer Stern
+    return diff * 100;         // Teilgefüllter Stern (z.B. 0.7 -> 70%)
   };
 
   return (
@@ -90,19 +101,22 @@ export function StarRatingWidget({ slug }: StarRatingWidgetProps) {
           <button
             key={star}
             onClick={() => handleVote(star)}
-            onMouseEnter={() => setHoveredStar(star)}
+            onMouseEnter={() => !hasVoted && setHoveredStar(star)}
             onMouseLeave={() => setHoveredStar(null)}
             disabled={isSubmitting || hasVoted}
-            className="transition-transform hover:scale-110 focus:outline-none disabled:opacity-50"
+            className="relative transition-transform hover:scale-110 focus:outline-none disabled:opacity-100"
             aria-label={`${star} Sterne vergeben`}
           >
-            <Star
-              className={`w-10 h-10 ${
-                (hoveredStar || Math.round(stats.avg)) >= star
-                  ? "fill-orange-400 text-orange-400"
-                  : "text-slate-200"
-              }`}
-            />
+            {/* Grauer Hintergrund-Stern */}
+            <Star className="w-10 h-10 text-slate-200" strokeWidth={1.5} />
+            
+            {/* Orangefarbener Vordergrund-Stern mit Teilfüllung */}
+            <div 
+              className="absolute top-0 left-0 overflow-hidden pointer-events-none transition-all duration-300"
+              style={{ width: `${getStarFill(star)}%` }}
+            >
+              <Star className="w-10 h-10 fill-orange-400 text-orange-400" strokeWidth={1.5} />
+            </div>
           </button>
         ))}
       </div>
