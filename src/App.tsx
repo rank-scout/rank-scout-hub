@@ -41,6 +41,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Impressum = lazy(() => import("./pages/Impressum"));
 const AGB = lazy(() => import("./pages/AGB"));
 const Datenschutz = lazy(() => import("./pages/Datenschutz"));
+const HowWeCompare = lazy(() => import("./pages/HowWeCompare")); // <-- NEU: Trust-Seite
 const GoRedirect = lazy(() => import("./pages/GoRedirect"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -189,6 +190,7 @@ const App = () => {
                     <Route path="/impressum" element={<Impressum />} />
                     <Route path="/agb" element={<AGB />} />
                     <Route path="/datenschutz" element={<Datenschutz />} />
+                    <Route path="/wie-wir-vergleichen" element={<HowWeCompare />} /> {/* <-- NEU: Trust-Seite */}
                     
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/admin" element={<AdminLayout />}>

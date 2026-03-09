@@ -100,6 +100,18 @@ const Datenschutz = () => {
               </div>
             </section>
 
+            {/* NEU: Integration von Vergleichsrechnern */}
+            <section>
+              <h2 className="text-2xl font-display font-bold text-primary mb-6 flex items-center gap-3">
+                <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><Server className="w-6 h-6" /></div>
+                Eingebundene Vergleichsrechner (Partnerprogramme)
+              </h2>
+              <div className="space-y-6 text-slate-700 p-6 rounded-xl border border-slate-100 bg-slate-50">
+                <p>Auf unserer Website binden wir iFrames und Vergleichsrechner von externen Partnern ein (insbesondere der TARIFCHECK24 GmbH und CHECK24). Wenn Sie diese Rechner nutzen und Daten in die Formulare eingeben, werden diese Daten direkt auf den Servern der jeweiligen Partner verarbeitet. Wir selbst speichern die in den Rechnern eingegebenen sensiblen Formulardaten nicht.</p>
+                <p>Der jeweilige Partner ist datenschutzrechtlich für die im Rechner eingegebenen Daten verantwortlich. Weitere Informationen zur Datenverarbeitung finden Sie in den Datenschutzerklärungen der jeweiligen Partner in den iFrames.</p>
+              </div>
+            </section>
+
             {/* 4. Datenerfassung */}
             <section>
               <h2 className="text-2xl font-display font-bold text-primary mb-6 flex items-center gap-3">

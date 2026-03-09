@@ -1,4 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
+import { StarRatingWidget } from '@/components/StarRatingWidget';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
 interface Project {
@@ -90,11 +93,51 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
   const year = new Date().getFullYear();
   const locationName = category.name.replace(/^Singles\s*/i, '').trim();
 
+  // --- NEU: Dynamische Rating-Logik ---
+  const [dynamicRating, setDynamicRating] = useState<{stars: number, count: number} | null>(null);
+
+  useEffect(() => {
+    const fetchRating = async () => {
+      if (!category?.slug) return;
+      
+      const { data, error } = await supabase
+        .from('page_ratings')
+        .select('total_stars, vote_count')
+        .eq('slug', category.slug)
+        .maybeSingle(); 
+      
+      if (data && data.vote_count > 0) {
+        setDynamicRating({
+          stars: Number((data.total_stars / data.vote_count).toFixed(1)),
+          count: data.vote_count
+        });
+      }
+    };
+    fetchRating();
+  }, [category?.slug]);
+
+  const renderDynamicSchema = () => {
+    if (!dynamicRating) return null;
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": category.name,
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": dynamicRating.stars,
+        "reviewCount": dynamicRating.count,
+        "bestRating": "5",
+        "worstRating": "1"
+      }
+    };
+    return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
+  };
+  // --- ENDE NEU ---
+
   // Helper: Sichere URLs
   const sanitizeUrl = (url: string | undefined) => {
     if (!url) return '#';
     try {
-      // Erlaube relative Links oder http/https
       if (url.startsWith('/') || url.startsWith('#')) return url;
       const p = new URL(url);
       return ['http:', 'https:'].includes(p.protocol) ? url : '#';
@@ -104,7 +147,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
   // Helper: SubID anhängen (für Affiliate Links)
   const addSubId = (link: string | undefined) => {
     if (!link) return '#';
-    if (link.startsWith('#')) return link; // Anker-Links nicht ändern
+    if (link.startsWith('#')) return link; 
     return link + (link.includes('?') ? '&' : '?') + 'subid=' + (category.slug || 'rank-scout');
   };
 
@@ -115,25 +158,20 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="canonical" href={`https://rank-scout.com/${category.slug}/`} />
 
-        {/* Favicons (Global) */}
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
         
-        {/* SEO */}
-        <title>{(category.meta_title || `${category.name} | Test & Vergleich 2026`).replace(/2026/g, year.toString())}</title>
+        <title>{(category.meta_title || `${category.name} | Vergleich 2026`).replace(/2026/g, year.toString())}</title>
         <meta name="description" content={(category.meta_description || '').replace(/2026/g, year.toString())} />
         <meta name="robots" content="index, follow" />
 
-        {/* Fonts & Styles */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
         
-        {/* Tailwind & FontAwesome */}
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 
-        {/* Tailwind Config & Custom Styles */}
         <script dangerouslySetInnerHTML={{
           __html: `
             tailwind.config = {
@@ -169,7 +207,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
           `
         }} />
 
-        {/* JSON-LD Schema */}
+        {/* ItemList Schema (Legal & Safe für die Projektliste) */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
@@ -236,11 +274,11 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                     <i className="fas fa-star mr-2"></i>{category.h1_title?.replace(/2026/g, year.toString()) || category.name}
                 </p>
                 <h1 className="font-heading font-bold text-3xl md:text-5xl lg:text-6xl text-white leading-tight mb-6">
-                    {category.hero_pretitle || 'Die besten Empfehlungen'} <br/>
-                    <span className="text-brand-gold">{category.hero_headline || 'im großen Vergleich'}</span>
+                    {category.hero_pretitle || 'Empfehlungen und Tarife'} <br/>
+                    <span className="text-brand-gold">{category.hero_headline || 'im redaktionellen Überblick'}</span>
                 </h1>
                 <p className="text-gray-300 text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
-                    {category.description || 'Wir haben die besten Anbieter objektiv getestet und verglichen. Finde jetzt deinen Testsieger.'}
+                    {category.description || 'Wir haben Anbieter und Tarife verglichen. Finde jetzt das für dich passende Angebot.'}
                 </p>
                 <a href="#vergleich" className="inline-flex items-center gap-2 bg-brand-gold hover:bg-brand-luxury text-brand-black font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105">
                     <i className="fas fa-search"></i>
@@ -248,7 +286,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                 </a>
                 <p className="text-gray-400 text-xs mt-6">
                     <i className="fas fa-check-circle text-green-400 mr-1"></i>
-                    <span>{category.hero_badge_text || 'Unabhängig & Objektiv geprüft'}</span>
+                    <span>{category.hero_badge_text || 'Konditionen übersichtlich prüfen'}</span>
                 </p>
             </div>
         </section>
@@ -256,7 +294,11 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         {/* INTRO & QUICK NAV */}
         <section className="py-16 bg-white">
             <div className="max-w-6xl mx-auto px-4">
-                <div className="text-center mb-12">
+                
+                {/* --- NEU: Affiliate Disclaimer --- */}
+                <AffiliateDisclaimer />
+                
+                <div className="text-center mb-12 mt-8">
                     <h2 className="font-heading font-bold text-2xl md:text-3xl text-gray-900 mb-4">
                         {category.intro_title || `Alles, was du über ${locationName} wissen musst`}
                     </h2>
@@ -266,18 +308,18 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                     <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="p-6 rounded-xl border border-gray-100 shadow-sm bg-gradient-to-br from-gray-50 to-white">
                             <i className="fas fa-shield-alt text-brand-primary text-2xl mb-3"></i>
-                            <h3 className="font-bold text-lg mb-2">Geprüfte Qualität</h3>
-                            <p className="text-sm text-gray-600">Wir listen nur seriöse und getestete Anbieter.</p>
+                            <h3 className="font-bold text-lg mb-2">Sichere Auswahl</h3>
+                            <p className="text-sm text-gray-600">Wir listen etablierte Anbieter und Tarifmodelle.</p>
                         </div>
                         <div className="p-6 rounded-xl border border-gray-100 shadow-sm bg-gradient-to-br from-gray-50 to-white">
                             <i className="fas fa-bolt text-brand-primary text-2xl mb-3"></i>
                             <h3 className="font-bold text-lg mb-2">Schneller Überblick</h3>
-                            <p className="text-sm text-gray-600">Vergleiche Preise, Features und Bewertungen auf einen Blick.</p>
+                            <p className="text-sm text-gray-600">Vergleiche Preise und Konditionen auf einen Blick.</p>
                         </div>
                     </div>
                     {/* Banner Slot */}
                     <div className="flex items-center justify-center">
-                        <div className="w-full" dangerouslySetInnerHTML={{ __html: category.banner_override || '<div class="ad-box rounded-xl bg-gray-100 p-8 text-center text-gray-500 border">Hier könnte dein Angebot stehen</div>' }} />
+                        <div className="w-full" dangerouslySetInnerHTML={{ __html: category.banner_override || '<div class="ad-box rounded-xl bg-gray-100 p-8 text-center text-gray-500 border">Finde das passende Angebot</div>' }} />
                     </div>
                 </div>
             </div>
@@ -288,7 +330,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
             <div className="max-w-4xl mx-auto px-4">
                 <div className="text-center mb-10">
                     <h2 className="font-heading font-bold text-2xl md:text-3xl text-gray-900 mb-2">
-                        {category.comparison_title || 'Top Anbieter im Vergleich'}
+                        {category.comparison_title || 'Tarife und Anbieter im Überblick'}
                     </h2>
                 </div>
 
@@ -300,7 +342,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                                 {isFirst && (
                                     <div className="p-1">
                                         <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-brand-gold to-yellow-500 text-brand-black">
-                                            <i className="fas fa-trophy mr-1"></i>{p.badge_text || 'Testsieger'}
+                                            <i className="fas fa-star mr-1"></i>{p.badge_text || 'Empfehlung'}
                                         </span>
                                     </div>
                                 )}
@@ -333,10 +375,9 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                             </div>
                         );
                     }) : (
-                        <p className="text-center text-gray-500">Aktuell keine Projekte gelistet.</p>
+                        <p className="text-center text-gray-500">Aktuell keine Angebote gelistet.</p>
                     )}
                 </div>
-                <p className="text-center text-gray-500 text-xs mt-8">*Werbung / Affiliate Links</p>
             </div>
         </section>
 
@@ -344,7 +385,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         {testimonials.length > 0 && (
             <section className="py-16 bg-white">
                 <div className="max-w-4xl mx-auto px-4">
-                    <h2 className="font-heading font-bold text-2xl text-center mb-10">Das sagen unsere Nutzer</h2>
+                    <h2 className="font-heading font-bold text-2xl text-center mb-10">Erfahrungen der Nutzer</h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {testimonials.map(t => (
                             <div key={t.id} className="testimonial-card bg-gray-50 p-6 rounded-xl border border-gray-100">
@@ -365,6 +406,10 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
             <div className="max-w-4xl mx-auto px-4">
                 <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: category.long_content_top || '' }} />
                 <div className="prose prose-lg max-w-none mt-8" dangerouslySetInnerHTML={{ __html: category.long_content_bottom || '' }} />
+                
+                {/* --- NEU: Sterne-Widget und Dynamisches Schema am Ende des Contents --- */}
+                <StarRatingWidget slug={category.slug} />
+                {renderDynamicSchema()}
             </div>
         </section>
 
@@ -406,7 +451,6 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
             <div dangerouslySetInnerHTML={{ __html: category.analytics_code }} />
         )}
 
-        {/* CLIENT SIDE INTERACTIVITY SCRIPTS */}
         <script dangerouslySetInnerHTML={{
           __html: `
             function closeTopBar() {

@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Spin } from "@/components/Spin";
+import { supabase } from '@/integrations/supabase/client';
+import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
+import { StarRatingWidget } from '@/components/StarRatingWidget';
 
 // --- Interfaces ---
 interface Project { id: string; name: string; url: string; affiliate_link: string; logo_url: string; rating: number; rating_count?: string; badge_text?: string; features?: string[]; description?: string; }
 interface FooterLink { label: string; url: string; }
 interface CategoryData { 
     id: string; name: string; slug: string; meta_title?: string; meta_description?: string; h1_title?: string; hero_pretitle?: string; hero_headline?: string; description?: string; hero_cta_text?: string; hero_badge_text?: string; intro_title?: string; long_content_top?: string; long_content_bottom?: string; site_name?: string; footer_site_name?: string; footer_copyright_text?: string; banner_override?: string; analytics_code?: string;
-    faq_data?: { question: string; answer: string }[]; // DAS IST NEU
+    faq_data?: { question: string; answer: string }[];
 }
 interface TemplateProps { category: CategoryData; projects: Project[]; settings: any; legalLinks: FooterLink[]; popularLinks: FooterLink[]; }
 
@@ -24,8 +27,30 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
     { label: "Kontakt", url: "https://dating.rank-scout.com/kontakt.html" }
   ];
 
-  // FAQ Schema Generator (nutzt jetzt das saubere JSON Array)
-  const faqSchema = [];
+  // --- NEU: Dynamische Rating-Logik ---
+  const [dynamicRating, setDynamicRating] = useState<{stars: number, count: number} | null>(null);
+
+  useEffect(() => {
+    const fetchRating = async () => {
+      if (!category?.slug) return;
+      const { data, error } = await supabase
+        .from('page_ratings')
+        .select('total_stars, vote_count')
+        .eq('slug', category.slug)
+        .maybeSingle();
+
+      if (data && data.vote_count > 0) {
+        setDynamicRating({
+          stars: Number((data.total_stars / data.vote_count).toFixed(1)),
+          count: data.vote_count
+        });
+      }
+    };
+    fetchRating();
+  }, [category?.slug]);
+
+  // FAQ Schema Generator (nutzt das saubere JSON Array)
+  const faqSchema: any[] = [];
   if (category.faq_data && Array.isArray(category.faq_data)) {
      category.faq_data.forEach(faq => {
          faqSchema.push({
@@ -36,13 +61,40 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
      });
   }
 
+  // CollectionPage Schema dynamisch aufbauen
+  const collectionPageSchema: any = { 
+    "@type": "CollectionPage", 
+    "name": category.meta_title || `Vergleich: ${category.name}`, 
+    "description": category.meta_description, 
+    "url": `https://dating.rank-scout.com/${category.slug}/`, 
+    "mainEntity": { 
+      "@type": "ItemList", 
+      "itemListElement": projects.map((p, i) => ({ 
+        "@type": "ListItem", "position": i + 1, "url": addSubId(p.affiliate_link), "name": p.name 
+      })) 
+    } 
+  };
+
+  // Dynamisches Rating zum Schema hinzufügen, sobald es geladen ist
+  if (dynamicRating) {
+    collectionPageSchema.aggregateRating = {
+      "@type": "AggregateRating",
+      "ratingValue": dynamicRating.stars,
+      "reviewCount": dynamicRating.count,
+      "bestRating": "5",
+      "worstRating": "1"
+    };
+  }
+
   const jsonLd = {
-    "@context": "https://schema.org", "@graph": [
+    "@context": "https://schema.org", 
+    "@graph": [
       { "@type": "BreadcrumbList", "itemListElement": [ { "@type": "ListItem", "position": 1, "name": "Startseite", "item": "https://dating.rank-scout.com/" }, { "@type": "ListItem", "position": 2, "name": category.name, "item": `https://dating.rank-scout.com/${category.slug}/` } ] },
-      { "@type": "CollectionPage", "name": category.meta_title || `Vergleich: ${category.name}`, "description": category.meta_description, "url": `https://dating.rank-scout.com/${category.slug}/`, "mainEntity": { "@type": "ItemList", "itemListElement": projects.map((p, i) => ({ "@type": "ListItem", "position": i + 1, "url": addSubId(p.affiliate_link), "name": p.name })) } },
+      collectionPageSchema,
       ...(faqSchema.length > 0 ? [{ "@type": "FAQPage", "mainEntity": faqSchema }] : [])
     ]
   };
+  // --- ENDE NEU ---
 
   return (
     <html lang="de" className="scroll-smooth">
@@ -50,7 +102,7 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
         <meta charSet="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <link rel="canonical" href={`https://dating.rank-scout.com/${category.slug}/`} />
         
-        {/* KYRA FIX: Preload für das CSS-Background-Image (Unsplash) für LCP Boost */}
+        {/* Preload für das CSS-Background-Image (Unsplash) für LCP Boost */}
         <link rel="preload" as="image" href="https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?q=80&w=2574&auto=format&fit=crop" fetchPriority="high" />
 
         <link rel="icon" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon.ico" sizes="any" /><link rel="icon" type="image/png" sizes="16x16" href="https://dating.rank-scout.com/top3-dating-apps/images/favicon-16x16.png" />
@@ -81,6 +133,8 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
             
             ${settings?.custom_css || ''}
         ` }} />
+        
+        {/* Dynamisches JSON-LD */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </head>
       <body className="font-sans text-gray-800 bg-gray-50 antialiased flex flex-col min-h-screen">
@@ -107,6 +161,12 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
         {/* VERGLEICH LISTE */}
         <section id="vergleich" className="py-20 bg-white relative -mt-8 rounded-t-[2.5rem] z-20 shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
             <div className="container mx-auto px-4 relative z-10">
+                
+                {/* --- NEU: Affiliate Disclaimer --- */}
+                <div className="max-w-4xl mx-auto mb-12">
+                    <AffiliateDisclaimer />
+                </div>
+
                 <h2 className="font-heading text-3xl md:text-4xl font-bold text-center text-gray-900 mb-4">{category.intro_title || <><Spin options={['Unsere Empfehlungen', 'Die Top-Liste', 'Das Ranking']} /> für {topicOrCity}</>}</h2>
                 <p className="text-center text-gray-500 mb-12 max-w-2xl mx-auto">Sortiert nach Relevanz, Erfolgsaussichten und Seriosität im Jahr {year}.</p>
                 <div className="flex flex-col gap-8 max-w-4xl mx-auto">
@@ -114,7 +174,7 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
                         const isFirst = idx === 0;
                         return (
                             <div key={p.id} className={`relative bg-white rounded-2xl shadow-sm border p-6 md:p-8 transition-all ${isFirst ? 'border-brand-primary/20 shadow-xl transform md:scale-105 z-10' : 'border-gray-100 hover:border-brand-primary/50 hover:shadow-md'}`}>
-                                {isFirst && <div className="absolute top-0 right-0 bg-gradient-to-r from-brand-primary to-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl rounded-tr-xl uppercase tracking-wider shadow-md"><i className="fas fa-crown text-brand-gold mr-1"></i> <Spin options={['Testsieger', 'Empfehlung', 'Top Wahl']} /></div>}
+                                {isFirst && <div className="absolute top-0 right-0 bg-gradient-to-r from-brand-primary to-red-600 text-white text-xs font-bold px-4 py-1.5 rounded-bl-xl rounded-tr-xl uppercase tracking-wider shadow-md"><i className="fas fa-crown text-brand-gold mr-1"></i> <Spin options={['Empfehlung', 'Tipp', 'Top Wahl']} /></div>}
                                 {!isFirst && <div className="absolute top-0 right-0 bg-gray-100 text-gray-500 text-xs font-bold px-3 py-1 rounded-bl-lg">Platz {idx + 1}</div>}
                                 <div className="flex flex-col md:flex-row items-center gap-6">
                                     <div className="w-24 h-24 bg-white rounded-2xl flex items-center justify-center p-2 border border-gray-100 overflow-hidden shadow-sm"><a href={addSubId(p.affiliate_link)} target="_blank" rel="nofollow sponsored noopener"><img src={sanitizeUrl(p.logo_url)} alt={p.name} className="w-full h-full object-contain" /></a></div>
@@ -132,7 +192,7 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
                                 </div>
                             </div>
                         );
-                    }) : <p className="text-center text-gray-500">Keine Projekte gefunden.</p>}
+                    }) : <p className="text-center text-gray-500">Keine Angebote gefunden.</p>}
                 </div>
                 <p className="text-center text-[10px] text-gray-400 mt-6 uppercase tracking-widest">*Werbung / Affiliate Links</p>
             </div>
@@ -189,6 +249,11 @@ export const NewComparisonTemplate: React.FC<TemplateProps> = ({ category, proje
                             </div>
                         </div>
                     )}
+                    
+                    {/* --- NEU: Sterne-Widget am Ende des Contents --- */}
+                    <div className="mt-16">
+                        <StarRatingWidget slug={category.slug} />
+                    </div>
                 </div>
             </div>
         </section>

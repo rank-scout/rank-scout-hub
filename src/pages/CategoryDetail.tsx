@@ -22,6 +22,11 @@ import { useForceSEO } from "@/hooks/useForceSEO";
 import { UniversalWidgetLoader } from "@/components/templates/UniversalWidgetLoader";
 import { useTrackView } from "@/hooks/useTrackView";
 
+// --- NEUE SICHERHEITS-IMPORTS ---
+import { supabase } from "@/integrations/supabase/client";
+import { AffiliateDisclaimer } from "@/components/AffiliateDisclaimer";
+import { StarRatingWidget } from "@/components/StarRatingWidget";
+
 const getCategoryHeroImage = (category: any) => {
     if (category.hero_image_url) return category.hero_image_url;
     const slug = category.slug.toLowerCase();
@@ -32,22 +37,18 @@ const getCategoryHeroImage = (category: any) => {
 
 // KYRA UPDATE: Pixel-genaue Amazon-Sterne mit Premium-Gold & Trust-Label
 const RatingStars = ({ rating }: { rating: number }) => {
-    // Rechnet 10er-Skala auf 5 Sterne runter (z.B. 9.5 -> 4.75)
     const score = (rating || 9.5) / 2; 
 
     return (
         <div className="flex flex-col items-start mt-1">
             <div className="flex gap-0.5">
                 {[0, 1, 2, 3, 4].map((index) => {
-                    // Berechnet exakt, wie viel Prozent DIESER Stern gefüllt sein muss
                     const fill = Math.max(0, Math.min(1, score - index));
                     const fillPercentage = fill * 100;
                     
                     return (
                         <div key={index} className="relative">
-                            {/* Leerer grauer Hintergrund-Stern */}
                             <Star className="w-4 h-4 text-slate-200 fill-current" />
-                            {/* Goldener Vordergrund-Stern (exakt abgeschnitten) */}
                             <div className="absolute top-0 left-0 overflow-hidden" style={{ width: `${fillPercentage}%` }}>
                                 <Star className="w-4 h-4 text-[#FFB900] fill-current" />
                             </div>
@@ -55,7 +56,6 @@ const RatingStars = ({ rating }: { rating: number }) => {
                     );
                 })}
             </div>
-            {/* Neuer Trust-Hinweis */}
             <div className="flex items-center gap-1.5 mt-2.5 text-[10px] text-slate-500 font-medium bg-slate-50 px-2 py-1 rounded border border-slate-100/50">
                 <ShieldCheck className="w-3 h-3 text-green-500" />
                 <span>Verifizierte Testnote</span>
@@ -68,7 +68,7 @@ const ProjectCard = ({ project, index, category }: { project: any, index: number
     const isWinner = index === 0;
     
     const ctaText = category?.project_cta_text || "Zum Anbieter";
-    const badgeText = project?.badge_text || category?.hero_badge_text || "TESTSIEGER 2026";
+    const badgeText = project?.badge_text || category?.hero_badge_text || "EMPFEHLUNG 2026";
     
     const ratingValue = project.rating || 9.5;
     const ratingText = ratingValue >= 9 ? 'EXZELLENT' : (ratingValue >= 8 ? 'SEHR GUT' : 'GUT');
@@ -96,7 +96,6 @@ const ProjectCard = ({ project, index, category }: { project: any, index: number
                         <div className="text-xs text-[#0A0F1C] font-bold">{ratingText}</div>
                     </div>
                 </div>
-                {/* Dynamische Sterne */}
                 <RatingStars rating={ratingValue} />
             </div>
 
@@ -119,7 +118,7 @@ const ProjectCard = ({ project, index, category }: { project: any, index: number
             <div className="p-8 md:w-[25%] flex flex-col justify-center items-center gap-4 bg-slate-50/30">
                 <Button asChild size="lg" className={`w-full h-14 font-bold text-base shadow-lg transition-all duration-300 rounded-xl group/btn ${isWinner ? 'bg-orange-500 hover:bg-[#0A0F1C] text-white hover:text-orange-500 border-none shadow-orange-500/25 hover:shadow-slate-900/20' : 'bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 border-none shadow-slate-900/20'}`}>
                     <a href={project.affiliate_link} target="_blank" rel="nofollow noreferrer" className="flex items-center justify-center gap-2">
-                        {ctaText} <ArrowRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
+                        {ctaText}* <ArrowRight className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" />
                     </a>
                 </Button>
             </div>
@@ -150,6 +149,52 @@ export default function CategoryDetail() {
 
   useForceSEO(category?.meta_description || "");
 
+  // --- NEU: Dynamische Rating-Logik ---
+  const [dynamicRating, setDynamicRating] = useState<{stars: number, count: number} | null>(null);
+
+  useEffect(() => {
+    const fetchRating = async () => {
+      if (!category?.slug) return;
+      const { data } = await supabase
+        .from('page_ratings')
+        .select('total_stars, vote_count')
+        .eq('slug', category.slug)
+        .maybeSingle();
+
+      if (data && data.vote_count > 0) {
+        setDynamicRating({
+          stars: Number((data.total_stars / data.vote_count).toFixed(1)),
+          count: data.vote_count
+        });
+      }
+    };
+    fetchRating();
+  }, [category?.slug]);
+
+  // Dynamisches JSON-LD generieren
+  const jsonLd = useMemo(() => {
+    if (!category) return null;
+    const schema: any = {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": category.meta_title || category.name,
+      "description": category.meta_description,
+      "url": `https://rank-scout.com/${category.slug}`
+    };
+
+    if (dynamicRating) {
+      schema.aggregateRating = {
+        "@type": "AggregateRating",
+        "ratingValue": dynamicRating.stars,
+        "reviewCount": dynamicRating.count,
+        "bestRating": "5",
+        "worstRating": "1"
+      };
+    }
+    return JSON.stringify(schema);
+  }, [category, dynamicRating]);
+  // --- ENDE NEU ---
+
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => { if (entry.isIntersecting) setActiveSection(entry.target.id); });
@@ -162,7 +207,6 @@ export default function CategoryDetail() {
 
   if (isCatLoading || isProjLoading) return <div className="flex h-screen items-center justify-center bg-slate-50"><Loader2 className="w-12 h-12 animate-spin text-[#0A0F1C]" /></div>;
   
-  // KYRA UPDATE: Harte 404 und noindex für Offline-Seiten!
   if (!category || category.is_active === false) {
       return (
           <div className="flex flex-col h-screen items-center justify-center space-y-4 bg-slate-50">
@@ -183,7 +227,11 @@ export default function CategoryDetail() {
   if (category.template === 'hub_overview') {
       return (
         <div className="min-h-screen flex flex-col font-sans bg-slate-50">
-            <Helmet><title>{category.meta_title || category.name}</title><link rel="canonical" href={currentUrl} /></Helmet>
+            <Helmet>
+                <title>{category.meta_title || category.name}</title>
+                <link rel="canonical" href={currentUrl} />
+                {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
+            </Helmet>
             <Header /><HubTemplate category={category} /><Footer />
         </div>
       );
@@ -204,6 +252,8 @@ return (
           <title>{category.meta_title || `${category.name}`}</title>
           <meta name="description" content={category.meta_description || ""} />
           <link rel="canonical" href={currentUrl} />
+          {/* Dynamisches Schema injizieren */}
+          {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
         </Helmet>
         <Header />
         <main className="flex-1">
@@ -232,15 +282,18 @@ return (
 
           <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-12 lg:flex lg:gap-12 relative z-10 -mt-10">
               <div className="lg:w-2/3" ref={contentTopRef}>
-                <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 mb-10 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
-                  <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-orange-50 rounded-2xl text-orange-500 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h3 className="font-bold text-[#0A0F1C] text-2xl mb-4 tracking-tight">{introTitle}</h3><div className="text-slate-600 leading-loose text-lg"></div></div></div>
-                </div>
-                {category.long_content_top && (<div className="bg-transparent mb-16 px-2"><article id="content-top" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: category.long_content_top }} /></article></div>)}
                 
-                {/* --- INTELLIGENTE WEICHE --- */}
+                {/* Intro Box */}
+                <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 mb-8 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
+                  <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-orange-50 rounded-2xl text-orange-500 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h3 className="font-bold text-[#0A0F1C] text-2xl tracking-tight">{introTitle}</h3></div></div>
+                </div>
+
+                {category.long_content_top && (<div className="bg-transparent mb-16 px-2 mt-8"><article id="content-top" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: category.long_content_top }} /></article></div>)}
+                
+                {/* --- INTELLIGENTE WEICHE (Rechner vs. Liste) --- */}
                 {hasWidgetCode ? (
-                    <div id="vergleich" className="scroll-mt-32 mb-20">
+                    <div id="vergleich" className="scroll-mt-32 mb-10">
                         <div className="mb-8 px-2">
                             <Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">Live Rechner</Badge>
                             <h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">{comparisonTitle}</h2>
@@ -251,15 +304,44 @@ return (
                         <p className="text-center text-xs text-slate-400 mt-4">Daten werden bereitgestellt durch unseren Partner.</p>
                     </div>
                 ) : (
-                    projects.length > 0 && (<div id="vergleich" className="scroll-mt-32 mb-20"><div className="mb-8 px-2"><Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">{category.hero_badge_text || "Testsieger 2026"}</Badge><h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">{comparisonTitle}</h2></div><div className="space-y-6">{projects.map((proj, idx) => (<ProjectCard key={proj.id} project={proj} index={idx} category={category} />))}</div></div>)
+                    projects.length > 0 && (<div id="vergleich" className="scroll-mt-32 mb-10"><div className="mb-8 px-2"><Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">{category.hero_badge_text || "Empfehlungen 2026"}</Badge><h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">{comparisonTitle}</h2></div><div className="space-y-6">{projects.map((proj, idx) => (<ProjectCard key={proj.id} project={proj} index={idx} category={category} />))}</div></div>)
                 )}
 
+                {/* --- NEU: Affiliate Disclaimer UNTER dem Vergleich --- */}
+                <div className="mb-16">
+                    <AffiliateDisclaimer />
+                </div>
+
                 {category.long_content_bottom && (<div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/30 border border-slate-100 mb-16"><article id="content-bottom" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: category.long_content_bottom }} /></article></div>)}
-                {category.faq_data && Array.isArray(category.faq_data) && (<section id="faq" className="scroll-mt-32 mb-24"><div className="mb-10 px-2"><h2 className="text-4xl font-extrabold text-[#0A0F1C] tracking-tight">Häufige Fragen</h2></div><div className="space-y-4"><Accordion type="single" collapsible className="w-full space-y-4">{category.faq_data.map((faq: any, index: number) => (<AccordionItem key={index} value={`item-${index}`} className="bg-white border border-slate-100 shadow-sm rounded-2xl px-2"><AccordionTrigger className="text-left font-bold text-[#0A0F1C] px-6 py-5 text-lg hover:no-underline hover:text-orange-500 transition-colors">{faq.question}</AccordionTrigger><AccordionContent className="text-slate-600 leading-loose px-6 pb-8 pt-2 text-base"><div dangerouslySetInnerHTML={{ __html: faq.answer.replace(/\n/g, '<br/>') }} /></AccordionContent></AccordionItem>))}</Accordion></div></section>)}
+                
+                {category.faq_data && Array.isArray(category.faq_data) && (
+                  <section id="faq" className="scroll-mt-32 mb-16">
+                    <div className="mb-10 px-2"><h2 className="text-4xl font-extrabold text-[#0A0F1C] tracking-tight">Häufige Fragen</h2></div>
+                    <div className="space-y-4">
+                      <Accordion type="single" collapsible className="w-full space-y-4">
+                        {category.faq_data.map((faq: any, index: number) => (
+                          <AccordionItem key={index} value={`item-${index}`} className="bg-white border border-slate-100 shadow-sm rounded-2xl px-2">
+                            <AccordionTrigger className="text-left font-bold text-[#0A0F1C] px-6 py-5 text-lg hover:no-underline hover:text-orange-500 transition-colors">{faq.question}</AccordionTrigger>
+                            <AccordionContent className="text-slate-600 leading-loose px-6 pb-8 pt-2 text-base">
+                              <div dangerouslySetInnerHTML={{ __html: faq.answer.replace(/\n/g, '<br/>') }} />
+                            </AccordionContent>
+                          </AccordionItem>
+                        ))}
+                      </Accordion>
+                    </div>
+                  </section>
+                )}
+
+                {/* --- NEU: Sterne-Widget am absoluten Ende des redaktionellen Contents --- */}
+                <div className="mb-24 mt-8 border-t border-slate-100 pt-10">
+                    <StarRatingWidget slug={category.slug} />
+                </div>
+
               </div>
               
+              {/* SIDEBAR */}
               <aside className="lg:w-1/3 lg:sticky top-24 self-start hidden lg:block max-h-[calc(100vh-120px)] overflow-y-auto pr-2 pb-10 custom-scrollbar">
-                {!hasWidgetCode && topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">EMPFEHLUNG</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-orange-50 rounded-xl text-orange-500"><Trophy className="w-6 h-6" /></div><p className="font-bold text-[#0A0F1C] text-lg">Top Favorit</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-[#0A0F1C] leading-tight mb-1.5">{topPick.name}</p><div className="mb-1"><RatingStars rating={topPick.rating} /></div></div></div><Button asChild className="w-full font-bold bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 transition-colors h-14 rounded-xl group/sidebar-btn"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover/sidebar-btn:translate-x-1" /></a></Button></div>)}
+                {!hasWidgetCode && topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">EMPFEHLUNG</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-orange-50 rounded-xl text-orange-500"><Trophy className="w-6 h-6" /></div><p className="font-bold text-[#0A0F1C] text-lg">Top Favorit</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-[#0A0F1C] leading-tight mb-1.5">{topPick.name}</p><div className="mb-1"><RatingStars rating={topPick.rating} /></div></div></div><Button asChild className="w-full font-bold bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 transition-colors h-14 rounded-xl group/sidebar-btn"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen* <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover/sidebar-btn:translate-x-1" /></a></Button></div>)}
                 
                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30 mb-8">
                   <p className="font-bold text-[#0A0F1C] mb-6 flex items-center gap-2 text-sm uppercase tracking-widest"><Zap className="w-4 h-4 text-orange-500"/> {featuresTitle}</p>
@@ -292,10 +374,19 @@ return (
   }
 
   return (
-    <><Helmet><title>{category.meta_title || category.name}</title><link rel="canonical" href={currentUrl} /></Helmet>{category.custom_html_override ? (<><Header /><CustomHtmlRenderer 
-  category={category} 
-  projects={projects} 
-  htmlContent={category.custom_html_override} 
-/><Footer /></>) : (category.template === 'comparison' && category.theme === 'DATING' && category.slug.includes('stadt')) ? (<><Header /><CityLandingTemplate category={category} projects={projects} /><Footer /></>) : (<div className="min-h-screen bg-[#0a0a0a] text-white"><Header /><ReviewTemplate category={category} projects={projects} /></div>)}</>
+    <>
+      <Helmet>
+        <title>{category.meta_title || category.name}</title>
+        <link rel="canonical" href={currentUrl} />
+        {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
+      </Helmet>
+      {category.custom_html_override ? (
+        <><Header /><CustomHtmlRenderer category={category} projects={projects} htmlContent={category.custom_html_override} /><Footer /></>
+      ) : (category.template === 'comparison' && category.theme === 'DATING' && category.slug.includes('stadt')) ? (
+        <><Header /><CityLandingTemplate category={category} projects={projects} /><Footer /></>
+      ) : (
+        <div className="min-h-screen bg-[#0a0a0a] text-white"><Header /><ReviewTemplate category={category} projects={projects} /></div>
+      )}
+    </>
   );
 }

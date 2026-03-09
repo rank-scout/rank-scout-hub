@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
+import { StarRatingWidget } from '@/components/StarRatingWidget';
 
 // --- Typen & Interfaces ---
 interface Project {
@@ -81,11 +84,32 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
   const ratingValue = (ratingOverall - 0.3).toFixed(1);
   const ratingQuality = (Math.min(ratingOverall + 0.1, 10)).toFixed(1);
 
-  // KYRA FIX: URL auf deutsch (/kategorien) angepasst
   const currentUrl = `https://rank-scout.com/kategorien/${category.slug}`;
 
-  // KYRA FIX: Schema mit "offers" erweitert (Killt den Semrush Fehler)
-  const schemaData = topProject 
+  // --- NEU: Dynamische Rating-Logik ---
+  const [dynamicRating, setDynamicRating] = useState<{stars: number, count: number} | null>(null);
+
+  useEffect(() => {
+    const fetchRating = async () => {
+      if (!category?.slug) return;
+      const { data, error } = await supabase
+        .from('page_ratings')
+        .select('total_stars, vote_count')
+        .eq('slug', category.slug)
+        .maybeSingle();
+      
+      if (data && data.vote_count > 0) {
+        setDynamicRating({
+          stars: Number((data.total_stars / data.vote_count).toFixed(1)),
+          count: data.vote_count
+        });
+      }
+    };
+    fetchRating();
+  }, [category?.slug]);
+
+  // Schema dynamisch aufbauen
+  const schemaData: any = topProject 
     ? {
         "@context": "https://schema.org",
         "@type": "Review",
@@ -103,7 +127,6 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
             "@type": "Product",
             "name": topProject.name
         },
-        // Das fehlte vorher:
         "offers": {
             "@type": "Offer",
             "price": "0",
@@ -120,6 +143,28 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
         "author": { "@type": "Organization", "name": "Rank-Scout Redaktion" }
       };
 
+  // Echte Sterne anhängen, falls geladen
+  if (dynamicRating) {
+    if (topProject) {
+      schemaData.itemReviewed.aggregateRating = {
+        "@type": "AggregateRating",
+        "ratingValue": dynamicRating.stars,
+        "reviewCount": dynamicRating.count,
+        "bestRating": "5",
+        "worstRating": "1"
+      };
+    } else {
+      schemaData.aggregateRating = {
+        "@type": "AggregateRating",
+        "ratingValue": dynamicRating.stars,
+        "reviewCount": dynamicRating.count,
+        "bestRating": "5",
+        "worstRating": "1"
+      };
+    }
+  }
+  // --- ENDE NEU ---
+
   return (
     <div className="font-sans antialiased text-gray-800 bg-[#fafafa] min-h-screen">
       <Helmet>
@@ -128,10 +173,9 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
         <meta name="description" content={(category.meta_description || '').replace(/2026/g, year.toString())} />
         <meta name="robots" content="index, follow" />
         
-        {/* KYRA FIX: Canonical auf /kategorien */}
         <link rel="canonical" href={currentUrl} />
         
-        {/* KYRA FIX: Valides Schema Markup JSON */}
+        {/* Dynamisches Schema Markup */}
         <script type="application/ld+json">
           {JSON.stringify(schemaData)}
         </script>
@@ -197,7 +241,7 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
                   <header className="mb-10">
                       <div className="flex items-center gap-3 mb-4">
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-red-50 text-brand-primary rounded-full text-sm font-medium border border-red-100">
-                              <i className="fas fa-file-alt"></i> Testbericht
+                              <i className="fas fa-file-alt"></i> Erfahrungsbericht
                           </span>
                           <span className="text-gray-400 text-sm">
                               <i className="far fa-calendar mr-1"></i>
@@ -208,9 +252,12 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
                           {category.h1_title?.replace(/2026/g, year.toString()) || category.name}
                       </h1>
                       <p className="text-xl text-gray-600 leading-relaxed">
-                          {category.meta_description || 'Ausführlicher Erfahrungsbericht mit allen Vor- und Nachteilen.'}
+                          {category.meta_description || 'Ausführlicher redaktioneller Erfahrungsbericht mit allen Vor- und Nachteilen.'}
                       </p>
                   </header>
+
+                  {/* NEU: Affiliate Disclaimer oben im Artikel */}
+                  <AffiliateDisclaimer />
                   
                   {/* RATING CARD */}
                   <div className="bg-white rounded-2xl shadow-lg p-6 mb-10 border border-gray-100">
@@ -289,10 +336,16 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
                           </div>
                           <div>
                               <p className="font-heading font-bold text-gray-900">Rank-Scout Redaktion</p>
-                              <p className="text-sm text-gray-500">Unser Expertenteam testet und bewertet Anbieter objektiv und unabhängig.</p>
+                              <p className="text-sm text-gray-500">Unser Expertenteam bewertet Anbieter objektiv und unabhängig.</p>
                           </div>
                       </div>
                   </div>
+
+                  {/* NEU: Sterne-Widget am Ende des Artikels */}
+                  <div className="mt-12">
+                      <StarRatingWidget slug={category.slug} />
+                  </div>
+
               </article>
               
               {/* SIDEBAR */}
@@ -304,7 +357,7 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
                           <div className="winner-card rounded-2xl shadow-xl p-6 bg-white relative overflow-hidden transform hover:-translate-y-1 transition-transform duration-300">
                               <div className="flex items-center gap-2 mb-4 justify-center">
                                   <span className="bg-gradient-to-r from-brand-gold to-yellow-500 text-white font-bold px-4 py-1.5 rounded-full text-sm shadow-md">
-                                      <i className="fas fa-trophy mr-1"></i> Testsieger
+                                      <i className="fas fa-star mr-1"></i> Empfehlung
                                   </span>
                               </div>
                               <div className="text-center">
@@ -328,7 +381,7 @@ export const ReviewTemplate: React.FC<TemplateProps> = ({
                       {/* NEWSLETTER */}
                       <div className="bg-[#1a1a1a] rounded-2xl shadow-lg p-6 text-white border border-gray-800">
                           <h3 className="font-heading font-bold text-lg mb-2 flex items-center"><i className="fas fa-envelope mr-2 text-brand-gold"></i>Newsletter</h3>
-                          <p className="text-sm text-gray-400 mb-4">Neue Testberichte & exklusive Deals direkt in dein Postfach.</p>
+                          <p className="text-sm text-gray-400 mb-4">Neue Berichte & exklusive Deals direkt in dein Postfach.</p>
                           <div className="space-y-3">
                               <input type="email" placeholder="deine@email.de" className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-gold transition-all" />
                               <button className="w-full bg-brand-gold hover:bg-yellow-400 text-black font-bold py-3 px-4 rounded-xl transition-colors shadow-lg">Kostenlos anmelden</button>
