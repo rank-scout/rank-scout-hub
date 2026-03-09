@@ -15,11 +15,14 @@ export function useTrackView(pageName: string | undefined, type: string) {
 
     const track = async () => {
       try {
-        await supabase.rpc("track_page_view", {
-          p_name: pageName,
-          p_type: type,
+        // KYRA UPDATE: Wir rufen jetzt die sichere Edge Function auf!
+        const { error } = await supabase.functions.invoke('track-view', {
+          body: { pageName, type }
         });
-        // Sperre setzen
+
+        if (error) throw error;
+        
+        // Sperre im Browser setzen
         sessionStorage.setItem(storageKey, "true");
       } catch (error) {
         console.error("Tracking Error:", error);

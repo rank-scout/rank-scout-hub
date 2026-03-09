@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { 
   FileBox, Mail, Link2, MousePointer, 
   Download, Activity, Globe, Eye, MessageSquare, Calendar as CalendarIcon, 
-  MonitorPlay, Layers, ExternalLink, ArrowUpRight, TrendingUp, Percent, Zap
+  MonitorPlay, Layers, ExternalLink, ArrowUpRight, TrendingUp, Percent, Zap, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -43,7 +43,7 @@ async function fetchRedirects() {
 }
 
 // --- COLORS ---
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d', '#ef4444'];
 
 // --- URL HELPER ---
 const getPublicUrl = (type: string, id: string) => {
@@ -78,20 +78,24 @@ export default function AdminDashboard() {
   const { data: settings } = useSettings();
   const updateSetting = useUpdateSetting();
 
-  // 1. PERIOD STATS
-  const { data: periodStats = [] } = useQuery({
-    queryKey: ["daily-stats-period", dateRange],
+  // 1. NEUE PERIOD STATS (Unique Views aus page_views_analytics)
+  const { data: rawAnalytics = [] } = useQuery({
+    queryKey: ["analytics-period", dateRange],
     queryFn: async () => {
         if (!dateRange?.from) return [];
         const fromStr = format(dateRange.from, 'yyyy-MM-dd');
         const toStr = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : fromStr;
-        const { data, error } = await supabase.from("daily_stats").select("*").gte("date", fromStr).lte("date", toStr);
+        const { data, error } = await supabase
+            .from("page_views_analytics")
+            .select("page_name, page_type, country, view_date")
+            .gte("view_date", fromStr)
+            .lte("view_date", toStr);
         if (error) throw error;
         return data || [];
     }
   });
 
-  // 2. ALL TIME STATS
+  // 2. ALL TIME STATS (Bleibt bestehen, um die gesamte Historie nicht zu verlieren)
   const { data: allTimeStats = [] } = useQuery({
     queryKey: ["daily-stats-alltime"],
     queryFn: async () => {
@@ -114,13 +118,13 @@ export default function AdminDashboard() {
   }, [allTimeStats]);
 
   const trafficList = useMemo(() => {
-      const map = periodStats.reduce((acc: any, curr) => {
-        const key = `${curr.item_id}_${curr.type}`;
+      const map = rawAnalytics.reduce((acc: any, curr) => {
+        const key = `${curr.page_name}_${curr.page_type}`;
         if (!acc[key]) {
-          acc[key] = { name: curr.item_id, type: curr.type, count: 0, last_date: curr.date };
+          acc[key] = { name: curr.page_name, type: curr.page_type, count: 0, last_date: curr.view_date };
         }
-        acc[key].count += curr.count;
-        if (new Date(curr.date) > new Date(acc[key].last_date)) acc[key].last_date = curr.date;
+        acc[key].count += 1;
+        if (new Date(curr.view_date) > new Date(acc[key].last_date)) acc[key].last_date = curr.view_date;
         return acc;
       }, {});
       
@@ -128,11 +132,23 @@ export default function AdminDashboard() {
           ...item,
           total_all_time: allTimeMap[`${item.name}_${item.type}`] || item.count
       })).sort((a: any, b: any) => b.count - a.count);
-  }, [periodStats, allTimeMap]);
+  }, [rawAnalytics, allTimeMap]);
+
+  // --- LÄNDER VERTEILUNG ---
+  const countryStats = useMemo(() => {
+      const map = rawAnalytics.reduce((acc: any, curr) => {
+          const c = curr.country || "Unbekannt";
+          acc[c] = (acc[c] || 0) + 1;
+          return acc;
+      }, {});
+      return Object.entries(map)
+          .map(([name, value]) => ({ name, value }))
+          .sort((a: any, b: any) => (b.value as number) - (a.value as number));
+  }, [rawAnalytics]);
 
   // CONTENT IDs FÜR TITEL
-  const blogIds = useMemo(() => [...new Set(periodStats.filter(s => s.type === 'blog').map(s => s.item_id))], [periodStats]);
-  const threadIds = useMemo(() => [...new Set(periodStats.filter(s => s.type === 'thread').map(s => s.item_id))], [periodStats]);
+  const blogIds = useMemo(() => [...new Set(rawAnalytics.filter((s:any) => s.page_type === 'blog').map((s:any) => s.page_name))], [rawAnalytics]);
+  const threadIds = useMemo(() => [...new Set(rawAnalytics.filter((s:any) => s.page_type === 'thread').map((s:any) => s.page_name))], [rawAnalytics]);
 
   const { data: periodBlogs = [] } = useQuery({
      queryKey: ["period-blogs", blogIds],
@@ -152,9 +168,9 @@ export default function AdminDashboard() {
      }
   });
 
-  // KPIs
-  const periodProjectClicks = periodStats.filter(s => s.type === 'project').reduce((sum, s) => sum + (s.count || 0), 0);
-  const periodPageViews = periodStats.filter(s => ['page', 'category', 'comparison', 'forum'].includes(s.type)).reduce((sum, s) => sum + (s.count || 0), 0);
+  // KPIs (Jetzt basierend auf den bereinigten Unique Views)
+  const periodProjectClicks = rawAnalytics.filter((s:any) => s.page_type === 'project').length;
+  const periodPageViews = rawAnalytics.filter((s:any) => ['page', 'category', 'comparison', 'forum'].includes(s.page_type)).length;
   const totalAllTimeViews = Object.values(allTimeMap).reduce((sum: any, val: any) => sum + val, 0);
   const conversionRate = periodPageViews > 0 ? ((periodProjectClicks / periodPageViews) * 100).toFixed(1) : "0.0";
   const activeProjects = projects.filter((p) => p.is_active).length;
@@ -170,16 +186,16 @@ export default function AdminDashboard() {
 
   const categoryPerformance = categories.map(cat => {
     const catProjectIds = projects.filter(p => p.category_id === cat.id).map(p => p.id);
-    const clicks = periodStats.filter(s => s.type === 'project' && catProjectIds.includes(s.item_id)).reduce((sum, s) => sum + (s.count || 0), 0);
+    const clicks = rawAnalytics.filter((s:any) => s.page_type === 'project' && catProjectIds.includes(s.page_name)).length;
     return { name: cat.name, value: clicks };
   }).filter(item => item.value > 0);
 
   const topBlogs = periodBlogs.map(blog => ({
-      ...blog, views: trafficList.find(t => t.name === blog.id)?.count || 0
+      ...blog, views: trafficList.find((t:any) => t.name === blog.id)?.count || 0
   })).sort((a,b) => b.views - a.views).slice(0, 5);
 
   const topThreads = periodThreads.map(thread => ({
-      ...thread, views: trafficList.find(t => t.name === thread.id)?.count || 0
+      ...thread, views: trafficList.find((t:any) => t.name === thread.id)?.count || 0
   })).sort((a,b) => b.views - a.views).slice(0, 5);
 
   async function handleToggle(key: string, value: boolean) {
@@ -385,32 +401,60 @@ export default function AdminDashboard() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* PERFORMANCE CHART */}
-        <Card className="lg:col-span-2 shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100 overflow-hidden">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-50">
-                <CardTitle className="flex items-center gap-3 text-xl font-black"><Activity className="w-5 h-5 text-primary"/> Performance Distribution</CardTitle>
-                <CardDescription className="text-slate-400 font-medium uppercase text-[10px] font-bold">Anteil der Klicks nach Kategorie</CardDescription>
-            </CardHeader>
-            <CardContent className="h-[400px] p-6">
-                {categoryPerformance.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie data={categoryPerformance} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={140} innerRadius={80} paddingAngle={8} dataKey="value">
-                                {categoryPerformance.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />)}
-                            </Pie>
-                            <RechartsTooltip contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} />
-                            <Legend verticalAlign="bottom" height={36}/>
-                        </PieChart>
-                    </ResponsiveContainer>
-                ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-4 bg-slate-50 rounded-3xl border border-dashed m-4">
-                        <Globe className="w-12 h-12 opacity-10" /><p className="font-bold text-slate-300 uppercase tracking-widest">Keine Daten verfügbar</p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
+        {/* LEFT COLUMN: CHARTS */}
+        <div className="lg:col-span-2 space-y-8">
+            {/* PERFORMANCE CHART */}
+            <Card className="shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100 overflow-hidden">
+                <CardHeader className="bg-slate-50/50 border-b border-slate-50">
+                    <CardTitle className="flex items-center gap-3 text-xl font-black"><Activity className="w-5 h-5 text-primary"/> Performance Distribution</CardTitle>
+                    <CardDescription className="text-slate-400 font-medium uppercase text-[10px] font-bold">Anteil der Klicks nach Kategorie</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[400px] p-6">
+                    {categoryPerformance.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie data={categoryPerformance} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={140} innerRadius={80} paddingAngle={8} dataKey="value">
+                                    {categoryPerformance.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />)}
+                                </Pie>
+                                <RechartsTooltip contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} />
+                                <Legend verticalAlign="bottom" height={36}/>
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-4 bg-slate-50 rounded-3xl border border-dashed m-4">
+                            <Globe className="w-12 h-12 opacity-10" /><p className="font-bold text-slate-300 uppercase tracking-widest">Keine Daten verfügbar</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
-        {/* QUICK ACTIONS & EXPORT */}
+            {/* NEU: LÄNDER VERTEILUNG CHART */}
+            <Card className="shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100 overflow-hidden">
+                <CardHeader className="bg-slate-50/50 border-b border-slate-50">
+                    <CardTitle className="flex items-center gap-3 text-xl font-black"><MapPin className="w-5 h-5 text-primary"/> Länder-Verteilung</CardTitle>
+                    <CardDescription className="text-slate-400 font-bold uppercase text-[10px]">Herkunft deiner Besucher</CardDescription>
+                </CardHeader>
+                <CardContent className="h-[300px] p-6">
+                    {countryStats.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie data={countryStats} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} outerRadius={100} innerRadius={60} paddingAngle={5} dataKey="value">
+                                    {countryStats.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />)}
+                                </Pie>
+                                <RechartsTooltip contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }} />
+                                <Legend verticalAlign="bottom" height={36} />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-4 bg-slate-50 rounded-3xl border border-dashed m-4">
+                            <Globe className="w-12 h-12 opacity-10" /><p className="font-bold text-slate-300 uppercase tracking-widest">Warten auf Daten...</p>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </div>
+
+        {/* RIGHT COLUMN: QUICK ACTIONS & EXPORT */}
         <div className="space-y-8 h-full">
             <Card className="shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100">
               <CardHeader className="pb-4"><CardTitle className="text-lg font-black flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-500 shadow-yellow-200 shadow-sm rounded-full"/> Schnellzugriff</CardTitle></CardHeader>
@@ -431,7 +475,7 @@ export default function AdminDashboard() {
               <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
                       <Download className="w-6 h-6 text-white"/>
-                      <CardTitle className="text-lg font-black text-white">Daten-Export</CardTitle>
+                      <CardTitle className="text-lg font-black text-white">Leads-Export</CardTitle>
                   </div>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -450,6 +494,34 @@ export default function AdminDashboard() {
                     }}
                  >
                     Leads CSV Exportieren
+                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* NEU: ANALYTICS EXPORT CARD */}
+            <Card className="shadow-sm border-none bg-slate-800 text-white rounded-3xl overflow-hidden ring-1 ring-white/10">
+              <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3">
+                      <Activity className="w-6 h-6 text-blue-400"/>
+                      <CardTitle className="text-lg font-black text-white">Analytics-Export</CardTitle>
+                  </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                 <p className="text-xs text-slate-400 font-medium leading-relaxed">Exportiere die bereinigten Unique Views inklusive Herkunftsland als CSV.</p>
+                 <Button 
+                    variant="default" 
+                    className="w-full h-14 rounded-2xl font-black bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-600/20 transition-all active:scale-95 border-none" 
+                    onClick={() => {
+                        const csv = "Seite,Typ,Land,Datum\n" + rawAnalytics.map((a:any) => `"${a.page_name}","${a.page_type}","${a.country}","${a.view_date}"`).join("\n");
+                        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `rankscout_analytics_${new Date().toISOString().split("T")[0]}.csv`;
+                        link.click();
+                        toast({ title: "CSV Exportiert", description: "Analytics erfolgreich heruntergeladen." });
+                    }}
+                 >
+                    Analytics Daten (Unique)
                  </Button>
               </CardContent>
             </Card>
