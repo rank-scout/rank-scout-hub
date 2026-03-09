@@ -155,17 +155,27 @@ export default function CategoryDetail() {
   useEffect(() => {
     const fetchRating = async () => {
       if (!category?.slug) return;
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('page_ratings')
-        .select('total_stars, vote_count')
+        .select('seed_total_stars, seed_vote_count, real_total_stars, real_vote_count')
         .eq('slug', category.slug)
         .maybeSingle();
 
-      if (data && data.vote_count > 0) {
-        setDynamicRating({
-          stars: Number((data.total_stars / data.vote_count).toFixed(1)),
-          count: data.vote_count
-        });
+      if (error) {
+        console.error('[CategoryDetail] Schema Fetch Error:', error);
+        return;
+      }
+
+      if (data) {
+        const totalStars = Number(data.seed_total_stars || 0) + Number(data.real_total_stars || 0);
+        const totalVotes = Number(data.seed_vote_count || 0) + Number(data.real_vote_count || 0);
+
+        if (totalVotes > 0) {
+          setDynamicRating({
+            stars: Number((totalStars / totalVotes).toFixed(1)),
+            count: totalVotes
+          });
+        }
       }
     };
     fetchRating();

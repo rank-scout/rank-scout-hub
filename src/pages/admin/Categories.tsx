@@ -26,7 +26,7 @@ import { toast } from "@/hooks/use-toast";
 import { 
     Plus, Pencil, Trash2, Copy, ArrowUp, ArrowDown, UploadCloud, Database, 
     Eye, Bot, Settings2, Code, FileText, Search, LayoutTemplate, Layers, 
-    Globe, CalendarDays, Image as ImageIcon 
+    Globe, CalendarDays, Image as ImageIcon, Star 
 } from "lucide-react";
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 import { CategoryFAQEditor } from "@/components/admin/CategoryFAQEditor"; 
@@ -114,14 +114,16 @@ const CategoryTable = ({
     onDelete, 
     onView,
     onToggleActive,
-    onDuplicate // Neu hinzugefügt
+    onDuplicate, // Neu hinzugefügt
+    onManageRating // --- NEU ---
 }: { 
     data: Category[], 
     onEdit: (c: Category) => void, 
     onDelete: (id: string) => void,
     onView: (slug: string) => void,
     onToggleActive: (id: string, currentStatus: boolean) => void,
-    onDuplicate: (cat: Category) => void // Neu hinzugefügt
+    onDuplicate: (cat: Category) => void, // Neu hinzugefügt
+    onManageRating: (cat: Category) => void // --- NEU ---
 }) => {
     if (data.length === 0) {
         return <div className="p-12 text-center text-slate-400 bg-slate-50/50 rounded-b-xl border-t border-slate-100">Keine Seiten in dieser Kategorie gefunden.</div>;
@@ -190,6 +192,11 @@ const CategoryTable = ({
                         </TableCell>
                         <TableCell className="text-right">
                             <div className="flex justify-end gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                                {/* --- NEU: Sterne-Manager Button --- */}
+                                <Button variant="ghost" size="sm" onClick={() => onManageRating(cat)} title="Basis-Sterne verwalten" className="h-8 w-8 p-0 hover:bg-yellow-50 hover:text-yellow-600 rounded-lg">
+                                    <Star className="w-4 h-4 fill-current"/>
+                                </Button>
+                                
                                 <Button variant="ghost" size="sm" onClick={()=>onView(`/${cat.slug}`)} className="h-8 w-8 p-0 hover:bg-blue-50 hover:text-blue-600" title="Vorschau"><Eye className="w-4 h-4"/></Button>
                                 {/* KYRA ADD: Duplizier-Button */}
                                 <Button variant="ghost" size="sm" onClick={() => onDuplicate(cat)} className="h-8 w-8 p-0 hover:bg-purple-50 hover:text-purple-600" title="Duplizieren"><Copy className="w-4 h-4"/></Button>
@@ -220,6 +227,12 @@ export default function Categories() {
   const [topicPrompt, setTopicPrompt] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+
+  // --- NEU: State für Sterne-Management ---
+  const [isRatingDialogOpen, setIsRatingDialogOpen] = useState(false);
+  const [ratingTargetCategory, setRatingTargetCategory] = useState<Category | null>(null);
+  const [seedAvg, setSeedAvg] = useState("4.8");
+  const [seedCount, setSeedCount] = useState("120");
   
   // HTML VIEW STATES
   const [showHtmlTop, setShowHtmlTop] = useState(false);
@@ -389,6 +402,47 @@ export default function Categories() {
     }
   }
 
+  // --- NEU: Sterne-Speicher-Funktion ---
+  const handleSaveSeedRating = async () => {
+    if (!ratingTargetCategory) return;
+    const avg = parseFloat(seedAvg.replace(',', '.'));
+    const count = parseInt(seedCount);
+    
+    if (isNaN(avg) || isNaN(count)) {
+        toast({ title: "Fehler", description: "Bitte gültige Zahlen eingeben.", variant: "destructive" });
+        return;
+    }
+
+    const totalStars = avg * count;
+
+    const { error } = await supabase.rpc('set_seed_rating', { 
+        page_slug: ratingTargetCategory.slug, 
+        new_seed_total_stars: totalStars, 
+        new_seed_vote_count: count 
+    });
+
+    if (error) {
+        toast({ title: "Fehler", description: error.message, variant: "destructive" });
+    } else {
+        toast({ title: "Sterne aktualisiert", description: `Basis-Schnitt von ${avg} bei ${count} Stimmen gesetzt.` });
+        setIsRatingDialogOpen(false);
+    }
+  };
+
+  const openRatingManager = async (category: Category) => {
+    setRatingTargetCategory(category);
+    const { data } = await supabase.from('page_ratings').select('seed_total_stars, seed_vote_count').eq('slug', category.slug).maybeSingle();
+    
+    if (data && data.seed_vote_count > 0) {
+        setSeedAvg((data.seed_total_stars / data.seed_vote_count).toFixed(1));
+        setSeedCount(data.seed_vote_count.toString());
+    } else {
+        setSeedAvg("4.8");
+        setSeedCount("120");
+    }
+    setIsRatingDialogOpen(true);
+  };
+
   const handleGenerateContent = async () => {
     const catName = form.getValues("name");
     const provider = localStorage.getItem("ai_provider") || "google";
@@ -510,6 +564,7 @@ export default function Categories() {
                         onView={(slug) => window.open(slug, '_blank')}
                         onToggleActive={handleToggleActive}
                         onDuplicate={handleDuplicate} // Neu
+                        onManageRating={openRatingManager} // --- NEU ---
                     />
                 </TabsContent>
                 <TabsContent value="comparison" className="m-0">
@@ -520,6 +575,7 @@ export default function Categories() {
                         onView={(slug) => window.open(slug, '_blank')}
                         onToggleActive={handleToggleActive}
                         onDuplicate={handleDuplicate} // Neu
+                        onManageRating={openRatingManager} // --- NEU ---
                     />
                 </TabsContent>
                 <TabsContent value="hub_overview" className="m-0">
@@ -530,6 +586,7 @@ export default function Categories() {
                         onView={(slug) => window.open(slug, '_blank')}
                         onToggleActive={handleToggleActive}
                         onDuplicate={handleDuplicate} // Neu
+                        onManageRating={openRatingManager} // --- NEU ---
                     />
                 </TabsContent>
                 <TabsContent value="review" className="m-0">
@@ -540,6 +597,7 @@ export default function Categories() {
                         onView={(slug) => window.open(slug, '_blank')}
                         onToggleActive={handleToggleActive}
                         onDuplicate={handleDuplicate} // Neu
+                        onManageRating={openRatingManager} // --- NEU ---
                     />
                 </TabsContent>
             </CardContent>
@@ -794,6 +852,32 @@ export default function Categories() {
                         </TabsContent>
                     </Tabs>
                 </div></div>
+        </DialogContent>
+      </Dialog>
+
+      {/* --- NEU: STERNE-MODAL --- */}
+      <Dialog open={isRatingDialogOpen} onOpenChange={setIsRatingDialogOpen}>
+        <DialogContent className="sm:max-w-[400px] rounded-3xl p-8 bg-white border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-black">Basis-Sterne (Seed)</DialogTitle>
+            <DialogDescription className="text-slate-500 font-medium pt-1">
+              Setze künstliche Startwerte für <strong>{ratingTargetCategory?.name}</strong>. Echte Votes werden dazu addiert.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-6">
+            <div className="grid gap-2">
+              <Label className="font-bold">Wunsch-Durchschnitt (z.B. 4.9)</Label>
+              <Input value={seedAvg} onChange={(e) => setSeedAvg(e.target.value)} className="rounded-xl border-slate-200" />
+            </div>
+            <div className="grid gap-2">
+              <Label className="font-bold">Anzahl Basis-Stimmen</Label>
+              <Input value={seedCount} onChange={(e) => setSeedCount(e.target.value)} className="rounded-xl border-slate-200" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRatingDialogOpen(false)}>Abbrechen</Button>
+            <Button onClick={handleSaveSeedRating} className="bg-orange-500 hover:bg-orange-600 text-white font-bold">Speichern</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
