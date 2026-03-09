@@ -1,30 +1,22 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useTrackView(pageName: string | undefined, type: string) {
+  const hasTracked = useRef(false);
+
   useEffect(() => {
-    if (!pageName) return;
-
-    const today = new Date().toISOString().split('T')[0];
-    const storageKey = `viewed_${type}_${pageName}_${today}`;
-
-    if (sessionStorage.getItem(storageKey)) {
-      return;
-    }
+    if (!pageName || hasTracked.current) return;
 
     const track = async () => {
       try {
-        // KYRA UPDATE: Stealth-Modus! Wir funken an 'page-pulse', um AdBlocker auszutricksen.
-        const { error } = await supabase.functions.invoke('page-pulse', {
+        hasTracked.current = true;
+        
+        // 100% Cookieless & Storage-Free Stealth Tracking
+        await supabase.functions.invoke('page-pulse', {
           body: { pageName, type }
         });
-
-        if (error) throw error;
-        
-        sessionStorage.setItem(storageKey, "true");
       } catch (error) {
-        // Im Hintergrund lassen wir Fehler stumm, damit die UX nicht leidet
-        console.error("Pulse Sync Failed:", error);
+        console.error("Pulse Sync Failed", error);
       }
     };
 

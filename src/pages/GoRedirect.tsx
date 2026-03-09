@@ -58,13 +58,13 @@ export default function GoRedirect() {
           return;
         }
 
-        // 2. Klick zählen (Wir funken jetzt an die NEUE Edge Function!)
+        // 2. Klick zählen (Wir funken an die NEUE Edge Function page-pulse!)
         try {
            await supabase.functions.invoke('page-pulse', {
              body: { pageName: slug, type: 'project' }
            });
         } catch (err) {
-           console.error("Klick-Tracking Fehler:", err);
+           console.error("Pulse Sync Failed:", err);
         }
 
         // 3. Weiterleitung

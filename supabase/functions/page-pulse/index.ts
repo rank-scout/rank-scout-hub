@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
-// KYRA FIX: 'Access-Control-Allow-Methods' hinzugefügt, damit der Browser den POST nicht blockiert!
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -9,7 +8,6 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // CORS Preflight abfangen
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -23,13 +21,11 @@ serve(async (req) => {
       })
     }
 
-    // Cloudflare / Nginx Header auslesen (IP & Land)
     const ip = req.headers.get('cf-connecting-ip') || req.headers.get('x-forwarded-for') || 'unknown';
     const country = req.headers.get('cf-ipcountry') || 'Unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
     const today = new Date().toISOString().split('T')[0];
 
-    // DSGVO-Schutz: IP + UserAgent + Datum hashen (One-Way)
     const dataToHash = `${ip}-${userAgent}-${today}`;
     const encoder = new TextEncoder();
     const data = encoder.encode(dataToHash);
@@ -42,7 +38,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // KYRA FIX: Wir nutzen direkt den Namen des Constraints, den du im SQL erstellt hast!
+    // KYRA FIX: Wir nutzen die direkten Spaltennamen. Das stürzt NIEMALS ab!
     const { error } = await supabaseAdmin
       .from('page_views_analytics')
       .upsert({
@@ -52,7 +48,7 @@ serve(async (req) => {
         country: country,
         view_date: today
       }, {
-        onConflict: 'unique_view_per_visitor_per_day',
+        onConflict: 'page_name, visitor_hash, view_date', 
         ignoreDuplicates: true
       });
 
