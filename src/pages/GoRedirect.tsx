@@ -60,7 +60,7 @@ export default function GoRedirect() {
 
         // 2. Klick zählen (Wir funken jetzt an die NEUE Edge Function!)
         try {
-           await supabase.functions.invoke('track-view', {
+           await supabase.functions.invoke('page-pulse', {
              body: { pageName: slug, type: 'project' }
            });
         } catch (err) {

@@ -8,24 +8,23 @@ export function useTrackView(pageName: string | undefined, type: string) {
     const today = new Date().toISOString().split('T')[0];
     const storageKey = `viewed_${type}_${pageName}_${today}`;
 
-    // Session Check: Haben wir heute schon gezählt?
     if (sessionStorage.getItem(storageKey)) {
       return;
     }
 
     const track = async () => {
       try {
-        // KYRA UPDATE: Wir rufen jetzt die sichere Edge Function auf!
-        const { error } = await supabase.functions.invoke('track-view', {
+        // KYRA UPDATE: Stealth-Modus! Wir funken an 'page-pulse', um AdBlocker auszutricksen.
+        const { error } = await supabase.functions.invoke('page-pulse', {
           body: { pageName, type }
         });
 
         if (error) throw error;
         
-        // Sperre im Browser setzen
         sessionStorage.setItem(storageKey, "true");
       } catch (error) {
-        console.error("Tracking Error:", error);
+        // Im Hintergrund lassen wir Fehler stumm, damit die UX nicht leidet
+        console.error("Pulse Sync Failed:", error);
       }
     };
 
