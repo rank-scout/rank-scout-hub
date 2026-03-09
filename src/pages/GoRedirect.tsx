@@ -58,10 +58,11 @@ export default function GoRedirect() {
           return;
         }
 
-        // 2. Klick zählen (Fire & Forget - wir warten nicht zwingend auf den Erfolg, um den User nicht zu bremsen)
-        // Wir nutzen await hier kurz, damit der Request sicher rausgeht bevor der Browser redirected
+        // 2. Klick zählen (Wir funken jetzt an die NEUE Edge Function!)
         try {
-           await supabase.rpc('increment_project_click', { p_slug: slug });
+           await supabase.functions.invoke('track-view', {
+             body: { pageName: slug, type: 'project' }
+           });
         } catch (err) {
            console.error("Klick-Tracking Fehler:", err);
         }
