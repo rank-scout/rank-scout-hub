@@ -3,6 +3,18 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { TrendingLink } from "@/lib/schemas";
 
+// --- HELPER FÜR TOXIC_WORD_ERROR ---
+const getCleanToxicWordMessage = (rawMessage?: string) => {
+  if (!rawMessage) return "Der Inhalt enthält einen blockierten Begriff.";
+
+  const cleanMsg = rawMessage
+    .replace(/^.*TOXIC_WORD_ERROR:\s*/i, "")
+    .split("\n")[0]
+    .trim();
+
+  return cleanMsg || "Der Inhalt enthält einen blockierten Begriff.";
+};
+
 // --- TYPES ---
 export type HomeSection = {
   id: string;
@@ -70,6 +82,12 @@ export function useUpdateSetting() {
       
       if (error) {
         console.error("Supabase Error:", error);
+
+        if (error.message?.includes("TOXIC_WORD_ERROR")) {
+          const cleanMsg = getCleanToxicWordMessage(error.message);
+          throw new Error(cleanMsg);
+        }
+
         throw error;
       }
     },
@@ -117,14 +135,15 @@ export const defaultHomeContent = {
   seo_description: "",
   
   hero: {
-    badge: "NEU: Rank-Scout 2.0 ist live",
-    headline: "Dein zentraler Vergleichs-Hub",
-    title: "Dein zentraler Vergleichs-Hub",
-    subtitle: "Suche & finde passende Tools für deinen Erfolg.",
-    subheadline: "Suche & finde passende Tools für deinen Erfolg. Vergleiche, entdecke und nutze etablierte Angebote aus KI, Software und Lifestyle. Transparent eingeordnet.",
-    search_placeholder: "Was suchst du heute? (z.B. 'KI Tools', 'Dating')",
-    search_label: "Finden"
-  },
+  badge: "NEU: Rank-Scout 2.0 ist live",
+  headline: "Dein zentraler Vergleichs-Hub",
+  title: "Dein zentraler Vergleichs-Hub",
+  subtitle: "Suche & finde passende Tools für deinen Erfolg.",
+  subheadline: "Suche & finde passende Tools für deinen Erfolg. Vergleiche, entdecke und nutze etablierte Angebote aus KI, Software und Lifestyle. Transparent eingeordnet.",
+  search_placeholder: "Was suchst du heute? (z.B. 'KI Tools', 'Dating')",
+  search_label: "Finden",
+  button_text: "Jetzt vergleichen"
+},
   trust: { 
     headline: "Warum Rank-Scout?", 
     subheadline: "Wir stehen für Transparenz und Qualität.", 
@@ -298,4 +317,25 @@ export function useTickerConfig() {
 
 export function useTrendingLinks() {
   return useSetting<TrendingLink[]>("trending_links", []);
+}
+// --- COMPLIANCE MANAGER HOOKS ---
+type ComplianceConfig = {
+  mode: "strict" | "warn" | "off";
+  exempt_slugs: string;
+};
+
+export function useComplianceConfig() {
+  return useSetting<ComplianceConfig>("compliance_config", {
+    mode: "strict",
+    exempt_slugs: ""
+  });
+}
+
+export function useUpdateComplianceConfig() {
+  const updateSetting = useUpdateSetting();
+  return (config: { mode: string; exempt_slugs: string }) =>
+    updateSetting.mutateAsync({
+      key: "compliance_config",
+      value: config as unknown as Json
+    });
 }

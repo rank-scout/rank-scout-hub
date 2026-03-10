@@ -5,6 +5,8 @@ import {
   useHomeLayout, 
   useHomeContent, 
   useForumAds,
+  useComplianceConfig,       // NEU IMPORTIERT
+  useUpdateComplianceConfig, // NEU IMPORTIERT
   defaultHomeLayout, 
   defaultHomeContent,
   ForumAd 
@@ -19,7 +21,8 @@ import {
   Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
   CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
   Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText,
-  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type, Rocket, X
+  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type, Rocket, X,
+  ShieldAlert, ShieldOff // NEU IMPORTIERT
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
@@ -28,6 +31,90 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+// --- NEUE KOMPONENTE: COMPLIANCE MANAGER ---
+function ComplianceSettingsCard() {
+  const config = useComplianceConfig();
+  const updateConfig = useUpdateComplianceConfig();
+  
+  const [mode, setMode] = useState(config?.mode || "strict");
+  const [exemptSlugs, setExemptSlugs] = useState(config?.exempt_slugs || "");
+
+  useEffect(() => {
+    if (config) {
+      setMode(config.mode || "strict");
+      setExemptSlugs(config.exempt_slugs || "");
+    }
+  }, [config]);
+
+  const handleSave = async () => {
+    try {
+      await updateConfig({ mode, exempt_slugs: exemptSlugs });
+      toast({
+        title: "Compliance Settings gespeichert",
+        description: `Der Legal-Filter läuft nun im Modus: ${mode.toUpperCase()}`,
+      });
+    } catch (error) {
+      toast({ title: "Fehler", description: "Speichern fehlgeschlagen", variant: "destructive" });
+    }
+  };
+
+  return (
+    <Card className="bg-card border-border shadow-sm border-l-4 border-l-slate-800">
+      <CardHeader className="bg-slate-50/50 dark:bg-slate-900/50 pb-4 border-b border-border">
+        <CardTitle className="text-lg font-bold flex items-center gap-2">
+          {mode === 'strict' && <ShieldCheck className="w-5 h-5 text-green-500" />}
+          {mode === 'warn' && <ShieldAlert className="w-5 h-5 text-yellow-500" />}
+          {mode === 'off' && <ShieldOff className="w-5 h-5 text-red-500" />}
+          Legal & Compliance Manager
+        </CardTitle>
+        <CardDescription>
+          Steuert den globalen Datenbank-Schutz vor abmahngefährdeten Wörtern (z.B. "Testsieger").
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="p-6 space-y-6">
+        
+        <div className="space-y-3">
+          <Label className="font-bold text-foreground">Schutz-Modus (Global)</Label>
+          <Select value={mode} onValueChange={setMode}>
+            <SelectTrigger className="h-12 rounded-xl bg-background border-input">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="strict">
+                <span className="font-bold text-green-600 dark:text-green-500">STRICT:</span> Harter Block (Speichern wird verweigert)
+              </SelectItem>
+              <SelectItem value="warn">
+                <span className="font-bold text-yellow-600 dark:text-yellow-500">SOFT ALLOW (Warn):</span> Speichern wird erlaubt, kein Hard-Stop
+              </SelectItem>
+              <SelectItem value="off">
+                <span className="font-bold text-red-600 dark:text-red-500">OFF (Exit-Modus):</span> Komplett deaktiviert (Alles ist erlaubt)
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-3">
+          <Label className="font-bold text-foreground">Ausnahmen (Freigegebene Slugs)</Label>
+          <Input 
+            value={exemptSlugs} 
+            onChange={(e) => setExemptSlugs(e.target.value)} 
+            placeholder="z.B. kredit-vergleich, dating-apps" 
+            className="h-12 rounded-xl bg-background border-input font-mono text-sm"
+          />
+          <p className="text-xs text-muted-foreground">
+            Kommagetrennte Liste von URLs (ohne Slash), bei denen der Filter ignoriert wird, selbst wenn "STRICT" aktiv ist.
+          </p>
+        </div>
+
+        <Button onClick={handleSave} className="w-full h-12 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-slate-200 dark:text-slate-900 text-white rounded-xl font-bold">
+          <Save className="w-4 h-4 mr-2" /> Compliance Einstellungen speichern
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+// --- ENDE NEUE KOMPONENTE ---
+
 export default function AdminSettings() {
   const { data: settings, isLoading } = useSettings();
   const updateSetting = useUpdateSetting();
@@ -35,7 +122,7 @@ export default function AdminSettings() {
   // Hooks für Home-Steuerung & Ads
   const { layout } = useHomeLayout();
   const { content: serverContent } = useHomeContent();
-  const { data: forumAds } = useForumAds();
+  const forumAds = useForumAds(); // BUGFIX: "const { data: forumAds }" entfernt!
    
   // Lokaler State
   const [localContent, setLocalContent] = useState<typeof defaultHomeContent | null>(null);
@@ -688,6 +775,10 @@ export default function AdminSettings() {
                 <div className="flex gap-2"><Input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Neuer PIN" /><Button onClick={savePin} variant="outline">Ändern</Button></div>
              </CardContent>
           </Card>
+
+          {/* NEUE COMPLIANCE & LEGAL KARTE HIER EINGEFÜGT */}
+          <ComplianceSettingsCard />
+
         </TabsContent>
 
         {/* ==============================================================

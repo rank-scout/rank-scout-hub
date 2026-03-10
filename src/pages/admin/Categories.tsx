@@ -44,6 +44,17 @@ const formatDate = (dateString: string | null | undefined) => {
     });
 };
 
+const getCleanToxicWordMessage = (rawMessage?: string) => {
+  if (!rawMessage) return "Der Inhalt enthält einen blockierten Begriff.";
+
+  const cleanMsg = rawMessage
+    .replace(/^.*TOXIC_WORD_ERROR:\s*/i, "")
+    .split("\n")[0]
+    .trim();
+
+  return cleanMsg || "Der Inhalt enthält einen blockierten Begriff.";
+};
+
 // --- KI CONFIG DIALOG ---
 const AIConfigDialog = () => {
     const [open, setOpen] = useState(false);
@@ -398,7 +409,25 @@ export default function Categories() {
       setIsDialogOpen(false);
     } catch (error: any) { 
         console.error("Save Error:", error);
-        toast({ title: "Fehler beim Speichern", description: error.message, variant: "destructive" }); 
+        const rawMessage = error?.message || "";
+
+        if (rawMessage.includes("TOXIC_WORD_ERROR")) {
+          const cleanMsg = getCleanToxicWordMessage(rawMessage);
+
+          toast({
+            title: "Speichern blockiert",
+            description: cleanMsg,
+            variant: "destructive",
+          });
+
+          return;
+        }
+
+        toast({
+          title: "Fehler beim Speichern",
+          description: rawMessage || "Unbekannter Fehler",
+          variant: "destructive",
+        });
     }
   }
 
