@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCategories } from "@/hooks/useCategories";
 import { useProjects } from "@/hooks/useProjects";
-import { useSettings, useUpdateSetting } from "@/hooks/useSettings";
+import { useAdminSettings, useUpdateSetting } from "@/hooks/useSettings";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
 
   const { data: categories = [] } = useCategories(true);
   const { data: projects = [] } = useProjects(true);
-  const { data: settings } = useSettings();
+  const { data: settings } = useAdminSettings();
   const updateSetting = useUpdateSetting();
 
   // 1. NEUE PERIOD STATS (Unique Views aus page_views_analytics)

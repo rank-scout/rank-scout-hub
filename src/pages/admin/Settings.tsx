@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { 
-  useSettings, 
+  useAdminSettings, 
   useUpdateSetting, 
   useHomeLayout, 
   useHomeContent, 
@@ -116,7 +116,7 @@ function ComplianceSettingsCard() {
 // --- ENDE NEUE KOMPONENTE ---
 
 export default function AdminSettings() {
-  const { data: settings, isLoading } = useSettings();
+  const { data: settings, isLoading } = useAdminSettings();
   const updateSetting = useUpdateSetting();
    
   // Hooks für Home-Steuerung & Ads

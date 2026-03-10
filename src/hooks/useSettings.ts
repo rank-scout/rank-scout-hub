@@ -2,6 +2,46 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { TrendingLink } from "@/lib/schemas";
+export const PUBLIC_SETTINGS_KEYS = [
+  "active_theme",
+  "home_sections",
+  "home_layout_v2",
+  "home_content",
+  "header_config",
+  "footer_config",
+  "scouty_config",
+  "home_forum_teaser",
+  "ads_sense_client_id",
+  "ads_sense_slot_id",
+  "ads_enabled",
+  "ads_amazon_headline",
+  "ads_amazon_text",
+  "ads_amazon_button_text",
+  "ads_amazon_link",
+  "forum_banner_headline",
+  "forum_banner_subheadline",
+  "forum_banner_badge",
+  "forum_ads",
+  "site_title",
+  "site_logo_url",
+  "site_description",
+  "hero_title",
+  "hero_subtitle",
+  "footer_designer_name",
+  "footer_designer_url",
+  "ticker_badge_text",
+  "ticker_headline",
+  "ticker_link_text",
+  "trending_links",
+  "compliance_config",
+  "google_analytics_id",
+  "google_search_console_verification",
+  "top_bar_text",
+  "top_bar_link",
+  "top_bar_active",
+  "newsletter_active",
+  "popup_active"
+];
 
 // --- HELPER FÜR TOXIC_WORD_ERROR ---
 const getCleanToxicWordMessage = (rawMessage?: string) => {
@@ -38,23 +78,49 @@ export interface ForumAd {
 }
 
 // --- CORE FETCHING ---
-async function fetchSettings(): Promise<Record<string, Json>> {
-  const { data, error } = await supabase.from("settings").select("*");
+async function fetchPublicSettings(): Promise<Record<string, Json>> {
+  const { data, error } = await supabase
+    .from("settings")
+    .select("key, value")
+    .in("key", PUBLIC_SETTINGS_KEYS);
+
   if (error) throw error;
-  
+
   const settings: Record<string, Json> = {};
-  data?.forEach((row) => { 
-    settings[row.key] = row.value; 
+  data?.forEach((row) => {
+    settings[row.key] = row.value;
   });
-  
+
   return settings;
 }
 
 export function useSettings() {
   return useQuery({
-    queryKey: ["settings"],
-    queryFn: fetchSettings,
+    queryKey: ["settings", "public"],
+    queryFn: fetchPublicSettings,
     staleTime: 5 * 60 * 1000,
+  });
+}
+async function fetchAdminSettings(): Promise<Record<string, Json>> {
+  const { data, error } = await supabase
+    .from("settings")
+    .select("key, value");
+
+  if (error) throw error;
+
+  const settings: Record<string, Json> = {};
+  data?.forEach((row) => {
+    settings[row.key] = row.value;
+  });
+
+  return settings;
+}
+
+export function useAdminSettings() {
+  return useQuery({
+    queryKey: ["settings", "admin"],
+    queryFn: fetchAdminSettings,
+    staleTime: 1 * 60 * 1000,
   });
 }
 

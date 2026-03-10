@@ -4,7 +4,7 @@ providers = ["node"]
 NIXPACKS_NODE_VERSION = "22"
 
 [phases.setup]
-nixPkgs = ["nodejs_22", "nginx"]
+nixPkgs = ["nodejs_22", "nginx", "gettext"]
 
 [phases.install]
 cmds = ["npm install"]
@@ -13,4 +13,4 @@ cmds = ["npm install"]
 cmds = ["npm run build"]
 
 [start]
-cmd = "cp nginx.conf /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+cmd = "set -eu; test -n \"$OLLAMA_AUTH_KEY\"; envsubst '${OLLAMA_AUTH_KEY}' < nginx.conf > /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"

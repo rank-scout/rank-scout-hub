@@ -1,20 +1,20 @@
-import { lazy, Suspense, useEffect, useLayoutEffect } from "react";
+import { lazy, Suspense, useEffect, useLayoutEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import { HelmetProvider, Helmet } from "react-helmet-async"; 
+import { HelmetProvider, Helmet } from "react-helmet-async";
 import { ThemeProvider } from "@/hooks/useTheme";
-import { useSettings } from "@/hooks/useSettings"; 
+import { useSettings, PUBLIC_SETTINGS_KEYS } from "@/hooks/useSettings";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
-import { supabase } from "@/integrations/supabase/client"; // Hebel C Import
+import { supabase } from "@/integrations/supabase/client";
 
 // --- LAYOUT KOMPONENTEN ---
 import { CookieBanner } from "./components/layout/CookieBanner";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
-import { MascotWidget } from "@/components/layout/MascotWidget"; 
+import { MascotWidget } from "@/components/layout/MascotWidget";
 
 // --- KRITISCHE SEITE ---
 import Index from "./pages/Index";
@@ -41,7 +41,7 @@ const Contact = lazy(() => import("./pages/Contact"));
 const Impressum = lazy(() => import("./pages/Impressum"));
 const AGB = lazy(() => import("./pages/AGB"));
 const Datenschutz = lazy(() => import("./pages/Datenschutz"));
-const HowWeCompare = lazy(() => import("./pages/HowWeCompare")); // <-- NEU: Trust-Seite
+const HowWeCompare = lazy(() => import("./pages/HowWeCompare"));
 const GoRedirect = lazy(() => import("./pages/GoRedirect"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -70,41 +70,80 @@ const ThemeManager = () => {
   return null;
 };
 
-// --- ANALYTICS WRAPPER ---
+// --- ANALYTICS WRAPPER (Consent-basiert) ---
 const AnalyticsWrapper = () => {
   const { data: settings } = useSettings();
-  
+  const [hasConsent, setHasConsent] = useState(false);
+
   useEffect(() => {
-    if (settings?.google_analytics_id) {
-      const timer = setTimeout(() => {
-        const scriptId = 'ga4-script';
-        if (!document.getElementById(scriptId)) {
-          const script = document.createElement('script');
-          script.id = scriptId;
-          script.async = true;
-          script.src = `https://www.googletagmanager.com/gtag/js?id=${settings.google_analytics_id}`;
-          document.head.appendChild(script);
+    const checkConsent = () => {
+      const consentRaw = localStorage.getItem("cookie-consent");
 
-          const inlineScript = document.createElement('script');
-          inlineScript.innerHTML = `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${settings.google_analytics_id}');
-          `;
-          document.head.appendChild(inlineScript);
-        }
-      }, 3500);
+      if (!consentRaw) {
+        setHasConsent(false);
+        return;
+      }
 
-      return () => clearTimeout(timer);
+      try {
+        const consent = JSON.parse(consentRaw);
+        setHasConsent(consent.analytics === true);
+      } catch (e) {
+        console.error("Fehler beim Parsen des Consents", e);
+        setHasConsent(false);
+      }
+    };
+
+    checkConsent();
+    window.addEventListener("cookie-consent-update", checkConsent);
+
+    return () => {
+      window.removeEventListener("cookie-consent-update", checkConsent);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!settings?.google_analytics_id) return;
+
+    const trackingId = settings.google_analytics_id as string;
+    const disableKey = `ga-disable-${trackingId}`;
+
+    if (hasConsent) {
+      (window as any)[disableKey] = false;
+
+      const scriptId = "ga4-script";
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement("script");
+        script.id = scriptId;
+        script.async = true;
+        script.src = `https://www.googletagmanager.com/gtag/js?id=${trackingId}`;
+        document.head.appendChild(script);
+
+        const inlineScript = document.createElement("script");
+        inlineScript.id = "ga4-inline-script";
+        inlineScript.innerHTML = `
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', '${trackingId}');
+        `;
+        document.head.appendChild(inlineScript);
+      } else if ((window as any).gtag) {
+        (window as any).gtag("config", trackingId);
+      }
+    } else {
+      (window as any)[disableKey] = true;
     }
-  }, [settings?.google_analytics_id]);
+  }, [hasConsent, settings?.google_analytics_id]);
 
   return (
     <>
       {settings?.google_search_console_verification && (
         <Helmet>
-          <meta name="google-site-verification" content={settings.google_search_console_verification} />
+          <meta
+            name="google-site-verification"
+            content={settings.google_search_console_verification as string}
+          />
         </Helmet>
       )}
     </>
@@ -114,7 +153,7 @@ const AnalyticsWrapper = () => {
 // --- SCOUTY WRAPPER ---
 const ScoutyWrapper = () => {
   const { data: settings } = useSettings();
-  const config = settings?.scouty_config as any || {};
+  const config = (settings?.scouty_config as any) || {};
   const isEnabled = config.enabled !== false;
 
   if (!isEnabled) return null;
@@ -123,38 +162,54 @@ const ScoutyWrapper = () => {
 
 // --- MAIN APP ---
 const App = () => {
-  // HEBEL C: PARALLEL LOADING LOGIK
   useEffect(() => {
-    // 1. Settings sofort parallel ziehen
+    // 1. Öffentliche Settings sofort parallel ziehen
     queryClient.prefetchQuery({
-      queryKey: ["settings"],
+      queryKey: ["settings", "public"],
       queryFn: async () => {
-        const { data, error } = await supabase.from("settings").select("*");
+        const { data, error } = await supabase
+          .from("settings")
+          .select("key, value")
+          .in("key", PUBLIC_SETTINGS_KEYS);
+
         if (error) throw error;
+
         const settings: Record<string, any> = {};
-        data?.forEach((row) => { settings[row.key] = row.value; });
+        data?.forEach((row) => {
+          settings[row.key] = row.value;
+        });
+
         return settings;
-      }
+      },
     });
 
     // 2. Kategorien sofort parallel ziehen
     queryClient.prefetchQuery({
       queryKey: ["categories", false],
       queryFn: async () => {
-        const { data, error } = await supabase.from("categories").select("*").eq("is_active", true).order("sort_order");
+        const { data, error } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("is_active", true)
+          .order("sort_order");
+
         if (error) throw error;
         return data;
-      }
+      },
     });
 
-    // 3. Promoted Apps sofort parallel ziehen (Limit 15 wie im Ticker)
+    // 3. Promoted Apps sofort parallel ziehen
     queryClient.prefetchQuery({
       queryKey: ["promoted-apps-weighted", 15],
       queryFn: async () => {
-        const { data, error } = await supabase.from("promoted_apps").select("*").eq("is_active", true);
+        const { data, error } = await supabase
+          .from("promoted_apps")
+          .select("*")
+          .eq("is_active", true);
+
         if (error) throw error;
-        return data; 
-      }
+        return data;
+      },
     });
   }, []);
 
@@ -162,18 +217,18 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <ThemeProvider defaultTheme="dark">
-          <ThemeManager /> 
+          <ThemeManager />
           <HelmetProvider>
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <AnalyticsWrapper /> 
+              <AnalyticsWrapper />
 
               <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                <CookieBanner /> 
-                <ScoutyWrapper /> 
-                <ScrollToTopHandler /> 
-                
+                <CookieBanner />
+                <ScoutyWrapper />
+                <ScrollToTopHandler />
+
                 <Suspense fallback={<LoadingScreen />}>
                   <Routes>
                     <Route path="/" element={<Index />} />
@@ -181,17 +236,17 @@ const App = () => {
                     <Route path="/top-apps" element={<TopApps />} />
                     <Route path="/go/:slug" element={<GoRedirect />} />
                     <Route path="/welcome" element={<Welcome />} />
-                    
+
                     <Route path="/forum" element={<Forum />} />
                     <Route path="/forum/kategorie/:categorySlug" element={<Forum />} />
                     <Route path="/forum/:slug" element={<ForumThread />} />
-                    
+
                     <Route path="/kontakt" element={<Contact />} />
                     <Route path="/impressum" element={<Impressum />} />
                     <Route path="/agb" element={<AGB />} />
                     <Route path="/datenschutz" element={<Datenschutz />} />
-                    <Route path="/wie-wir-vergleichen" element={<HowWeCompare />} /> {/* <-- NEU: Trust-Seite */}
-                    
+                    <Route path="/wie-wir-vergleichen" element={<HowWeCompare />} />
+
                     <Route path="/admin/login" element={<AdminLogin />} />
                     <Route path="/admin" element={<AdminLayout />}>
                       <Route index element={<AdminDashboard />} />
@@ -205,7 +260,7 @@ const App = () => {
                       <Route path="multi-publisher" element={<AdminPublisher />} />
                       <Route path="apps" element={<AdminApps />} />
                     </Route>
-                    
+
                     <Route path="/:slug" element={<CategoryDetail />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
