@@ -25,7 +25,6 @@ export const HomeSEOText = () => {
 
   if (!content?.seo?.long_text && !fallbackText) return null;
 
-  // HIER: Das neue Tech-Bild verlinkt
   const cardImage = "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=800&auto=format&fit=crop";
 
   return (
@@ -66,11 +65,11 @@ export const HomeSEOText = () => {
                         <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/10">
                             <div className="flex items-center gap-2">
                                 <GraphUp className="w-4 h-4 text-blue-400" />
-                                <span className="text-[10px] text-slate-300 font-mono">DATA: 100%</span>
+                                <span className="text-[10px] text-slate-300 font-mono">DATEN: gepflegt</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Cup className="w-4 h-4 text-secondary" />
-                                <span className="text-[10px] text-slate-300 font-mono">RANK: #1</span>
+                                <span className="text-[10px] text-slate-300 font-mono">FOKUS: Übersicht</span>
                             </div>
                         </div>
                     </div>

@@ -5,7 +5,6 @@ const steps = [
     icon: Magnifer,
     title: "Suchen",
     description: "Wähle deine Kategorie oder suche direkt nach deinem Bedarf.",
-    // Fix: Volle Klassennamen statt dynamischer Strings
     bgClass: "bg-primary/10",
     textClass: "text-primary",
   },
@@ -19,8 +18,7 @@ const steps = [
   {
     icon: CheckCircle,
     title: "Entscheiden",
-    description: "Wähle den Testsieger und sichere dir exklusive Vorteile.",
-    // Grün für Erfolg/Abschluss
+    description: "Vergleiche passende Angebote und prüfe verfügbare Vorteile.",
     bgClass: "bg-green-100",
     textClass: "text-green-600",
   }
@@ -40,7 +38,6 @@ export const HowItWorksSection = () => {
         </div>
 
         <div className="relative grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-16">
-          {/* Connecting line for desktop */}
           <div 
             aria-hidden="true" 
             className="hidden md:block absolute top-[2.5rem] left-[16%] right-[16%] h-px"

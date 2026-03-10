@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Cookie, ShieldCheck, ChevronDown, ChevronUp, ExternalLink } from "lucide-react";
+import { Cookie, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Typisierung für die Consent-Einstellungen
@@ -15,11 +15,11 @@ export const CookieBanner = () => {
   const [showDetails, setShowDetails] = useState(false);
   
   // Standard: Nur Essenziell ist an, Rest aus (Opt-In Prinzip!)
-  const [settings, setSettings] = useState<ConsentSettings>(({
+  const [settings, setSettings] = useState<ConsentSettings>({
     essential: true, // Darf nicht deaktivierbar sein
     analytics: false,
     marketing: false
-  }));
+  });
 
   useEffect(() => {
     // Prüfen, ob bereits eine Entscheidung getroffen wurde
@@ -32,6 +32,8 @@ export const CookieBanner = () => {
             setSettings(JSON.parse(consent));
         } catch (e) {
             console.error("Cookie Parse Error", e);
+            localStorage.removeItem("cookie-consent");
+            setIsVisible(true);
         }
     }
 
@@ -148,8 +150,8 @@ export const CookieBanner = () => {
                                 <input 
                                     type="checkbox" 
                                     checked={settings.analytics} 
-                                    onChange={() => toggleSetting('analytics')}
-                                    className="accent-secondary h-4 w-4 rounded cursor-pointer" 
+                                    readOnly
+                                    className="accent-secondary h-4 w-4 rounded pointer-events-none" 
                                 />
                             </div>
                             <p className="text-xs text-slate-400">Hilft uns zu verstehen, welche Seiten beliebt sind (Google Analytics).</p>
@@ -165,23 +167,27 @@ export const CookieBanner = () => {
                                 <input 
                                     type="checkbox" 
                                     checked={settings.marketing} 
-                                    onChange={() => toggleSetting('marketing')}
-                                    className="accent-secondary h-4 w-4 rounded cursor-pointer" 
+                                    readOnly
+                                    className="accent-secondary h-4 w-4 rounded pointer-events-none" 
                                 />
                             </div>
                             <p className="text-xs text-slate-400">Amazon Bilder, AdSense Werbung und personalisierte Angebote.</p>
                         </div>
                         
-                        {/* SAVE BUTTON FOR DETAILS */}
+                        {/* SAVE BUTTON FOR DETAILS - FIX: Mobile-friendly Full Width */}
                         <div className="md:col-span-3 flex justify-end mt-2">
-                             <Button onClick={handleSaveSelection} variant="outline" className="border-secondary text-secondary hover:bg-secondary hover:text-white">
+                             <Button 
+                                onClick={handleSaveSelection} 
+                                variant="outline" 
+                                className="w-full md:w-auto border-secondary text-secondary hover:bg-secondary hover:text-white font-bold"
+                             >
                                 Auswahl speichern
                              </Button>
                         </div>
                     </div>
                 )}
 
-                {/* MOBILE BUTTONS (Nur sichtbar auf Mobile, wenn Details zu sind oder unter Details) */}
+                {/* MOBILE BUTTONS (Sichtbar auf Mobile, wenn Details zu sind) */}
                 <div className="md:hidden flex flex-col gap-3 mt-6">
                     {!showDetails && (
                         <>

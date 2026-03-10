@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
 import { Heart, ShieldCheck } from "lucide-react";
-import { useSiteLogo, useFooterConfig } from "@/hooks/useSettings";
+import { useFooterConfig } from "@/hooks/useSettings";
 
 export const Footer = () => {
-  const logo = useSiteLogo();
   const config = useFooterConfig();
 
   const legalLinks = config.legal_links || [];
@@ -14,6 +13,23 @@ export const Footer = () => {
     e.preventDefault();
     window.dispatchEvent(new Event("showCookieSettings"));
   };
+
+  // --- DISCLAIMER LOGIK SAUBER AUSGELAGERT ---
+  let finalDisclaimer = "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn du über einen Link auf dieser Seite einkaufst, erhalten wir möglicherweise eine Provision. Der Preis für dich ändert sich dabei nicht. Unsere Inhalte werden redaktionell erstellt und fortlaufend gepflegt.";
+
+  if (config.disclaimer && config.disclaimer.trim() !== "") {
+    finalDisclaimer = config.disclaimer
+      // 1. Du/Sie UX Konsistenz
+      .replace(/Wenn Sie/g, "Wenn du")
+      .replace(/für Sie/g, "für dich")
+      .replace(/Ihnen/g, "dir")
+      .replace(/ Sie /g, " dich ")
+      // 2. Toxischen Unabhängigkeits-Claim der DB direkt abfangen (Safety Net!)
+      .replace(
+        "Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.", 
+        "Unsere Inhalte werden redaktionell erstellt und fortlaufend gepflegt."
+      );
+  }
 
   return (
     <footer className="relative bg-primary pt-20 pb-12 overflow-hidden border-t border-white/10 mt-0">
@@ -41,7 +57,6 @@ export const Footer = () => {
           {/* 1. BRANDING (CONSISTENT) */}
           <div className="space-y-6 sm:col-span-2 lg:col-span-1">
             <Link to="/" className="block w-fit group">
-               {/* Hier das exakt gleiche Logo-Styling wie im Header */}
                <span className="text-3xl font-display font-extrabold tracking-tight text-white">
                   Rank-
                   <span className="text-secondary">Scout</span>
@@ -49,7 +64,7 @@ export const Footer = () => {
                </span>
             </Link>
             <p className="text-slate-300 text-sm leading-relaxed max-w-xs">
-              {config.text_description || "Der ultimative Vergleichs-Hub für Software, Finanzen und Lifestyle. Unabhängig und datenbasiert."}
+              {config.text_description || "Vergleiche, Rechner und Ratgeber für Software, Finanzen und Lifestyle im strukturierten Überblick."}
             </p>
           </div>
 
@@ -75,7 +90,7 @@ export const Footer = () => {
           <div>
             <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Rechtliches</h4>
             <ul className="space-y-3">
-              {/* NEUER KONTAKT LINK */}
+              {/* KONTAKT LINK */}
               <li>
                   <Link 
                     to="/kontakt" 
@@ -97,7 +112,7 @@ export const Footer = () => {
                   </Link>
                 </li>
               ))}
-              {/* KYRA FIX: Cookie Settings Button */}
+              {/* COOKIE SETTINGS BUTTON */}
               <li>
                 <button 
                   onClick={openCookieSettings}
@@ -112,16 +127,16 @@ export const Footer = () => {
 
           {/* 4. Quality Badge */}
           <div className="flex flex-col justify-start">
-            <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Sicherheit</h4>
+            <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Transparenz</h4>
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md hover:bg-white/10 transition-colors cursor-default group">
                 <div className="flex items-start gap-4">
                     <div className="p-2.5 bg-green-500/10 rounded-full text-green-400 border border-green-500/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
                         <ShieldCheck className="w-6 h-6" />
                     </div>
                     <div>
-                        <div className="font-bold text-white text-sm mb-1">{config.text_checked || "Redaktionell geprüft"}</div>
+                        <div className="font-bold text-white text-sm mb-1">{config.text_checked || "Redaktioneller Überblick"}</div>
                         <div className="text-xs text-slate-400 leading-snug">
-                            {config.text_update || "Täglich aktualisierte Daten und unabhängige Bewertungen."}
+                            {config.text_update || "Fortlaufend gepflegte Daten und nachvollziehbare Vergleiche."}
                         </div>
                     </div>
                 </div>
@@ -140,11 +155,11 @@ export const Footer = () => {
           </div>
         </div>
         
-        {/* Disclaimer - FIX: Kontrast leicht erhöht (slate-400 -> slate-300) für Accessibility Score */}
-        {config.disclaimer && (
+        {/* Disclaimer - Sauber über Variable gerendert */}
+        {finalDisclaimer && (
             <div className="mt-8 pt-6 border-t border-white/5">
                 <p className="text-xs text-slate-300 text-center max-w-4xl mx-auto leading-relaxed">
-                    {config.disclaimer}
+                    {finalDisclaimer}
                 </p>
             </div>
         )}

@@ -17,19 +17,11 @@ export const HeroSection = () => {
   const { content } = useHomeContent();
   const { data: searchResults = [], isLoading: isSearching } = useGlobalSearch(searchQuery);
 
-  // Klick nach außen schließt das Dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsSearchFocused(false);
       }
-// Diese Funktion sucht die Section mit der ID "bereiche" und scrollt weich dorthin
-const scrollToComparison = () => {
-  const target = document.getElementById('bereiche');
-  if (target) {
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-};
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -47,10 +39,8 @@ const scrollToComparison = () => {
     }
   };
 
-  // --- HIER IST DIE ÄNDERUNG: Daten kommen jetzt aus der Datenbank (Supabase) ---
-  // Falls im Admin nichts steht, wird dein Standard-Text als Fallback genutzt.
-  const newTitle = content.hero?.title || "Software & Services: Transparent. Unabhängig. Geprüft.";
-  const newSubtitle = content.hero?.subtitle || "Wir analysieren hunderte Anbieter, damit du in Sekunden die richtige Wahl triffst. Spare Zeit, Geld und Nerven.";
+  const newTitle = content.hero?.title || "Vergleiche, Rechner und Ratgeber im Überblick.";
+  const newSubtitle = content.hero?.subtitle || "Wir strukturieren zahlreiche Anbieter, damit du in Sekunden die richtige Wahl triffst. Spare Zeit, Geld und Nerven.";
   const badgeText = content.hero?.badge || "Update 2026";
   const searchPlaceholder = content.hero?.search_placeholder || "Was möchtest du vergleichen?";
   const searchButtonLabel = content.hero?.search_label || "Vergleichen";
@@ -58,13 +48,9 @@ const scrollToComparison = () => {
   const showDropdown = isSearchFocused && searchQuery.length >= 2;
 
   return (
-    // FIX 1: z-40 hinzugefügt. Die komplette Sektion liegt jetzt über dem App-Ticker und restlichem Content
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-10 bg-[#0a0f1c] selection:bg-secondary/30 z-40">
       
-      {/* --- BG EFFECTS WRAPPER (3D Space & Image) --- */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          
-          {/* 1. HINTERGRUNDBILD - Knackscharf auf 100% */}
           <div 
             className="absolute inset-0 z-0 opacity-100 bg-cover bg-center bg-no-repeat"
             style={{ 
@@ -74,10 +60,8 @@ const scrollToComparison = () => {
             }}
           />
 
-          {/* 2. DUNKLES OVERLAY - Mobil fast unsichtbar (transparent/5%), Desktop moderat */}
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0a0f1c]/5 to-[#0a0f1c] md:from-[#0a0f1c]/5 md:via-[#0a0f1c]/15 z-0" />
 
-          {/* 3. DIE 3D-STERNE (Animiertes Funkeln) */}
           <div className="absolute inset-0 z-0 opacity-80" 
                style={{ maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)' }}>
             <div className="absolute inset-0 animate-[pulse_4s_ease-in-out_infinite]"
@@ -88,13 +72,10 @@ const scrollToComparison = () => {
                  style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='240' height='240' viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Ccircle cx='50' cy='50' r='1.5'/%3E%3Ccircle cx='180' cy='90' r='1.5'/%3E%3Ccircle cx='120' cy='200' r='1.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
           </div>
 
-          {/* 4. GLOW ORBS (Behält das farbige Leuchten bei) */}
           <div className="absolute top-[-20%] right-[-10%] w-[1000px] h-[1000px] bg-secondary/20 rounded-full blur-[120px] mix-blend-screen" />
           <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-500/20 rounded-full blur-[100px]" />
       </div>
 
-      {/* --- CONTENT --- */}
-      {/* FIX 2: z-30 für den Container, damit er sicher ÜBER der weißen Welle liegt */}
       <div className="container px-4 mx-auto relative z-30">
         <div className="max-w-4xl mx-auto text-center">
           
@@ -139,11 +120,9 @@ const scrollToComparison = () => {
               </Button>
             </form>
 
-            {/* LIVE SEARCH DROPDOWN */}
             {showDropdown && (
               <div className="absolute top-full left-0 right-0 mt-4 bg-white rounded-2xl shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in slide-in-from-top-4 duration-200 text-left z-[100]">
                 {searchResults.length > 0 ? (
-                  // FIX 3: max-h-[60vh] sorgt dafür, dass die Liste dynamisch bis zu 60% der Bildschirmhöhe nutzt
                   <div className="max-h-[60vh] overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
                     {searchResults.map((result) => (
                       <Link
@@ -178,34 +157,31 @@ const scrollToComparison = () => {
             )}
           </div>
 
-          {/* STATS BAR */}
           <div className="mt-12 flex flex-wrap justify-center gap-8 md:gap-16 animate-fade-in animation-delay-500 relative z-0">
              <div className="flex items-center gap-3 group select-none">
                 <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
                     <GraphUp weight="Bold" className="w-5 h-5 text-blue-200" />
                 </div>
-                <div className="text-left"><div className="text-white font-bold leading-none">50+</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Kategorien</div></div>
+                <div className="text-left"><div className="text-white font-bold leading-none">Viele</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Kategorien</div></div>
              </div>
 
              <div className="flex items-center gap-3 group select-none">
                 <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
                     <UsersGroupTwoRounded weight="Bold" className="w-5 h-5 text-blue-200" />
                 </div>
-                <div className="text-left"><div className="text-white font-bold leading-none">10k+</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Community</div></div>
+                <div className="text-left"><div className="text-white font-bold leading-none">Aktive</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Community</div></div>
              </div>
 
              <div className="flex items-center gap-3 group select-none">
                 <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
                     <ShieldCheck weight="Bold" className="w-5 h-5 text-green-400" />
                 </div>
-                <div className="text-left"><div className="text-white font-bold leading-none">100%</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Geprüft</div></div>
+                <div className="text-left"><div className="text-white font-bold leading-none">Laufend</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Aktualisiert</div></div>
              </div>
           </div>
         </div>
       </div>
 
-      {/* --- THE ARROW --- */}
-      {/* Die Welle bleibt auf z-20 und wird vom Such-Container (z-30) problemlos überlagert */}
       <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-[0] transform translate-y-[1px] z-20 pointer-events-none">
           <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120" preserveAspectRatio="none" className="relative block w-[calc(100%+1.3px)] h-[60px]">
               <path d="M600,112.77C268.63,112.77,0,65.52,0,7.23V120H1200V7.23C1200,65.52,931.37,112.77,600,112.77Z" className="fill-background"></path>

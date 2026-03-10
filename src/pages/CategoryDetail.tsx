@@ -28,8 +28,6 @@ import { useForceSEO } from "@/hooks/useForceSEO";
 import { UniversalWidgetLoader } from "@/components/templates/UniversalWidgetLoader";
 import { useTrackView } from "@/hooks/useTrackView";
 
-// --- NEUE SICHERHEITS-IMPORTS ---
-import { supabase } from "@/integrations/supabase/client";
 import { AffiliateDisclaimer } from "@/components/AffiliateDisclaimer";
 import { StarRatingWidget } from "@/components/StarRatingWidget";
 
@@ -41,7 +39,6 @@ const getCategoryHeroImage = (category: any) => {
     return "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop";
 };
 
-// KYRA UPDATE: Pixel-genaue Amazon-Sterne mit Premium-Gold & Trust-Label
 const RatingStars = ({ rating }: { rating: number }) => {
     const score = (rating || 9.5) / 2; 
 
@@ -64,7 +61,7 @@ const RatingStars = ({ rating }: { rating: number }) => {
             </div>
             <div className="flex items-center gap-1.5 mt-2.5 text-[10px] text-slate-500 font-medium bg-slate-50 px-2 py-1 rounded border border-slate-100/50">
                 <ShieldCheck className="w-3 h-3 text-green-500" />
-                <span>Verifizierte Testnote</span>
+                <span>Redaktionelle Einordnung</span>
             </div>
         </div>
     );
@@ -74,7 +71,7 @@ const ProjectCard = ({ project, index, category }: { project: any, index: number
     const isWinner = index === 0;
     
     const ctaText = category?.project_cta_text || "Zum Anbieter";
-    const badgeText = project?.badge_text || category?.hero_badge_text || "EMPFEHLUNG 2026";
+    const badgeText = project?.badge_text || category?.hero_badge_text || "AUSGEWÄHLT 2026";
     
     const ratingValue = project.rating || 9.5;
     const ratingText = ratingValue >= 9 ? 'EXZELLENT' : (ratingValue >= 8 ? 'SEHR GUT' : 'GUT');
@@ -155,75 +152,69 @@ export default function CategoryDetail() {
 
   useForceSEO(category?.meta_description || "");
 
-  // --- NEU: Dynamische Rating-Logik ---
-  const [dynamicRating, setDynamicRating] = useState<{stars: number, count: number} | null>(null);
-
-  useEffect(() => {
-    const fetchRating = async () => {
-      if (!category?.slug) return;
-      const { data, error } = await supabase
-        .from('page_ratings')
-        .select('seed_total_stars, seed_vote_count, real_total_stars, real_vote_count')
-        .eq('slug', category.slug)
-        .maybeSingle();
-
-      if (error) {
-        console.error('[CategoryDetail] Schema Fetch Error:', error);
-        return;
-      }
-
-      if (data) {
-        const totalStars = Number(data.seed_total_stars || 0) + Number(data.real_total_stars || 0);
-        const totalVotes = Number(data.seed_vote_count || 0) + Number(data.real_vote_count || 0);
-
-        if (totalVotes > 0) {
-          setDynamicRating({
-            stars: Number((totalStars / totalVotes).toFixed(1)),
-            count: totalVotes
-          });
-        }
-      }
-    };
-    fetchRating();
-  }, [category?.slug]);
-
- // Dynamisches JSON-LD generieren (Google Rich Snippet Safe)
+  // Dynamisches JSON-LD generieren (Defensiv und Google-konform)
   const jsonLd = useMemo(() => {
     if (!category) return null;
 
-    if (dynamicRating) {
-      // Mit Rating: MUSS "Product" sein für Google Sterne
-      const schema = {
-        "@context": "https://schema.org",
-        "@type": "Product",
-        "name": category.meta_title || `${category.name} Vergleich`,
-        "description": category.meta_description || `Die besten Anbieter für ${category.name} im unabhängigen Vergleich.`,
-        "image": category.hero_image_url || "https://rank-scout.com/Rank-Scout-Logo.webp",
-        "brand": {
-          "@type": "Brand",
-          "name": "Rank-Scout"
+    const schema: any = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `https://rank-scout.com/${category.slug}/#webpage`,
+          "url": `https://rank-scout.com/${category.slug}`,
+          "name": category.meta_title || category.name,
+          "description": category.meta_description || `Anbieter für ${category.name} im Vergleich.`
         },
-        "aggregateRating": {
-          "@type": "AggregateRating",
-          "ratingValue": dynamicRating.stars,
-          "reviewCount": dynamicRating.count,
-          "bestRating": "5",
-          "worstRating": "1"
+        {
+          "@type": "BreadcrumbList",
+          "@id": `https://rank-scout.com/${category.slug}/#breadcrumb`,
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Startseite",
+              "item": "https://rank-scout.com/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": category.name,
+              "item": `https://rank-scout.com/${category.slug}`
+            }
+          ]
         }
-      };
-      return JSON.stringify(schema);
+      ]
+    };
+
+    // Dynamisch FAQPage anfügen, falls FAQs vorhanden sind (HTML aus Antworten filtern)
+    const shouldRenderVisibleFaq =
+  category?.is_internal_generated === true &&
+  category?.template !== 'hub_overview' &&
+  Array.isArray(category.faq_data) &&
+  category.faq_data.length > 0;
+
+    if (shouldRenderVisibleFaq) {
+      schema["@graph"].push({
+        "@type": "FAQPage",
+        "@id": `https://rank-scout.com/${category.slug}/#faq`,
+        "mainEntity": category.faq_data.map((faq: any) => ({
+          "@type": "Question",
+          "name": String(faq.question || "").trim(),
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": String(faq.answer || "")
+              .replace(/<[^>]+>/g, '')
+              .replace(/\n/g, ' ')
+              .trim()
+          }
+        }))
+      });
     }
 
-    // Ohne Rating: Normale WebPage
-    return JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": category.meta_title || category.name,
-      "description": category.meta_description,
-      "url": `https://rank-scout.com/${category.slug}`
-    });
-  }, [category, dynamicRating]);
-  // --- ENDE NEU ---
+    return JSON.stringify(schema);
+  }, [category]);
+
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach((entry) => { if (entry.isIntersecting) setActiveSection(entry.target.id); });
@@ -281,7 +272,6 @@ return (
           <title>{category.meta_title || `${category.name}`}</title>
           <meta name="description" content={category.meta_description || ""} />
           <link rel="canonical" href={currentUrl} />
-          {/* Dynamisches Schema injizieren */}
           {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
         </Helmet>
         <Header />
@@ -299,7 +289,7 @@ return (
           <section className="relative w-full min-h-[500px] md:min-h-[60vh] overflow-hidden rounded-b-[3.5rem] shadow-2xl shadow-slate-300/50 z-20 flex items-center justify-center bg-[#0a0a0a]">
             <div className="absolute inset-0 z-0"><img src={heroImage} alt="Background" className="w-full h-full object-cover object-center opacity-60" /><div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-black/50 to-transparent"></div></div>
             <div className="container relative z-20 mx-auto px-4 max-w-5xl text-center pt-32 pb-16 md:pt-40 md:pb-20 flex flex-col items-center justify-center">
-              <div className="flex justify-center mb-6 md:mb-8"><div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 text-orange-400 px-5 py-2 rounded-full shadow-lg text-[10px] md:text-xs font-bold uppercase tracking-widest"><ShieldCheck className="w-4 h-4 text-orange-500" />{category.hero_pretitle || "Redaktionell geprüft"}</div></div>
+              <div className="flex justify-center mb-6 md:mb-8"><div className="inline-flex items-center gap-2 bg-white/5 backdrop-blur-md border border-white/10 text-orange-400 px-5 py-2 rounded-full shadow-lg text-[10px] md:text-xs font-bold uppercase tracking-widest"><ShieldCheck className="w-4 h-4 text-orange-500" />{category.hero_pretitle || "Redaktioneller Überblick"}</div></div>
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tighter mb-6 md:mb-8 leading-tight md:leading-[1.1] drop-shadow-2xl px-2">{category.h1_title || category.name}</h1>
               {category.hero_headline && (<p className="text-lg sm:text-xl md:text-2xl text-slate-300 font-medium mb-10 md:mb-12 leading-relaxed max-w-3xl mx-auto antialiased px-4">{category.hero_headline}</p>)}
               <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 md:gap-4 bg-white/5 backdrop-blur-sm p-3 rounded-3xl border border-white/10 shadow-2xl max-w-4xl mx-auto w-full sm:w-auto">
@@ -309,8 +299,8 @@ return (
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div className="text-left text-slate-800">
-                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Markt-Analyse</div>
-                    <div className="text-sm font-bold">Tagesaktuell</div>
+                    <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Markt-Überblick</div>
+                    <div className="text-sm font-bold">Aktualisiert</div>
                   </div>
                 </div>
 
@@ -352,7 +342,7 @@ return (
                         <p className="text-center text-xs text-slate-400 mt-4">Daten werden bereitgestellt durch unseren Partner.</p>
                     </div>
                 ) : (
-                    projects.length > 0 && (<div id="vergleich" className="scroll-mt-32 mb-10"><div className="mb-8 px-2"><Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">{category.hero_badge_text || "Empfehlungen 2026"}</Badge><h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">{comparisonTitle}</h2></div><div className="space-y-6">{projects.map((proj, idx) => (<ProjectCard key={proj.id} project={proj} index={idx} category={category} />))}</div></div>)
+                    projects.length > 0 && (<div id="vergleich" className="scroll-mt-32 mb-10"><div className="mb-8 px-2"><Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">{category.hero_badge_text || "Ausgewählte Anbieter"}</Badge><h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">{comparisonTitle}</h2></div><div className="space-y-6">{projects.map((proj, idx) => (<ProjectCard key={proj.id} project={proj} index={idx} category={category} />))}</div></div>)
                 )}
 
                 {/* --- NEU: Affiliate Disclaimer UNTER dem Vergleich --- */}
@@ -371,7 +361,7 @@ return (
                           <AccordionItem key={index} value={`item-${index}`} className="bg-white border border-slate-100 shadow-sm rounded-2xl px-2">
                             <AccordionTrigger className="text-left font-bold text-[#0A0F1C] px-6 py-5 text-lg hover:no-underline hover:text-orange-500 transition-colors">{faq.question}</AccordionTrigger>
                             <AccordionContent className="text-slate-600 leading-loose px-6 pb-8 pt-2 text-base">
-                              <div dangerouslySetInnerHTML={{ __html: faq.answer.replace(/\n/g, '<br/>') }} />
+                              <div dangerouslySetInnerHTML={{ __html: String(faq.answer || '').replace(/\n/g, '<br/>') }} />
                             </AccordionContent>
                           </AccordionItem>
                         ))}
@@ -389,7 +379,7 @@ return (
               
               {/* SIDEBAR */}
               <aside className="lg:w-1/3 lg:sticky top-24 self-start hidden lg:block max-h-[calc(100vh-120px)] overflow-y-auto pr-2 pb-10 custom-scrollbar">
-                {!hasWidgetCode && topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">EMPFEHLUNG</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-orange-50 rounded-xl text-orange-500"><Trophy className="w-6 h-6" /></div><p className="font-bold text-[#0A0F1C] text-lg">Top Favorit</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-[#0A0F1C] leading-tight mb-1.5">{topPick.name}</p><div className="mb-1"><RatingStars rating={topPick.rating} /></div></div></div><Button asChild className="w-full font-bold bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 transition-colors h-14 rounded-xl group/sidebar-btn"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen* <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover/sidebar-btn:translate-x-1" /></a></Button></div>)}
+                {!hasWidgetCode && topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">AUSGEWÄHLT</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-orange-50 rounded-xl text-orange-500"><Trophy className="w-6 h-6" /></div><p className="font-bold text-[#0A0F1C] text-lg">Hervorgehobener Anbieter</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-[#0A0F1C] leading-tight mb-1.5">{topPick.name}</p><div className="mb-1"><RatingStars rating={topPick.rating} /></div></div></div><Button asChild className="w-full font-bold bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 transition-colors h-14 rounded-xl group/sidebar-btn"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen* <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover/sidebar-btn:translate-x-1" /></a></Button></div>)}
                 
                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30 mb-8">
                   <p className="font-bold text-[#0A0F1C] mb-6 flex items-center gap-2 text-sm uppercase tracking-widest"><Zap className="w-4 h-4 text-orange-500"/> {featuresTitle}</p>
@@ -413,7 +403,7 @@ return (
                     </div>
                 )}
                 
-                <div className="bg-gradient-to-b from-white to-slate-50 rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30"><p className="font-bold text-[#0A0F1C] mb-6 text-[10px] uppercase tracking-widest text-center">Unser Qualitäts-Versprechen</p><div className="space-y-4 text-sm text-slate-600 font-medium"><div className="flex items-center gap-4"><BookOpenTextIcon className="w-5 h-5 text-blue-600" /><span>Redaktioneller Ratgeber</span></div><div className="flex items-center gap-4"><ScaleIcon className="w-5 h-5 text-blue-600" /><span>Transparente Kriterien</span></div><div className="flex items-center gap-4"><ActivityIcon className="w-5 h-5 text-blue-600" /><span>Laufend aktualisiert</span></div></div></div>
+                <div className="bg-gradient-to-b from-white to-slate-50 rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30"><p className="font-bold text-[#0A0F1C] mb-6 text-[10px] uppercase tracking-widest text-center">Unsere redaktionellen Standards</p><div className="space-y-4 text-sm text-slate-600 font-medium"><div className="flex items-center gap-4"><BookOpenTextIcon className="w-5 h-5 text-blue-600" /><span>Redaktioneller Ratgeber</span></div><div className="flex items-center gap-4"><ScaleIcon className="w-5 h-5 text-blue-600" /><span>Transparente Kriterien</span></div><div className="flex items-center gap-4"><ActivityIcon className="w-5 h-5 text-blue-600" /><span>Laufend aktualisiert</span></div></div></div>
               </aside>
           </div>
         </main>

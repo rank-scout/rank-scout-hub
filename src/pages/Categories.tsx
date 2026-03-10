@@ -7,11 +7,9 @@ import { useProjects } from "@/hooks/useProjects";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowRight, Loader2 } from "lucide-react";
 import { Helmet } from "react-helmet-async"; 
-// KYRA FIX: Import für Tracking
 import { useTrackView } from "@/hooks/useTrackView";
 
 export default function Categories() {
-  // KYRA FIX: Tracking für Kategorie-Übersicht aktivieren
   useTrackView("categories-overview", "page");
 
   const { data: categories = [], isLoading } = useCategories();
@@ -95,7 +93,7 @@ export default function Categories() {
               Unsere Vergleiche
             </h1>
             <p className="text-lg text-muted-foreground mb-8">
-              Wähle eine Kategorie, um die besten Anbieter und Produkte zu finden.
+              Wähle eine Kategorie, um passende Angebote und Produkte im Überblick zu sehen.
             </p>
             
             <div className="relative max-w-md mx-auto">
@@ -130,19 +128,16 @@ export default function Categories() {
                   return (
                     <Link 
                       key={category.id} 
-                      to={`/kategorien/${category.slug}`}
+                      to={`/${category.slug}`}
                       className="group block h-full"
                     >
                       <div className={`h-full bg-white rounded-3xl p-6 border transition-all duration-300 relative overflow-hidden flex flex-col ${theme.border} hover:shadow-lg`}>
-                        {/* Background Gradient */}
                         <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                         
-                        {/* Icon */}
                         <div className={`w-14 h-14 rounded-2xl ${theme.bg} ${theme.text} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
                           <span className="text-3xl">{category.icon || "📊"}</span>
                         </div>
 
-                        {/* Content */}
                         <h2 className="font-display font-bold text-xl text-foreground mb-2 group-hover:text-primary transition-colors">
                           {category.name}
                         </h2>
@@ -153,10 +148,9 @@ export default function Categories() {
                           </p>
                         )}
 
-                        {/* Footer */}
                         <div className="flex items-center justify-between mt-auto pt-4 border-t border-border/50">
                           <span className={`text-sm font-medium ${theme.text}`}>
-                            {projectCount} {projectCount === 1 ? "Anbieter" : "Anbieter"}
+                            {projectCount} Anbieter
                           </span>
                           <ArrowRight className={`w-5 h-5 ${theme.text} opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
                         </div>

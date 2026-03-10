@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import type { TrendingLink, NavLink } from "@/lib/schemas";
+import type { TrendingLink } from "@/lib/schemas";
 
 // --- TYPES ---
 export type HomeSection = {
@@ -118,53 +118,53 @@ export const defaultHomeContent = {
   
   hero: {
     badge: "NEU: Rank-Scout 2.0 ist live",
-    headline: "Der ultimative Vergleichs-Hub",
-    title: "Der ultimative Vergleichs-Hub",
-    subtitle: "Suche & finde die besten Tools für deinen Erfolg.",
-    subheadline: "Suche & finde die besten Tools für deinen Erfolg. Vergleiche, entdecke und nutze die Top-Angebote aus KI, Software und Lifestyle. Unabhängig geprüft.",
+    headline: "Dein zentraler Vergleichs-Hub",
+    title: "Dein zentraler Vergleichs-Hub",
+    subtitle: "Suche & finde passende Tools für deinen Erfolg.",
+    subheadline: "Suche & finde passende Tools für deinen Erfolg. Vergleiche, entdecke und nutze etablierte Angebote aus KI, Software und Lifestyle. Transparent eingeordnet.",
     search_placeholder: "Was suchst du heute? (z.B. 'KI Tools', 'Dating')",
     search_label: "Finden"
   },
   trust: { 
     headline: "Warum Rank-Scout?", 
     subheadline: "Wir stehen für Transparenz und Qualität.", 
-    card1_title: "Daten statt Meinung", card1_text: "Unsere Algorithmen analysieren tausende Datenpunkte. Keine gekauften Platzierungen, nur harte Fakten.", 
-    card2_title: "Echtzeit-Scouting", card2_text: "Der Markt schläft nie. Unsere Datenbank wird täglich aktualisiert, damit Sie keinen Trend verpassen.", 
-    card3_title: "Verifizierte Experten", card3_text: "Nur Dienstleister mit nachgewiesenem Track-Record schaffen es in unsere Rankings.", 
-    box_title: "Ihr unfairer Wettbewerbsvorteil", box_text: "Während andere noch suchen, haben Sie bereits entschieden. Rank-Scout liefert Ihnen die Marktdaten, die Sie für technologische Führung brauchen.", 
-    live_badge: "Live-System aktiv" 
+    card1_title: "Daten statt Meinung", card1_text: "Unsere Algorithmen strukturieren tausende Datenpunkte. Nachvollziehbare Vergleiche statt reiner Meinungen.", 
+    card2_title: "Laufendes Scouting", card2_text: "Angebote und Entwicklungen ändern sich regelmäßig. Unsere Datenbank wird regelmäßig aktualisiert, damit du keinen Trend verpasst.", 
+    card3_title: "Etablierte Anbieter", card3_text: "Wir listen Dienstleister und Produkte mit nachvollziehbarem Track-Record in unseren Übersichten.", 
+    box_title: "Dein Informationsvorsprung", box_text: "Während andere noch suchen, hast du bereits verglichen. Rank-Scout liefert dir strukturierte Marktdaten für fundierte Entscheidungen.", 
+    live_badge: "Vergleiche aktiv" 
   },
   big_three: { 
-    headline: "Wählen Sie Ihren Bereich", 
+    headline: "Wähle deinen Bereich", 
     items: [
-        { id: "1", title: "Finanzen & Krypto", desc: "Broker, Kredite & Geschäftskonten im Härtetest.", link: "/finanzen", button_text: "Vergleichen", theme: "blue", image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab" },
-        { id: "2", title: "Software & SaaS", desc: "Die besten Tools für Marketing, HR und Vertrieb.", link: "/software", button_text: "Tools finden", theme: "gold", image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b" },
-        { id: "3", title: "Dienstleistungen", desc: "Agenturen, Berater und Services auf dem Prüfstand.", link: "/dienstleistungen", button_text: "Suchen", theme: "dark", image_url: "https://images.unsplash.com/photo-1497366216548-37526070297c" }
+        { id: "1", title: "Finanzen & Krypto", desc: "Broker, Kredite & Geschäftskonten im Überblick.", link: "/finanzen", button_text: "Vergleichen", theme: "blue", image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab" },
+        { id: "2", title: "Software & SaaS", desc: "Beliebte Tools für Marketing, HR und Vertrieb.", link: "/software", button_text: "Tools finden", theme: "gold", image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b" },
+        { id: "3", title: "Dienstleistungen", desc: "Agenturen, Berater und Services im Vergleich.", link: "/dienstleistungen", button_text: "Suchen", theme: "dark", image_url: "https://images.unsplash.com/photo-1497366216548-37526070297c" }
     ],
-    finance_title: "Finanzen & Krypto", finance_desc: "Broker, Kredite & Geschäftskonten im Härtetest.", finance_link: "/finanzen", finance_button: "Jetzt vergleichen", 
-    software_title: "Software & SaaS", software_desc: "Die besten Tools für Marketing, HR und Vertrieb.", software_link: "/software", software_button: "Tools finden", 
-    services_title: "Dienstleistungen", services_desc: "Agenturen, Berater und Services auf dem Prüfstand.", services_link: "/dienstleistungen", services_button: "Anbieter suchen" 
+    finance_title: "Finanzen & Krypto", finance_desc: "Broker, Kredite & Geschäftskonten im Überblick.", finance_link: "/finanzen", finance_button: "Jetzt vergleichen", 
+    software_title: "Software & SaaS", software_desc: "Beliebte Tools für Marketing, HR und Vertrieb.", software_link: "/software", software_button: "Tools finden", 
+    services_title: "Dienstleistungen", services_desc: "Agenturen, Berater und Services im Vergleich.", services_link: "/dienstleistungen", services_button: "Anbieter suchen" 
   },
   why_us: {
     headline: "Warum Rank-Scout?",
     subheadline: "Wir sind deine intelligente Entscheidungshilfe.",
     features: [
-      { title: "Extreme Performance", text: "Keine Ladezeiten, nur Fakten.", icon: "zap" },
-      { title: "100% Unabhängig", text: "Maximale Neutralität.", icon: "shield" },
+      { title: "Hohe Performance", text: "Schnelle Ladezeiten, klare Fakten.", icon: "zap" },
+      { title: "Transparente Kriterien", text: "Nachvollziehbare Vergleiche.", icon: "shield" },
       { title: "Global & Lokal", text: "Von International bis Regional.", icon: "globe" },
-      { title: "Echtzeit Updates", text: "Täglich frische Daten.", icon: "chart" }
+      { title: "Laufende Updates", text: "Regelmäßig frische Daten.", icon: "chart" }
     ]
   },
   seo: { 
-    headline: "Über unser Vergleichsportal", 
+    headline: "Über unseren Vergleichs-Hub", 
     intro: "Willkommen bei Rank-Scout. Wir bringen Licht in den Dschungel digitaler Dienstleistungen.", 
-    block1_title: "Warum Rank-Scout?", block1_text: "In einer Welt voller Fake-Bewertungen und intransparenter Affiliate-Modelle setzen wir einen neuen Standard.", 
-    block2_title: "Zukunftssicherheit", block2_text: "Unsere Scouts scannen den globalen Markt permanent nach neuen Trends.",
+    block1_title: "Unser Ansatz", block1_text: "Wir strukturieren komplexe Angebote und bereiten Konditionen verständlich und übersichtlich auf.", 
+    block2_title: "Laufende Pflege", block2_text: "Unsere Redaktion überprüft den Markt regelmäßig auf neue Entwicklungen und Tarifänderungen.",
     long_text: "" 
   },
   categories: { headline: "Alle Kategorien im Überblick", count: 6, button_more: "Alle Kategorien anzeigen", button_card: "Bereich erkunden" },
   news: { headline: "Aktuelles & Ratgeber", subheadline: "News & Updates", count: 3, button_text: "Zum Magazin", read_more: "Artikel lesen" },
-  forum_teaser: { headline: "Community Hub", subheadline: "Diskutiere mit den Besten.", link_text: "Alle Foren anzeigen", mobile_button: "Zum Community Forum" }
+  forum_teaser: { headline: "Community Hub", subheadline: "Tauche in beliebte Themenbereiche ein und teile deine Erfahrungen mit der Community.", link_text: "Alle Foren anzeigen", mobile_button: "Zum Community Forum" }
 };
 
 export const defaultHeaderConfig = { 
@@ -176,27 +176,27 @@ export const defaultHeaderConfig = {
 
 export const defaultFooterConfig = { 
   title: "Rank-Scout", 
-  text_checked: "Redaktionell geprüft", 
+  text_checked: "Redaktioneller Überblick", 
   text_update: "Aktualisiert: 2026", 
-  text_description: "Unsere Vergleiche basieren auf echten Daten, Nutzer-Feedback und Experten-Analysen.", 
+  text_description: "Unsere Inhalte basieren auf strukturierten Informationen, redaktioneller Einordnung und fortlaufend gepflegten Übersichten.", 
   copyright_text: "© 2026 Rank-Scout. Alle Rechte vorbehalten.", 
   made_with_text: "Made with", 
   made_in_text: "in Germany", 
-  disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn Sie über einen Link auf dieser Seite einkaufen, erhalten wir möglicherweise eine Provision. Der Preis für Sie ändert sich dabei nicht. Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.", 
+  disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn du über einen Link auf dieser Seite einkaufst, erhalten wir möglicherweise eine Provision. Der Preis für dich ändert sich dabei nicht. Unsere Inhalte werden redaktionell erstellt und fortlaufend gepflegt.", 
   legal_links: [{ label: "Impressum", url: "/impressum" }, { label: "Datenschutz", url: "/datenschutz" }, { label: "AGB", url: "/agb" }], 
   popular_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }] 
 };
 
 export const defaultScoutyConfig = { 
-  bubble_intro: "Hi, ich bin Scouty! Ich finde die besten Produkt-Deals für dich! 🔭", 
-  bubble_exit: "Warte! 🛑 Bevor du gehst: Ich habe gerade einen neuen Testsieger gefunden. Willst du ihn sehen?", 
-  bubble_newsletter: "Top 3 Deals per Mail?", 
+  bubble_intro: "Hi, ich bin Scouty! Ich finde passende Angebote für dich! 🔭", 
+  bubble_exit: "Warte! 🛑 Bevor du gehst: Ich habe gerade einen passenden Vorschlag gefunden. Willst du ihn sehen?", 
+  bubble_newsletter: "Spannende Deals per Mail?", 
   powered_by: "Powered By Rank-Scout AI" 
 };
 
 export const defaultHomeForumTeaser = { 
   headline: "Community Hub", 
-  subheadline: "Diskutiere mit den Besten. Tauche in unsere beliebtesten Themenbereiche ein und vernetze dich mit Experten.", 
+  subheadline: "Tauche in beliebte Themenbereiche ein und teile deine Erfahrungen mit der Community.", 
   link_text: "Alle Foren anzeigen", 
   mobile_button: "Zum Community Forum" 
 };
@@ -276,8 +276,8 @@ export function useForumAds() {
 export function useSiteTitle() { return useSetting<string>("site_title", ""); }
 export function useSiteLogo() { return useSetting<string | null>("site_logo_url", null); }
 export function useSiteDescription() { return useSetting<string>("site_description", ""); }
-export function useHeroTitle() { return useSetting<string>("hero_title", "Entdecke die besten Vergleiche"); }
-export function useHeroSubtitle() { return useSetting<string>("hero_subtitle", "Wir vergleichen, damit du die richtige Wahl triffst"); }
+export function useHeroTitle() { return useSetting<string>("hero_title", "Entdecke strukturierte Vergleiche"); }
+export function useHeroSubtitle() { return useSetting<string>("hero_subtitle", "Wir strukturieren Daten, damit du die richtige Wahl triffst"); }
 export function useAdsEnabled() { return useSetting<boolean>("ads_enabled", false); }
 export function useGlobalAnalyticsCode() { return useSetting<string>("global_analytics_code", ""); }
 export function useNavLinks() { const c = useHeaderConfig(); return c.nav_links; }
@@ -290,9 +290,12 @@ export function useFooterDesignerUrl() { return useSetting<string>("footer_desig
 export function useTickerConfig() {
   const { data: settings } = useSettings();
   return {
-    badge: (settings?.ticker_badge_text as string) || "Live Trends (24h)",
-    headline: (settings?.ticker_headline as string) || "Top Apps & Deals",
-    linkText: (settings?.ticker_link_text as string) || "Alle Top 100 ansehen →"
+    badge: (settings?.ticker_badge_text as string) || "Aktuelle Trends",
+    headline: (settings?.ticker_headline as string) || "Beliebte Apps & Deals",
+    linkText: (settings?.ticker_link_text as string) || "Alle Trends ansehen →"
   };
 }
-export function useTrendingLinks() { return useSetting<TrendingLink[]>("trending_links", []); }
+
+export function useTrendingLinks() {
+  return useSetting<TrendingLink[]>("trending_links", []);
+}
