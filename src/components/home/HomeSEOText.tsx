@@ -1,6 +1,7 @@
 import { useHomeContent } from "@/hooks/useSettings";
 import { cn } from "@/lib/utils";
 import { ShieldCheck, Cup, GraphUp } from "@solar-icons/react";
+import { sanitizeCmsHtml } from "@/lib/sanitizeHtml";
 
 export const HomeSEOText = () => {
   const { content } = useHomeContent();
@@ -41,7 +42,7 @@ export const HomeSEOText = () => {
                 <div className="prose prose-slate prose-lg dark:prose-invert max-w-none 
                   prose-headings:text-primary prose-headings:font-display prose-headings:font-bold 
                   prose-p:text-slate-600 prose-strong:text-primary">
-                  <div dangerouslySetInnerHTML={{ __html: seoContent }} />
+                  <div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(seoContent) }} />
                 </div>
             </div>
 

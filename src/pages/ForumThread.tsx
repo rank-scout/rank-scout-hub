@@ -2,17 +2,26 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { 
-  useForumThread, 
-  useThreadReplies, 
-  useCreateReply, 
-  useToggleLike, 
+import { sanitizeForumHtml } from "@/lib/sanitizeHtml";
+import {
+  useForumThread,
+  useThreadReplies,
+  useCreateReply,
+  useToggleLike,
   useIncrementThreadView,
-  ForumReplyWithLikes 
+  ForumReplyWithLikes,
 } from "@/hooks/useForum";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  MessageSquare, Pin, Clock, ArrowLeft, Send, Lock, CheckCircle, ThumbsUp, ShieldCheck
+  MessageSquare,
+  Pin,
+  Clock,
+  ArrowLeft,
+  Send,
+  Lock,
+  CheckCircle,
+  ThumbsUp,
+  ShieldCheck,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,10 +29,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import DOMPurify from "dompurify";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
-import { Helmet } from "react-helmet-async"; 
-import { useForceSEO } from "@/hooks/useForceSEO"; 
+import { Helmet } from "react-helmet-async";
+import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { useTrackView } from "@/hooks/useTrackView";
 
@@ -31,24 +39,29 @@ export default function ForumThread() {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  
+
   useTrackView(slug, "forum");
   const viewIncremented = useRef(false);
-   
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setCurrentUserId(session?.user?.id || null);
     });
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_, session) => {
       setCurrentUserId(session?.user?.id || null);
     });
-    
+
     return () => subscription.unsubscribe();
   }, []);
-   
+
   const { data: thread, isLoading: threadLoading } = useForumThread(slug || "");
-  const { data: replies, isLoading: repliesLoading } = useThreadReplies(thread?.id || "", currentUserId || undefined);
+  const { data: replies, isLoading: repliesLoading } = useThreadReplies(
+    thread?.id || "",
+    currentUserId || undefined
+  );
   const createReply = useCreateReply();
   const toggleLike = useToggleLike();
   const incrementView = useIncrementThreadView();
@@ -65,16 +78,22 @@ export default function ForumThread() {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("de-DE", {
-      day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const handleSubmitReply = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!replyName.trim() || !replyContent.trim()) {
       toast.error("Bitte fülle alle Felder aus");
       return;
     }
+
     if (!thread?.id) return;
 
     try {
@@ -83,6 +102,7 @@ export default function ForumThread() {
         author_name: replyName.trim(),
         content: replyContent.trim(),
       });
+
       setReplyName("");
       setReplyContent("");
       toast.success("Dein Kommentar wurde eingereicht und wird geprüft");
@@ -90,12 +110,13 @@ export default function ForumThread() {
       toast.error("Fehler beim Senden des Kommentars");
     }
   };
-   
+
   const handleLikeClick = async (reply: ForumReplyWithLikes) => {
     if (!currentUserId) {
       toast.error("Bitte melde dich an, um Kommentare zu liken");
       return;
     }
+
     try {
       await toggleLike.mutateAsync({
         replyId: reply.id,
@@ -109,33 +130,39 @@ export default function ForumThread() {
 
   const renderContent = () => {
     if (!thread) return { __html: "" };
+
     const htmlContent = thread.raw_html_content || thread.content;
-    return { 
-      __html: DOMPurify.sanitize(htmlContent, {
-        ADD_ATTR: ['class', 'style', 'target', 'rel'],
-        ADD_TAGS: ['iframe', 'figure', 'figcaption']
-      }) 
+
+    return {
+      __html: sanitizeForumHtml(htmlContent),
     };
   };
 
-  const seoTitle = thread?.seo_title && thread.seo_title.trim() !== "" 
-    ? thread.seo_title 
-    : (thread ? `${thread.title} | Forum` : "Lade Beitrag...");
+  const seoTitle =
+    thread?.seo_title && thread.seo_title.trim() !== ""
+      ? thread.seo_title
+      : thread
+        ? `${thread.title} | Forum`
+        : "Lade Beitrag...";
 
   let seoDescription = "";
   if (thread) {
     if (thread.seo_description && thread.seo_description.trim() !== "") {
       seoDescription = thread.seo_description;
     } else {
-      const cleanContent = thread.content.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
-      seoDescription = cleanContent.substring(0, 155) + (cleanContent.length > 155 ? "..." : "");
+      const cleanContent = thread.content
+        .replace(/<[^>]*>/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+      seoDescription =
+        cleanContent.substring(0, 155) + (cleanContent.length > 155 ? "..." : "");
     }
   }
 
   useForceSEO(seoDescription);
   const canonicalUrl = window.location.href;
 
-  const getInitial = (name: string) => name ? name.charAt(0).toUpperCase() : "U";
+  const getInitial = (name: string) => (name ? name.charAt(0).toUpperCase() : "U");
 
   if (threadLoading) {
     return (
@@ -161,9 +188,16 @@ export default function ForumThread() {
         <main className="flex-grow container mx-auto px-4 py-20 text-center max-w-[1920px]">
           <div className="bg-white rounded-3xl p-16 shadow-lg shadow-slate-200/30 border border-slate-100 max-w-2xl mx-auto">
             <MessageSquare className="w-20 h-20 text-slate-300 mx-auto mb-6" />
-            <h1 className="text-3xl font-extrabold text-[#0A0F1C] mb-4">Beitrag nicht gefunden</h1>
-            <p className="text-slate-500 mb-8 text-lg">Der gesuchte Beitrag existiert nicht oder wurde entfernt.</p>
-            <Button asChild className="bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 h-12 px-8 rounded-full font-bold">
+            <h1 className="text-3xl font-extrabold text-[#0A0F1C] mb-4">
+              Beitrag nicht gefunden
+            </h1>
+            <p className="text-slate-500 mb-8 text-lg">
+              Der gesuchte Beitrag existiert nicht oder wurde entfernt.
+            </p>
+            <Button
+              asChild
+              className="bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 h-12 px-8 rounded-full font-bold"
+            >
               <Link to="/forum">Zurück zum Forum</Link>
             </Button>
           </div>
@@ -182,80 +216,106 @@ export default function ForumThread() {
         <meta property="og:description" content={seoDescription} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="article" />
-        {thread.featured_image_url && <meta property="og:image" content={thread.featured_image_url} />}
+        {thread.featured_image_url && (
+          <meta property="og:image" content={thread.featured_image_url} />
+        )}
       </Helmet>
-      
+
       <Header />
-      
+
       <main className="flex-grow">
-       {/* Sticky Top Bar */}
+        {/* Sticky Top Bar */}
         <div className="sticky top-[65px] z-30 w-full bg-primary/95 backdrop-blur-md border-b border-white/10 shadow-lg transition-all duration-300">
-            <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 h-14 flex items-center justify-between">
-                 <Link to="/forum" className="inline-flex items-center gap-1.5 md:gap-2 text-xs md:text-sm font-bold text-slate-200 hover:text-orange-500 transition-colors group">
-                    <ArrowLeft className="w-4 h-4 text-orange-500 group-hover:-translate-x-1 transition-transform" /> 
-                    <span className="hidden sm:inline">Zurück zur Übersicht</span>
-                    <span className="sm:hidden">Zurück</span>
-                 </Link>
-            </div>
+          <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 h-14 flex items-center justify-between">
+            <Link
+              to="/forum"
+              className="inline-flex items-center gap-1.5 md:gap-2 text-xs md:text-sm font-bold text-slate-200 hover:text-orange-500 transition-colors group"
+            >
+              <ArrowLeft className="w-4 h-4 text-orange-500 group-hover:-translate-x-1 transition-transform" />
+              <span className="hidden sm:inline">Zurück zur Übersicht</span>
+              <span className="sm:hidden">Zurück</span>
+            </Link>
+          </div>
         </div>
-        
+
         <section className="py-6 md:py-16">
           <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-              
               {/* Haupt-Content Bereich */}
               <div className="flex-1 lg:w-[70%]">
-                
                 {/* Die Haupt-Frage / Der Beitrag */}
                 <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100 mb-10 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1 md:w-1.5 h-full bg-orange-500"></div>
-                  
+
                   <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <div className="flex items-center gap-2 mb-6 flex-wrap">
-                      {thread.is_pinned && <Badge className="bg-orange-50 text-orange-600 border border-orange-100 hover:bg-orange-100 gap-1.5 px-3 py-1 text-xs"><Pin className="w-3 h-3" /> Angepinnt</Badge>}
-                      {thread.is_locked && <Badge variant="outline" className="gap-1.5 px-3 py-1 text-xs text-slate-500 border-slate-200"><Lock className="w-3 h-3" /> Geschlossen</Badge>}
-                      {thread.is_answered && <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 gap-1.5 px-3 py-1 text-xs hover:bg-emerald-100"><CheckCircle className="w-3 h-3" /> Beantwortet</Badge>}
+                      {thread.is_pinned && (
+                        <Badge className="bg-orange-50 text-orange-600 border border-orange-100 hover:bg-orange-100 gap-1.5 px-3 py-1 text-xs">
+                          <Pin className="w-3 h-3" /> Angepinnt
+                        </Badge>
+                      )}
+                      {thread.is_locked && (
+                        <Badge
+                          variant="outline"
+                          className="gap-1.5 px-3 py-1 text-xs text-slate-500 border-slate-200"
+                        >
+                          <Lock className="w-3 h-3" /> Geschlossen
+                        </Badge>
+                      )}
+                      {thread.is_answered && (
+                        <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 gap-1.5 px-3 py-1 text-xs hover:bg-emerald-100">
+                          <CheckCircle className="w-3 h-3" /> Beantwortet
+                        </Badge>
+                      )}
                     </div>
-                    
+
                     <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-6 md:mb-8 leading-[1.15] text-[#0A0F1C] tracking-tight">
                       {thread.title}
                     </h1>
-                    
+
                     <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm text-slate-500 border-b border-slate-100 pb-6 md:pb-8 mb-8">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-[#0A0F1C] flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-sm">
                           {getInitial(thread.author_name)}
                         </div>
                         <div className="flex flex-col">
-                            <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Autor</span>
-                            <span className="font-bold text-[#0A0F1C] text-sm">{thread.author_name}</span>
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                            Autor
+                          </span>
+                          <span className="font-bold text-[#0A0F1C] text-sm">
+                            {thread.author_name}
+                          </span>
                         </div>
                       </div>
                       <div className="hidden sm:block h-8 w-px bg-slate-200"></div>
                       <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400">
-                               <Clock className="w-4 h-4 md:w-5 md:h-5" />
-                          </div>
-                          <div className="flex flex-col">
-                              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Veröffentlicht</span>
-                              <span className="font-bold text-[#0A0F1C] text-sm">{formatDate(thread.created_at || "")}</span>
-                          </div>
+                        <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 text-slate-400">
+                          <Clock className="w-4 h-4 md:w-5 md:h-5" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                            Veröffentlicht
+                          </span>
+                          <span className="font-bold text-[#0A0F1C] text-sm">
+                            {formatDate(thread.created_at || "")}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  
+
                   <FadeIn>
-                      {/* PROSE OPTIMIZATION FOR MOBILE */}
-                      <div className="prose prose-base md:prose-lg max-w-none prose-slate 
+                    <div
+                      className="prose prose-base md:prose-lg max-w-none prose-slate 
                         prose-headings:font-extrabold prose-headings:text-[#0A0F1C] prose-headings:tracking-tight 
                         prose-p:text-slate-600 prose-p:leading-loose 
                         prose-a:text-orange-500 prose-a:font-bold prose-a:no-underline hover:prose-a:underline 
                         prose-strong:text-[#0A0F1C] prose-strong:font-bold 
                         prose-img:rounded-3xl prose-img:shadow-xl prose-img:border prose-img:border-slate-100 prose-img:w-full
                         prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
-                        prose-table:w-full prose-table:text-sm md:prose-table:text-base prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3" 
-                           dangerouslySetInnerHTML={renderContent()} 
-                      />
+                        prose-table:w-full prose-table:text-sm md:prose-table:text-base prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3"
+                      dangerouslySetInnerHTML={renderContent()}
+                    />
                   </FadeIn>
                 </div>
 
@@ -263,56 +323,86 @@ export default function ForumThread() {
                 <div className="mb-12">
                   <div className="flex items-center gap-4 mb-8 px-2">
                     <div className="p-3 bg-orange-50 rounded-2xl text-orange-500 shrink-0">
-                        <MessageSquare className="w-6 h-6" /> 
+                      <MessageSquare className="w-6 h-6" />
                     </div>
                     <h2 className="text-2xl md:text-3xl font-extrabold text-[#0A0F1C] tracking-tight">
-                      Antworten <span className="text-slate-400 font-medium ml-1">({replies?.length || 0})</span>
+                      Antworten{" "}
+                      <span className="text-slate-400 font-medium ml-1">
+                        ({replies?.length || 0})
+                      </span>
                     </h2>
                   </div>
 
                   {repliesLoading ? (
-                    <div className="space-y-4">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-32 rounded-3xl" />)}</div>
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-32 rounded-3xl" />
+                      ))}
+                    </div>
                   ) : replies && replies.length > 0 ? (
                     <div className="space-y-5">
                       {replies.map((reply) => (
-                        <div key={reply.id} className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300">
-                            <div className="flex items-start gap-4 md:gap-6">
-                              <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-100 shadow-inner flex items-center justify-center flex-shrink-0 text-slate-500 font-bold text-base md:text-lg">
-                                {getInitial(reply.author_name)}
+                        <div
+                          key={reply.id}
+                          className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300"
+                        >
+                          <div className="flex items-start gap-4 md:gap-6">
+                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-100 shadow-inner flex items-center justify-center flex-shrink-0 text-slate-500 font-bold text-base md:text-lg">
+                              {getInitial(reply.author_name)}
+                            </div>
+                            <div className="flex-1 min-w-0 pt-1">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-3">
+                                <span className="font-extrabold text-[#0A0F1C] text-lg">
+                                  {reply.author_name}
+                                </span>
+                                <span className="hidden sm:inline text-slate-300">•</span>
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                  {formatDate(reply.created_at || "")}
+                                </span>
                               </div>
-                              <div className="flex-1 min-w-0 pt-1">
-                                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-3">
-                                  <span className="font-extrabold text-[#0A0F1C] text-lg">{reply.author_name}</span>
-                                  <span className="hidden sm:inline text-slate-300">•</span>
-                                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{formatDate(reply.created_at || "")}</span>
-                                </div>
-                                <div className="text-slate-600 leading-relaxed text-base mb-6 break-words">{reply.content}</div>
-                                
-                                <div className="flex items-center gap-4">
-                                  <Button 
-                                    variant="outline"
-                                    size="sm" 
-                                    className={`h-10 gap-2 px-5 rounded-full transition-all font-bold ${reply.user_has_liked ? "bg-orange-500 text-white border-transparent shadow-lg shadow-orange-500/20 hover:bg-[#0A0F1C] hover:text-orange-500" : "bg-slate-50 border-slate-200 text-slate-500 hover:border-orange-500/30 hover:text-orange-500 hover:bg-white"}`} 
-                                    onClick={() => handleLikeClick(reply)} 
-                                    disabled={toggleLike.isPending}
-                                  >
-                                    <ThumbsUp className={`w-4 h-4 ${reply.user_has_liked ? "fill-current" : ""}`} />
-                                    <span>{reply.like_count}</span>
-                                  </Button>
-                                  <button className="text-xs font-bold text-slate-400 hover:text-orange-500 transition-colors uppercase tracking-wider">Antworten</button>
-                                </div>
+                              <div className="text-slate-600 leading-relaxed text-base mb-6 break-words">
+                                {reply.content}
+                              </div>
+
+                              <div className="flex items-center gap-4">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className={`h-10 gap-2 px-5 rounded-full transition-all font-bold ${
+                                    reply.user_has_liked
+                                      ? "bg-orange-500 text-white border-transparent shadow-lg shadow-orange-500/20 hover:bg-[#0A0F1C] hover:text-orange-500"
+                                      : "bg-slate-50 border-slate-200 text-slate-500 hover:border-orange-500/30 hover:text-orange-500 hover:bg-white"
+                                  }`}
+                                  onClick={() => handleLikeClick(reply)}
+                                  disabled={toggleLike.isPending}
+                                >
+                                  <ThumbsUp
+                                    className={`w-4 h-4 ${
+                                      reply.user_has_liked ? "fill-current" : ""
+                                    }`}
+                                  />
+                                  <span>{reply.like_count}</span>
+                                </Button>
+                                <button className="text-xs font-bold text-slate-400 hover:text-orange-500 transition-colors uppercase tracking-wider">
+                                  Antworten
+                                </button>
                               </div>
                             </div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="text-center py-16 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-                             <MessageSquare className="w-8 h-8 text-slate-300" />
-                        </div>
-                        <h3 className="text-xl font-extrabold text-[#0A0F1C] mb-2">Noch keine Antworten</h3>
-                        <p className="text-slate-500 font-medium">Sei der Erste, der sein Wissen hier teilt!</p>
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                        <MessageSquare className="w-8 h-8 text-slate-300" />
+                      </div>
+                      <h3 className="text-xl font-extrabold text-[#0A0F1C] mb-2">
+                        Noch keine Antworten
+                      </h3>
+                      <p className="text-slate-500 font-medium">
+                        Sei der Erste, der sein Wissen hier teilt!
+                      </p>
                     </div>
                   )}
                 </div>
@@ -321,40 +411,53 @@ export default function ForumThread() {
                 {!thread.is_locked ? (
                   <div className="bg-white border border-slate-100 shadow-xl shadow-slate-200/40 rounded-3xl overflow-hidden mt-8">
                     <div className="bg-slate-50/50 border-b border-slate-100 px-6 md:px-8 py-6">
-                        <h3 className="text-xl font-extrabold text-[#0A0F1C]">Deine Meinung zählt</h3>
+                      <h3 className="text-xl font-extrabold text-[#0A0F1C]">
+                        Deine Meinung zählt
+                      </h3>
                     </div>
                     <div className="p-6 md:p-8">
                       <form onSubmit={handleSubmitReply} className="space-y-6">
                         <div className="grid gap-2">
-                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Dein Name</label>
-                             <Input 
-                               placeholder="Max Mustermann" 
-                               value={replyName} 
-                               onChange={(e) => setReplyName(e.target.value)} 
-                               maxLength={50} 
-                               required 
-                               className="bg-slate-50 border-slate-200 h-14 rounded-2xl focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium px-4" 
-                            />
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
+                            Dein Name
+                          </label>
+                          <Input
+                            placeholder="Max Mustermann"
+                            value={replyName}
+                            onChange={(e) => setReplyName(e.target.value)}
+                            maxLength={50}
+                            required
+                            className="bg-slate-50 border-slate-200 h-14 rounded-2xl focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium px-4"
+                          />
                         </div>
                         <div className="grid gap-2">
-                             <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Deine Antwort</label>
-                             <Textarea 
-                               placeholder="Schreibe deine Gedanken hier..." 
-                               value={replyContent} 
-                               onChange={(e) => setReplyContent(e.target.value)} 
-                               rows={6} 
-                               maxLength={1000} 
-                               required 
-                               className="bg-slate-50 border-slate-200 rounded-2xl min-h-[160px] focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium p-5 resize-y" 
-                            />
+                          <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">
+                            Deine Antwort
+                          </label>
+                          <Textarea
+                            placeholder="Schreibe deine Gedanken hier..."
+                            value={replyContent}
+                            onChange={(e) => setReplyContent(e.target.value)}
+                            rows={6}
+                            maxLength={1000}
+                            required
+                            className="bg-slate-50 border-slate-200 rounded-2xl min-h-[160px] focus:bg-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all font-medium p-5 resize-y"
+                          />
                         </div>
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-6 pt-4">
                           <p className="text-xs text-slate-400 font-bold order-2 sm:order-1 flex items-center gap-1.5 uppercase tracking-wide">
-                             <ShieldCheck className="w-4 h-4 text-green-500" /> Moderiert & Respektvoll
+                            <ShieldCheck className="w-4 h-4 text-green-500" />{" "}
+                            Moderiert & Respektvoll
                           </p>
-                          <Button type="submit" disabled={createReply.isPending} className="w-full sm:w-auto order-1 sm:order-2 bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 h-14 px-10 rounded-full text-base font-bold shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-1">
-                             <Send className="w-5 h-5 mr-2" /> 
-                             {createReply.isPending ? "Wird gesendet..." : "Antwort absenden"}
+                          <Button
+                            type="submit"
+                            disabled={createReply.isPending}
+                            className="w-full sm:w-auto order-1 sm:order-2 bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 h-14 px-10 rounded-full text-base font-bold shadow-lg shadow-slate-900/20 transition-all hover:-translate-y-1"
+                          >
+                            <Send className="w-5 h-5 mr-2" />
+                            {createReply.isPending
+                              ? "Wird gesendet..."
+                              : "Antwort absenden"}
                           </Button>
                         </div>
                       </form>
@@ -362,23 +465,25 @@ export default function ForumThread() {
                   </div>
                 ) : (
                   <div className="bg-slate-100 border-none rounded-3xl p-12 text-center mt-8">
-                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                          <Lock className="w-8 h-8 text-slate-400" />
-                      </div>
-                      <h3 className="text-xl font-extrabold text-[#0A0F1C] mb-2">Diskussion geschlossen</h3>
-                      <p className="text-slate-500 font-medium">Zu diesem Beitrag sind keine weiteren Antworten möglich.</p>
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                      <Lock className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <h3 className="text-xl font-extrabold text-[#0A0F1C] mb-2">
+                      Diskussion geschlossen
+                    </h3>
+                    <p className="text-slate-500 font-medium">
+                      Zu diesem Beitrag sind keine weiteren Antworten möglich.
+                    </p>
                   </div>
                 )}
-                
               </div>
-              
+
               {/* Sidebar */}
               <aside className="lg:w-[30%]">
-                 <div className="sticky top-24">
-                    <ForumSidebar />
-                 </div>
+                <div className="sticky top-24">
+                  <ForumSidebar />
+                </div>
               </aside>
-              
             </div>
           </div>
         </section>

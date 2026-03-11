@@ -53,7 +53,7 @@ const Impressum = () => {
                 <ShieldCheck className="w-5 h-5" /> Rechtliches
               </h2>
               <div className="space-y-4 text-slate-700 leading-relaxed">
-                <p><strong className="text-primary block mb-1">Unternehmensgegenstand:</strong> Betrieb eines unabhängigen Vergleichsportals für digitale Dienstleistungen.</p>
+                <p><strong className="text-primary block mb-1">Unternehmensgegenstand:</strong> Betrieb eines redaktionellen Vergleichsportals für digitale Dienstleistungen.</p>
                 <p><strong className="text-primary block mb-1">Kammerzugehörigkeit:</strong> Wirtschaftskammer Oberösterreich (WKO).</p>
                 <p><strong className="text-primary block mb-1">Redaktion:</strong> Digital-Perfect</p>
               </div>

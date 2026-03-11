@@ -5,6 +5,8 @@ import { ArrowRight, Layers, Zap, Search, LayoutGrid, TrendingUp } from "lucide-
 import { Helmet } from "react-helmet-async";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import type { Category } from '@/hooks/useCategories';
+import { sanitizeCmsHtml } from '@/lib/sanitizeHtml';
 
 interface HubTemplateProps {
   category: any;
@@ -274,7 +276,7 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
                         <Zap className="w-10 h-10 text-orange-500 fill-orange-500" /> 
                         Wissenswertes: {category.name}
                     </h2>
-                    <div className="prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-3xl prose-strong:text-slate-900 font-medium" dangerouslySetInnerHTML={{ __html: category.long_content_bottom }} />
+                    <div className="prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-3xl prose-strong:text-slate-900 font-medium" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom) }} />
                 </div>
             </div>
           </div>

@@ -81,7 +81,7 @@ export const useGenerateCategoryContent = () => {
 
       4. **CTA Button**: Baue mitten im Text einmal diesen Button ein:
          <div class="my-8 text-center">
-           <a href="#vergleich" class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:-translate-y-1">🏆 Zum Testsieger springen</a>
+           <a href="#vergleich" class="inline-block bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-lg transform transition hover:-translate-y-1">🏆 Zur Top-Empfehlung springen</a>
          </div>
 
       STRUKTUR DES ARTIKELS:

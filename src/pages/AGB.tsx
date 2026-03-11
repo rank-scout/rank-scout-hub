@@ -62,7 +62,7 @@ const AGB = () => {
                 2. Leistungsgegenstand
               </h2>
               <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 text-slate-700 space-y-3">
-                <p>Rank-Scout stellt eine unabhängige Informations- und Vergleichsplattform für Software, digitale Dienstleistungen, Finanzprodukte und Versicherungen bereit.</p>
+                <p>Rank-Scout stellt eine redaktionelle Informations- und Vergleichsplattform für Software, digitale Dienstleistungen, Finanzprodukte und Versicherungen bereit.</p>
                 <p><strong>Hinweis zur Vermittlung:</strong> Wir treten bei Finanz- und Versicherungsprodukten ausdrücklich nicht als Versicherungsvermittler oder Makler auf, sondern ausschließlich als Tippgeber. Die auf unserer Website eingebundenen Vergleichsrechner und -formulare werden von externen Technologiepartnern (z. B. TARIFCHECK24 GmbH, CHECK24) bereitgestellt. Die vertragliche Beziehung bezüglich des Produktes kommt ausschließlich zwischen dem Nutzer und dem jeweiligen Drittanbieter bzw. dem durchführenden Partner zustande.</p>
               </div>
             </section>

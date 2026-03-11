@@ -63,7 +63,7 @@ export default function HowWeCompare() {
                     Wie kommen unsere Listen zustande?
                 </h3>
                 <p className="text-slate-600 leading-relaxed">
-                    Die Reihenfolge der dargestellten Produkte in unseren Listen und Übersichten hängt von verschiedenen Faktoren ab. Dazu zählen unter anderem der Preis, Leistungsmerkmale, Nutzerbeliebtheit, Verfügbarkeit sowie die Provisionshöhe der jeweiligen Partnerschaften. Wir führen keine eigenen Labor-Härtetests durch, sondern aggregieren und analysieren tagesaktuelle Marktdaten und Tarifinformationen unserer Partner.
+                    Die Reihenfolge der dargestellten Produkte in unseren Listen und Übersichten hängt von verschiedenen Faktoren ab. Dazu zählen unter anderem der Preis, Leistungsmerkmale, Nutzerbeliebtheit, Verfügbarkeit sowie die Provisionshöhe der jeweiligen Partnerschaften. Wir führen keine eigenen Labortests durch, sondern aggregieren und analysieren tagesaktuelle Marktdaten und Tarifinformationen unserer Partner.
                 </p>
             </div>
 

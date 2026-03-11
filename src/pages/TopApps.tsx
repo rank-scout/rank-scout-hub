@@ -194,7 +194,7 @@ function AppRankCard({ app, index }: { app: any, index: number }) {
                 {app.logo_url ? <img src={app.logo_url} alt={app.name} className="w-full h-full object-contain" /> : <HashtagChat weight="Bold" className="w-12 h-12 text-slate-200" />}
             </div>
             <div className="absolute -top-3 -right-3">
-                {index === 0 && <Badge className="bg-secondary text-primary font-black px-4 py-1.5 shadow-xl border-none">🥇 TESTSIEGER</Badge>}
+                {index === 0 && <Badge className="bg-secondary text-primary font-black px-4 py-1.5 shadow-xl border-none">🥇 TOP-EMPFEHLUNG</Badge>}
                 {index === 1 && <Badge className="bg-slate-200 text-slate-700 font-black px-3 py-1 border-none">🥈 TOP 2</Badge>}
                 {index === 2 && <Badge className="bg-orange-100 text-orange-700 font-black px-3 py-1 border-none">🥉 TOP 3</Badge>}
             </div>
@@ -211,7 +211,7 @@ function AppRankCard({ app, index }: { app: any, index: number }) {
           </div>
           
           <p className="text-slate-500 text-sm md:text-base mb-8 line-clamp-2 leading-relaxed font-light">
-            {app.short_description || `Exklusive Markt-Analyse für ${app.name}. Geprüft auf Datensicherheit und Performance-Metriken 2026.`}
+            {app.short_description || `Exklusive Marktübersicht für ${app.name}. Redaktionell aufbereitete Infos zu Funktionen und Performance-Merkmalen 2026.`}
           </p>
           
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-8">

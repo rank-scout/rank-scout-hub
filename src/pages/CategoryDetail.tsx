@@ -30,6 +30,7 @@ import { useTrackView } from "@/hooks/useTrackView";
 
 import { AffiliateDisclaimer } from "@/components/AffiliateDisclaimer";
 import { StarRatingWidget } from "@/components/StarRatingWidget";
+import { sanitizeCmsHtml, sanitizeCmsHtmlWithBreaks } from "@/lib/sanitizeHtml";
 
 const getCategoryHeroImage = (category: any) => {
     if (category.hero_image_url) return category.hero_image_url;
@@ -327,7 +328,7 @@ return (
                   <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-orange-50 rounded-2xl text-orange-500 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h3 className="font-bold text-[#0A0F1C] text-2xl tracking-tight">{introTitle}</h3></div></div>
                 </div>
 
-                {category.long_content_top && (<div className="bg-transparent mb-16 px-2 mt-8"><article id="content-top" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: category.long_content_top }} /></article></div>)}
+                {category.long_content_top && (<div className="bg-transparent mb-16 px-2 mt-8"><article id="content-top" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top) }} /></article></div>)}
                 
                 {/* --- INTELLIGENTE WEICHE (Rechner vs. Liste) --- */}
                 {hasWidgetCode ? (
@@ -350,7 +351,7 @@ return (
                     <AffiliateDisclaimer />
                 </div>
 
-                {category.long_content_bottom && (<div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/30 border border-slate-100 mb-16"><article id="content-bottom" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: category.long_content_bottom }} /></article></div>)}
+                {category.long_content_bottom && (<div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/30 border border-slate-100 mb-16"><article id="content-bottom" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom) }} /></article></div>)}
                 
                 {category.faq_data && Array.isArray(category.faq_data) && (
                   <section id="faq" className="scroll-mt-32 mb-16">
@@ -361,7 +362,7 @@ return (
                           <AccordionItem key={index} value={`item-${index}`} className="bg-white border border-slate-100 shadow-sm rounded-2xl px-2">
                             <AccordionTrigger className="text-left font-bold text-[#0A0F1C] px-6 py-5 text-lg hover:no-underline hover:text-orange-500 transition-colors">{faq.question}</AccordionTrigger>
                             <AccordionContent className="text-slate-600 leading-loose px-6 pb-8 pt-2 text-base">
-                              <div dangerouslySetInnerHTML={{ __html: String(faq.answer || '').replace(/\n/g, '<br/>') }} />
+                              <div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtmlWithBreaks(String(faq.answer || "")) }} />
                             </AccordionContent>
                           </AccordionItem>
                         ))}

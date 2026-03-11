@@ -15,8 +15,12 @@ serve(async (req) => {
     const finalTopic = topic || keyword || "Allgemeines Thema";
 
     // 1. Lokale API Config (via Deno Env, Fallback auf unsere Werte)
-    const ollamaUrl = Deno.env.get('OLLAMA_API_URL') || "https://rank-scout.com/ollama/api/generate";
-    const ollamaKey = Deno.env.get('OLLAMA_API_KEY') || "RankScout-Secret-Key-2026";
+    const ollamaUrl = Deno.env.get('OLLAMA_API_URL');
+const ollamaKey = Deno.env.get('OLLAMA_API_KEY');
+
+if (!ollamaUrl || !ollamaKey) {
+  throw new Error("OLLAMA_API_URL oder OLLAMA_API_KEY fehlt.");
+}
 
     console.log(`[LOKAL] Rank-Scout AI (Llama 3) für: ${finalTopic}`);
 

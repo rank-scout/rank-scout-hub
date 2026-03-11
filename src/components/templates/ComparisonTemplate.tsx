@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
 import { StarRatingWidget } from '@/components/StarRatingWidget';
+import { sanitizeCmsHtml } from '@/lib/sanitizeHtml';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
 interface Project {
@@ -404,8 +405,8 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         {/* LONG CONTENT */}
         <section className="py-16 bg-gray-50">
             <div className="max-w-4xl mx-auto px-4">
-                <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: category.long_content_top || '' }} />
-                <div className="prose prose-lg max-w-none mt-8" dangerouslySetInnerHTML={{ __html: category.long_content_bottom || '' }} />
+                <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top || '') }} />
+<div className="prose prose-lg max-w-none mt-8" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom || '') }} />
                 
                 {/* --- NEU: Sterne-Widget und Dynamisches Schema am Ende des Contents --- */}
                 <StarRatingWidget slug={category.slug} />
@@ -446,10 +447,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
             </div>
         </footer>
 
-        {/* ANALYTICS & SCRIPTS */}
-        {category.analytics_code && (
-            <div dangerouslySetInnerHTML={{ __html: category.analytics_code }} />
-        )}
+        {/* analytics_code entfernt – Tracking läuft zentral und consent-basiert */}
 
         <script dangerouslySetInnerHTML={{
           __html: `

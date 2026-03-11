@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import type { ProjectWithCategory } from '@/hooks/useProjects';
+import { sanitizeCmsHtml } from '@/lib/sanitizeHtml';
 import { 
   ExternalLink, 
   Star, 
@@ -60,7 +62,7 @@ export default function ProjectListEmbed({ projects, categoryName = "", theme = 
           </h2>
           {categoryName && (
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Unsere Redaktion hat die besten Anbieter für {categoryName} getestet und bewertet.
+              Unsere Redaktion hat Anbieter für {categoryName} strukturiert aufbereitet.
             </p>
           )}
         </div>
@@ -82,7 +84,7 @@ export default function ProjectListEmbed({ projects, categoryName = "", theme = 
               {index === 0 && (
                 <div className="absolute -right-2 -top-2">
                   <Badge className="bg-gradient-to-r from-yellow-500 to-amber-500 text-white border-0 shadow-lg shadow-amber-500/25">
-                    🏆 Testsieger
+                    🏆 Top-Empfehlung
                   </Badge>
                 </div>
               )}
@@ -125,7 +127,7 @@ export default function ProjectListEmbed({ projects, categoryName = "", theme = 
                   {/* 2. Ausführliche Beschreibung: SEO-Content wird korrekt als HTML gerendert */}
                   {project.description && (
                     <div className="mt-4 mb-6 p-4 bg-slate-50 rounded-xl border border-slate-100 text-sm text-slate-600 leading-relaxed text-left">
-                      <div dangerouslySetInnerHTML={{ __html: project.description }} />
+                      <div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(project.description) }} />
                     </div>
                   )}
 

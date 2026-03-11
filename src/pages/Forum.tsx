@@ -403,7 +403,7 @@ export default function Forum() {
                   </p>
                   <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
                     <p className="font-extrabold text-[#0A0F1C] mb-1">Du suchst Anbieter?</p>
-                    <p className="text-sm text-slate-500 mb-4">Vergleiche die besten {activeCategoryData.name}-Lösungen im Härtetest.</p>
+                    <p className="text-sm text-slate-500 mb-4">Vergleiche passende {activeCategoryData.name}-Lösungen im Überblick.</p>
                     <Button asChild className="w-full bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 rounded-xl h-12 font-bold group">
                         <Link to={`/${activeCategoryData.slug}`}>
                             Zum Vergleich <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
