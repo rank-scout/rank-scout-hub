@@ -34,7 +34,7 @@ export default function TopApps() {
   // KYRA FIX: Tracking für Top Apps Seite aktivieren
   useTrackView("top-apps", "page");
 
-  useForceSEO("Die Top 100 Apps im großen Vergleich 2026. Unabhängige Tests, echte Bewertungen und exklusive Deals. Rank-Scout ist deine Instanz für Software-Entscheidungen.");
+  useForceSEO("Die Top 100 Apps im großen Vergleich 2026. Strukturierte Übersichten, echte Bewertungen und klare Fakten. Rank-Scout ist deine Instanz für Software-Entscheidungen.");
 
   if (isLoading) return <LoadingScreen />;
 

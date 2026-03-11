@@ -18,7 +18,7 @@ import {
 
 import CustomHtmlRenderer from "@/components/templates/CustomHtmlRenderer";
 import CityLandingTemplate from "@/components/templates/CityLandingTemplate";
-import { ReviewTemplate } from "@/components/templates/ReviewTemplate";
+// ReviewTemplate-Import entfernt
 import { HubTemplate } from "@/components/templates/HubTemplate"; 
 import { Helmet } from "react-helmet-async";
 import { Badge } from "@/components/ui/badge";
@@ -241,7 +241,7 @@ export default function CategoryDetail() {
       );
   }
 
-  const isInternalPage = (category as any)?.is_internal_generated === true;
+  const isStandardLayoutPage = (category as any)?.is_internal_generated === true || category?.template === 'review';
   const currentUrl = `https://rank-scout.com/${category.slug}`;
 
   if (category.template === 'hub_overview') {
@@ -257,7 +257,7 @@ export default function CategoryDetail() {
       );
   }
 
-  if (isInternalPage) {
+  if (isStandardLayoutPage) {
     const currentMonthYear = new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
     const heroImage = getCategoryHeroImage(category);
     const hasWidgetCode = !!(category as any).comparison_widget_code;
@@ -424,7 +424,7 @@ return (
       ) : (category.template === 'comparison' && category.theme === 'DATING' && category.slug.includes('stadt')) ? (
         <><Header /><CityLandingTemplate category={category} projects={projects} /><Footer /></>
       ) : (
-        <div className="min-h-screen bg-[#0a0a0a] text-white"><Header /><ReviewTemplate category={category} projects={projects} /></div>
+        <><Header /><ComparisonTemplate category={category} projects={projects} /><Footer /></>
       )}
     </>
   );

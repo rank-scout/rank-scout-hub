@@ -644,7 +644,7 @@
         // ========== GENERATORS ==========
         function generateProjectCard(project, index) {
             const isFirst = index === 0;
-            const badgeText = isFirst ? escapeHtml(project.badge_text || 'Testsieger') : 'Platz ' + (index + 1);
+            const badgeText = isFirst ? escapeHtml(project.badge_text || 'Top-Empfehlung') : 'Platz ' + (index + 1);
             const badgeClass = isFirst 
                 ? 'bg-gradient-to-r from-brand-gold to-yellow-500 text-brand-black' 
                 : 'bg-gray-200 text-gray-700';
