@@ -17,7 +17,6 @@ import {
 } from "lucide-react"; 
 
 import CustomHtmlRenderer from "@/components/templates/CustomHtmlRenderer";
-import CityLandingTemplate from "@/components/templates/CityLandingTemplate";
 // ReviewTemplate-Import entfernt
 import { HubTemplate } from "@/components/templates/HubTemplate"; 
 import { Helmet } from "react-helmet-async";
@@ -422,8 +421,6 @@ return (
       </Helmet>
       {category.custom_html_override ? (
         <><Header /><CustomHtmlRenderer category={category} projects={projects} htmlContent={category.custom_html_override} /><Footer /></>
-      ) : (category.template === 'comparison' && category.theme === 'DATING' && category.slug.includes('stadt')) ? (
-        <><Header /><CityLandingTemplate category={category} projects={projects} /><Footer /></>
       ) : (
         <><Header /><ComparisonTemplate category={category} projects={projects} /><Footer /></>
       )}

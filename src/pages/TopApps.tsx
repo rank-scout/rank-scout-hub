@@ -34,7 +34,7 @@ export default function TopApps() {
   // KYRA FIX: Tracking für Top Apps Seite aktivieren
   useTrackView("top-apps", "page");
 
-  useForceSEO("Die Top 100 Apps im großen Vergleich 2026. Strukturierte Übersichten, echte Bewertungen und klare Fakten. Rank-Scout ist deine Instanz für Software-Entscheidungen.");
+  useForceSEO("Die Top 100 Apps im großen Vergleich 2026. Strukturierte Übersichten, redaktionelle Einordnungen und klare Orientierung für bessere Software-Entscheidungen.");
 
   if (isLoading) return <LoadingScreen />;
 
@@ -88,7 +88,7 @@ export default function TopApps() {
             </h1>
             
             <p className="text-lg md:text-xl text-slate-500 leading-relaxed font-light max-w-2xl mx-auto mb-10">
-              Wir haben über 1.000 Anwendungen analysiert. Nur die besten 10% schaffen es in unser offizielles Ranking. Radikal ehrlich, technisch geprüft.
+              Unsere redaktionelle Auswahl basiert auf strengen Kriterien, klaren Vergleichsmaßstäben und einer transparenten Einordnung für bessere Software-Entscheidungen.
             </p>
           </div>
 
@@ -99,7 +99,7 @@ export default function TopApps() {
                 <div>
                   <Badge className="bg-primary/10 text-primary border-none mb-4">Methodik</Badge>
                   <h2 className="text-3xl md:text-4xl font-display font-bold text-primary">Das Rank-Scout Protokoll</h2>
-                  <p className="text-slate-500 mt-2">So objektiv wie Software, so menschlich wie Erfahrung.</p>
+                  <p className="text-slate-500 mt-2">Redaktionelle Kriterien, nachvollziehbare Einordnung und eine klare Orientierung für den Markt.</p>
                 </div>
                 <div className="hidden md:block text-right">
                   <span className="text-5xl font-display font-black text-primary/5">2026</span>
@@ -154,11 +154,11 @@ export default function TopApps() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <FAQCard 
                         question="Wie kommen die Bewertungen zustande?" 
-                        answer="Unser Team bewertet Apps nach unserem 4-Säulen-Protokoll: Performance, Usability, Security und Preis-Leistung. Wir nutzen sowohl automatisierte Audits als auch Experten-Tests."
+                        answer="Unser Team ordnet Apps anhand definierter Kriterien wie Performance, Usability, Security und Preis-Leistung redaktionell ein. So entsteht eine nachvollziehbare Vergleichsübersicht mit klarer Orientierung."
                     />
                     <FAQCard 
                         question="Werden die Rankings manipuliert?" 
-                        answer="Nein. Rank-Scout finanziert sich über Affiliate-Einnahmen, aber die Platzierung im Ranking ist rein datenbasiert. Ein schlechtes Produkt kann sich keinen Spitzenplatz kaufen."
+                        answer="Unsere Übersichten folgen redaktionellen Kriterien und einer eigenständigen Einordnung. Kooperationen beeinflussen nicht automatisch die Empfehlung, weil Produkte weiterhin nach festgelegten Maßstäben bewertet und eingeordnet werden."
                     />
                 </div>
             </div>

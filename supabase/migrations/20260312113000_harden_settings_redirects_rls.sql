@@ -1,7 +1,9 @@
--- SETTINGS: offene Public-Policy entfernen
+-- Harden public access to settings and redirects
+
+-- SETTINGS: remove overly broad public read policy
 DROP POLICY IF EXISTS "Anyone can view settings" ON public.settings;
 
--- SETTINGS: nur freigegebene Public-Keys
+-- SETTINGS: allow public reads only for explicitly whitelisted keys
 CREATE POLICY "Public can view whitelisted settings"
 ON public.settings
 FOR SELECT
@@ -25,8 +27,5 @@ USING (
   )
 );
 
--- REDIRECTS: unnötiges Public-Read entfernen
+-- REDIRECTS: remove broad public read policy while keeping tracking logic untouched
 DROP POLICY IF EXISTS "Anyone can view active redirects" ON public.redirects;
-
--- WICHTIG:
--- KEINE Änderung an increment_redirect_click(...) Rechten
