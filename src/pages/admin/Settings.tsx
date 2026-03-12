@@ -5,8 +5,8 @@ import {
   useHomeLayout, 
   useHomeContent, 
   useForumAds,
-  useComplianceConfig,       // NEU IMPORTIERT
-  useUpdateComplianceConfig, // NEU IMPORTIERT
+  useComplianceConfig,
+  useUpdateComplianceConfig,
   defaultHomeLayout, 
   defaultHomeContent,
   ForumAd 
@@ -18,11 +18,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { 
-  Loader2, Trash2, Save, Lock, Globe, Layout, Sparkles, BarChart3, 
-  CheckCircle2, DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
-  Target, Users, Plus, Edit, Menu as MenuIcon, MessageSquare, ShieldCheck, List, FileText,
-  Mail, Megaphone, PaintBucket, Key, ArrowUp, ArrowDown, Type, Rocket, X,
-  ShieldAlert, ShieldOff // NEU IMPORTIERT
+  Loader2, Trash2, Save, Globe, Layout, Sparkles, BarChart3, 
+  DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
+  Target, Users, Plus, Menu as MenuIcon, MessageSquare, ShieldCheck, List,
+  Mail, Megaphone, PaintBucket, ArrowUp, ArrowDown, Type, Rocket, X,
+  ShieldAlert, ShieldOff
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
@@ -115,6 +115,32 @@ function ComplianceSettingsCard() {
 }
 // --- ENDE NEUE KOMPONENTE ---
 
+// --- NEUE KOMPONENTE: SERVER SECRETS WARNING ---
+function ServerSecretsWarningCard() {
+  return (
+    <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-red-700 dark:text-red-400">
+          <ShieldAlert className="w-5 h-5" />
+          Server-Secrets
+        </CardTitle>
+        <CardDescription className="text-red-700/80 dark:text-red-400/80">
+          Bridge-Key und Admin-Geheimnisse werden nicht mehr in der Datenbank oder im Browser gespeichert.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <p className="text-sm text-red-700/80 dark:text-red-400/80">
+          Verwaltung erfolgt ausschließlich serverseitig über Supabase Secrets und die Edge Function.
+        </p>
+        <p className="text-sm text-red-700/80 dark:text-red-400/80">
+          Änderungen laufen ab sofort nur noch über Supabase CLI bzw. Supabase Dashboard.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+// --- ENDE NEUE KOMPONENTE ---
+
 export default function AdminSettings() {
   const { data: settings, isLoading } = useAdminSettings();
   const updateSetting = useUpdateSetting();
@@ -122,7 +148,7 @@ export default function AdminSettings() {
   // Hooks für Home-Steuerung & Ads
   const { layout } = useHomeLayout();
   const { content: serverContent } = useHomeContent();
-  const forumAds = useForumAds(); // BUGFIX: "const { data: forumAds }" entfernt!
+  const forumAds = useForumAds();
    
   // Lokaler State
   const [localContent, setLocalContent] = useState<typeof defaultHomeContent | null>(null);
@@ -137,7 +163,6 @@ export default function AdminSettings() {
   const [siteDescription, setSiteDescription] = useState("");
   const [topBarText, setTopBarText] = useState("");
   const [topBarLink, setTopBarLink] = useState("");
-  const [newPin, setNewPin] = useState("");
   const [analyticsCode, setAnalyticsCode] = useState("");
   const [adsEnabled, setAdsEnabled] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -150,10 +175,6 @@ export default function AdminSettings() {
   // --- MARKETING STATES ---
   const [newsletterActive, setNewsletterActive] = useState(true);
   const [popupActive, setPopupActive] = useState(false);
-
-  // --- API & BRIDGE STATES ---
-  const [bridgeUrl, setBridgeUrl] = useState("");
-  const [bridgeKey, setBridgeKey] = useState("");
 
   // --- FORUM BANNER CONFIG ---
   const [forumBanner, setForumBanner] = useState({
@@ -203,7 +224,6 @@ export default function AdminSettings() {
 
       if (error) throw error;
 
-      // Ergebnis auswerten
       const results = data.results || [];
       const successCount = results.filter((r: any) => r.success).length;
       const failCount = results.length - successCount;
@@ -215,7 +235,7 @@ export default function AdminSettings() {
       });
       
       if (successCount === urls.length) {
-          setIndexingUrls(""); // Reset bei vollem Erfolg
+        setIndexingUrls("");
       }
 
     } catch (error: any) {
@@ -229,15 +249,15 @@ export default function AdminSettings() {
   // --- STANDARD CONFIG WERTE (DEFAULTS) ---
   const defaultHeaderConfig = { 
     nav_links: [
-        { label: "Software Vergleich", url: "/categories/software" },
-        { label: "Finanz-Tools", url: "/categories/finance" },
-        { label: "Agentur Finder", url: "/categories/agency" }
+      { label: "Software Vergleich", url: "/categories/software" },
+      { label: "Finanz-Tools", url: "/categories/finance" },
+      { label: "Agentur Finder", url: "/categories/agency" }
     ],
     hub_links: [
-        { label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, 
-        { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, 
-        { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, 
-        { label: "Community", url: "/forum", icon: "Users" }
+      { label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, 
+      { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, 
+      { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, 
+      { label: "Community", url: "/forum", icon: "Users" }
     ],
     button_text: "Jetzt vergleichen", 
     button_url: "/categories" 
@@ -252,15 +272,15 @@ export default function AdminSettings() {
     made_in_text: "in Germany", 
     disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn Sie über einen Link auf dieser Seite einkaufen, erhalten wir möglicherweise eine Provision. Der Preis für Sie ändert sich dabei nicht. Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.",
     legal_links: [
-        { label: "Impressum", url: "/impressum" },
-        { label: "Datenschutz", url: "/datenschutz" },
-        { label: "AGB", url: "/agb" },
-        { label: "Sicherheit", url: "/sicherheit" }
+      { label: "Impressum", url: "/impressum" },
+      { label: "Datenschutz", url: "/datenschutz" },
+      { label: "AGB", url: "/agb" },
+      { label: "Sicherheit", url: "/sicherheit" }
     ],
     popular_links: [
-        { label: "Software Vergleich", url: "/categories/software" },
-        { label: "Finanz-Tools", url: "/categories/finance" },
-        { label: "Agentur Finder", url: "/categories/agency" }
+      { label: "Software Vergleich", url: "/categories/software" },
+      { label: "Finanz-Tools", url: "/categories/finance" },
+      { label: "Agentur Finder", url: "/categories/agency" }
     ]
   };
 
@@ -283,19 +303,15 @@ export default function AdminSettings() {
     setNewsletterActive((settings.newsletter_active as boolean) ?? true);
     setPopupActive((settings.popup_active as boolean) ?? false);
 
-    // API Bridge Init
-    setBridgeUrl((settings.bridge_url as string) || "");
-    setBridgeKey((settings.bridge_key as string) || "");
-
     // Forum Banner Init
     if (settings.forum_banner_config) {
-        setForumBanner((prev: any) => ({ ...prev, ...(settings.forum_banner_config as any) }));
+      setForumBanner((prev: any) => ({ ...prev, ...(settings.forum_banner_config as any) }));
     }
 
     // Home Sections Init
     if (settings.home_sections) {
-        const sortedSections = [...(settings.home_sections as any[])].sort((a, b) => a.order - b.order);
-        setHomeSections(sortedSections);
+      const sortedSections = [...(settings.home_sections as any[])].sort((a, b) => a.order - b.order);
+      setHomeSections(sortedSections);
     }
 
     // Load Analytics
@@ -322,11 +338,11 @@ export default function AdminSettings() {
     // SICHERES MERGEN FÜR HEADER & FOOTER
     // @ts-ignore
     if (settings.header_config) {
-        setHeaderConfig((prev: any) => ({ ...prev, ...(settings.header_config as any) }));
+      setHeaderConfig((prev: any) => ({ ...prev, ...(settings.header_config as any) }));
     }
     // @ts-ignore
     if (settings.footer_config) {
-        setFooterConfig((prev: any) => ({ ...prev, ...(settings.footer_config as any) }));
+      setFooterConfig((prev: any) => ({ ...prev, ...(settings.footer_config as any) }));
     }
 
     setInitialized(true);
@@ -335,7 +351,6 @@ export default function AdminSettings() {
   useEffect(() => {
     if (serverContent && !localContent) {
       setLocalContent(JSON.parse(JSON.stringify(serverContent)));
-      // Init SEO Text local state
       if (serverContent.seo && serverContent.seo.long_text) {
         setSeoLongText(serverContent.seo.long_text);
       }
@@ -364,8 +379,8 @@ export default function AdminSettings() {
 
   const saveScoutyConfig = () => {
     saveSetting("scouty_config", { 
-        high_ticket_url: scoutyHighTicketUrl,
-        enabled: scoutyEnabled
+      high_ticket_url: scoutyHighTicketUrl,
+      enabled: scoutyEnabled
     });
   };
 
@@ -374,11 +389,6 @@ export default function AdminSettings() {
     saveSetting("google_search_console_verification", gscVerification);
     saveSetting("custom_report_url", reportUrl);
     saveSetting("global_analytics_code", analyticsCode);
-  };
-
-  const saveBridgeSettings = () => {
-    saveSetting("bridge_url", bridgeUrl);
-    saveSetting("bridge_key", bridgeKey);
   };
 
   const saveThemeSettings = () => {
@@ -426,7 +436,7 @@ export default function AdminSettings() {
     const newContent = { 
       ...localContent, 
       [section]: { 
-        //@ts-ignore
+        // @ts-ignore
         ...(localContent[section] || {}), 
         [field]: value 
       } 
@@ -437,13 +447,12 @@ export default function AdminSettings() {
 
   const saveContentManually = () => {
     if (!localContent) return;
-    // SEO-Text aus dem State noch ins localContent pushen, falls nicht passiert
     const finalContentToSave = {
-        ...localContent,
-        seo: {
-            ...localContent.seo,
-            long_text: seoLongText
-        }
+      ...localContent,
+      seo: {
+        ...localContent.seo,
+        long_text: seoLongText
+      }
     };
     saveSetting("home_content", finalContentToSave);
     setLocalContent(finalContentToSave);
@@ -488,8 +497,8 @@ export default function AdminSettings() {
     if (!localContent) return;
     // @ts-ignore
     const currentFeatures = localContent.why_us?.features || [];
-    while(currentFeatures.length < 4) {
-        currentFeatures.push({ title: "Feature", text: "Beschreibung", icon: "zap" });
+    while (currentFeatures.length < 4) {
+      currentFeatures.push({ title: "Feature", text: "Beschreibung", icon: "zap" });
     }
     const newFeatures = [...currentFeatures];
     newFeatures[index] = { ...newFeatures[index], [field]: value };
@@ -501,11 +510,13 @@ export default function AdminSettings() {
     const newLinks = [...(headerConfig.nav_links || []), { label: "Neuer Link", url: "/" }];
     setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
+
   const removeNavLink = (index: number) => {
     const newLinks = [...(headerConfig.nav_links || [])];
     newLinks.splice(index, 1);
     setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
+
   const updateNavLink = (index: number, field: string, value: string) => {
     const newLinks = [...(headerConfig.nav_links || [])];
     newLinks[index] = { ...newLinks[index], [field]: value };
@@ -538,11 +549,13 @@ export default function AdminSettings() {
     const newLinks = [...(footerConfig.legal_links || []), { label: "Neuer Link", url: "/" }];
     setFooterConfig({ ...footerConfig, legal_links: newLinks });
   };
+
   const removeLegalLink = (index: number) => {
     const newLinks = [...(footerConfig.legal_links || [])];
     newLinks.splice(index, 1);
     setFooterConfig({ ...footerConfig, legal_links: newLinks });
   };
+
   const updateLegalLink = (index: number, field: string, value: string) => {
     const newLinks = [...(footerConfig.legal_links || [])];
     newLinks[index] = { ...newLinks[index], [field]: value };
@@ -553,17 +566,20 @@ export default function AdminSettings() {
     const newLinks = [...(footerConfig.popular_links || []), { label: "Neuer Link", url: "/" }];
     setFooterConfig({ ...footerConfig, popular_links: newLinks });
   };
+
   const removePopularLink = (index: number) => {
     const newLinks = [...(footerConfig.popular_links || [])];
     newLinks.splice(index, 1);
     setFooterConfig({ ...footerConfig, popular_links: newLinks });
   };
+
   const updatePopularLink = (index: number, field: string, value: string) => {
     const newLinks = [...(footerConfig.popular_links || [])];
     newLinks[index] = { ...newLinks[index], [field]: value };
     setFooterConfig({ ...footerConfig, popular_links: newLinks });
   };
-// --- HEADER SUB-LINKS LOGIC ---
+
+  // --- HEADER SUB-LINKS LOGIC ---
   const addSubLink = (parentIdx: number) => {
     const newLinks = [...(headerConfig.nav_links || [])];
     if (!newLinks[parentIdx].items) newLinks[parentIdx].items = [];
@@ -582,6 +598,7 @@ export default function AdminSettings() {
     newLinks[parentIdx].items[subIdx] = { ...newLinks[parentIdx].items[subIdx], [field]: value };
     setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
+
   const saveHeader = () => saveSetting("header_config", headerConfig);
   const saveFooter = () => saveSetting("footer_config", footerConfig);
 
@@ -623,16 +640,6 @@ export default function AdminSettings() {
     setSiteLogoUrl("");
     await saveSetting("site_logo_url", null);
     toast({ title: "Logo entfernt" });
-  }
-
-  async function savePin() {
-    if (newPin.length < 4) {
-      toast({ title: "Fehler", description: "PIN zu kurz", variant: "destructive" });
-      return;
-    }
-    await saveSetting("admin_pin", newPin);
-    setNewPin("");
-    toast({ title: "Admin-PIN geändert" });
   }
 
   if (isLoading || !localContent) {
@@ -683,17 +690,17 @@ export default function AdminSettings() {
                 <CardDescription className="text-slate-400 text-xs">Konfiguriere deinen AI-Assistenten.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                 <div className="flex items-center justify-between">
-                    <Label className="text-white text-xs">Scouty aktivieren</Label>
-                    <Switch checked={scoutyEnabled} onCheckedChange={setScoutyEnabled} />
-                 </div>
-                 <div className="space-y-2">
-                    <Label className="text-white text-xs">High-Ticket / Easter-Egg URL</Label>
-                    <Input placeholder="https://..." value={scoutyHighTicketUrl} onChange={(e) => setScoutyHighTicketUrl(e.target.value)} className="bg-slate-950 border-slate-800 text-xs h-9" />
-                 </div>
-                 <Button onClick={saveScoutyConfig} size="sm" className="w-full bg-secondary hover:bg-secondary/80 h-8">
-                    <Save className="h-3 w-3 mr-2" /> Speichern
-                 </Button>
+                <div className="flex items-center justify-between">
+                  <Label className="text-white text-xs">Scouty aktivieren</Label>
+                  <Switch checked={scoutyEnabled} onCheckedChange={setScoutyEnabled} />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-white text-xs">High-Ticket / Easter-Egg URL</Label>
+                  <Input placeholder="https://..." value={scoutyHighTicketUrl} onChange={(e) => setScoutyHighTicketUrl(e.target.value)} className="bg-slate-950 border-slate-800 text-xs h-9" />
+                </div>
+                <Button onClick={saveScoutyConfig} size="sm" className="w-full bg-secondary hover:bg-secondary/80 h-8">
+                  <Save className="h-3 w-3 mr-2" /> Speichern
+                </Button>
               </CardContent>
             </Card>
 
@@ -769,23 +776,16 @@ export default function AdminSettings() {
             </CardContent>
           </Card>
 
-          <Card className="bg-card border-border shadow-sm">
-             <CardHeader><CardTitle className="font-display text-lg flex items-center gap-2"><Lock className="w-5 h-5 text-red-500" />Admin PIN</CardTitle></CardHeader>
-             <CardContent className="space-y-4">
-                <div className="flex gap-2"><Input type="password" value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="Neuer PIN" /><Button onClick={savePin} variant="outline">Ändern</Button></div>
-             </CardContent>
-          </Card>
+          <ServerSecretsWarningCard />
 
-          {/* NEUE COMPLIANCE & LEGAL KARTE HIER EINGEFÜGT */}
           <ComplianceSettingsCard />
-
         </TabsContent>
 
         {/* ==============================================================
             MARKETING TAB
         ============================================================== */}
         <TabsContent value="marketing" className="space-y-6 mt-6">
-           <Card className="bg-card border-border shadow-sm border-t-4 border-t-green-500">
+          <Card className="bg-card border-border shadow-sm border-t-4 border-t-green-500">
             <CardHeader>
               <CardTitle className="font-display text-lg flex items-center gap-2">
                 <Mail className="w-5 h-5 text-green-600" /> Lead-Gen Steuerung
@@ -832,21 +832,21 @@ export default function AdminSettings() {
               </div>
 
               <div className="space-y-4 pt-4 border-t border-border">
-                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-500"/> Forum Global Banner
                 </h4>
                 <div className="space-y-3 bg-purple-50/50 dark:bg-purple-900/10 p-4 rounded-lg">
                   <div className="flex justify-between items-center mb-2">
                     <Label className="font-bold">Banner aktiv</Label>
-                    <Switch checked={forumBanner.isActive} onCheckedChange={(c) => setForumBanner({...forumBanner, isActive: c})} />
+                    <Switch checked={forumBanner.isActive} onCheckedChange={(c) => setForumBanner({ ...forumBanner, isActive: c })} />
                   </div>
                   <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Titel</Label><Input value={forumBanner.title} onChange={(e) => setForumBanner({...forumBanner, title: e.target.value})} /></div>
-                      <div className="space-y-2"><Label>Link URL</Label><Input value={forumBanner.linkUrl} onChange={(e) => setForumBanner({...forumBanner, linkUrl: e.target.value})} /></div>
-                      <div className="space-y-2"><Label>Button Text</Label><Input value={forumBanner.ctaText} onChange={(e) => setForumBanner({...forumBanner, ctaText: e.target.value})} /></div>
-                      <div className="space-y-2"><Label>Bild URL</Label><Input value={forumBanner.imageUrl} onChange={(e) => setForumBanner({...forumBanner, imageUrl: e.target.value})} /></div>
+                    <div className="space-y-2"><Label>Titel</Label><Input value={forumBanner.title} onChange={(e) => setForumBanner({ ...forumBanner, title: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Link URL</Label><Input value={forumBanner.linkUrl} onChange={(e) => setForumBanner({ ...forumBanner, linkUrl: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Button Text</Label><Input value={forumBanner.ctaText} onChange={(e) => setForumBanner({ ...forumBanner, ctaText: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Bild URL</Label><Input value={forumBanner.imageUrl} onChange={(e) => setForumBanner({ ...forumBanner, imageUrl: e.target.value })} /></div>
                   </div>
-                  <div className="space-y-2"><Label>Beschreibung</Label><Textarea value={forumBanner.description} onChange={(e) => setForumBanner({...forumBanner, description: e.target.value})} rows={2} /></div>
+                  <div className="space-y-2"><Label>Beschreibung</Label><Textarea value={forumBanner.description} onChange={(e) => setForumBanner({ ...forumBanner, description: e.target.value })} rows={2} /></div>
                   <Button size="sm" onClick={saveForumBannerConfig} className="bg-purple-600 hover:bg-purple-700 text-white w-full mt-2">
                     <Save className="w-4 h-4 mr-2" /> Forum Banner Speichern
                   </Button>
@@ -854,23 +854,23 @@ export default function AdminSettings() {
               </div>
 
               <div className="space-y-4 pt-4 border-t border-border">
-                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
+                <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300">
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-500"/> Native Amazon Banner
                 </h4>
                 <div className="space-y-3">
                   <div className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2"><Label>Headline</Label><Input value={amznHeadline} onChange={(e) => setAmznHeadline(e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Affiliate Link</Label><Input value={amznLink} onChange={(e) => setAmznLink(e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Headline</Label><Input value={amznHeadline} onChange={(e) => setAmznHeadline(e.target.value)} /></div>
+                    <div className="space-y-2"><Label>Affiliate Link</Label><Input value={amznLink} onChange={(e) => setAmznLink(e.target.value)} /></div>
                   </div>
                   <div className="space-y-2"><Label>Text</Label><Input value={amznText} onChange={(e) => setAmznText(e.target.value)} /></div>
                   <div className="space-y-2"><Label>Button</Label><Input value={amznButton} onChange={(e) => setAmznButton(e.target.value)} /></div>
                 </div>
                 <Button size="sm" variant="outline" onClick={() => {
-                      saveSetting("ads_amazon_headline", amznHeadline);
-                      saveSetting("ads_amazon_text", amznText);
-                      saveSetting("ads_amazon_button_text", amznButton);
-                      saveSetting("ads_amazon_link", amznLink);
-                  }}>
+                  saveSetting("ads_amazon_headline", amznHeadline);
+                  saveSetting("ads_amazon_text", amznText);
+                  saveSetting("ads_amazon_button_text", amznButton);
+                  saveSetting("ads_amazon_link", amznLink);
+                }}>
                   <Save className="w-4 h-4 mr-2" /> Banner speichern
                 </Button>
               </div>
@@ -882,86 +882,71 @@ export default function AdminSettings() {
             API & ANALYTICS TAB
         ============================================================== */}
         <TabsContent value="analytics_new" className="space-y-6 mt-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Key className="w-5 h-5 text-red-600"/> API Bridge & Security</CardTitle>
-                    <CardDescription>Verbindung zum Legacy Server (PHP).</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>Bridge URL</Label>
-                        <Input value={bridgeUrl} onChange={e => setBridgeUrl(e.target.value)} placeholder="https://rank-scout.com/rank-scout-bridge.php" className="font-mono bg-slate-50" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Sicherheits-Schlüssel (Key Rotation)</Label>
-                        <Input type="password" value={bridgeKey} onChange={e => setBridgeKey(e.target.value)} placeholder="Geheimer Schlüssel" className="font-mono" />
-                        <p className="text-xs text-muted-foreground">Dieser Key muss mit dem in der PHP Datei übereinstimmen. Ändere ihn regelmäßig.</p>
-                    </div>
-                    <Button onClick={saveBridgeSettings} variant="destructive"><Lock className="w-4 h-4 mr-2" /> Bridge Sichern</Button>
-                </CardContent>
-            </Card>
+          <ServerSecretsWarningCard />
 
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><BarChart3 className="w-5 h-5 text-blue-600"/> Tracking & Reports</CardTitle>
-                    <CardDescription>Verbinde deine Google Dienste für maximale Einsicht.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-3">
-                        <Label className="text-base font-semibold">Google Analytics 4 (GA4)</Label>
-                        <p className="text-sm text-slate-500">Deine Mess-ID (z.B. G-12345678).</p>
-                        <Input value={ga4Id} onChange={e => setGa4Id(e.target.value)} placeholder="G-XXXXXXXXXX" className="font-mono" />
-                    </div>
-                    <div className="space-y-3 pt-4 border-t">
-                        <Label className="text-base font-semibold">Google Search Console</Label>
-                        <p className="text-sm text-slate-500">Der Content des HTML-Tags für die Verifizierung.</p>
-                        <Input value={gscVerification} onChange={e => setGscVerification(e.target.value)} placeholder="..." className="font-mono" />
-                    </div>
-                    <div className="space-y-3 pt-4 border-t">
-                        <Label className="text-base font-semibold">Looker Studio Report URL</Label>
-                        <p className="text-sm text-slate-500">Bette deinen persönlichen Report direkt ins Dashboard ein.</p>
-                        <Input value={reportUrl} onChange={e => setReportUrl(e.target.value)} placeholder="https://lookerstudio.google.com/embed/..." className="font-mono" />
-                    </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><BarChart3 className="w-5 h-5 text-blue-600"/> Tracking & Reports</CardTitle>
+              <CardDescription>Verbinde deine Google Dienste für maximale Einsicht.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-3">
+                <Label className="text-base font-semibold">Google Analytics 4 (GA4)</Label>
+                <p className="text-sm text-slate-500">Deine Mess-ID (z.B. G-12345678).</p>
+                <Input value={ga4Id} onChange={e => setGa4Id(e.target.value)} placeholder="G-XXXXXXXXXX" className="font-mono" />
+              </div>
+
+              <div className="space-y-3 pt-4 border-t">
+                <Label className="text-base font-semibold">Google Search Console</Label>
+                <p className="text-sm text-slate-500">Der Content des HTML-Tags für die Verifizierung.</p>
+                <Input value={gscVerification} onChange={e => setGscVerification(e.target.value)} placeholder="..." className="font-mono" />
+              </div>
+
+              <div className="space-y-3 pt-4 border-t">
+                <Label className="text-base font-semibold">Looker Studio Report URL</Label>
+                <p className="text-sm text-slate-500">Bette deinen persönlichen Report direkt ins Dashboard ein.</p>
+                <Input value={reportUrl} onChange={e => setReportUrl(e.target.value)} placeholder="https://lookerstudio.google.com/embed/..." className="font-mono" />
+              </div>
                     
-                    <div className="space-y-3 pt-4 border-t">
-                        <Label className="text-base font-semibold">AdSense Integration</Label>
-                        <div className="grid gap-4 md:grid-cols-2">
-                          <div className="space-y-2"><Label className="text-xs">Publisher ID</Label><Input value={adSenseClient} onChange={(e) => setAdSenseClient(e.target.value)} /></div>
-                          <div className="space-y-2"><Label className="text-xs">Slot ID</Label><Input value={adSenseSlot} onChange={(e) => setAdSenseSlot(e.target.value)} /></div>
-                        </div>
-                    </div>
+              <div className="space-y-3 pt-4 border-t">
+                <Label className="text-base font-semibold">AdSense Integration</Label>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2"><Label className="text-xs">Publisher ID</Label><Input value={adSenseClient} onChange={(e) => setAdSenseClient(e.target.value)} /></div>
+                  <div className="space-y-2"><Label className="text-xs">Slot ID</Label><Input value={adSenseSlot} onChange={(e) => setAdSenseSlot(e.target.value)} /></div>
+                </div>
+              </div>
 
-                    <Button onClick={() => {saveAnalytics(); saveSetting("ads_sense_client_id", adSenseClient); saveSetting("ads_sense_slot_id", adSenseSlot);}} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Analytics & Ads speichern</Button>
-                </CardContent>
-            </Card>
+              <Button onClick={() => { saveAnalytics(); saveSetting("ads_sense_client_id", adSenseClient); saveSetting("ads_sense_slot_id", adSenseSlot); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold"><Save className="w-4 h-4 mr-2" /> Analytics & Ads speichern</Button>
+            </CardContent>
+          </Card>
 
-            {/* --- GOOGLE INDEXING TOOL --- */}
-            <Card className="border-yellow-500/20 bg-yellow-50/10">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-yellow-500"/> Google Indexing API</CardTitle>
-                    <CardDescription>Manuelles Pingen von URLs an den Google Index (via Indexing API).</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>URLs (Eine pro Zeile)</Label>
-                        <Textarea 
-                            placeholder="https://rank-scout.com/kategorie/..." 
-                            className="font-mono text-xs min-h-[150px] bg-slate-50 dark:bg-slate-900"
-                            value={indexingUrls}
-                            onChange={(e) => setIndexingUrls(e.target.value)}
-                        />
-                        <p className="text-xs text-muted-foreground">Maximal 200 URLs pro Tag (Google Quota beachten).</p>
-                    </div>
-                    <Button 
-                        onClick={handleIndexPing} 
-                        disabled={isPinging || !indexingUrls.trim()} 
-                        className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
-                    >
-                        {isPinging ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Rocket className="w-4 h-4 mr-2" />}
-                        Jetzt Indexierung beantragen
-                    </Button>
-                </CardContent>
-            </Card>
+          {/* --- GOOGLE INDEXING TOOL --- */}
+          <Card className="border-yellow-500/20 bg-yellow-50/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-yellow-500"/> Google Indexing API</CardTitle>
+              <CardDescription>Manuelles Pingen von URLs an den Google Index (via Indexing API).</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>URLs (Eine pro Zeile)</Label>
+                <Textarea 
+                  placeholder="https://rank-scout.com/kategorie/..." 
+                  className="font-mono text-xs min-h-[150px] bg-slate-50 dark:bg-slate-900"
+                  value={indexingUrls}
+                  onChange={(e) => setIndexingUrls(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">Maximal 200 URLs pro Tag (Google Quota beachten).</p>
+              </div>
+              <Button 
+                onClick={handleIndexPing} 
+                disabled={isPinging || !indexingUrls.trim()} 
+                className="w-full bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                {isPinging ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Rocket className="w-4 h-4 mr-2" />}
+                Jetzt Indexierung beantragen
+              </Button>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ==============================================================
@@ -973,11 +958,11 @@ export default function AdminSettings() {
               <CardTitle className="flex items-center gap-2"><LinkIcon className="w-5 h-5 text-secondary" /> Top-Bar (Oben drüber)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-               <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Text</Label><Input value={topBarText} onChange={(e) => setTopBarText(e.target.value)} /></div>
-                  <div className="space-y-2"><Label>Link</Label><Input value={topBarLink} onChange={(e) => setTopBarLink(e.target.value)} /></div>
-               </div>
-               <Button onClick={() => { saveSetting("top_bar_text", topBarText); saveSetting("top_bar_link", topBarLink); }} className="bg-primary hover:bg-primary/90"><Save className="w-4 h-4 mr-2" /> Speichern</Button>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="space-y-2"><Label>Text</Label><Input value={topBarText} onChange={(e) => setTopBarText(e.target.value)} /></div>
+                <div className="space-y-2"><Label>Link</Label><Input value={topBarLink} onChange={(e) => setTopBarLink(e.target.value)} /></div>
+              </div>
+              <Button onClick={() => { saveSetting("top_bar_text", topBarText); saveSetting("top_bar_link", topBarLink); }} className="bg-primary hover:bg-primary/90"><Save className="w-4 h-4 mr-2" /> Speichern</Button>
             </CardContent>
           </Card>
 
@@ -986,86 +971,83 @@ export default function AdminSettings() {
             <CardContent className="space-y-6">
               
               <div className="space-y-6">
-                 <h4 className="font-medium text-sm text-slate-500 mb-2">Desktop & Mobile Menüstruktur</h4>
-                 {headerConfig.nav_links?.map((link: any, idx: number) => (
-                    <div key={idx} className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-900/50">
-                        {/* Haupt-Link */}
-                        <div className="flex gap-3 items-end mb-4">
-                            <div className="flex-1 space-y-1"><Label className="text-xs font-bold text-primary">Haupt-Link</Label><Input value={link.label} onChange={e => updateNavLink(idx, 'label', e.target.value)} className="bg-white dark:bg-slate-950 font-bold" /></div>
-                            <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateNavLink(idx, 'url', e.target.value)} className="bg-white dark:bg-slate-950" /></div>
-                            <Button variant="ghost" size="icon" onClick={() => removeNavLink(idx)} className="mb-0.5 hover:bg-red-100 hover:text-red-600"><Trash2 className="w-4 h-4" /></Button>
-                        </div>
-                        
-                        {/* Sub-Links Bereich (MEGA MENU EDITOR) */}
-                            <div className="pl-4 ml-2 border-l-2 border-slate-200 dark:border-slate-700 space-y-3">
-                                <Label className="text-xs text-slate-400 uppercase tracking-widest">Untermenü (Mega Dropdown)</Label>
-                                {link.items?.map((subLink: any, subIdx: number) => (
-                                    <div key={subIdx} className="flex flex-col gap-2 p-3 bg-white dark:bg-slate-950 border rounded-lg mb-2 shadow-sm relative group/edit">
-                                        <div className="flex gap-2 items-center justify-between mb-1">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-3 h-3 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{subIdx + 1}</div>
-                                                <span className="text-xs font-semibold text-slate-500">Eintrag #{subIdx + 1}</span>
-                                            </div>
-                                            <Button variant="ghost" size="sm" onClick={() => removeSubLink(idx, subIdx)} className="h-6 w-6 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50"><X className="w-3 h-3" /></Button>
-                                        </div>
-                                        
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] text-slate-500 uppercase">Titel *</Label>
-                                                <Input value={subLink.label} onChange={e => updateSubLink(idx, subIdx, 'label', e.target.value)} className="h-8 text-xs font-medium" placeholder="z.B. VPN Vergleich" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] text-slate-500 uppercase">Ziel-URL *</Label>
-                                                <Input value={subLink.url} onChange={e => updateSubLink(idx, subIdx, 'url', e.target.value)} className="h-8 text-xs font-mono" placeholder="/kategorien/vpn" />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] text-slate-500 uppercase">Bild/Icon URL (Optional)</Label>
-                                                <div className="flex gap-2">
-                                                    <Input value={subLink.image_url || ""} onChange={e => updateSubLink(idx, subIdx, 'image_url', e.target.value)} className="h-8 text-xs" placeholder="https://..." />
-                                                    {subLink.image_url && <div className="w-8 h-8 rounded border bg-slate-50 flex-shrink-0 overflow-hidden"><img src={subLink.image_url} className="w-full h-full object-cover" /></div>}
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-[10px] text-slate-500 uppercase">Beschreibung (Optional)</Label>
-                                                <Input value={subLink.description || ""} onChange={e => updateSubLink(idx, subIdx, 'description', e.target.value)} className="h-8 text-xs" placeholder="z.B. Top 10 Anbieter 2026" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                <Button variant="outline" size="sm" onClick={() => addSubLink(idx)} className="mt-2 text-xs h-8 w-full border-dashed"><Plus className="w-3 h-3 mr-1" /> Weiteren Unterpunkt hinzufügen</Button>
-                            </div>
+                <h4 className="font-medium text-sm text-slate-500 mb-2">Desktop & Mobile Menüstruktur</h4>
+                {headerConfig.nav_links?.map((link: any, idx: number) => (
+                  <div key={idx} className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-slate-50/50 dark:bg-slate-900/50">
+                    <div className="flex gap-3 items-end mb-4">
+                      <div className="flex-1 space-y-1"><Label className="text-xs font-bold text-primary">Haupt-Link</Label><Input value={link.label} onChange={e => updateNavLink(idx, 'label', e.target.value)} className="bg-white dark:bg-slate-950 font-bold" /></div>
+                      <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateNavLink(idx, 'url', e.target.value)} className="bg-white dark:bg-slate-950" /></div>
+                      <Button variant="ghost" size="icon" onClick={() => removeNavLink(idx)} className="mb-0.5 hover:bg-red-100 hover:text-red-600"><Trash2 className="w-4 h-4" /></Button>
                     </div>
-                 ))}
-                 <Button onClick={addNavLink} className="w-full border-dashed border-2 bg-transparent text-slate-500 hover:bg-slate-50 hover:text-primary"><Plus className="w-4 h-4 mr-2" /> Neuen Haupt-Menüpunkt anlegen</Button>
+                        
+                    <div className="pl-4 ml-2 border-l-2 border-slate-200 dark:border-slate-700 space-y-3">
+                      <Label className="text-xs text-slate-400 uppercase tracking-widest">Untermenü (Mega Dropdown)</Label>
+                      {link.items?.map((subLink: any, subIdx: number) => (
+                        <div key={subIdx} className="flex flex-col gap-2 p-3 bg-white dark:bg-slate-950 border rounded-lg mb-2 shadow-sm relative group/edit">
+                          <div className="flex gap-2 items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <div className="w-3 h-3 rounded-full bg-slate-200 flex items-center justify-center text-[8px] font-bold text-slate-500">{subIdx + 1}</div>
+                              <span className="text-xs font-semibold text-slate-500">Eintrag #{subIdx + 1}</span>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => removeSubLink(idx, subIdx)} className="h-6 w-6 p-0 text-slate-400 hover:text-red-500 hover:bg-red-50"><X className="w-3 h-3" /></Button>
+                          </div>
+                                      
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-slate-500 uppercase">Titel *</Label>
+                              <Input value={subLink.label} onChange={e => updateSubLink(idx, subIdx, 'label', e.target.value)} className="h-8 text-xs font-medium" placeholder="z.B. VPN Vergleich" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-slate-500 uppercase">Ziel-URL *</Label>
+                              <Input value={subLink.url} onChange={e => updateSubLink(idx, subIdx, 'url', e.target.value)} className="h-8 text-xs font-mono" placeholder="/kategorien/vpn" />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-slate-500 uppercase">Bild/Icon URL (Optional)</Label>
+                              <div className="flex gap-2">
+                                <Input value={subLink.image_url || ""} onChange={e => updateSubLink(idx, subIdx, 'image_url', e.target.value)} className="h-8 text-xs" placeholder="https://..." />
+                                {subLink.image_url && <div className="w-8 h-8 rounded border bg-slate-50 flex-shrink-0 overflow-hidden"><img src={subLink.image_url} className="w-full h-full object-cover" /></div>}
+                              </div>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] text-slate-500 uppercase">Beschreibung (Optional)</Label>
+                              <Input value={subLink.description || ""} onChange={e => updateSubLink(idx, subIdx, 'description', e.target.value)} className="h-8 text-xs" placeholder="z.B. Top 10 Anbieter 2026" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" onClick={() => addSubLink(idx)} className="mt-2 text-xs h-8 w-full border-dashed"><Plus className="w-3 h-3 mr-1" /> Weiteren Unterpunkt hinzufügen</Button>
+                    </div>
+                  </div>
+                ))}
+                <Button onClick={addNavLink} className="w-full border-dashed border-2 bg-transparent text-slate-500 hover:bg-slate-50 hover:text-primary"><Plus className="w-4 h-4 mr-2" /> Neuen Haupt-Menüpunkt anlegen</Button>
               </div>
 
-              {/* Mobile Hub Links */}
               <div className="pt-8 mt-8 border-t border-border space-y-4">
-                 <h4 className="font-medium text-sm text-slate-500 mb-2">Mobile Hub Grid (App-Style)</h4>
-                 {headerConfig.hub_links?.map((link: any, idx: number) => (
-                    <div key={idx} className="flex flex-col md:flex-row gap-3 md:items-end p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100">
-                       <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateHubLink(idx, 'label', e.target.value)} /></div>
-                       <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateHubLink(idx, 'url', e.target.value)} /></div>
+                <h4 className="font-medium text-sm text-slate-500 mb-2">Mobile Hub Grid (App-Style)</h4>
+                {headerConfig.hub_links?.map((link: any, idx: number) => (
+                  <div key={idx} className="flex flex-col md:flex-row gap-3 md:items-end p-3 bg-slate-50 dark:bg-slate-900 rounded-lg border border-slate-100">
+                    <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateHubLink(idx, 'label', e.target.value)} /></div>
+                    <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateHubLink(idx, 'url', e.target.value)} /></div>
                        
-                       <div className="flex items-center gap-4 justify-end pb-2 px-2 mt-2 md:mt-0">
-                          <div className="flex flex-col items-center space-y-2">
-                             <Label className="text-xs text-orange-600 font-bold whitespace-nowrap">Bald verfügbar</Label>
-                             <Switch checked={link.isComingSoon === true} onCheckedChange={() => toggleHubLinkComingSoon(idx)} />
-                          </div>
-                          <div className="flex flex-col items-center space-y-2 border-l border-slate-200 pl-4">
-                             <Label className="text-xs">Aktiv</Label>
-                             <Switch checked={link.enabled !== false} onCheckedChange={() => toggleHubLink(idx)} />
-                          </div>
-                       </div>
+                    <div className="flex items-center gap-4 justify-end pb-2 px-2 mt-2 md:mt-0">
+                      <div className="flex flex-col items-center space-y-2">
+                        <Label className="text-xs text-orange-600 font-bold whitespace-nowrap">Bald verfügbar</Label>
+                        <Switch checked={link.isComingSoon === true} onCheckedChange={() => toggleHubLinkComingSoon(idx)} />
+                      </div>
+                      <div className="flex flex-col items-center space-y-2 border-l border-slate-200 pl-4">
+                        <Label className="text-xs">Aktiv</Label>
+                        <Switch checked={link.enabled !== false} onCheckedChange={() => toggleHubLink(idx)} />
+                      </div>
                     </div>
-                 ))}
+                  </div>
+                ))}
               </div>
 
               <div className="pt-6 border-t border-border space-y-4">
-                 <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Button Text</Label><Input value={headerConfig.button_text} onChange={e => setHeaderConfig({...headerConfig, button_text: e.target.value})} /></div>
-                    <div className="space-y-2"><Label>Button Ziel</Label><Input value={headerConfig.button_url} onChange={e => setHeaderConfig({...headerConfig, button_url: e.target.value})} /></div>
-                 </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2"><Label>Button Text</Label><Input value={headerConfig.button_text} onChange={e => setHeaderConfig({ ...headerConfig, button_text: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Button Ziel</Label><Input value={headerConfig.button_url} onChange={e => setHeaderConfig({ ...headerConfig, button_url: e.target.value })} /></div>
+                </div>
               </div>
               <Button onClick={saveHeader} className="w-full mt-4 bg-primary"><Save className="w-4 h-4 mr-2" /> Header Konfiguration Speichern</Button>
             </CardContent>
@@ -1075,27 +1057,29 @@ export default function AdminSettings() {
             <CardHeader><CardTitle className="flex items-center gap-2"><List className="w-5 h-5 text-green-500" /> Footer Links</CardTitle></CardHeader>
             <CardContent className="space-y-8">
               <div className="space-y-4">
-                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300"><ShieldCheck className="w-4 h-4" /> Rechtliches</h4>
-                 {footerConfig.legal_links?.map((link: any, idx: number) => (
-                    <div key={idx} className="flex gap-3 items-end">
-                       <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateLegalLink(idx, 'label', e.target.value)} /></div>
-                       <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateLegalLink(idx, 'url', e.target.value)} /></div>
-                       <Button variant="ghost" size="icon" onClick={() => removeLegalLink(idx)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                    </div>
-                 ))}
-                 <Button variant="outline" size="sm" onClick={addLegalLink}><Plus className="w-3 h-3 mr-2" /> Neu</Button>
+                <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300"><ShieldCheck className="w-4 h-4" /> Rechtliches</h4>
+                {footerConfig.legal_links?.map((link: any, idx: number) => (
+                  <div key={idx} className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateLegalLink(idx, 'label', e.target.value)} /></div>
+                    <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateLegalLink(idx, 'url', e.target.value)} /></div>
+                    <Button variant="ghost" size="icon" onClick={() => removeLegalLink(idx)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={addLegalLink}><Plus className="w-3 h-3 mr-2" /> Neu</Button>
               </div>
+
               <div className="space-y-4 border-t pt-6">
-                 <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300"><LinkIcon className="w-4 h-4" /> Vergleiche & Tools</h4>
-                 {footerConfig.popular_links?.map((link: any, idx: number) => (
-                    <div key={idx} className="flex gap-3 items-end">
-                       <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updatePopularLink(idx, 'label', e.target.value)} /></div>
-                       <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updatePopularLink(idx, 'url', e.target.value)} /></div>
-                       <Button variant="ghost" size="icon" onClick={() => removePopularLink(idx)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
-                    </div>
-                 ))}
-                 <Button variant="outline" size="sm" onClick={addPopularLink}><Plus className="w-3 h-3 mr-2" /> Neu</Button>
+                <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300"><LinkIcon className="w-4 h-4" /> Vergleiche & Tools</h4>
+                {footerConfig.popular_links?.map((link: any, idx: number) => (
+                  <div key={idx} className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updatePopularLink(idx, 'label', e.target.value)} /></div>
+                    <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updatePopularLink(idx, 'url', e.target.value)} /></div>
+                    <Button variant="ghost" size="icon" onClick={() => removePopularLink(idx)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={addPopularLink}><Plus className="w-3 h-3 mr-2" /> Neu</Button>
               </div>
+
               <Button onClick={saveFooter} className="w-full mt-2 bg-primary"><Save className="w-4 h-4 mr-2" /> Footer Links Speichern</Button>
             </CardContent>
           </Card>
@@ -1107,16 +1091,16 @@ export default function AdminSettings() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid md:grid-cols-2 gap-4">
-                 <div className="space-y-2"><Label>Geprüft Text</Label><Input value={footerConfig.text_checked} onChange={e => setFooterConfig({...footerConfig, text_checked: e.target.value})} /></div>
-                 <div className="space-y-2"><Label>Update Text</Label><Input value={footerConfig.text_update} onChange={e => setFooterConfig({...footerConfig, text_update: e.target.value})} /></div>
+                <div className="space-y-2"><Label>Geprüft Text</Label><Input value={footerConfig.text_checked} onChange={e => setFooterConfig({ ...footerConfig, text_checked: e.target.value })} /></div>
+                <div className="space-y-2"><Label>Update Text</Label><Input value={footerConfig.text_update} onChange={e => setFooterConfig({ ...footerConfig, text_update: e.target.value })} /></div>
               </div>
-              <div className="space-y-2"><Label>Copyright Zeile</Label><Input value={footerConfig.copyright_text} onChange={e => setFooterConfig({...footerConfig, copyright_text: e.target.value})} /></div>
-              <div className="space-y-2"><Label>Beschreibung (Über uns)</Label><Textarea value={footerConfig.text_description} onChange={e => setFooterConfig({...footerConfig, text_description: e.target.value})} rows={2} /></div>
-              <div className="space-y-2"><Label>Disclaimer (Ganz unten)</Label><Textarea value={footerConfig.disclaimer} onChange={e => setFooterConfig({...footerConfig, disclaimer: e.target.value})} rows={3} /></div>
+              <div className="space-y-2"><Label>Copyright Zeile</Label><Input value={footerConfig.copyright_text} onChange={e => setFooterConfig({ ...footerConfig, copyright_text: e.target.value })} /></div>
+              <div className="space-y-2"><Label>Beschreibung (Über uns)</Label><Textarea value={footerConfig.text_description} onChange={e => setFooterConfig({ ...footerConfig, text_description: e.target.value })} rows={2} /></div>
+              <div className="space-y-2"><Label>Disclaimer (Ganz unten)</Label><Textarea value={footerConfig.disclaimer} onChange={e => setFooterConfig({ ...footerConfig, disclaimer: e.target.value })} rows={3} /></div>
               
               <div className="grid md:grid-cols-2 gap-4 pt-2">
-                 <div className="space-y-2"><Label>"Made with" Text</Label><Input value={footerConfig.made_with_text} onChange={e => setFooterConfig({...footerConfig, made_with_text: e.target.value})} /></div>
-                 <div className="space-y-2"><Label>"Made in" Text</Label><Input value={footerConfig.made_in_text} onChange={e => setFooterConfig({...footerConfig, made_in_text: e.target.value})} /></div>
+                <div className="space-y-2"><Label>"Made with" Text</Label><Input value={footerConfig.made_with_text} onChange={e => setFooterConfig({ ...footerConfig, made_with_text: e.target.value })} /></div>
+                <div className="space-y-2"><Label>"Made in" Text</Label><Input value={footerConfig.made_in_text} onChange={e => setFooterConfig({ ...footerConfig, made_in_text: e.target.value })} /></div>
               </div>
               
               <Button onClick={saveFooter} className="w-full mt-2 bg-primary"><Save className="w-4 h-4 mr-2" /> Footer Texte Speichern</Button>
@@ -1138,82 +1122,77 @@ export default function AdminSettings() {
             </Button>
           </div>
 
-          {/* --- STRUKTUR MANAGER --- */}
           <Card className="bg-card border-border shadow-sm border-l-4 border-l-secondary">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5 text-secondary" /> Struktur Manager</CardTitle>
-                <CardDescription>Aktiviere und sortiere die Blöcke auf der Startseite (Top to Bottom).</CardDescription>
+              <CardTitle className="flex items-center gap-2"><Layout className="w-5 h-5 text-secondary" /> Struktur Manager</CardTitle>
+              <CardDescription>Aktiviere und sortiere die Blöcke auf der Startseite (Top to Bottom).</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-               {homeSections.length > 0 ? homeSections.map((section, idx) => (
-                 <div key={section.id} className={`flex items-center justify-between border border-slate-200 dark:border-slate-800 p-3 rounded-lg ${section.enabled ? 'bg-slate-50 dark:bg-slate-900/50' : 'bg-slate-100 dark:bg-slate-950 opacity-50'}`}>
-                   <div className="flex items-center gap-4">
-                     <span className="font-mono text-xs text-slate-400 w-4">{idx + 1}.</span>
-                     <Label className="font-semibold text-sm cursor-pointer">{section.label}</Label>
-                   </div>
-                   <div className="flex items-center gap-3">
-                     <Switch checked={section.enabled} onCheckedChange={() => toggleHomeSectionEnabled(idx)} />
-                     <div className="flex flex-col ml-4">
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveHomeSection(idx, 'up')} disabled={idx === 0}><ArrowUp className="w-3 h-3" /></Button>
-                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveHomeSection(idx, 'down')} disabled={idx === homeSections.length - 1}><ArrowDown className="w-3 h-3" /></Button>
-                     </div>
-                   </div>
-                 </div>
-               )) : (
-                 <div className="text-sm text-slate-500">Lade Layout-Daten aus der Datenbank...</div>
-               )}
+              {homeSections.length > 0 ? homeSections.map((section, idx) => (
+                <div key={section.id} className={`flex items-center justify-between border border-slate-200 dark:border-slate-800 p-3 rounded-lg ${section.enabled ? 'bg-slate-50 dark:bg-slate-900/50' : 'bg-slate-100 dark:bg-slate-950 opacity-50'}`}>
+                  <div className="flex items-center gap-4">
+                    <span className="font-mono text-xs text-slate-400 w-4">{idx + 1}.</span>
+                    <Label className="font-semibold text-sm cursor-pointer">{section.label}</Label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Switch checked={section.enabled} onCheckedChange={() => toggleHomeSectionEnabled(idx)} />
+                    <div className="flex flex-col ml-4">
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveHomeSection(idx, 'up')} disabled={idx === 0}><ArrowUp className="w-3 h-3" /></Button>
+                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => moveHomeSection(idx, 'down')} disabled={idx === homeSections.length - 1}><ArrowDown className="w-3 h-3" /></Button>
+                    </div>
+                  </div>
+                </div>
+              )) : (
+                <div className="text-sm text-slate-500">Lade Layout-Daten aus der Datenbank...</div>
+              )}
             </CardContent>
           </Card>
 
-          {/* --- CONTENT EDITOR (AKKORDEON) --- */}
           <Card className="bg-card border-border shadow-sm border-l-4 border-l-blue-500">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Type className="w-5 h-5 text-blue-500" /> Startseiten Inhalte (Texte)</CardTitle>
-                <CardDescription>Bearbeite die Live-Texte der einzelnen Sektionen. Vergiss nicht oben zu speichern!</CardDescription>
+              <CardTitle className="flex items-center gap-2"><Type className="w-5 h-5 text-blue-500" /> Startseiten Inhalte (Texte)</CardTitle>
+              <CardDescription>Bearbeite die Live-Texte der einzelnen Sektionen. Vergiss nicht oben zu speichern!</CardDescription>
             </CardHeader>
             <CardContent>
               <Accordion type="single" collapsible className="w-full">
                 
-                {/* HERO SEKTION - OPTIMIERT FÜR NEUES DESIGN */}
                 <AccordionItem value="hero">
                   <AccordionTrigger className="font-semibold">Hero Sektion (Ganz oben)</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
                     <div className="grid md:grid-cols-2 gap-4">
-                      
                       <div className="space-y-2">
-                          <Label className="text-green-600 font-bold">Badge Text</Label>
-                          <Input placeholder="Update 2026: Neue Vergleiche" value={localContent.hero?.badge || ""} onChange={e => updateContent("hero", "badge", e.target.value)} />
+                        <Label className="text-green-600 font-bold">Badge Text</Label>
+                        <Input placeholder="Update 2026: Neue Vergleiche" value={localContent.hero?.badge || ""} onChange={e => updateContent("hero", "badge", e.target.value)} />
                       </div>
                       <div className="space-y-2">
-                          <Label>H1 Titel (Groß / Shadow)</Label>
-                          <Input placeholder="Vergleiche Finanzen..." value={localContent.hero?.title || ""} onChange={e => updateContent("hero", "title", e.target.value)} />
-                          <p className="text-xs text-muted-foreground">Der fette, große Haupttitel.</p>
+                        <Label>H1 Titel (Groß / Shadow)</Label>
+                        <Input placeholder="Vergleiche Finanzen..." value={localContent.hero?.title || ""} onChange={e => updateContent("hero", "title", e.target.value)} />
+                        <p className="text-xs text-muted-foreground">Der fette, große Haupttitel.</p>
                       </div>
 
                       <div className="space-y-2">
-                          <Label>Zusatz-Headline (Unter H1)</Label>
-                          <Input placeholder="Die besten Angebote..." value={localContent.hero?.headline || ""} onChange={e => updateContent("hero", "headline", e.target.value)} />
+                        <Label>Zusatz-Headline (Unter H1)</Label>
+                        <Input placeholder="Die besten Angebote..." value={localContent.hero?.headline || ""} onChange={e => updateContent("hero", "headline", e.target.value)} />
                       </div>
                       
                       <div className="space-y-2 md:col-span-2">
-                          <Label>Beschreibungstext (Intro)</Label>
-                          <Textarea placeholder="Wir analysieren über 500 Anbieter..." value={localContent.hero?.subtitle || ""} onChange={e => updateContent("hero", "subtitle", e.target.value)} rows={3} />
+                        <Label>Beschreibungstext (Intro)</Label>
+                        <Textarea placeholder="Wir analysieren über 500 Anbieter..." value={localContent.hero?.subtitle || ""} onChange={e => updateContent("hero", "subtitle", e.target.value)} rows={3} />
                       </div>
 
                       <div className="space-y-2">
-                          <Label>Button Text</Label>
-                          <Input placeholder="Jetzt vergleichen" value={localContent.hero?.button_text || ""} onChange={e => updateContent("hero", "button_text", e.target.value)} />
+                        <Label>Button Text</Label>
+                        <Input placeholder="Jetzt vergleichen" value={localContent.hero?.button_text || ""} onChange={e => updateContent("hero", "button_text", e.target.value)} />
                       </div>
 
                       <div className="space-y-2">
-                          <Label>Suchfeld Platzhalter</Label>
-                          <Input placeholder="z.B. Kredit, VPN..." value={localContent.hero?.search_placeholder || ""} onChange={e => updateContent("hero", "search_placeholder", e.target.value)} />
+                        <Label>Suchfeld Platzhalter</Label>
+                        <Input placeholder="z.B. Kredit, VPN..." value={localContent.hero?.search_placeholder || ""} onChange={e => updateContent("hero", "search_placeholder", e.target.value)} />
                       </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* TRUST SEKTION */}
                 <AccordionItem value="trust">
                   <AccordionTrigger className="font-semibold">Trust & Siegel Sektion</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -1241,13 +1220,12 @@ export default function AdminSettings() {
                       <h4 className="font-medium text-sm mt-4 border-t pt-4">Rechte Seiten-Box</h4>
                       <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.box_title || ""} onChange={e => updateContent("trust", "box_title", e.target.value)} /></div>
-                        <div className="space-y-2"><Label>Text</Label><Textarea value={localContent.trust?.box_text || ""} onChange={e => updateContent("trust", "box_text", e.target.value)} rows={2}/></div>
+                        <div className="space-y-2"><Label>Text</Label><Textarea value={localContent.trust?.box_text || ""} onChange={e => updateContent("trust", "box_text", e.target.value)} rows={2} /></div>
                       </div>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* BIG THREE SEKTION */}
                 <AccordionItem value="big_three">
                   <AccordionTrigger className="font-semibold">Big Three Sektion (Hauptlinks)</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -1274,7 +1252,6 @@ export default function AdminSettings() {
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* WHY US SEKTION */}
                 <AccordionItem value="why_us">
                   <AccordionTrigger className="font-semibold">Features (Why Us) Sektion</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -1295,7 +1272,6 @@ export default function AdminSettings() {
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* CATEGORIES SEKTION */}
                 <AccordionItem value="categories">
                   <AccordionTrigger className="font-semibold">Kategorien Slider Sektion</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -1308,7 +1284,6 @@ export default function AdminSettings() {
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* NEWS SEKTION */}
                 <AccordionItem value="news">
                   <AccordionTrigger className="font-semibold">News & Magazin Sektion</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -1322,7 +1297,6 @@ export default function AdminSettings() {
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* FORUM TEASER */}
                 <AccordionItem value="forum_teaser">
                   <AccordionTrigger className="font-semibold">Forum Teaser Sektion</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -1335,7 +1309,6 @@ export default function AdminSettings() {
                   </AccordionContent>
                 </AccordionItem>
 
-                {/* SEO TEXTE */}
                 <AccordionItem value="seo">
                   <AccordionTrigger className="font-semibold">SEO Texte (Unten)</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
@@ -1353,8 +1326,8 @@ export default function AdminSettings() {
                     <div className="space-y-2 pt-4 border-t">
                       <Label>Deep Content (Langer SEO Text)</Label>
                       <Textarea className="min-h-[400px] font-mono text-sm bg-slate-50" value={seoLongText} onChange={(e) => {
-                          setSeoLongText(e.target.value);
-                          updateContent("seo", "long_text", e.target.value);
+                        setSeoLongText(e.target.value);
+                        updateContent("seo", "long_text", e.target.value);
                       }} />
                     </div>
                   </AccordionContent>
@@ -1363,56 +1336,54 @@ export default function AdminSettings() {
             </CardContent>
           </Card>
 
-          {/* --- LEGACY LAYOUT & TICKER --- */}
           <Card className="bg-card border-border shadow-sm">
             <CardHeader><CardTitle>Legacy Layout (Backup)</CardTitle><CardDescription>Primitive Steuerung älterer Module.</CardDescription></CardHeader>
             <CardContent className="space-y-4 opacity-75">
-               {Object.keys(defaultHomeLayout).map((key) => (
-                 <div key={key} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 p-2 rounded-lg">
-                   <Label className="capitalize font-medium">{key.replace('_', ' ')}</Label>
-                   <Switch checked={(layout as any)[key]} onCheckedChange={() => toggleSection(key as any)} />
-                 </div>
-               ))}
+              {Object.keys(defaultHomeLayout).map((key) => (
+                <div key={key} className="flex items-center justify-between border-b border-border/50 pb-3 last:border-0 p-2 rounded-lg">
+                  <Label className="capitalize font-medium">{key.replace('_', ' ')}</Label>
+                  <Switch checked={(layout as any)[key]} onCheckedChange={() => toggleSection(key as any)} />
+                </div>
+              ))}
             </CardContent>
           </Card>
            
-          {/* --- TICKER SETTINGS BLOCK --- */}
           <Card className="bg-card border-border shadow-sm">
-              <CardHeader><CardTitle>App-Ticker Sektion</CardTitle></CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
+            <CardHeader><CardTitle>App-Ticker Sektion</CardTitle></CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 p-4 bg-slate-50 dark:bg-slate-900 rounded-lg">
                 <div className="space-y-2">
-                    <Label htmlFor="ticker_headline">Ticker Überschrift</Label>
-                    <Input 
+                  <Label htmlFor="ticker_headline">Ticker Überschrift</Label>
+                  <Input 
                     id="ticker_headline" 
                     name="ticker_headline" 
                     placeholder="Top Apps & Deals"
                     defaultValue={settings?.ticker_headline as string || "Top Apps & Deals"} 
                     onChange={(e) => saveSetting("ticker_headline", e.target.value)}
-                    />
+                  />
                 </div>
                 <div className="space-y-2">
-                    <Label htmlFor="ticker_badge_text">Badge Text (rot)</Label>
-                    <Input 
+                  <Label htmlFor="ticker_badge_text">Badge Text (rot)</Label>
+                  <Input 
                     id="ticker_badge_text" 
                     name="ticker_badge_text" 
                     placeholder="Live Trends (24h)"
                     defaultValue={settings?.ticker_badge_text as string || "Live Trends (24h)"} 
                     onChange={(e) => saveSetting("ticker_badge_text", e.target.value)}
-                    />
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="ticker_link_text">Button Text (Link zur Topliste)</Label>
-                    <Input 
+                  <Label htmlFor="ticker_link_text">Button Text (Link zur Topliste)</Label>
+                  <Input 
                     id="ticker_link_text" 
                     name="ticker_link_text" 
                     placeholder="Alle Top 100 ansehen →"
                     defaultValue={settings?.ticker_link_text as string || "Alle Top 100 ansehen →"} 
                     onChange={(e) => saveSetting("ticker_link_text", e.target.value)}
-                    />
+                  />
                 </div>
-                </div>
-              </CardContent>
+              </div>
+            </CardContent>
           </Card>
         </TabsContent>
       </Tabs>

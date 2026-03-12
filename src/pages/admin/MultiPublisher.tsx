@@ -18,7 +18,11 @@ import { useGenerateCategoryContent, GeneratedCategoryContent } from "@/hooks/us
 import ProjectCheckboxList from "@/components/admin/ProjectCheckboxList";
 
 // Typen
-type DeploymentTarget = { id: string; name: string; bridge_url: string; api_key: string; };
+type DeploymentTarget = {
+  id: string;
+  name: string;
+  bridge_url: string;
+};
 type Project = { id: string; name: string; logo_url: string; rating: number; affiliate_link: string; features: any; badge_text: string; };
 type Category = { id: string; name: string; slug: string; is_internal_generated?: boolean };
 
@@ -70,11 +74,22 @@ export default function AdminPublisher() {
   }, [selectedCategoryId, mode]);
 
   const fetchTargets = async () => {
-    setTargets([
-      { id: "1", name: "Dating-Vergleich.org", bridge_url: "https://dating-vergleich.org/bridge.php", api_key: "xyz" },
-      { id: "2", name: "Finanz-Check.de", bridge_url: "https://finanz-check.de/bridge.php", api_key: "abc" }
-    ]);
-  };
+  const { data, error } = await (supabase as any)
+    .from("deployment_targets")
+    .select("id, name, bridge_url")
+    .order("name");
+
+  if (error) {
+    toast({
+      title: "Fehler",
+      description: "Deployment-Ziele konnten nicht geladen werden.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  setTargets((data ?? []) as DeploymentTarget[]);
+};
 
   const fetchProjects = async () => {
     const { data } = await supabase.from("projects").select("*").eq("is_active", true).order("rating", { ascending: false });
@@ -139,19 +154,34 @@ export default function AdminPublisher() {
   };
 
   const handleDeploy = async () => {
-    if (!generatedHtml || !selectedTargetId) return;
-    setIsDeploying(true);
-    const target = targets.find(t => t.id === selectedTargetId);
-    if(!target) return;
-    try {
-      await new Promise(r => setTimeout(r, 1500)); 
-      toast({ title: "Erfolg", description: `Seite erfolgreich veröffentlicht!` });
-    } catch (e) {
-      toast({ title: "Fehler", description: "Deployment fehlgeschlagen", variant: "destructive" });
-    } finally {
-      setIsDeploying(false);
-    }
-  };
+  if (!generatedHtml || !selectedTargetId) return;
+
+  setIsDeploying(true);
+
+  try {
+    const { error } = await supabase.functions.invoke("publish-external-page", {
+      body: {
+        targetId: selectedTargetId,
+        html: generatedHtml,
+      },
+    });
+
+    if (error) throw error;
+
+    toast({
+      title: "Erfolg",
+      description: "Seite erfolgreich veröffentlicht!",
+    });
+  } catch (e: any) {
+    toast({
+      title: "Fehler",
+      description: e?.message || "Deployment fehlgeschlagen",
+      variant: "destructive",
+    });
+  } finally {
+    setIsDeploying(false);
+  }
+};
 
   const handleCreateInternalCategory = async () => {
     if (!newInternalName.trim()) return;

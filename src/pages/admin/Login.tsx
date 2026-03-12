@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Search, Loader2 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 export default function AdminLogin() {
   const { signIn, user, isLoading: authLoading } = useAuth();
@@ -25,13 +24,13 @@ export default function AdminLogin() {
     resolver: zodResolver(loginSchema),
   });
 
-  // If already logged in, redirect to admin dashboard
   if (user && !authLoading) {
     return <Navigate to="/admin" replace />;
   }
 
   async function onSubmit(data: LoginInput) {
     setIsSubmitting(true);
+
     try {
       const { error } = await signIn(data.email, data.password);
 
@@ -41,13 +40,15 @@ export default function AdminLogin() {
           description: error.message || "Anmeldung fehlgeschlagen",
           variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Angemeldet",
-          description: "Willkommen zurück!",
-        });
-        navigate("/admin");
+        return;
       }
+
+      toast({
+        title: "Angemeldet",
+        description: "Willkommen zurück!",
+      });
+
+      navigate("/admin");
     } finally {
       setIsSubmitting(false);
     }
@@ -63,7 +64,6 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-hero-gradient p-4">
-      {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
@@ -76,12 +76,8 @@ export default function AdminLogin() {
               <Search className="w-5 h-5 text-primary-foreground" />
             </div>
           </Link>
-          <CardTitle className="font-display text-2xl">
-            Admin Login
-          </CardTitle>
-          <CardDescription>
-            Melde dich an, um das Portal zu verwalten
-          </CardDescription>
+          <CardTitle className="font-display text-2xl">Admin Login</CardTitle>
+          <CardDescription>Melde dich mit Supabase Auth an, um das Portal zu verwalten.</CardDescription>
         </CardHeader>
 
         <CardContent>
@@ -95,9 +91,7 @@ export default function AdminLogin() {
                 {...register("email")}
                 className="bg-muted/50"
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email.message}</p>
-              )}
+              {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
@@ -109,9 +103,7 @@ export default function AdminLogin() {
                 {...register("password")}
                 className="bg-muted/50"
               />
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password.message}</p>
-              )}
+              {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
             </div>
 
             <Button

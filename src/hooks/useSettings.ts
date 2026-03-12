@@ -131,21 +131,28 @@ export function useSetting<T>(key: string, defaultValue: T): T {
   return settings[key] as T;
 }
 
+// Server-only Keys dürfen nicht mehr clientseitig gespeichert werden
+const BLOCKED_SERVER_ONLY_KEYS = new Set(["bridge_key", "admin_pin"]);
+
 // Generic Hook zum Schreiben
 export function useUpdateSetting() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: Json }) => {
+      if (BLOCKED_SERVER_ONLY_KEYS.has(key)) {
+        throw new Error(`Die Einstellung "${key}" darf nicht mehr clientseitig gespeichert werden.`);
+      }
+
       const { error } = await supabase.from("settings").upsert(
-        { 
-          key, 
-          value, 
-          updated_at: new Date().toISOString() 
+        {
+          key,
+          value,
+          updated_at: new Date().toISOString(),
         },
-        { onConflict: 'key' }
+        { onConflict: "key" }
       );
-      
+
       if (error) {
         console.error("Supabase Error:", error);
 
