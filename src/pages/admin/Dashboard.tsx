@@ -89,12 +89,12 @@ async function fetchRedirects() {
 
 // --- COLORS ---
 const COLORS = [
-  "#0EA5E9",
+  "#0E1F53",
+  "#FF8400",
+  "#2563EB",
   "#14B8A6",
   "#8B5CF6",
   "#F59E0B",
-  "#EF4444",
-  "#6366F1",
   "#22C55E",
   "#EC4899",
 ];
@@ -464,24 +464,24 @@ export default function AdminDashboard() {
     );
 
     return (
-      <div className="rounded-xl border border-slate-100 overflow-hidden shadow-sm">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <Table>
-          <TableHeader className="bg-slate-50">
+          <TableHeader className="bg-slate-50/90">
             <TableRow>
-              <TableHead className="font-bold text-slate-900">
+              <TableHead className="px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">
                 Seite / Ziel
               </TableHead>
-              <TableHead className="font-bold text-slate-900">Typ</TableHead>
-              <TableHead className="text-right font-bold text-slate-900">
+              <TableHead className="px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">Typ</TableHead>
+              <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">
                 Anteil
               </TableHead>
-              <TableHead className="text-right font-bold text-slate-900 text-primary">
+              <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-[#FF8400]">
                 Views (Zeitraum)
               </TableHead>
-              <TableHead className="text-right font-bold text-slate-500">
+              <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-slate-500">
                 Views (Gesamt)
               </TableHead>
-              <TableHead className="text-right">Live</TableHead>
+              <TableHead className="px-6 py-4 text-right">Live</TableHead>
             </TableRow>
           </TableHeader>
 
@@ -490,7 +490,7 @@ export default function AdminDashboard() {
               <TableRow>
                 <TableCell
                   colSpan={6}
-                  className="text-center text-muted-foreground h-24 italic"
+                  className="h-28 text-center italic text-slate-400"
                 >
                   Keine Daten verfügbar.
                 </TableCell>
@@ -505,7 +505,7 @@ export default function AdminDashboard() {
                 return (
                   <TableRow
                     key={`${item.name}-${item.type}`}
-                    className="group hover:bg-slate-50/50 transition-colors"
+                    className="group border-t border-slate-100 hover:bg-slate-50/60 transition-colors"
                   >
                     <TableCell>
                       <div className="min-w-0">
@@ -539,7 +539,7 @@ export default function AdminDashboard() {
                       </Badge>
                     </TableCell>
 
-                    <TableCell className="text-right">
+                    <TableCell className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <span className="text-[10px] text-slate-400 w-8 font-mono">
                           {share.toFixed(0)}%
@@ -559,12 +559,12 @@ export default function AdminDashboard() {
                       {item.total_all_time}
                     </TableCell>
 
-                    <TableCell className="text-right">
+                    <TableCell className="px-6 py-4 text-right">
                       {item.type !== "project" && (
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="h-8 w-8 opacity-40 group-hover:opacity-100 transition-all"
+                          className="h-9 w-9 rounded-xl border border-slate-200 opacity-60 transition-all group-hover:opacity-100"
                           asChild
                         >
                           <a
@@ -584,10 +584,10 @@ export default function AdminDashboard() {
           </TableBody>
 
           {data.length > 0 && (
-            <TableFooter className="bg-slate-50 font-black text-slate-900">
+            <TableFooter className="bg-slate-50/90 font-black text-slate-900">
               <TableRow>
                 <TableCell colSpan={2}>ZUSAMMENFASSUNG</TableCell>
-                <TableCell className="text-right">-</TableCell>
+                <TableCell className="px-6 py-4 text-right">-</TableCell>
                 <TableCell className="text-right text-primary">
                   {sumPeriod}
                 </TableCell>
@@ -604,14 +604,14 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-20 max-w-[1600px] mx-auto">
+    <div className="mx-auto max-w-[1600px] space-y-8 animate-in fade-in duration-500 pb-20">
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+      <div className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:flex-row lg:items-center lg:justify-between lg:p-8">
         <div>
-          <h2 className="font-display text-2xl font-bold text-slate-900 tracking-tight">
+          <h2 className="font-display text-3xl font-black tracking-tight text-[#0E1F53]">
             Kommando-Zentrale
           </h2>
-          <p className="text-slate-500 text-sm flex items-center gap-2 mt-1">
+          <p className="mt-2 flex items-center gap-2 text-sm text-slate-500">
             <CalendarIcon className="w-4 h-4 text-primary" />
             Zeitraum:
             <span className="font-bold text-primary bg-primary/5 px-2 py-0.5 rounded">
@@ -633,7 +633,7 @@ export default function AdminDashboard() {
               <Button
                 id="date"
                 variant={"outline"}
-                className="w-[260px] justify-start text-left font-bold border-slate-200"
+                className="h-12 w-[280px] justify-start rounded-xl border-slate-200 bg-white text-left font-bold text-[#0E1F53] shadow-sm"
               >
                 <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
                 {dateRange?.from ? (
@@ -668,8 +668,8 @@ export default function AdminDashboard() {
           <div
             className={`px-4 py-2 rounded-full text-xs font-black uppercase border flex items-center gap-2 ${
               analyticsFound
-                ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                : "bg-orange-50 text-orange-600 border-orange-200"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-orange-50 text-[#FF8400] border-orange-200"
             }`}
           >
             <div
@@ -685,8 +685,8 @@ export default function AdminDashboard() {
       </div>
 
       {/* KPI GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-6">
-        <Card className="bg-white border-slate-100 shadow-sm group">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-6">
+        <Card className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-black text-slate-400 uppercase tracking-widest">
               Views (Zeitraum)
@@ -703,7 +703,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-slate-100 shadow-sm group">
+        <Card className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-black text-slate-400 uppercase tracking-widest">
               Klicks (Zeitraum)
@@ -720,24 +720,24 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-primary/5 to-white border-primary/20 shadow-sm">
+        <Card className="rounded-2xl border border-orange-200 bg-gradient-to-br from-orange-50 to-white shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-xs font-black text-primary uppercase tracking-widest">
+            <CardTitle className="text-xs font-black uppercase tracking-[0.18em] text-[#FF8400]">
               Conversion Rate
             </CardTitle>
-            <Percent className="w-5 h-5 text-primary" />
+            <Percent className="w-5 h-5 text-[#FF8400]" />
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-black text-primary">
+            <div className="text-4xl font-black text-[#FF8400]">
               {conversionRate}%
             </div>
-            <p className="text-[10px] text-primary/60 mt-2 italic">
+            <p className="mt-2 text-[10px] italic text-[#FF8400]/70">
               Klicks pro View
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-slate-100 shadow-sm group">
+        <Card className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-black text-slate-400 uppercase tracking-widest">
               Aktive Projekte
@@ -754,7 +754,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-slate-100 shadow-sm group">
+        <Card className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-black text-slate-400 uppercase tracking-widest">
               Top-Land
@@ -778,7 +778,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-white border-slate-100 shadow-sm group">
+        <Card className="group rounded-2xl border border-slate-200 bg-white shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-xs font-black text-slate-400 uppercase tracking-widest">
               Top-Seite
@@ -799,7 +799,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* MAIN TRAFFIC MONITOR */}
-      <Card className="shadow-lg border-none bg-white rounded-3xl overflow-hidden ring-1 ring-slate-100">
+      <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <CardHeader className="bg-slate-50/80 border-b border-slate-100 p-8">
           <div className="flex items-center justify-between">
             <div>
@@ -825,40 +825,40 @@ export default function AdminDashboard() {
 
         <CardContent className="p-8">
           <Tabs defaultValue="all" className="w-full">
-            <TabsList className="mb-6 bg-slate-100 p-1.5 rounded-2xl w-full flex justify-start overflow-x-auto h-auto">
+            <TabsList className="mb-6 flex h-auto w-full justify-start overflow-x-auto rounded-2xl border border-slate-200 bg-slate-100 p-1.5">
               <TabsTrigger
                 value="all"
-                className="px-6 py-2.5 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                className="rounded-xl px-6 py-2.5 font-bold text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF8400] data-[state=active]:shadow-sm"
               >
                 Alles
               </TabsTrigger>
               <TabsTrigger
                 value="pages"
-                className="px-6 py-2.5 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                className="rounded-xl px-6 py-2.5 font-bold text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF8400] data-[state=active]:shadow-sm"
               >
                 System
               </TabsTrigger>
               <TabsTrigger
                 value="comparisons"
-                className="px-6 py-2.5 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                className="rounded-xl px-6 py-2.5 font-bold text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF8400] data-[state=active]:shadow-sm"
               >
                 Vergleiche
               </TabsTrigger>
               <TabsTrigger
                 value="categories"
-                className="px-6 py-2.5 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                className="rounded-xl px-6 py-2.5 font-bold text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF8400] data-[state=active]:shadow-sm"
               >
                 Kategorien
               </TabsTrigger>
               <TabsTrigger
                 value="forum"
-                className="px-6 py-2.5 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold"
+                className="rounded-xl px-6 py-2.5 font-bold text-slate-600 data-[state=active]:bg-white data-[state=active]:text-[#FF8400] data-[state=active]:shadow-sm"
               >
                 Forum
               </TabsTrigger>
               <TabsTrigger
                 value="outbound"
-                className="px-6 py-2.5 rounded-xl data-[state=active]:bg-white data-[state=active]:shadow-sm font-bold text-green-700"
+                className="rounded-xl px-6 py-2.5 font-bold text-green-700 data-[state=active]:bg-white data-[state=active]:text-[#FF8400] data-[state=active]:shadow-sm"
               >
                 Affiliate Klicks
               </TabsTrigger>
@@ -903,8 +903,8 @@ export default function AdminDashboard() {
             </TabsContent>
 
             <TabsContent value="outbound" className="mt-0 focus-visible:ring-0">
-              <div className="bg-green-50 p-4 rounded-2xl border border-green-100 mb-6 flex items-center gap-4 text-green-800 text-sm font-bold shadow-sm">
-                <TrendingUp className="w-5 h-5 text-green-600" />
+              <div className="mb-6 flex items-center gap-4 rounded-2xl border border-orange-200 bg-orange-50 p-4 text-sm font-bold text-[#FF8400] shadow-sm">
+                <TrendingUp className="w-5 h-5 text-[#FF8400]" />
                 Welche Partner generieren aktuell den meisten Umsatz?
               </div>
               <TrafficTable
@@ -920,13 +920,13 @@ export default function AdminDashboard() {
         {/* LEFT COLUMN: CHARTS */}
         <div className="lg:col-span-2 space-y-8">
           {/* PERFORMANCE CHART */}
-          <Card className="shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100 overflow-hidden">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-50">
-              <CardTitle className="flex items-center gap-3 text-xl font-black">
-                <Activity className="w-5 h-5 text-primary" />
+          <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 bg-slate-50/80 p-6">
+              <CardTitle className="flex items-center gap-3 text-xl font-black text-[#0E1F53]">
+                <Activity className="w-5 h-5 text-[#FF8400]" />
                 Performance Distribution
               </CardTitle>
-              <CardDescription className="text-slate-400 font-medium uppercase text-[10px] font-bold">
+              <CardDescription className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                 Anteil der Klicks nach Kategorie
               </CardDescription>
             </CardHeader>
@@ -992,7 +992,7 @@ export default function AdminDashboard() {
                       return (
                         <div
                           key={item.name}
-                          className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
+                          className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4"
                         >
                           <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3 min-w-0">
@@ -1031,7 +1031,7 @@ export default function AdminDashboard() {
                     })}
 
                     <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="rounded-2xl border border-slate-100 bg-white p-4">
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                           Kategorien aktiv
                         </div>
@@ -1040,7 +1040,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-100 bg-white p-4">
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                           Top-Kategorie
                         </div>
@@ -1052,7 +1052,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="h-[300px] flex flex-col items-center justify-center text-muted-foreground gap-4 bg-slate-50 rounded-3xl border border-dashed">
+                <div className="flex h-[300px] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-muted-foreground">
                   <Globe className="w-12 h-12 opacity-10" />
                   <p className="font-bold text-slate-300 uppercase tracking-widest">
                     Keine Daten verfügbar
@@ -1063,13 +1063,13 @@ export default function AdminDashboard() {
           </Card>
 
           {/* LÄNDER VERTEILUNG CHART */}
-          <Card className="shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100 overflow-hidden">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-50">
-              <CardTitle className="flex items-center gap-3 text-xl font-black">
-                <MapPin className="w-5 h-5 text-primary" />
+          <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <CardHeader className="border-b border-slate-200 bg-slate-50/80 p-6">
+              <CardTitle className="flex items-center gap-3 text-xl font-black text-[#0E1F53]">
+                <MapPin className="w-5 h-5 text-[#FF8400]" />
                 Länder-Verteilung
               </CardTitle>
-              <CardDescription className="text-slate-400 font-bold uppercase text-[10px]">
+              <CardDescription className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">
                 Herkunft deiner Besucher
               </CardDescription>
             </CardHeader>
@@ -1129,7 +1129,7 @@ export default function AdminDashboard() {
                     {visibleCountryStats.map((country) => (
                       <div
                         key={country.code}
-                        className="rounded-2xl border border-slate-100 bg-slate-50/70 p-4"
+                        className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4"
                       >
                         <div className="flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 min-w-0">
@@ -1167,7 +1167,7 @@ export default function AdminDashboard() {
                     ))}
 
                     <div className="grid grid-cols-2 gap-4 pt-2">
-                      <div className="rounded-2xl border border-slate-100 bg-white p-4">
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                           Länder erkannt
                         </div>
@@ -1176,7 +1176,7 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      <div className="rounded-2xl border border-slate-100 bg-white p-4">
+                      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                           Top-Anteil
                         </div>
@@ -1188,7 +1188,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="h-[260px] flex flex-col items-center justify-center text-muted-foreground gap-4 bg-slate-50 rounded-3xl border border-dashed">
+                <div className="flex h-[260px] flex-col items-center justify-center gap-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 text-muted-foreground">
                   <Globe className="w-12 h-12 opacity-10" />
                   <p className="font-bold text-slate-300 uppercase tracking-widest">
                     Warten auf Daten...
@@ -1201,10 +1201,10 @@ export default function AdminDashboard() {
 
         {/* RIGHT COLUMN: QUICK ACTIONS & EXPORT */}
         <div className="space-y-8 h-full">
-          <Card className="shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100">
+          <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle className="text-lg font-black flex items-center gap-2">
-                <Zap className="w-5 h-5 text-yellow-500 shadow-yellow-200 shadow-sm rounded-full" />
+              <CardTitle className="flex items-center gap-2 text-lg font-black text-[#0E1F53]">
+                <Zap className="h-5 w-5 rounded-full text-[#FF8400]" />
                 Schnellzugriff
               </CardTitle>
             </CardHeader>
@@ -1213,7 +1213,7 @@ export default function AdminDashboard() {
               {toggles.map((toggle) => (
                 <div
                   key={toggle.key}
-                  className="flex items-center justify-between p-3 rounded-2xl hover:bg-slate-50 transition-colors"
+                  className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition-colors hover:bg-white"
                 >
                   <div className="space-y-0.5">
                     <Label className="text-sm font-black text-slate-700">
@@ -1231,7 +1231,7 @@ export default function AdminDashboard() {
               ))}
 
               <div className="grid grid-cols-3 gap-3 pt-2">
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-center gap-2 text-slate-400">
                     <Mail className="w-4 h-4" />
                     <span className="text-[10px] uppercase font-black tracking-widest">
@@ -1243,7 +1243,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-center gap-2 text-slate-400">
                     <Link2 className="w-4 h-4" />
                     <span className="text-[10px] uppercase font-black tracking-widest">
@@ -1255,7 +1255,7 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-center gap-2 text-slate-400">
                     <Activity className="w-4 h-4" />
                     <span className="text-[10px] uppercase font-black tracking-widest">
@@ -1270,7 +1270,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-none bg-slate-900 text-white rounded-3xl overflow-hidden ring-1 ring-white/10">
+          <Card className="overflow-hidden rounded-2xl border border-[#0E1F53]/10 bg-[#0E1F53] text-white shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 <Download className="w-6 h-6 text-white" />
@@ -1288,7 +1288,7 @@ export default function AdminDashboard() {
 
               <Button
                 variant="default"
-                className="w-full h-14 rounded-2xl font-black bg-orange-500 text-white hover:bg-orange-600 shadow-xl shadow-orange-500/20 transition-all active:scale-95 border-none"
+                className="h-14 w-full rounded-2xl border-none bg-[#FF8400] font-black text-white shadow-lg shadow-[#FF8400]/20 transition-all hover:bg-[#e67800] active:scale-95"
                 onClick={() => {
                   const csv =
                     "Email,Quelle,Datum\n" +
@@ -1322,7 +1322,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-none bg-slate-800 text-white rounded-3xl overflow-hidden ring-1 ring-white/10">
+          <Card className="overflow-hidden rounded-2xl border border-[#0E1F53]/10 bg-[#10265f] text-white shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 <Activity className="w-6 h-6 text-blue-400" />
@@ -1340,7 +1340,7 @@ export default function AdminDashboard() {
 
               <Button
                 variant="default"
-                className="w-full h-14 rounded-2xl font-black bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-600/20 transition-all active:scale-95 border-none"
+                className="h-14 w-full rounded-2xl border-none bg-[#FF8400] font-black text-white shadow-lg shadow-[#FF8400]/20 transition-all hover:bg-[#e67800] active:scale-95"
                 onClick={() => {
                   const csv =
                     "Seite,Typ,Landcode,Land,Datum\n" +
@@ -1377,9 +1377,9 @@ export default function AdminDashboard() {
       {/* CONTENT INTELLIGENCE */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100 group overflow-hidden">
-          <CardHeader className="bg-slate-50/50 p-6">
+          <CardHeader className="border-b border-slate-200 bg-slate-50/80 p-6">
             <CardTitle className="flex items-center gap-2 text-lg font-black">
-              <Globe className="w-5 h-5 text-blue-500 group-hover:animate-pulse" />
+              <Globe className="w-5 h-5 text-[#0E1F53] group-hover:animate-pulse" />
               Meistgelesen (Zeitraum)
             </CardTitle>
           </CardHeader>
@@ -1394,7 +1394,7 @@ export default function AdminDashboard() {
                 topContentItems.map((item) => (
                   <div
                     key={`${item.type}-${item.name}`}
-                    className="flex justify-between items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-transparent hover:border-blue-100 transition-all"
+                    className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 transition-all hover:border-orange-200 hover:bg-white"
                   >
                     <div className="flex flex-col min-w-0 max-w-[72%]">
                       <span className="text-xs font-black text-slate-400 uppercase tracking-tighter mb-1">
@@ -1409,7 +1409,7 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-black bg-blue-50 text-blue-600 px-3 py-1.5 rounded-full flex gap-2 items-center">
+                      <span className="flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-black text-[#FF8400]">
                         <Eye className="w-3 h-3" />
                         {item.count}
                       </span>
@@ -1432,9 +1432,9 @@ export default function AdminDashboard() {
         </Card>
 
         <Card className="shadow-sm border-none bg-white rounded-3xl ring-1 ring-slate-100 group overflow-hidden">
-          <CardHeader className="bg-slate-50/50 p-6">
+          <CardHeader className="border-b border-slate-200 bg-slate-50/80 p-6">
             <CardTitle className="flex items-center gap-2 text-lg font-black">
-              <MessageSquare className="w-5 h-5 text-purple-500 group-hover:animate-bounce" />
+              <MessageSquare className="w-5 h-5 text-[#FF8400] group-hover:animate-bounce" />
               Heiß diskutiert (Zeitraum)
             </CardTitle>
           </CardHeader>
@@ -1449,7 +1449,7 @@ export default function AdminDashboard() {
                 topForumItems.map((item) => (
                   <div
                     key={`${item.type}-${item.name}`}
-                    className="flex justify-between items-center gap-4 bg-slate-50/50 p-4 rounded-2xl border border-transparent hover:border-purple-100 transition-all"
+                    className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50/80 p-4 transition-all hover:border-orange-200 hover:bg-white"
                   >
                     <div className="flex flex-col min-w-0 max-w-[72%]">
                       <span className="text-xs font-black text-slate-400 uppercase tracking-tighter mb-1">
@@ -1464,7 +1464,7 @@ export default function AdminDashboard() {
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className="text-xs font-black bg-purple-50 text-purple-600 px-3 py-1.5 rounded-full flex gap-2 items-center">
+                      <span className="flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-black text-[#FF8400]">
                         <Eye className="w-3 h-3" />
                         {item.count}
                       </span>
@@ -1489,10 +1489,10 @@ export default function AdminDashboard() {
 
       {/* EXTERNAL REPORT */}
       {(settings as any)?.custom_report_url && (
-        <Card className="shadow-lg border-none bg-white rounded-3xl overflow-hidden ring-1 ring-slate-100">
-          <CardHeader className="bg-slate-50/50 p-6">
-            <CardTitle className="text-lg font-black flex items-center gap-2">
-              <Globe className="w-5 h-5 text-blue-500" />
+        <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <CardHeader className="border-b border-slate-200 bg-slate-50/80 p-6">
+            <CardTitle className="flex items-center gap-2 text-lg font-black text-[#0E1F53]">
+              <Globe className="w-5 h-5 text-[#0E1F53]" />
               Google Looker Studio Report
             </CardTitle>
           </CardHeader>

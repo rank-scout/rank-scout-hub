@@ -157,11 +157,11 @@ export const ExportTemplate: React.FC<ExportTemplateProps> = ({
                                             {index === 0 && <span className="text-[10px] font-bold bg-secondary text-white px-2 py-0.5 rounded shadow-sm shadow-orange-500/20 uppercase tracking-wide">Sieger</span>}
                                         </div>
                                         
-                                        <div className="flex items-center justify-center md:justify-start gap-1 mb-3">
-                                            {[...Array(5)].map((_, i) => (
-                                                <i key={i} className={`fas fa-star text-xs ${i < Math.round((project.rating || 0) / 2) ? 'text-accent' : 'text-slate-200'}`}></i>
-                                            ))}
-                                            <span className="text-xs font-bold text-slate-600 ml-1 bg-slate-100 px-1.5 rounded">{project.rating}/10</span>
+                                        <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
+                                            <span className="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-orange-700">
+                                                <i className="fas fa-shield-alt"></i>
+                                                {project.badge_text || (index === 0 ? 'Top-Empfehlung' : 'Beliebt')}
+                                            </span>
                                         </div>
 
                                         {project.features && (

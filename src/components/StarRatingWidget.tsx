@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Star } from 'lucide-react';
+import { MessageSquareText, ThumbsUp, CircleAlert } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -9,15 +9,42 @@ interface StarRatingWidgetProps {
   slug: string;
 }
 
+type FeedbackOption = {
+  label: string;
+  value: number;
+  helper: string;
+  icon: typeof ThumbsUp;
+};
+
+const FEEDBACK_OPTIONS: FeedbackOption[] = [
+  {
+    label: 'Sehr hilfreich',
+    value: 5,
+    helper: 'Klar, nützlich und direkt anwendbar.',
+    icon: ThumbsUp,
+  },
+  {
+    label: 'Teilweise hilfreich',
+    value: 3,
+    helper: 'Grundsätzlich hilfreich, aber noch ausbaufähig.',
+    icon: MessageSquareText,
+  },
+  {
+    label: 'Noch unklar',
+    value: 1,
+    helper: 'Hier fehlt noch etwas oder es braucht mehr Tiefe.',
+    icon: CircleAlert,
+  },
+];
+
 export function StarRatingWidget({ slug }: StarRatingWidgetProps) {
-  const [hoveredStar, setHoveredStar] = useState<number | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stats, setStats] = useState({ avg: 0, count: 0 });
 
   useEffect(() => {
     const voted = localStorage.getItem(`rs_voted_${slug}`);
-    setHasVoted(!!voted); 
+    setHasVoted(!!voted);
     fetchStats();
   }, [slug]);
 
@@ -37,11 +64,11 @@ export function StarRatingWidget({ slug }: StarRatingWidgetProps) {
     if (data) {
       const totalStars = Number(data.seed_total_stars || 0) + Number(data.real_total_stars || 0);
       const totalVotes = Number(data.seed_vote_count || 0) + Number(data.real_vote_count || 0);
-      
+
       if (totalVotes > 0) {
         setStats({
           avg: Number((totalStars / totalVotes).toFixed(1)),
-          count: totalVotes
+          count: totalVotes,
         });
       } else {
         setStats({ avg: 0, count: 0 });
@@ -51,88 +78,88 @@ export function StarRatingWidget({ slug }: StarRatingWidgetProps) {
     }
   };
 
-  const handleVote = async (stars: number) => {
+  const handleVote = async (value: number) => {
     if (hasVoted || isSubmitting) return;
     setIsSubmitting(true);
 
     try {
       const { error } = await supabase.rpc('increment_real_rating', {
         page_slug: slug,
-        submitted_stars: stars,
+        submitted_stars: value,
       });
 
       if (error) throw error;
 
-      localStorage.setItem(`rs_voted_${slug}`, "true");
+      localStorage.setItem(`rs_voted_${slug}`, 'true');
       setHasVoted(true);
-      toast.success("Vielen Dank für dein Feedback!");
+      toast.success('Vielen Dank für dein Feedback!');
       fetchStats();
     } catch (error) {
       console.error('[StarRatingWidget] Error:', error);
-      toast.error("Fehler beim Speichern deiner Bewertung.");
+      toast.error('Fehler beim Speichern deines Feedbacks.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Hilfsfunktion zur Berechnung der Füllung pro Stern
-  const getStarFill = (starIndex: number) => {
-    // Wenn gehovered wird, zeigen wir volle Sterne für das Feedback-Gefühl
-    if (hoveredStar !== null) {
-      return hoveredStar >= starIndex ? 100 : 0;
-    }
-    
-    // Ansonsten berechnen wir die Füllung basierend auf dem Durchschnitt
-    const diff = stats.avg - (starIndex - 1);
-    if (diff >= 1) return 100; // Voller Stern
-    if (diff <= 0) return 0;   // Leerer Stern
-    return diff * 100;         // Teilgefüllter Stern (z.B. 0.7 -> 70%)
-  };
-
   return (
-    <div className="bg-white border border-slate-200 shadow-sm rounded-xl p-8 text-center my-10 max-w-2xl mx-auto">
-      <h3 className="text-xl font-bold text-[#0A0F1C] mb-2">
-        Wie hilfreich war dieser redaktionelle Überblick für dich?
-      </h3>
-      <p className="text-sm text-slate-500 mb-6">Klicke auf die Sterne, um unseren Content zu bewerten.</p>
-      
-      <div className="flex justify-center gap-2">
-        {[1, 2, 3, 4, 5].map((star) => (
-          <button
-            key={star}
-            onClick={() => handleVote(star)}
-            onMouseEnter={() => !hasVoted && setHoveredStar(star)}
-            onMouseLeave={() => setHoveredStar(null)}
-            disabled={isSubmitting || hasVoted}
-            className="relative transition-transform hover:scale-110 focus:outline-none disabled:opacity-100"
-            aria-label={`${star} Sterne vergeben`}
-          >
-            {/* Grauer Hintergrund-Stern */}
-            <Star className="w-10 h-10 text-slate-200" strokeWidth={1.5} />
-            
-            {/* Orangefarbener Vordergrund-Stern mit Teilfüllung */}
-            <div 
-              className="absolute top-0 left-0 overflow-hidden pointer-events-none transition-all duration-300"
-              style={{ width: `${getStarFill(star)}%` }}
-            >
-              <Star className="w-10 h-10 fill-orange-400 text-orange-400" strokeWidth={1.5} />
-            </div>
-          </button>
-        ))}
+    <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-lg shadow-slate-200/30 mb-8">
+      <div className="inline-flex items-center gap-2 rounded-full bg-[#FF8400]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-[#FF8400] mb-4">
+        <MessageSquareText className="w-3.5 h-3.5" />
+        Content-Feedback
       </div>
 
-      <div className="mt-4 text-sm font-medium text-slate-500">
+      <h3 className="text-lg font-bold tracking-tight text-[#0A0F1C] mb-2 leading-tight">
+        War dieser redaktionelle Überblick hilfreich?
+      </h3>
+
+      <p className="text-sm text-slate-500 leading-relaxed mb-5">
+        Gib uns ein kurzes, neutrales Feedback zum Inhalt – ganz ohne Sternebewertung.
+      </p>
+
+      <div className="flex flex-col gap-3">
+        {FEEDBACK_OPTIONS.map((option) => {
+          const Icon = option.icon;
+
+          return (
+            <button
+              key={option.label}
+              onClick={() => handleVote(option.value)}
+              disabled={isSubmitting || hasVoted}
+              className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3.5 text-left transition-all hover:border-[#FF8400]/40 hover:bg-white hover:shadow-sm disabled:opacity-100"
+            >
+              <div className="flex items-center gap-2 mb-1.5 text-sm font-bold text-[#0A0F1C]">
+                <Icon className="w-4 h-4 text-[#FF8400] shrink-0" />
+                <span>{option.label}</span>
+              </div>
+
+              <p className="text-[13px] leading-relaxed text-slate-500">
+                {option.helper}
+              </p>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-5 text-sm text-slate-500">
         {stats.count > 0 ? (
-          <p>Durchschnitt: <span className="text-[#0A0F1C] font-bold">{stats.avg}</span> ({stats.count} Stimmen)</p>
+          <p className="leading-relaxed">
+            <span className="text-[#0A0F1C] font-bold text-base">
+              {Math.round((stats.avg / 5) * 100)} %
+            </span>{' '}
+            der Leser fanden diesen Beitrag hilfreich ({stats.count} Bewertungen)
+          </p>
         ) : (
-          <p>Noch keine Bewertungen. Sei der Erste!</p>
+          <p>Sei der Erste, der diesen Ratgeber bewertet.</p>
         )}
       </div>
 
       {hasVoted && (
-        <div className="mt-6 p-4 bg-green-50 border border-green-100 rounded-xl animate-fade-in">
-          <p className="text-green-800 font-medium text-lg">Vielen Dank für dein Feedback!</p>
-          <p className="text-sm text-green-600 mt-1">Deine Bewertung hilft uns, die Inhalte täglich zu verbessern.</p>
+        <div className="mt-5 rounded-2xl border border-green-100 bg-green-50 p-4 animate-fade-in">
+          <p className="text-green-800 font-semibold">Vielen Dank für dein Feedback!</p>
+          <p className="text-sm text-green-600 mt-1 leading-relaxed">
+            Deine Rückmeldung hilft uns, die Inhalte weiter zu verbessern.
+          </p>
         </div>
       )}
     </div>

@@ -2,39 +2,36 @@ import { Navigate, Outlet, NavLink, useLocation, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  LayoutDashboard, 
-  FolderTree, 
-  FileBox, 
-  Link2, 
-  Mail, 
-  Settings, 
-  LogOut, 
-  Search, 
-  Loader2, 
-  Menu, 
-  X, 
-  UploadCloud, 
-  Layers, 
-  BarChart3, 
-  Globe, 
+import {
+  LayoutDashboard,
+  Link2,
+  Mail,
+  Settings,
+  LogOut,
+  Loader2,
+  Menu,
+  X,
+  UploadCloud,
+  BarChart3,
+  Globe,
   BookOpen,
   Smartphone,
-  Handshake, // Neu für Partner
-  Network // Neu für Hubs
+  Handshake,
+  Network,
+  ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-// Navigation Items - KYRA CLEAN UP
 const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/admin" },
-  { label: "Partner & Angebote", icon: Handshake, path: "/admin/projects" }, // Ex-Projekte
+  { label: "Partner & Angebote", icon: Handshake, path: "/admin/projects" },
   { label: "Apps & Deals", icon: Smartphone, path: "/admin/apps" },
-  { label: "Seiten & Hubs", icon: Network, path: "/admin/categories" }, // Ex-Kategorien
+  { label: "Seiten & Hubs", icon: Network, path: "/admin/categories" },
   { label: "Magazin", icon: BookOpen, path: "/admin/forum" },
-  { label: "Massen-Generator", icon: UploadCloud, path: "/admin/multi-publisher" }, // Ex-Publisher
+  { label: "Massen-Generator", icon: UploadCloud, path: "/admin/multi-publisher" },
   { label: "Redirects", icon: BarChart3, path: "/admin/redirects" },
   { label: "Footer-Links", icon: Link2, path: "/admin/footer-links" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },
@@ -47,11 +44,11 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { data: isServerAdmin, isLoading: isVerifyingAdmin } = useQuery({
-    queryKey: ['verify-admin', user?.id],
+    queryKey: ["verify-admin", user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase.rpc('verify_admin_access');
+      const { data, error } = await supabase.rpc("verify_admin_access");
       if (error) {
-        console.error('Admin verification failed:', error);
+        console.error("Admin verification failed:", error);
         return false;
       }
       return data === true;
@@ -62,8 +59,8 @@ export default function AdminLayout() {
 
   if (isLoading || isVerifyingAdmin) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0E1F53]" />
       </div>
     );
   }
@@ -76,142 +73,184 @@ export default function AdminLayout() {
     return <Navigate to="/" replace />;
   }
 
-  const currentTitle = navItems.find((item) => 
-    item.path === "/admin" 
-      ? location.pathname === "/admin" 
-      : location.pathname.startsWith(item.path)
-  )?.label || "Dashboard";
+  const currentTitle =
+    navItems.find((item) =>
+      item.path === "/admin"
+        ? location.pathname === "/admin"
+        : location.pathname.startsWith(item.path)
+    )?.label || "Dashboard";
 
   return (
-    <div className="min-h-screen flex bg-background font-body">
+    <div className="min-h-screen bg-slate-50 text-slate-900">
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-primary/80 backdrop-blur-sm z-40 lg:hidden"
+        <div
+          className="fixed inset-0 z-40 bg-slate-950/50 backdrop-blur-sm lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-primary text-primary-foreground border-r border-white/10 shadow-xl transition-transform lg:translate-x-0 lg:static lg:z-auto",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex flex-col h-full">
-          <div className="h-20 flex items-center justify-between px-6 border-b border-white/10">
-            <Link to="/admin" className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center shadow-lg shadow-secondary/20">
-                <span className="font-display font-bold text-xl text-white">R</span>
+      <div className="flex min-h-screen">
+        <aside
+          className={cn(
+            "fixed inset-y-0 left-0 z-50 flex w-[290px] flex-col border-r border-white/10 bg-[#0E1F53] text-white shadow-2xl transition-transform duration-300 lg:static lg:translate-x-0",
+            sidebarOpen ? "translate-x-0" : "-translate-x-full"
+          )}
+        >
+          <div className="flex h-24 items-center justify-between border-b border-white/10 px-6">
+            <Link to="/admin" className="flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FF8400] shadow-lg shadow-[#FF8400]/30">
+                <span className="text-lg font-black text-white">R</span>
               </div>
-              <div className="flex flex-col">
-                <span className="font-display font-bold text-lg text-white leading-none">
-                  Rank-Scout
-                </span>
-                <span className="text-[10px] text-slate-400 uppercase tracking-widest font-medium mt-1">
-                  Admin Hub
-                </span>
+              <div>
+                <div className="text-lg font-black tracking-tight">Rank-Scout</div>
+                <div className="text-[11px] uppercase tracking-[0.22em] text-slate-300">
+                  Premium Admin
+                </div>
               </div>
             </Link>
+
             <button
-              className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors"
+              className="rounded-xl p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white lg:hidden"
               onClick={() => setSidebarOpen(false)}
             >
-              <X className="w-6 h-6" />
+              <X className="h-5 w-5" />
             </button>
           </div>
 
-          <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto custom-scrollbar">
+          <div className="px-6 pt-6">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-300">
+                <ShieldCheck className="h-4 w-4 text-[#FF8400]" />
+                Kontrollzentrum
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-200">
+                Struktur, Kontrolle und schnelle Aktionen für alle Rank-Scout Bereiche.
+              </p>
+            </div>
+          </div>
+
+          <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-6 custom-scrollbar">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}
                 end={item.path === "/admin"}
                 onClick={() => setSidebarOpen(false)}
-                className={({ isActive }) => cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 group relative overflow-hidden",
-                  isActive
-                    ? "bg-secondary text-white shadow-md translate-x-1"
-                    : "text-slate-300 hover:bg-white/10 hover:text-white hover:translate-x-1"
-                )}
+                className={({ isActive }) =>
+                  cn(
+                    "group flex items-center gap-3 rounded-2xl px-4 py-3.5 text-sm font-semibold transition-all duration-200",
+                    isActive
+                      ? "bg-white text-[#0E1F53] shadow-lg"
+                      : "text-slate-200 hover:bg-white/10 hover:text-white"
+                  )
+                }
               >
                 {({ isActive }) => (
                   <>
-                    <item.icon className={cn(
-                      "w-5 h-5 transition-colors",
-                      isActive ? "text-white" : "text-slate-400 group-hover:text-white"
-                    )} />
-                    <span className="relative z-10">{item.label}</span>
-                    {isActive && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    )}
+                    <div
+                      className={cn(
+                        "flex h-10 w-10 items-center justify-center rounded-xl transition-colors",
+                        isActive
+                          ? "bg-[#FF8400]/15 text-[#FF8400]"
+                          : "bg-white/5 text-slate-300 group-hover:bg-white/10 group-hover:text-white"
+                      )}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <span className="flex-1">{item.label}</span>
+                    <ChevronRight
+                      className={cn(
+                        "h-4 w-4 transition-transform",
+                        isActive
+                          ? "text-[#FF8400]"
+                          : "text-slate-400 group-hover:translate-x-0.5 group-hover:text-white"
+                      )}
+                    />
                   </>
                 )}
               </NavLink>
             ))}
           </nav>
 
-          <div className="p-4 border-t border-white/10 bg-black/20">
-            <div className="flex items-center gap-3 mb-4 px-2">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-600 flex items-center justify-center shadow-inner">
-                <span className="text-sm font-bold text-white">
+          <div className="border-t border-white/10 p-4">
+            <div className="rounded-2xl bg-white/5 p-4">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 border border-white/10 text-sm font-black text-white">
                   {user.email?.charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
-                  {user.email}
-                </p>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                  <p className="text-xs text-slate-400">Online</p>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-white">{user.email}</p>
+                  <div className="mt-1 flex items-center gap-2 text-xs text-slate-300">
+                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                    Admin aktiv
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Link to="/">
-                <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-slate-400 hover:text-white hover:bg-white/5 font-normal">
-                  <Globe className="w-4 h-4" />
-                  Zur Website
+
+              <div className="space-y-2">
+                <Link to="/">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start rounded-xl text-slate-200 hover:bg-white/10 hover:text-white"
+                  >
+                    <Globe className="mr-2 h-4 w-4" />
+                    Zur Website
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={signOut}
+                  className="w-full justify-start rounded-xl text-red-200 hover:bg-red-500/10 hover:text-red-100"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Abmelden
                 </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={signOut}
-                className="w-full justify-start gap-2 text-red-300 hover:text-red-100 hover:bg-red-500/10 font-normal"
-              >
-                <LogOut className="w-4 h-4" />
-                Abmelden
-              </Button>
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
+        </aside>
 
-      <main className="flex-1 flex flex-col min-h-screen transition-all duration-300">
-        <header className="lg:hidden h-16 bg-primary border-b border-white/10 flex items-center px-4 sticky top-0 z-30 shadow-md">
-          <button className="p-2 -ml-2 text-white" onClick={() => setSidebarOpen(true)}>
-            <Menu className="w-6 h-6" />
-          </button>
-          <span className="ml-3 font-display font-bold text-white text-lg">Rank-Scout</span>
-        </header>
+        <main className="flex min-h-screen flex-1 flex-col">
+          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/90 backdrop-blur-md lg:hidden">
+            <div className="flex h-16 items-center justify-between px-4">
+              <button
+                className="rounded-xl border border-slate-200 p-2 text-[#0E1F53]"
+                onClick={() => setSidebarOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="text-base font-black text-[#0E1F53]">Rank-Scout Admin</div>
+              <div className="h-10 w-10 rounded-xl bg-[#FF8400]" />
+            </div>
+          </header>
 
-        <div className="hidden lg:flex h-16 bg-white/80 backdrop-blur-md border-b border-border sticky top-0 z-20 px-8 items-center justify-between">
-          <div className="flex items-center gap-2 text-sm">
-             <span className="text-muted-foreground font-medium">Admin</span>
-             <span className="text-slate-300">/</span>
-             <h1 className="text-primary font-bold text-lg capitalize">{currentTitle}</h1>
-          </div>
-          <div className="flex items-center gap-4">
-             <div className="text-xs font-mono text-muted-foreground bg-slate-100 px-2 py-1 rounded">v2.1.0 Kyra-Hub</div>
-          </div>
-        </div>
+          <div className="hidden lg:block sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur-md">
+            <div className="flex h-20 items-center justify-between px-8">
+              <div>
+                <div className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                  Admin / Übersicht
+                </div>
+                <h1 className="mt-1 text-2xl font-black tracking-tight text-[#0E1F53]">
+                  {currentTitle}
+                </h1>
+              </div>
 
-        <div className="flex-1 p-4 lg:p-8 overflow-x-hidden">
-          <div className="max-w-7xl mx-auto animate-fade-in">
-             <Outlet />
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#FF8400]">
+                <ShieldCheck className="h-4 w-4" />
+                B2B Control Mode
+              </div>
+            </div>
           </div>
-        </div>
-      </main>
+
+          <div className="flex-1 px-4 py-6 lg:px-8 lg:py-8">
+            <div className="mx-auto max-w-[1680px]">
+              <Outlet />
+            </div>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

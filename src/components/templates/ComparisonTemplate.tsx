@@ -1,7 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import React from 'react';
 import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
-import { StarRatingWidget } from '@/components/StarRatingWidget';
 import { sanitizeCmsHtml } from '@/lib/sanitizeHtml';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
@@ -94,48 +92,8 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
   const year = new Date().getFullYear();
   const locationName = category.name.replace(/^Singles\s*/i, '').trim();
 
-  // --- NEU: Dynamische Rating-Logik ---
-  const [dynamicRating, setDynamicRating] = useState<{stars: number, count: number} | null>(null);
-
-  useEffect(() => {
-    const fetchRating = async () => {
-      if (!category?.slug) return;
-      
-      const { data, error } = await supabase
-        .from('page_ratings')
-        .select('total_stars, vote_count')
-        .eq('slug', category.slug)
-        .maybeSingle(); 
-      
-      if (data && data.vote_count > 0) {
-        setDynamicRating({
-          stars: Number((data.total_stars / data.vote_count).toFixed(1)),
-          count: data.vote_count
-        });
-      }
-    };
-    fetchRating();
-  }, [category?.slug]);
-
-  const renderDynamicSchema = () => {
-    if (!dynamicRating) return null;
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": category.name,
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": dynamicRating.stars,
-        "reviewCount": dynamicRating.count,
-        "bestRating": "5",
-        "worstRating": "1"
-      }
-    };
-    return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />;
-  };
-  // --- ENDE NEU ---
-
   // Helper: Sichere URLs
+
   const sanitizeUrl = (url: string | undefined) => {
     if (!url) return '#';
     try {
@@ -272,7 +230,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         <section className="hero-gradient py-16 md:py-24 relative overflow-hidden text-center">
             <div className="max-w-4xl mx-auto px-4 relative z-10">
                 <p className="text-brand-gold text-sm md:text-base tracking-widest uppercase mb-4 font-heading">
-                    <i className="fas fa-star mr-2"></i>{category.h1_title?.replace(/2026/g, year.toString()) || category.name}
+                    <i className="fas fa-award mr-2"></i>{category.h1_title?.replace(/2026/g, year.toString()) || category.name}
                 </p>
                 <h1 className="font-heading font-bold text-3xl md:text-5xl lg:text-6xl text-white leading-tight mb-6">
                     {category.hero_pretitle || 'Empfehlungen und Tarife'} <br/>
@@ -343,7 +301,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                                 {isFirst && (
                                     <div className="p-1">
                                         <span className="inline-block px-4 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-brand-gold to-yellow-500 text-brand-black">
-                                            <i className="fas fa-star mr-1"></i>{p.badge_text || 'Empfehlung'}
+                                            <i className="fas fa-shield-alt mr-1"></i>{p.badge_text || 'Top-Empfehlung'}
                                         </span>
                                     </div>
                                 )}
@@ -355,8 +313,10 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                                         <div className="flex-1 text-center md:text-left">
                                             <h3 className="font-heading font-bold text-xl text-gray-900">{p.name}</h3>
                                             <div className="flex items-center justify-center md:justify-start gap-2 my-2">
-                                                <div className="flex text-brand-gold"><i className="fas fa-star"></i></div>
-                                                <span className="font-bold">{p.rating}/10</span>
+                                                <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-700 border border-amber-100">
+                                                    <i className="fas fa-shield-alt"></i>
+                                                    {p.badge_text || (idx === 0 ? 'Top-Empfehlung' : 'Beliebt')}
+                                                </span>
                                             </div>
                                             <div className="text-sm text-gray-600 space-y-1">
                                                 {p.features?.map((f, i) => (
@@ -390,8 +350,9 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {testimonials.map(t => (
                             <div key={t.id} className="testimonial-card bg-gray-50 p-6 rounded-xl border border-gray-100">
-                                <div className="text-brand-gold text-sm mb-3">
-                                    {[...Array(Math.round(t.rating || 5))].map((_, i) => <i key={i} className="fas fa-star"></i>)}
+                                <div className="text-amber-700 text-xs font-bold uppercase tracking-wide mb-3 inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-1 border border-amber-100">
+                                    <i className="fas fa-comment-dots"></i>
+                                    Nutzerstimme
                                 </div>
                                 <p className="text-gray-700 italic text-sm mb-4">"{t.text}"</p>
                                 <div className="font-bold text-sm text-gray-900">- {t.name}</div>
@@ -408,9 +369,6 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                 <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top || '') }} />
 <div className="prose prose-lg max-w-none mt-8" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom || '') }} />
                 
-                {/* --- NEU: Sterne-Widget und Dynamisches Schema am Ende des Contents --- */}
-                <StarRatingWidget slug={category.slug} />
-                {renderDynamicSchema()}
             </div>
         </section>
 

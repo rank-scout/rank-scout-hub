@@ -7,7 +7,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useCategoryProjects } from "@/hooks/useCategoryProjects";
 import { Button } from "@/components/ui/button";
 import { 
-    Loader2, ShieldCheck, Clock, Users, Lock, Trophy, Star, CheckCircle2, ArrowRight, Home, Lightbulb, Zap,
+    Loader2, ShieldCheck, Clock, Users, Lock, Trophy, CheckCircle2, ArrowRight, Home, Lightbulb, Zap,
     ActivityIcon,
     Scale3DIcon,
     ScaleIcon,
@@ -40,27 +40,32 @@ const getCategoryHeroImage = (category: any) => {
     return "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop";
 };
 
-const RatingStars = ({ rating }: { rating: number }) => {
-    const score = (rating || 9.5) / 2; 
+const EditorialBadgeBlock = ({
+    badgeText,
+    isWinner,
+    index,
+}: {
+    badgeText: string;
+    isWinner: boolean;
+    index: number;
+}) => {
+    const label = isWinner ? badgeText : index < 3 ? "Beliebt" : "Redaktionell eingeordnet";
 
     return (
-        <div className="flex flex-col items-start mt-1">
-            <div className="flex gap-0.5">
-                {[0, 1, 2, 3, 4].map((index) => {
-                    const fill = Math.max(0, Math.min(1, score - index));
-                    const fillPercentage = fill * 100;
-                    
-                    return (
-                        <div key={index} className="relative">
-                            <Star className="w-4 h-4 text-slate-200 fill-current" />
-                            <div className="absolute top-0 left-0 overflow-hidden" style={{ width: `${fillPercentage}%` }}>
-                                <Star className="w-4 h-4 text-[#FFB900] fill-current" />
-                            </div>
-                        </div>
-                    );
-                })}
+        <div className="flex flex-col items-center mt-3 gap-3 text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide text-orange-700">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                {label}
             </div>
-            <div className="flex items-center gap-1.5 mt-2.5 text-[10px] text-slate-500 font-medium bg-slate-50 px-2 py-1 rounded border border-slate-100/50">
+            <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">
+                    Platzierung
+                </div>
+                <div className="mt-1 text-3xl font-extrabold tracking-tight text-[#0A0F1C]">
+                    #{index + 1}
+                </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium bg-slate-50 px-2.5 py-1.5 rounded border border-slate-100/50">
                 <ShieldCheck className="w-3 h-3 text-green-500" />
                 <span>Redaktionelle Einordnung</span>
             </div>
@@ -74,8 +79,6 @@ const ProjectCard = ({ project, index, category }: { project: any, index: number
     const ctaText = category?.project_cta_text || "Zum Anbieter";
     const badgeText = project?.badge_text || category?.hero_badge_text || "AUSGEWÄHLT 2026";
     
-    const ratingValue = project.rating || 9.5;
-    const ratingText = ratingValue >= 9 ? 'EXZELLENT' : (ratingValue >= 8 ? 'SEHR GUT' : 'GUT');
 
     return (
         <div className={`relative flex flex-col md:flex-row bg-white rounded-3xl transition-all duration-500 overflow-hidden mb-6 group ${isWinner ? 'shadow-2xl shadow-orange-500/10 ring-1 ring-orange-500/30 border-orange-500/20' : 'shadow-lg shadow-slate-100 border border-slate-100 hover:shadow-xl hover:-translate-y-1 hover:border-orange-500/30'}`}>
@@ -93,14 +96,7 @@ const ProjectCard = ({ project, index, category }: { project: any, index: number
                         <div className="h-16 w-16 bg-white rounded-2xl flex items-center justify-center font-bold text-slate-400 text-2xl border border-slate-100 shadow-sm">{project.name.charAt(0)}</div>
                     )}
                 </a>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className="font-extrabold text-4xl text-[#0A0F1C] tracking-tighter">{ratingValue}</div>
-                    <div className="flex flex-col items-start leading-none">
-                        <div className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Punkte</div>
-                        <div className="text-xs text-[#0A0F1C] font-bold">{ratingText}</div>
-                    </div>
-                </div>
-                <RatingStars rating={ratingValue} />
+                <EditorialBadgeBlock badgeText={badgeText} isWinner={isWinner} index={index} />
             </div>
 
             {/* CONTENT SEKTION */}
@@ -190,10 +186,10 @@ export default function CategoryDetail() {
 
     // Dynamisch FAQPage anfügen, falls FAQs vorhanden sind (HTML aus Antworten filtern)
     const shouldRenderVisibleFaq =
-  category?.is_internal_generated === true &&
-  category?.template !== 'hub_overview' &&
-  Array.isArray(category.faq_data) &&
-  category.faq_data.length > 0;
+      category?.is_internal_generated === true &&
+      category?.template !== 'hub_overview' &&
+      Array.isArray(category.faq_data) &&
+      category.faq_data.length > 0;
 
     if (shouldRenderVisibleFaq) {
       schema["@graph"].push({
@@ -267,7 +263,7 @@ export default function CategoryDetail() {
     const comparisonTitle = category.comparison_title || "Alle Anbieter im Vergleich";
     const featuresTitle = category.features_title || "Inhalt";
 
-return (
+    return (
       <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-[#FAFAFA]">
         <Helmet>
           <title>{category.meta_title || `${category.name}`}</title>
@@ -371,8 +367,8 @@ return (
                   </section>
                 )}
 
-                {/* --- NEU: Sterne-Widget am absoluten Ende des redaktionellen Contents --- */}
-                <div className="mb-24 mt-8 border-t border-slate-100 pt-10">
+                {/* --- MOBILE WIDGET: Wird nur auf dem Handy angezeigt, da die Sidebar hier wegbricht --- */}
+                <div className="lg:hidden mb-16 mt-8">
                     <StarRatingWidget slug={category.slug} />
                 </div>
 
@@ -380,21 +376,26 @@ return (
               
               {/* SIDEBAR */}
               <aside className="lg:w-1/3 lg:sticky top-24 self-start hidden lg:block max-h-[calc(100vh-120px)] overflow-y-auto pr-2 pb-10 custom-scrollbar">
-                {!hasWidgetCode && topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">AUSGEWÄHLT</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-orange-50 rounded-xl text-orange-500"><Trophy className="w-6 h-6" /></div><p className="font-bold text-[#0A0F1C] text-lg">Hervorgehobener Anbieter</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-[#0A0F1C] leading-tight mb-1.5">{topPick.name}</p><div className="mb-1"><RatingStars rating={topPick.rating} /></div></div></div><Button asChild className="w-full font-bold bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 transition-colors h-14 rounded-xl group/sidebar-btn"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen* <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover/sidebar-btn:translate-x-1" /></a></Button></div>)}
+                {!hasWidgetCode && topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">AUSGEWÄHLT</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-orange-50 rounded-xl text-orange-500"><Trophy className="w-6 h-6" /></div><p className="font-bold text-[#0A0F1C] text-lg">Hervorgehobener Anbieter</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-[#0A0F1C] leading-tight mb-1.5">{topPick.name}</p><div className="mb-1"><EditorialBadgeBlock badgeText={topPick.badge_text || category.hero_badge_text || "AUSGEWÄHLT"} isWinner={true} index={0} /></div></div></div><Button asChild className="w-full font-bold bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 transition-colors h-14 rounded-xl group/sidebar-btn"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen* <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover/sidebar-btn:translate-x-1" /></a></Button></div>)}
                 
                 <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30 mb-8">
                   <p className="font-bold text-[#0A0F1C] mb-6 flex items-center gap-2 text-sm uppercase tracking-widest"><Zap className="w-4 h-4 text-orange-500"/> {featuresTitle}</p>
                   <ul className="text-sm space-y-4 font-medium">
                     {category.long_content_top && (<li><a href="#content-top" className={`flex items-center gap-3 transition-colors ${activeSection==='content-top'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='content-top'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Einleitung</a></li>)}
+                    
+                    {/* KYRA FIX: Das versehentliche ")}" am Ende dieser Zeile wurde entfernt! */}
                     <li><a href="#vergleich" className={`flex items-center gap-3 transition-colors ${activeSection==='vergleich'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='vergleich'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Anbieter & Tarife</a></li>
+                    
                     {category.long_content_bottom && (<li><a href="#content-bottom" className={`flex items-center gap-3 transition-colors ${activeSection==='content-bottom'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='content-bottom'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Ratgeber & Analyse</a></li>)}
                     {category.faq_data && (<li><a href="#faq" className={`flex items-center gap-3 transition-colors ${activeSection==='faq'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='faq'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> FAQ</a></li>)}
                   </ul>
                 </div>
 
+                {/* --- DESKTOP WIDGET: Perfekt platziert in der Sidebar --- */}
+                <StarRatingWidget slug={category.slug} />
+
                 {((category as any).sidebar_ad_html || (category as any).sidebar_ad_image) && (
                     <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-lg shadow-slate-200/30 mb-8 flex flex-col items-center justify-center overflow-hidden">
-
                         <span className="text-[9px] uppercase tracking-widest text-slate-300 font-bold mb-4 w-full text-center">Anzeige</span>
                         {(category as any).sidebar_ad_html ? (
                             <div className="w-full flex justify-center items-center"><div dangerouslySetInnerHTML={{ __html: (category as any).sidebar_ad_html }} /></div>
