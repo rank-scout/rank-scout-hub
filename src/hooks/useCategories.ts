@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CategoryInput, NavigationSettings } from "@/lib/schemas";
+import { isBlockedTopLevelSlug } from "@/lib/routes";
 
 export type Category = {
   id: string;
@@ -70,14 +71,24 @@ export const useCategories = (includeInactive: boolean = false) => {
 };
 
 export const useCategoryBySlug = (slug: string) => {
+  const normalizedSlug = String(slug ?? "").trim().toLowerCase();
+  const shouldBlockLookup = isBlockedTopLevelSlug(normalizedSlug);
+
   return useQuery({
-    queryKey: ["category_v2", slug], // KYRA FIX: Cache-Buster
+    queryKey: ["category_v2", normalizedSlug], // KYRA FIX: Cache-Buster
     queryFn: async () => {
-      const { data, error } = await supabase.from("categories").select("*").eq("slug", slug).single();
+      if (shouldBlockLookup) return null;
+
+      const { data, error } = await supabase
+        .from("categories")
+        .select("*")
+        .eq("slug", normalizedSlug)
+        .maybeSingle();
+
       if (error) throw error;
-      return data as Category;
+      return (data ?? null) as Category | null;
     },
-    enabled: !!slug,
+    enabled: !shouldBlockLookup && !!normalizedSlug,
   });
 };
 

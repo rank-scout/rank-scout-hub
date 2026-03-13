@@ -1,5 +1,17 @@
 const DEFAULT_SITE_URL = "https://rank-scout.com";
 
+const RESERVED_TOP_LEVEL_SLUGS = new Set([
+  "sitemap.xml",
+  "robots.txt",
+  "favicon.ico",
+  "site.webmanifest",
+  "manifest.json",
+  "asset-manifest.json",
+  "browserconfig.xml",
+  "ads.txt",
+  "security.txt",
+]);
+
 function sanitizeSlug(rawSlug: string): string {
   return String(rawSlug ?? "")
     .trim()
@@ -20,6 +32,15 @@ export function normalizeRoutePath(rawPath: string): string {
   return collapsed.length > 1 && collapsed.endsWith("/")
     ? collapsed.slice(0, -1)
     : collapsed;
+}
+
+export function isBlockedTopLevelSlug(rawSlug: string | null | undefined): boolean {
+  const slug = sanitizeSlug(String(rawSlug ?? "")).toLowerCase();
+
+  if (!slug) return true;
+  if (RESERVED_TOP_LEVEL_SLUGS.has(slug)) return true;
+
+  return /\.[a-z0-9]+$/i.test(slug);
 }
 
 export function buildAbsoluteSiteUrl(
