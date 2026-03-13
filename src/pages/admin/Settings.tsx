@@ -204,6 +204,7 @@ export default function AdminSettings() {
   // --- GOOGLE INDEXING STATE (NEU) ---
   const [indexingUrls, setIndexingUrls] = useState("");
   const [isPinging, setIsPinging] = useState(false);
+  const [isGeneratingSitemap, setIsGeneratingSitemap] = useState(false);
 
   const handleIndexPing = async () => {
     if (!indexingUrls.trim()) return;
@@ -243,6 +244,30 @@ export default function AdminSettings() {
       toast({ title: "Fehler beim Pingen", description: error.message || "Unbekannter Fehler", variant: "destructive" });
     } finally {
       setIsPinging(false);
+    }
+  };
+
+  const handleGenerateSitemap = async () => {
+    setIsGeneratingSitemap(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-sitemap');
+
+      if (error) throw error;
+
+      if (!data?.success) {
+        throw new Error(data?.error || data?.message || 'Sitemap konnte nicht generiert werden.');
+      }
+
+      toast({
+        title: 'Sitemap neu generiert',
+        description: `${data.url_count ?? 0} URLs geschrieben. ${data.public_url ? `Live-URL: ${data.public_url}` : ''}`.trim(),
+      });
+    } catch (error: any) {
+      console.error(error);
+      toast({ title: 'Fehler bei der Sitemap', description: error.message || 'Unbekannter Fehler', variant: 'destructive' });
+    } finally {
+      setIsGeneratingSitemap(false);
     }
   };
 
@@ -944,6 +969,26 @@ export default function AdminSettings() {
               >
                 {isPinging ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Rocket className="w-4 h-4 mr-2" />}
                 Jetzt Indexierung beantragen
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-emerald-500/20 bg-emerald-50/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Globe className="w-5 h-5 text-emerald-500"/> Auto-Sitemap</CardTitle>
+              <CardDescription>Generiert die sitemap.xml neu, lädt sie in den öffentlichen Bucket <code>seo-assets</code> und versorgt Nginx über die Bucket-URL.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-muted-foreground">
+                Nutzt aktive Kategorien, Forum-Threads und die geteilte Route-Logik aus den Edge Functions. Affiliate-<code>/go/</code>-Routen bleiben bewusst außen vor.
+              </div>
+              <Button 
+                onClick={handleGenerateSitemap} 
+                disabled={isGeneratingSitemap} 
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                {isGeneratingSitemap ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Globe className="w-4 h-4 mr-2" />}
+                Sitemap neu generieren
               </Button>
             </CardContent>
           </Card>

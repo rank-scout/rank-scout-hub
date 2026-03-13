@@ -513,6 +513,47 @@ export type Database = {
           updated_at?: string | null
         }
       }
+      seo_redirects: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_table: "categories" | "projects"
+          id: string
+          is_active: boolean
+          is_automatic: boolean
+          is_locked: boolean
+          redirect_code: number
+          source_path: string
+          target_path: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_table: "categories" | "projects"
+          id?: string
+          is_active?: boolean
+          is_automatic?: boolean
+          is_locked?: boolean
+          redirect_code?: number
+          source_path: string
+          target_path: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_table?: "categories" | "projects"
+          id?: string
+          is_active?: boolean
+          is_automatic?: boolean
+          is_locked?: boolean
+          redirect_code?: number
+          source_path?: string
+          target_path?: string
+          updated_at?: string
+        }
+      }
       settings: {
         Row: {
           created_at: string | null

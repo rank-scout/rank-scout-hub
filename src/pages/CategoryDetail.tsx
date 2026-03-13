@@ -30,6 +30,7 @@ import { useTrackView } from "@/hooks/useTrackView";
 import { AffiliateDisclaimer } from "@/components/AffiliateDisclaimer";
 import { StarRatingWidget } from "@/components/StarRatingWidget";
 import { sanitizeCmsHtml, sanitizeCmsHtmlWithBreaks } from "@/lib/sanitizeHtml";
+import { getCategoryCanonicalUrl } from "@/lib/routes";
 
 const getCategoryHeroImage = (category: any) => {
     if (category.hero_image_url) return category.hero_image_url;
@@ -242,7 +243,7 @@ export default function CategoryDetail() {
   }
 
   const isStandardLayoutPage = (category as any)?.is_internal_generated === true || category?.template === 'review';
-  const currentUrl = `https://rank-scout.com/${category.slug}`;
+  const currentUrl = getCategoryCanonicalUrl(category.slug);
 
   if (category.template === 'hub_overview') {
       return (

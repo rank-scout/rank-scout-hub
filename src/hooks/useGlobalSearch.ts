@@ -1,5 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  getCategoryRoute,
+  getForumCategoryRoute,
+  getForumThreadRoute,
+  getProjectRoute,
+} from "@/lib/routes";
 
 export type SearchResultType = 'category' | 'project' | 'forum_category' | 'forum_thread';
 
@@ -35,7 +41,7 @@ export const useGlobalSearch = (searchQuery: string) => {
           type: "category",
           title: c.name,
           subtitle: c.description,
-          url: `/kategorien/${c.slug}`,
+          url: getCategoryRoute(c.slug),
           icon: c.icon || "📊"
         }));
       }
@@ -53,7 +59,7 @@ export const useGlobalSearch = (searchQuery: string) => {
           type: "project",
           title: p.name,
           subtitle: p.short_description,
-          url: `/go/${p.slug}`,
+          url: getProjectRoute(p.slug),
           icon: "🚀"
         }));
       }
@@ -72,7 +78,7 @@ export const useGlobalSearch = (searchQuery: string) => {
           type: "forum_category",
           title: fc.name,
           subtitle: "Forum Bereich",
-          url: `/forum/kategorie/${fc.slug}`,
+          url: getForumCategoryRoute(fc.slug),
           icon: "👥"
         }));
       }
@@ -91,7 +97,7 @@ export const useGlobalSearch = (searchQuery: string) => {
           type: "forum_thread",
           title: t.title,
           subtitle: "Community Diskussion",
-          url: `/forum/${t.slug}`,
+          url: getForumThreadRoute(t.slug),
           icon: "💬"
         }));
       }

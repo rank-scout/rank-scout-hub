@@ -17,6 +17,7 @@ import { useHomeContent } from "@/hooks/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getCategoriesRoute, getCategoryRoute } from "@/lib/routes";
 
 const getIconForCategory = (slug: string) => {
   const s = slug.toLowerCase();
@@ -91,7 +92,7 @@ export const CategoriesSection = () => {
               return (
                 <Link
                   key={category.id}
-                  to={`/category/${category.slug}`}
+                  to={getCategoryRoute(category.slug)}
                   className="group relative flex flex-col p-8 bg-white rounded-[2rem] border border-primary/10 transition-all duration-500 hover:border-secondary/40 hover:bg-secondary/[0.02] active:scale-[0.98] overflow-hidden"
                 >
                   {/* Icon Wrapper: Blau (Normal) -> Orange (Hover) */}
@@ -127,7 +128,7 @@ export const CategoriesSection = () => {
             className="gap-3 h-14 px-10 rounded-full border-primary/10 text-primary font-bold hover:bg-secondary hover:text-white hover:border-secondary transition-all duration-300 shadow-none" 
             asChild
           >
-            <Link to="/kategorien">
+            <Link to={getCategoriesRoute()}>
               <Widget weight="Bold" className="w-5 h-5" />
               Alle Kategorien durchstöbern
             </Link>

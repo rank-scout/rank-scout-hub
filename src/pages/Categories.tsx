@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search, ArrowRight, Loader2 } from "lucide-react";
 import { Helmet } from "react-helmet-async"; 
 import { useTrackView } from "@/hooks/useTrackView";
+import { getCategoriesCanonicalUrl, getCategoryRoute } from "@/lib/routes";
 
 export default function Categories() {
   useTrackView("categories-overview", "page");
@@ -81,7 +82,7 @@ export default function Categories() {
       <Helmet>
         <title>Alle Kategorien im Vergleich | Rank-Scout</title>
         <meta name="description" content="Finde den passenden Vergleich für deine Bedürfnisse. Alle Kategorien von Software bis Finanzen in der Übersicht." />
-        <link rel="canonical" href="https://rank-scout.com/kategorien" />
+        <link rel="canonical" href={getCategoriesCanonicalUrl()} />
       </Helmet>
 
       <Header />
@@ -128,7 +129,7 @@ export default function Categories() {
                   return (
                     <Link 
                       key={category.id} 
-                      to={`/${category.slug}`}
+                      to={getCategoryRoute(category.slug)}
                       className="group block h-full"
                     >
                       <div className={`h-full bg-white rounded-3xl p-6 border transition-all duration-300 relative overflow-hidden flex flex-col ${theme.border} hover:shadow-lg`}>
