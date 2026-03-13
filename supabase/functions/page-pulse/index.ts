@@ -1,27 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
-}
-
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
-  }
-
-  try {
-    const { pageName, type } = await req.json()
-
-    if (!pageName || !type) {
-      return new Response(JSON.stringify({ error: 'Missing parameters' }), { 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 
-      })
-    }
-
-    import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -67,20 +44,11 @@ serve(async (req) => {
 
   try {
     const body = await req.json().catch(() => null);
-    const rawPageName = body?.pageName;
-    const rawType = body?.type;
-
-    const pageName = typeof rawPageName === "string" ? rawPageName.trim() : "";
-    const type = typeof rawType === "string" ? rawType.trim() : "";
+    const pageName = typeof body?.pageName === "string" ? body.pageName.trim() : "";
+    const type = typeof body?.type === "string" ? body.type.trim() : "";
 
     if (!pageName || !type) {
-      return json(
-        {
-          error: "Missing parameters",
-          received: { pageName: rawPageName, type: rawType },
-        },
-        400
-      );
+      return json({ error: "Missing parameters" }, 400);
     }
 
     const ip = getClientIp(req);
@@ -118,56 +86,13 @@ serve(async (req) => {
       });
 
     if (error) {
-      console.error("page-pulse db error", {
-        error,
-        payload,
-      });
-
-      return json(
-        {
-          error: "DB insert failed",
-          details: error.message,
-        },
-        500
-      );
+      console.error("DB Insert Error:", error.message);
+      return json({ error: "DB insert failed", details: error.message }, 500);
     }
 
-    return json({
-      success: true,
-      tracked: {
-        pageName,
-        type,
-        country,
-        today,
-      },
-    });
+    return json({ success: true });
   } catch (error) {
-    console.error("page-pulse fatal error", error);
-
-    return json(
-      {
-        error: "Internal Server Error",
-        details: error instanceof Error ? error.message : String(error),
-      },
-      500
-    );
+    console.error("Fatal Server Error:", error);
+    return json({ error: "Internal Server Error" }, 500);
   }
 });
-
-    if (error) {
-        console.error("DB Insert Error:", error);
-        throw error;
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 200,
-    })
-  } catch (error) {
-    console.error("Pulse Error:", error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    })
-  }
-})
