@@ -22,6 +22,7 @@ export interface ForumThread {
   seo_title?: string;
   seo_description?: string;
   featured_image_url?: string;
+  featured_image_alt?: string;
   admin_notes?: string;
   status?: string;
   raw_html_content?: string;
@@ -31,9 +32,40 @@ export interface ForumThread {
   show_ad?: boolean;
   ad_type?: string;
   ad_image_url?: string;
+  ad_image_alt?: string;
   ad_link_url?: string;
   ad_html_code?: string;
   ad_cta_text?: string;
+}
+
+export interface ForumThreadWritePayload {
+  title: string;
+  slug: string;
+  content: string;
+  author_name: string;
+  category_id: string | null;
+  seo_title?: string;
+  seo_description?: string;
+  featured_image_url?: string;
+  featured_image_alt?: string;
+  is_pinned?: boolean;
+  is_locked?: boolean;
+  is_answered?: boolean;
+  is_active?: boolean;
+  admin_notes?: string;
+  status?: string;
+  raw_html_content?: string;
+  show_ad?: boolean;
+  ad_type?: string;
+  ad_image_url?: string;
+  ad_image_alt?: string;
+  ad_link_url?: string;
+  ad_html_code?: string;
+  ad_cta_text?: string;
+}
+
+export interface ForumThreadUpdatePayload extends Partial<ForumThreadWritePayload> {
+  id: string;
 }
 
 export interface ForumCategory {
@@ -209,7 +241,7 @@ export const useThreadReplies = (threadId: string, userId?: string) => {
 export const useCreateThread = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (thread: any) => {
+    mutationFn: async (thread: ForumThreadWritePayload) => {
       const { data, error } = await supabase.from("forum_threads").insert([thread]).select().single();
       if (error) throw error;
       return data;
@@ -223,7 +255,7 @@ export const useCreateThread = () => {
 export const useUpdateThread = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: any) => {
+    mutationFn: async ({ id, ...updates }: ForumThreadUpdatePayload) => {
       const { error } = await supabase.from("forum_threads").update(updates).eq("id", id);
       if (error) throw error;
     },

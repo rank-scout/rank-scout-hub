@@ -73,6 +73,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { optimizeSupabaseImageUrl } from "@/lib/sanitizeHtml";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 
 const EMPTY_THREAD = {
   title: "",
@@ -83,6 +85,7 @@ const EMPTY_THREAD = {
   seo_title: "",
   seo_description: "",
   featured_image_url: "",
+  featured_image_alt: "",
   is_pinned: false,
   is_locked: false,
   is_answered: false,
@@ -93,6 +96,7 @@ const EMPTY_THREAD = {
   show_ad: true, 
   ad_type: "image",
   ad_image_url: "",
+  ad_image_alt: "",
   ad_link_url: "",
   ad_html_code: "",
   ad_cta_text: "Jetzt ansehen",
@@ -114,6 +118,56 @@ const EMPTY_CATEGORY = {
   ad_headline: "", 
   ad_subheadline: "", 
   ad_cta_text: "" 
+};
+
+const looksLikeHtml = (value: string) => /<\/?[a-z][\s\S]*>/i.test(value);
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const convertPlainTextToHtml = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  return trimmed
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br />")}</p>`)
+    .join("");
+};
+
+const normalizeEditorHtml = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return looksLikeHtml(trimmed) ? trimmed : convertPlainTextToHtml(trimmed);
+};
+
+const stripHtmlToPlainText = (value: string) => {
+  if (!value) return "";
+
+  if (typeof window !== "undefined") {
+    const element = document.createElement("div");
+    element.innerHTML = value;
+    return (element.textContent || element.innerText || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim();
+  }
+
+  return value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
 };
 
 export default function AdminForum() {
@@ -184,29 +238,40 @@ export default function AdminForum() {
     });
   };
 
-  const handleNewThread = () => { setEditingThread(null); setFormData(EMPTY_THREAD); setEditorOpen(true); };
+  const handleNewThread = () => {
+    setEditingThread(null);
+    setEditorMode("visual");
+    setFormData(EMPTY_THREAD);
+    setEditorOpen(true);
+  };
   
   const handleEditThread = (thread: ForumThread) => {
+    const editorHtml = normalizeEditorHtml(thread.raw_html_content || thread.content || "");
+    const plainTextContent = stripHtmlToPlainText(editorHtml || thread.content || "");
+
     setEditingThread(thread);
+    setEditorMode("visual");
     setFormData({
-      title: thread.title, 
-      slug: thread.slug, 
-      content: thread.content, 
-      raw_html_content: thread.raw_html_content || "",
-      author_name: thread.author_name || "Redaktion", 
-      seo_title: thread.seo_title || "", 
+      title: thread.title,
+      slug: thread.slug,
+      content: plainTextContent,
+      raw_html_content: editorHtml,
+      author_name: thread.author_name || "Redaktion",
+      seo_title: thread.seo_title || "",
       seo_description: thread.seo_description || "",
-      featured_image_url: thread.featured_image_url || "", 
-      is_pinned: thread.is_pinned || false, 
-      is_locked: thread.is_locked || false, 
-      is_answered: thread.is_answered || false, 
-      is_active: thread.is_active !== false, 
+      featured_image_url: optimizeSupabaseImageUrl(thread.featured_image_url || "", 1536, 80),
+      featured_image_alt: thread.featured_image_alt || "",
+      is_pinned: thread.is_pinned || false,
+      is_locked: thread.is_locked || false,
+      is_answered: thread.is_answered || false,
+      is_active: thread.is_active !== false,
       admin_notes: thread.admin_notes || "",
-      status: thread.status || "published", 
+      status: thread.status || "published",
       category_id: thread.category_id || null,
       show_ad: thread.show_ad ?? true,
       ad_type: thread.ad_type || "image",
-      ad_image_url: thread.ad_image_url || "",
+      ad_image_url: optimizeSupabaseImageUrl(thread.ad_image_url || "", 800, 80),
+      ad_image_alt: thread.ad_image_alt || "",
       ad_link_url: thread.ad_link_url || "",
       ad_html_code: thread.ad_html_code || "",
       ad_cta_text: thread.ad_cta_text || "Jetzt ansehen",
@@ -225,19 +290,48 @@ export default function AdminForum() {
       const { error: uploadError } = await supabase.storage.from("forum-images").upload(fileName, processedFile);
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("forum-images").getPublicUrl(fileName);
-      setFormData((prev) => ({ ...prev, featured_image_url: urlData.publicUrl, }));
+      const optimizedImageUrl = optimizeSupabaseImageUrl(urlData.publicUrl, 1536, 80);
+      setFormData((prev) => ({ ...prev, featured_image_url: optimizedImageUrl }));
       toast.success("Bild auf 1536x1024px zugeschnitten & hochgeladen!");
     } catch (error) { toast.error("Fehler beim Bild-Upload"); } finally { setImageUploading(false); }
   };
 
+  const syncEditorContent = (htmlValue: string) => {
+    const normalizedHtml = normalizeEditorHtml(htmlValue);
+    const plainTextContent = stripHtmlToPlainText(normalizedHtml);
+
+    setFormData((prev) => ({
+      ...prev,
+      raw_html_content: normalizedHtml,
+      content: plainTextContent,
+    }));
+  };
+
   const handleSaveThread = async () => {
-    if (!formData.title || !formData.content) { toast.error("Titel und Inhalt sind erforderlich"); return; }
+    const normalizedHtml = normalizeEditorHtml(formData.raw_html_content || formData.content);
+    const plainTextContent = stripHtmlToPlainText(normalizedHtml);
+
+    if (!formData.title.trim() || !plainTextContent) {
+      toast.error("Titel und Inhalt sind erforderlich");
+      return;
+    }
+
     try {
+      const normalizedThreadData = {
+        ...formData,
+        content: plainTextContent,
+        raw_html_content: normalizedHtml,
+        featured_image_url: optimizeSupabaseImageUrl(formData.featured_image_url, 1536, 80),
+        featured_image_alt: formData.featured_image_alt.trim(),
+        ad_image_url: optimizeSupabaseImageUrl(formData.ad_image_url, 800, 80),
+        ad_image_alt: formData.ad_image_alt.trim(),
+      };
+
       if (editingThread?.id) { 
-          await updateThread.mutateAsync({ id: editingThread.id, ...formData, }); 
+          await updateThread.mutateAsync({ id: editingThread.id, ...normalizedThreadData, }); 
           toast.success("Beitrag aktualisiert"); 
       } else { 
-          await createThread.mutateAsync(formData); 
+          await createThread.mutateAsync(normalizedThreadData); 
           toast.success("Beitrag erstellt"); 
       }
       setEditorOpen(false);
@@ -268,7 +362,7 @@ export default function AdminForum() {
       seo_description: category.seo_description || "",
       ad_enabled: category.ad_enabled || false,
       assigned_ad_id: category.assigned_ad_id || "",
-      ad_image_url: category.ad_image_url || "",
+      ad_image_url: optimizeSupabaseImageUrl(category.ad_image_url || "", 800, 80),
       ad_link_url: category.ad_link_url || "",
       ad_html_code: category.ad_html_code || "",
       ad_headline: category.ad_headline || "",
@@ -283,7 +377,11 @@ export default function AdminForum() {
   const handleSaveCategory = async () => {
     if (!categoryFormData.name || !categoryFormData.slug) { toast.error("Name und Slug sind erforderlich"); return; }
     try {
-      if (editingCategory?.id) { await updateCategory.mutateAsync({ id: editingCategory.id, ...categoryFormData, }); toast.success("Kategorie aktualisiert"); } else { await createCategory.mutateAsync(categoryFormData); toast.success("Kategorie erstellt"); }
+      const normalizedCategoryData = {
+        ...categoryFormData,
+        ad_image_url: optimizeSupabaseImageUrl(categoryFormData.ad_image_url, 800, 80),
+      };
+      if (editingCategory?.id) { await updateCategory.mutateAsync({ id: editingCategory.id, ...normalizedCategoryData, }); toast.success("Kategorie aktualisiert"); } else { await createCategory.mutateAsync(normalizedCategoryData); toast.success("Kategorie erstellt"); }
       setCategoryEditorOpen(false);
     } catch (error) { toast.error("Fehler beim Speichern"); }
   };
@@ -367,8 +465,40 @@ export default function AdminForum() {
                     <strong>Image-Performance-Gesetz:</strong> Wir erlauben nur noch Uploads. So wird jedes Bild automatisch optimiert und über unsere Render-API blitzschnell geladen.
                   </p>
                 </div>
+                <div><Label>Featured Image Alt-Text</Label><Input value={formData.featured_image_alt} onChange={(e) => setFormData((p) => ({ ...p, featured_image_alt: e.target.value }))} placeholder="Präziser Alt-Text für das Beitragsbild" /></div>
             </div>
-            <div><div className="flex items-center justify-between mb-2"><Label>Inhalt *</Label><div className="flex gap-1"><Button variant={editorMode === "visual" ? "secondary" : "ghost"} size="sm" onClick={() => setEditorMode("visual")}><FileText className="w-4 h-4 mr-1" />Visual</Button><Button variant={editorMode === "code" ? "secondary" : "ghost"} size="sm" onClick={() => setEditorMode("code")}><Code className="w-4 h-4 mr-1" />HTML</Button></div></div>{editorMode === "visual" ? (<Textarea value={formData.content} onChange={(e) => setFormData((p) => ({ ...p, content: e.target.value }))} rows={10} placeholder="Beitragsinhalt..." />) : (<Textarea value={formData.raw_html_content} onChange={(e) => setFormData((p) => ({ ...p, raw_html_content: e.target.value, }))} rows={10} className="font-mono text-sm" placeholder="<p>Raw HTML Content...</p>" />)}</div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Inhalt *</Label>
+                <div className="flex gap-1">
+                  <Button type="button" variant={editorMode === "visual" ? "secondary" : "ghost"} size="sm" onClick={() => setEditorMode("visual")}><FileText className="w-4 h-4 mr-1" />Visual</Button>
+                  <Button type="button" variant={editorMode === "code" ? "secondary" : "ghost"} size="sm" onClick={() => setEditorMode("code")}><Code className="w-4 h-4 mr-1" />HTML</Button>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 mb-3 text-xs text-slate-600 leading-relaxed">
+                Visual und HTML laufen jetzt über dieselbe Quelle. Änderungen werden sofort bidirektional synchronisiert. Bilder aus dem visuellen Editor landen automatisch im Bucket <strong>forum-images</strong> und werden per Render-API eingebunden.
+              </div>
+
+              {editorMode === "visual" ? (
+                <RichTextEditor
+                  value={formData.raw_html_content}
+                  onChange={syncEditorContent}
+                  uploadBucket="forum-images"
+                  imageWidth={1280}
+                  imageQuality={80}
+                  className="min-h-[360px]"
+                />
+              ) : (
+                <Textarea
+                  value={formData.raw_html_content}
+                  onChange={(e) => syncEditorContent(e.target.value)}
+                  rows={14}
+                  className="font-mono text-sm"
+                  placeholder="<p>Raw HTML Content...</p>"
+                />
+              )}
+            </div>
             
             <div className="flex flex-wrap gap-6 items-center border-t pt-4">
                 <div className="flex items-center gap-2"><Switch checked={formData.is_pinned} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_pinned: v }))} /><Label>Angepinnt</Label></div>
@@ -396,7 +526,8 @@ export default function AdminForum() {
                     </RadioGroup>
                     {formData.ad_type === 'image' ? (
                         <div className="grid md:grid-cols-2 gap-4">
-                            <div><Label>Bild URL</Label><Input value={formData.ad_image_url} onChange={(e) => setFormData(p => ({...p, ad_image_url: e.target.value}))} placeholder="https://..." /></div>
+                            <div><Label>Bild URL</Label><Input value={formData.ad_image_url} onChange={(e) => setFormData(p => ({...p, ad_image_url: optimizeSupabaseImageUrl(e.target.value, 800, 80)}))} placeholder="https://..." /></div>
+                            <div><Label>Bild Alt-Text</Label><Input value={formData.ad_image_alt} onChange={(e) => setFormData(p => ({...p, ad_image_alt: e.target.value}))} placeholder="Präziser Alt-Text für das Werbebild" /></div>
                             <div><Label>Ziel-Link</Label><div className="flex gap-2"><LinkIcon className="w-4 h-4 text-muted-foreground mt-3" /><Input value={formData.ad_link_url} onChange={(e) => setFormData(p => ({...p, ad_link_url: e.target.value}))} placeholder="https://dein-angebot.de" /></div></div>
                             <div><Label>Button Text (CTA)</Label><Input value={formData.ad_cta_text} onChange={(e) => setFormData(p => ({...p, ad_cta_text: e.target.value}))} placeholder="Jetzt ansehen" /></div>
                         </div>
@@ -447,7 +578,7 @@ export default function AdminForum() {
                                     </RadioGroup>
                                     {manualAdType === 'image' ? (
                                         <div className="grid grid-cols-2 gap-4">
-                                            <Input value={categoryFormData.ad_image_url} onChange={(e) => setCategoryFormData(p => ({...p, ad_image_url: e.target.value}))} placeholder="Bild URL" />
+                                            <Input value={categoryFormData.ad_image_url} onChange={(e) => setCategoryFormData(p => ({...p, ad_image_url: optimizeSupabaseImageUrl(e.target.value, 800, 80)}))} placeholder="Bild URL" />
                                             <Input value={categoryFormData.ad_link_url} onChange={(e) => setCategoryFormData(p => ({...p, ad_link_url: e.target.value}))} placeholder="Ziel Link" />
                                         </div>
                                     ) : (

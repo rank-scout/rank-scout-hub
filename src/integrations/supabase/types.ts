@@ -313,40 +313,94 @@ export type Database = {
       }
       forum_threads: {
         Row: {
+          ad_cta_text: string | null
+          ad_html_code: string | null
+          ad_image_alt: string | null
+          ad_image_url: string | null
+          ad_link_url: string | null
+          ad_type: string | null
+          admin_notes: string | null
           author_id: string | null
+          author_name: string | null
           category_id: string | null
           content: string
           created_at: string | null
+          featured_image_alt: string | null
+          featured_image_url: string | null
           id: string
+          is_active: boolean | null
+          is_answered: boolean | null
+          is_locked: boolean | null
           is_pinned: boolean | null
           last_activity_at: string | null
+          raw_html_content: string | null
+          seo_description: string | null
+          seo_title: string | null
+          show_ad: boolean | null
           slug: string
+          status: string | null
           title: string
           updated_at: string | null
           views: number | null
         }
         Insert: {
+          ad_cta_text?: string | null
+          ad_html_code?: string | null
+          ad_image_alt?: string | null
+          ad_image_url?: string | null
+          ad_link_url?: string | null
+          ad_type?: string | null
+          admin_notes?: string | null
           author_id?: string | null
+          author_name?: string | null
           category_id?: string | null
           content: string
           created_at?: string | null
+          featured_image_alt?: string | null
+          featured_image_url?: string | null
           id?: string
+          is_active?: boolean | null
+          is_answered?: boolean | null
+          is_locked?: boolean | null
           is_pinned?: boolean | null
           last_activity_at?: string | null
+          raw_html_content?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          show_ad?: boolean | null
           slug: string
+          status?: string | null
           title: string
           updated_at?: string | null
           views?: number | null
         }
         Update: {
+          ad_cta_text?: string | null
+          ad_html_code?: string | null
+          ad_image_alt?: string | null
+          ad_image_url?: string | null
+          ad_link_url?: string | null
+          ad_type?: string | null
+          admin_notes?: string | null
           author_id?: string | null
+          author_name?: string | null
           category_id?: string | null
           content?: string
           created_at?: string | null
+          featured_image_alt?: string | null
+          featured_image_url?: string | null
           id?: string
+          is_active?: boolean | null
+          is_answered?: boolean | null
+          is_locked?: boolean | null
           is_pinned?: boolean | null
           last_activity_at?: string | null
+          raw_html_content?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          show_ad?: boolean | null
           slug?: string
+          status?: string | null
           title?: string
           updated_at?: string | null
           views?: number | null

@@ -25,8 +25,8 @@ const URLS_TO_INDEX = [
 '/kreditkarten-vergleich',
 '/baufinanzierung-vergleich',
 '/stromvergleich',
+'/forum/strompreisvergleich-2026-abzocke-stoppen',
 '/gadgets-gegen-nackenschmerzen',
-'/kredit-vergleich-testsieger',
 '/dsl-vergleich-rank-scout',
 ];
 

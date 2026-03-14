@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { sanitizeForumHtml } from "@/lib/sanitizeHtml";
+import { optimizeSupabaseImageUrl, sanitizeForumHtml } from "@/lib/sanitizeHtml";
 import {
   useForumThread,
   useThreadReplies,
@@ -161,6 +161,8 @@ export default function ForumThread() {
 
   useForceSEO(seoDescription);
   const canonicalUrl = window.location.href;
+  const featuredImageAlt = thread?.featured_image_alt?.trim() || thread?.title || "Rank-Scout Forum Beitrag";
+  const adImageAlt = thread?.ad_image_alt?.trim() || thread?.title || "Rank-Scout Anzeige";
 
   const getInitial = (name: string) => (name ? name.charAt(0).toUpperCase() : "U");
 
@@ -217,8 +219,13 @@ export default function ForumThread() {
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="article" />
         {thread.featured_image_url && (
-          <meta property="og:image" content={thread.featured_image_url} />
+          <>
+            <meta property="og:image" content={optimizeSupabaseImageUrl(thread.featured_image_url, 1200, 80)} />
+            <meta property="og:image:alt" content={featuredImageAlt} />
+            <meta name="twitter:image:alt" content={featuredImageAlt} />
+          </>
         )}
+        {thread.ad_image_url && <meta name="rank-scout:ad-image-alt" content={adImageAlt} />}
       </Helmet>
 
       <Header />
@@ -269,7 +276,7 @@ export default function ForumThread() {
                       )}
                     </div>
 
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold mb-6 md:mb-8 leading-[1.15] text-[#0A0F1C] tracking-tight">
+                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold mb-5 md:mb-7 leading-[1.12] text-[#0A0F1C] tracking-tight">
                       {thread.title}
                     </h1>
 
@@ -305,17 +312,22 @@ export default function ForumThread() {
                   </div>
 
                   <FadeIn>
-                    <div
-                      className="prose prose-base md:prose-lg max-w-none prose-slate 
-                        prose-headings:font-extrabold prose-headings:text-[#0A0F1C] prose-headings:tracking-tight 
-                        prose-p:text-slate-600 prose-p:leading-loose 
-                        prose-a:text-orange-500 prose-a:font-bold prose-a:no-underline hover:prose-a:underline 
-                        prose-strong:text-[#0A0F1C] prose-strong:font-bold 
-                        prose-img:rounded-3xl prose-img:shadow-xl prose-img:border prose-img:border-slate-100 prose-img:w-full
-                        prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
-                        prose-table:w-full prose-table:text-sm md:prose-table:text-base prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3"
-                      dangerouslySetInnerHTML={renderContent()}
-                    />
+                    <div className="mx-auto w-full max-w-4xl px-1 sm:px-2">
+                      <div
+                        className="prose prose-sm sm:prose-base max-w-none prose-slate
+                          prose-headings:font-extrabold prose-headings:text-[#0A0F1C] prose-headings:tracking-tight prose-headings:mt-8 prose-headings:mb-4
+                          prose-p:my-4 prose-p:text-slate-600 prose-p:leading-relaxed
+                          prose-li:my-1 prose-li:leading-relaxed prose-ul:my-4 prose-ol:my-4
+                          prose-a:text-orange-500 prose-a:font-bold prose-a:no-underline hover:prose-a:underline
+                          prose-strong:text-[#0A0F1C] prose-strong:font-bold
+                          prose-figure:my-8 prose-figure:overflow-hidden prose-figure:rounded-[1.75rem]
+                          prose-figcaption:mt-3 prose-figcaption:px-3 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-slate-500
+                          prose-img:mx-auto prose-img:block prose-img:max-w-full prose-img:h-auto prose-img:rounded-2xl prose-img:shadow-md prose-img:border prose-img:border-slate-200
+                          prose-blockquote:my-6 prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
+                          prose-table:w-full prose-table:text-sm prose-th:px-3 prose-th:py-3 prose-td:px-3 prose-td:py-3"
+                        dangerouslySetInnerHTML={renderContent()}
+                      />
+                    </div>
                   </FadeIn>
                 </div>
 

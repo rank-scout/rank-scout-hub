@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
 import { useTrackView } from "@/hooks/useTrackView";
+import { optimizeSupabaseImageUrl } from "@/lib/sanitizeHtml";
 
 // --- HELPER ---
 const getCategoryStyle = (slug: string) => {
@@ -196,6 +197,7 @@ export default function Forum() {
     }
     return randomGlobalAd;
   })();
+  const currentAdAlt = currentAd?.ad_image_alt?.trim() || currentAd?.headline?.trim() || "Anzeige";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FAFAFA] font-sans">
@@ -324,8 +326,8 @@ export default function Forum() {
 {thread.featured_image_url && (
    <div className="w-full md:w-[280px] lg:w-[360px] aspect-[3/2] flex-shrink-0 rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 relative">
       <img 
-        src={thread.featured_image_url} 
-        alt={thread.title} 
+        src={optimizeSupabaseImageUrl(thread.featured_image_url, 1536, 80)} 
+        alt={thread.featured_image_alt?.trim() || thread.title} 
         className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         loading="lazy"
       />
@@ -447,7 +449,7 @@ export default function Forum() {
                         </div>
                       )}
                       <a href={currentAd.link_url || "#"} target={currentAd.link_url?.startsWith("http") ? "_blank" : "_self"} rel="noopener noreferrer" className="block relative overflow-hidden rounded-2xl mb-5 border border-slate-100">
-                        <img src={currentAd.image_url} alt={currentAd.headline || "Anzeige"} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
+                        <img src={optimizeSupabaseImageUrl(currentAd.image_url, 800, 80)} alt={currentAdAlt} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
                         <div className="absolute top-3 right-3 bg-black/50 text-white text-[10px] px-2.5 py-1 rounded backdrop-blur-md z-20 font-bold uppercase tracking-widest">Anzeige</div>
                       </a>
                       {currentAd.cta_text && (

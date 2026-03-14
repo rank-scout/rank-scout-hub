@@ -69,6 +69,7 @@ export interface ForumAd {
   type: 'image' | 'code';
   enabled: boolean;
   image_url?: string;
+  ad_image_alt?: string;
   link_url?: string;
   headline?: string;
   subheadline?: string;
