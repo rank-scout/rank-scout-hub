@@ -200,22 +200,27 @@ Deno.serve(async (req) => {
       : null;
 
     if (typeof lastOperationId === "string" && lastOperationId.trim()) {
-      const operationStatus = await cloudflareRequest<{ id: string; status: string }>(
-        `/accounts/${cloudflareAccountId}/rules/lists/bulk_operations/${lastOperationId}`,
-        { method: "GET" },
-        cloudflareApiToken,
-      );
+      try {
+        const operationStatus = await cloudflareRequest<{ id: string; status: string }>(
+          `/accounts/${cloudflareAccountId}/rules/lists/bulk_operations/${lastOperationId}`,
+          { method: "GET" },
+          cloudflareApiToken,
+        );
 
-      const status = operationStatus.result?.status?.toLowerCase();
+        const status = operationStatus.result?.status?.toLowerCase();
 
-      if (status === "pending" || status === "running") {
-        return json({
-          success: false,
-          in_progress: true,
-          message: `Cloudflare meldet noch eine laufende Bulk-Operation (${status}). Bitte kurz warten und dann erneut synchronisieren.`,
-          operation_id: lastOperationId,
-          status,
-        });
+        if (status === "pending" || status === "running") {
+          return json({
+            success: false,
+            in_progress: true,
+            message: `Cloudflare meldet noch eine laufende Bulk-Operation (${status}). Bitte kurz warten und dann erneut synchronisieren.`,
+            operation_id: lastOperationId,
+            status,
+          });
+        }
+      } catch (err) {
+        // Härtung: Fehler bei abgelaufener Cloudflare-ID ignorieren und neuen Sync zulassen
+        console.warn("Letzte Operation-ID ungültig oder abgelaufen. Starte neuen Sync-Prozess.", err instanceof Error ? err.message : String(err));
       }
     }
 
