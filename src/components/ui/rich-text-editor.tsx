@@ -9,6 +9,8 @@ import {
   type NodeViewProps,
 } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import Paragraph from "@tiptap/extension-paragraph";
+import Heading from "@tiptap/extension-heading";
 import UnderlineExtension from "@tiptap/extension-underline";
 import LinkExtension from "@tiptap/extension-link";
 import ImageExtension from "@tiptap/extension-image";
@@ -69,6 +71,84 @@ const parseWidthAttribute = (value: unknown): number | null => {
   return null;
 };
 
+const sanitizeInlineStyle = (styleText?: string | null) => {
+  if (!styleText) return null;
+
+  const safeDeclarations = styleText
+    .split(";")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const colonIndex = entry.indexOf(":");
+      if (colonIndex === -1) return null;
+
+      const property = entry.slice(0, colonIndex).trim().toLowerCase();
+      const value = entry.slice(colonIndex + 1).trim().replace(/\s+/g, " ");
+
+      if (!value || /(?:expression\s*\(|javascript:|vbscript:|@import|behavior\s*:|url\s*\()/i.test(value)) {
+        return null;
+      }
+
+      if (!["background", "background-color", "color", "text-align", "border", "border-color", "border-left-color", "border-right-color", "border-top-color", "border-bottom-color", "border-radius", "padding", "padding-top", "padding-right", "padding-bottom", "padding-left", "margin", "margin-top", "margin-right", "margin-bottom", "margin-left", "font-size", "font-weight", "font-style", "line-height", "letter-spacing", "display", "justify-content", "align-items", "gap", "white-space", "text-decoration", "box-shadow", "width", "max-width", "height"].includes(property)) {
+        return null;
+      }
+
+      return `${property}: ${value}`;
+    })
+    .filter((entry): entry is string => Boolean(entry));
+
+  return safeDeclarations.length ? safeDeclarations.join("; ") : null;
+};
+
+const INTERNAL_PATH_PATTERN = /^\/(?!\/)/;
+
+const isInternalPathHref = (href?: string | null) => {
+  if (!href) return false;
+  return INTERNAL_PATH_PATTERN.test(String(href).trim());
+};
+
+const normalizeEditorRel = (rel?: string | null) => {
+  if (!rel) return null;
+
+  const safeTokens = Array.from(
+    new Set(
+      String(rel)
+        .split(/\s+/)
+        .map((token) => token.trim().toLowerCase())
+        .filter(Boolean)
+        .filter((token) => !["nofollow", "noopener", "noreferrer"].includes(token))
+    )
+  );
+
+  return safeTokens.length ? safeTokens.join(" ") : null;
+};
+
+const stripEmptyHtmlAttributes = <T extends Record<string, any>>(attributes: T) => {
+  return Object.fromEntries(
+    Object.entries(attributes).filter(([, value]) => value !== null && value !== undefined && value !== "")
+  ) as Partial<T>;
+};
+
+const normalizeEditorLinkAttributes = <T extends Record<string, any>>(attributes: T): T => {
+  const href = typeof attributes.href === "string" ? attributes.href.trim() : "";
+
+  if (isInternalPathHref(href)) {
+    return {
+      ...attributes,
+      href,
+      target: null,
+      rel: null,
+    };
+  }
+
+  return {
+    ...attributes,
+    href,
+    target: attributes.target ?? null,
+    rel: normalizeEditorRel(attributes.rel),
+  };
+};
+
 const sanitizeFileName = (fileName: string) => {
   const withoutExtension = fileName.replace(/\.[^/.]+$/, "");
   const normalized = withoutExtension
@@ -95,6 +175,64 @@ const resolveDefaultImageWidth = (url: string): Promise<number> =>
     image.onerror = () => resolve(IMAGE_DEFAULT_WIDTH);
     image.src = url;
   });
+
+const StyledParagraph = Paragraph.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      class: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("class"),
+        renderHTML: (attributes) => (attributes.class ? { class: attributes.class } : {}),
+      },
+      style: {
+        default: null,
+        parseHTML: (element) => sanitizeInlineStyle(element.getAttribute("style")),
+        renderHTML: (attributes) => (attributes.style ? { style: attributes.style } : {}),
+      },
+    };
+  },
+});
+
+const StyledHeading = Heading.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      class: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("class"),
+        renderHTML: (attributes) => (attributes.class ? { class: attributes.class } : {}),
+      },
+      style: {
+        default: null,
+        parseHTML: (element) => sanitizeInlineStyle(element.getAttribute("style")),
+        renderHTML: (attributes) => (attributes.style ? { style: attributes.style } : {}),
+      },
+    };
+  },
+});
+
+const StyledLinkExtension = LinkExtension.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      class: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("class"),
+        renderHTML: (attributes) => (attributes.class ? { class: attributes.class } : {}),
+      },
+      style: {
+        default: null,
+        parseHTML: (element) => sanitizeInlineStyle(element.getAttribute("style")),
+        renderHTML: (attributes) => (attributes.style ? { style: attributes.style } : {}),
+      },
+    };
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ["a", mergeAttributes(stripEmptyHtmlAttributes(normalizeEditorLinkAttributes(HTMLAttributes))), 0];
+  },
+});
 
 const ResizableImageView: React.FC<NodeViewProps> = ({ node, selected, updateAttributes }) => {
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -239,16 +377,15 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     immediatelyRender: false,
     extensions: [
       StarterKit.configure({
-        heading: { levels: [2, 3] },
+        heading: false,
+        paragraph: false,
       }),
+      StyledParagraph,
+      StyledHeading.configure({ levels: [2, 3] }),
       UnderlineExtension,
-      LinkExtension.configure({
+      StyledLinkExtension.configure({
         openOnClick: false,
-        HTMLAttributes: {
-          class: "text-orange-500 underline underline-offset-4",
-          rel: "noopener noreferrer nofollow",
-          target: "_blank",
-        },
+        HTMLAttributes: {},
       }),
       ResizableImageExtension.configure({
         inline: false,
@@ -263,8 +400,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose-base max-w-none min-h-[280px] px-4 py-4 focus:outline-none " +
-          "prose-headings:tracking-tight prose-headings:text-slate-900 prose-p:text-slate-700 prose-p:leading-relaxed " +
+          "prose prose-sm sm:prose-base max-w-none min-h-[520px] px-5 py-5 focus:outline-none " +
+          "prose-headings:tracking-tight prose-headings:text-slate-900 prose-p:text-slate-700 prose-p:leading-relaxed prose-p:my-4 " +
           "prose-a:text-orange-500 prose-a:font-semibold prose-img:mx-auto prose-img:max-w-full prose-img:h-auto",
       },
     },
@@ -370,7 +507,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
       .chain()
       .focus()
       .extendMarkRange("link")
-      .setLink({ href: url.trim() })
+      .setLink(normalizeEditorLinkAttributes({ href: url.trim() }))
       .run();
   }, [editor]);
 
@@ -417,19 +554,60 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 
       setIsUploading(true);
       try {
-        const extension = file.name.split(".").pop()?.toLowerCase() || "webp";
-        const fileName = `${sanitizeFileName(file.name)}-${Date.now()}.${extension}`;
+        const processedFile = await (async () => {
+          if (typeof window === "undefined" || !file.type.startsWith("image/")) return file;
 
-        const { error: uploadError } = await supabase.storage.from(uploadBucket).upload(fileName, file, {
+          const targetWidth = 1536;
+          const targetHeight = 1024;
+          const imageUrl = URL.createObjectURL(file);
+
+          try {
+            const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+              const nextImage = new window.Image();
+              nextImage.onload = () => resolve(nextImage);
+              nextImage.onerror = (error) => reject(error);
+              nextImage.src = imageUrl;
+            });
+
+            const canvas = document.createElement("canvas");
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+            const context = canvas.getContext("2d");
+
+            if (!context) return file;
+
+            const scale = Math.max(targetWidth / image.width, targetHeight / image.height);
+            const drawWidth = image.width * scale;
+            const drawHeight = image.height * scale;
+            const drawX = (targetWidth - drawWidth) / 2;
+            const drawY = (targetHeight - drawHeight) / 2;
+
+            context.fillStyle = "#ffffff";
+            context.fillRect(0, 0, targetWidth, targetHeight);
+            context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+
+            const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/webp", 0.9));
+            if (!blob) return file;
+
+            return new File([blob], `${sanitizeFileName(file.name)}.webp`, { type: "image/webp" });
+          } finally {
+            URL.revokeObjectURL(imageUrl);
+          }
+        })();
+
+        const fileName = `${sanitizeFileName(file.name)}-${Date.now()}.webp`;
+
+        const { error: uploadError } = await supabase.storage.from(uploadBucket).upload(fileName, processedFile, {
           cacheControl: "3600",
           upsert: false,
+          contentType: "image/webp",
         });
 
         if (uploadError) throw uploadError;
 
         const { data } = supabase.storage.from(uploadBucket).getPublicUrl(fileName);
         await insertImage(data.publicUrl, sanitizeFileName(file.name).replace(/-/g, " "));
-        toast.success("Bild hochgeladen und eingefügt");
+        toast.success("Bild im 3:2-Format optimiert, hochgeladen und eingefügt");
       } catch (error) {
         console.error(error);
         toast.error("Bild-Upload fehlgeschlagen");
@@ -565,7 +743,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
         )}
       </div>
 
-      <EditorContent editor={editor} />
+      <div className="min-h-[520px] max-h-[58vh] overflow-y-auto bg-white custom-scrollbar"><EditorContent editor={editor} /></div>
 
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
     </div>

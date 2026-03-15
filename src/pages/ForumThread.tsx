@@ -320,9 +320,9 @@ export default function ForumThread() {
                           prose-li:my-1 prose-li:leading-relaxed prose-ul:my-4 prose-ol:my-4
                           prose-a:text-orange-500 prose-a:font-bold prose-a:no-underline hover:prose-a:underline
                           prose-strong:text-[#0A0F1C] prose-strong:font-bold
-                          prose-figure:my-8 prose-figure:overflow-hidden prose-figure:rounded-[1.75rem]
-                          prose-figcaption:mt-3 prose-figcaption:px-3 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-slate-500
-                          prose-img:mx-auto prose-img:block prose-img:max-w-full prose-img:h-auto prose-img:rounded-2xl prose-img:shadow-md prose-img:border prose-img:border-slate-200
+                          prose-figure:my-8 prose-figure:mx-auto prose-figure:w-fit prose-figure:max-w-full
+                          prose-figcaption:mt-3 prose-figcaption:px-2 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-slate-500
+                          prose-img:block prose-img:mx-auto prose-img:!max-w-full prose-img:!h-auto prose-img:rounded-2xl prose-img:shadow-md prose-img:border prose-img:border-slate-200
                           prose-blockquote:my-6 prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
                           prose-table:w-full prose-table:text-sm prose-th:px-3 prose-th:py-3 prose-td:px-3 prose-td:py-3"
                         dangerouslySetInnerHTML={renderContent()}

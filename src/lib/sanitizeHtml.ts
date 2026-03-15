@@ -4,7 +4,7 @@ const CMS_ALLOWED_TAGS = [
   "h1", "h2", "h3", "h4", "h5", "h6",
   "p", "br", "ul", "ol", "li",
   "strong", "em", "b", "i", "u",
-  "a", "span", "div",
+  "a", "span", "div", "section",
   "img", "blockquote",
   "table", "thead", "tbody", "tr", "th", "td",
   "details", "summary", "code", "pre", "figure", "figcaption"
@@ -13,7 +13,7 @@ const CMS_ALLOWED_TAGS = [
 const CMS_ALLOWED_ATTR = [
   "href", "target", "rel",
   "src", "srcset", "alt", "title",
-  "class", "id",
+  "class", "id", "style",
   "width", "height", "loading", "decoding",
   "colspan", "rowspan"
 ];
@@ -22,6 +22,101 @@ const STORAGE_SEGMENT = "/storage/v1/object/public/";
 const RENDER_SEGMENT = "/storage/v1/render/image/public/";
 const MAX_FORUM_IMAGE_WIDTH = 1400;
 const MIN_FORUM_IMAGE_WIDTH = 180;
+const DEFAULT_FORUM_IMAGE_WIDTH = 1100;
+const SAFE_INLINE_STYLE_PROPERTIES = new Set([
+  "background",
+  "background-color",
+  "color",
+  "text-align",
+  "border",
+  "border-color",
+  "border-left-color",
+  "border-right-color",
+  "border-top-color",
+  "border-bottom-color",
+  "border-radius",
+  "padding",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  "margin",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "line-height",
+  "letter-spacing",
+  "display",
+  "justify-content",
+  "align-items",
+  "gap",
+  "white-space",
+  "text-decoration",
+  "box-shadow",
+  "max-width",
+  "width",
+  "height",
+]);
+const UNSAFE_STYLE_VALUE_PATTERN = /(?:expression\s*\(|javascript:|vbscript:|data:text\/html|@import|behavior\s*:|url\s*\()/i;
+
+const INTERNAL_PATH_PATTERN = /^\/(?!\/)/;
+
+function isInternalPathUrl(url?: string | null) {
+  if (!url) return false;
+  return INTERNAL_PATH_PATTERN.test(String(url).trim());
+}
+
+function normalizeLinkRelValue(rel?: string | null) {
+  if (!rel) return null;
+
+  const safeTokens = Array.from(
+    new Set(
+      String(rel)
+        .split(/\s+/)
+        .map((token) => token.trim().toLowerCase())
+        .filter(Boolean)
+        .filter((token) => !["nofollow", "noopener", "noreferrer"].includes(token))
+    )
+  );
+
+  return safeTokens.length ? safeTokens.join(" ") : null;
+}
+
+function normalizeAnchorElement(anchor: HTMLAnchorElement) {
+  const href = anchor.getAttribute("href");
+  const safeStyle = sanitizeInlineStyle(anchor.getAttribute("style"));
+
+  if (safeStyle) {
+    anchor.setAttribute("style", safeStyle);
+  } else {
+    anchor.removeAttribute("style");
+  }
+
+  if (isInternalPathUrl(href)) {
+    anchor.removeAttribute("target");
+    anchor.removeAttribute("rel");
+    return;
+  }
+
+  const safeRel = normalizeLinkRelValue(anchor.getAttribute("rel"));
+  if (safeRel) {
+    anchor.setAttribute("rel", safeRel);
+  } else {
+    anchor.removeAttribute("rel");
+  }
+}
+
+function cleanupInternalLinkAttributesInHtml(html: string) {
+  return html.replace(/<a\b([^>]*?)\bhref=(['"])(\/[^'"]*)\2([^>]*)>/gi, (fullMatch) => {
+    const withoutTarget = fullMatch.replace(/\s+target=(['"]).*?\1/gi, "");
+    const withoutRel = withoutTarget.replace(/\s+rel=(['"]).*?\1/gi, "");
+    return withoutRel;
+  });
+}
 
 function splitUrlParts(url: string) {
   const trimmed = url.trim();
@@ -73,7 +168,32 @@ function normalizeImageWidth(value?: string | null): string | null {
   return String(safeWidth);
 }
 
-function normalizeImageAttributes(html?: string | null) {
+function sanitizeInlineStyle(styleText?: string | null): string | null {
+  if (!styleText) return null;
+
+  const safeDeclarations = styleText
+    .split(";")
+    .map((declaration) => declaration.trim())
+    .filter(Boolean)
+    .map((declaration) => {
+      const colonIndex = declaration.indexOf(":");
+      if (colonIndex === -1) return null;
+
+      const property = declaration.slice(0, colonIndex).trim().toLowerCase();
+      const value = declaration.slice(colonIndex + 1).trim().replace(/\s+/g, " ");
+
+      if (!SAFE_INLINE_STYLE_PROPERTIES.has(property) || !value || UNSAFE_STYLE_VALUE_PATTERN.test(value)) {
+        return null;
+      }
+
+      return `${property}: ${value}`;
+    })
+    .filter((value): value is string => Boolean(value));
+
+  return safeDeclarations.length ? safeDeclarations.join("; ") : null;
+}
+
+function normalizeForumMarkup(html?: string | null) {
   if (!html) return "";
 
   const markup = String(html);
@@ -84,16 +204,33 @@ function normalizeImageAttributes(html?: string | null) {
 
   const documentFragment = new DOMParser().parseFromString(markup, "text/html");
 
+  documentFragment.body.querySelectorAll<HTMLElement>("*").forEach((element) => {
+    if (element instanceof HTMLAnchorElement) {
+      normalizeAnchorElement(element);
+      return;
+    }
+
+    const safeStyle = sanitizeInlineStyle(element.getAttribute("style"));
+    if (safeStyle) {
+      element.setAttribute("style", safeStyle);
+    } else {
+      element.removeAttribute("style");
+    }
+  });
+
   documentFragment.querySelectorAll("img").forEach((img) => {
     const widthAttr = normalizeImageWidth(img.getAttribute("width"));
     const styleWidth = normalizeImageWidth((img as HTMLElement).style?.width || null);
-    const resolvedWidth = widthAttr || styleWidth;
+    const resolvedWidth = widthAttr || styleWidth || String(DEFAULT_FORUM_IMAGE_WIDTH);
 
     if (resolvedWidth) {
       img.setAttribute("width", resolvedWidth);
     } else {
       img.removeAttribute("width");
     }
+
+    img.removeAttribute("class");
+    img.removeAttribute("style");
 
     if (!img.getAttribute("loading")) {
       img.setAttribute("loading", "lazy");
@@ -129,13 +266,15 @@ export function optimizeSupabaseImageUrl(url?: string | null, width = 800, quali
 export function rewriteSupabaseStorageUrls(html?: string | null, width = 800, quality = 80): string {
   if (!html) return "";
 
-  const markup = normalizeImageAttributes(html);
+  const markup = normalizeForumMarkup(html);
 
   if (typeof DOMParser === "undefined") {
-    return markup.replace(/<img\b([^>]*)\bsrc=(["'])([^"']+)\2([^>]*)>/gi, (_full, before, quote, src, after) => {
-      const optimizedSrc = optimizeSupabaseImageUrl(src, width, quality);
-      return `<img${before}src=${quote}${optimizedSrc}${quote}${after}>`;
-    });
+    return cleanupInternalLinkAttributesInHtml(
+      markup.replace(/<img\b([^>]*)\bsrc=(["'])([^"']+)\2([^>]*)>/gi, (_full, before, quote, src, after) => {
+        const optimizedSrc = optimizeSupabaseImageUrl(src, width, quality);
+        return `<img${before}src=${quote}${optimizedSrc}${quote}${after}>`;
+      })
+    );
   }
 
   const documentFragment = new DOMParser().parseFromString(markup, "text/html");

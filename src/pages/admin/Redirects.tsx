@@ -8,6 +8,7 @@ import {
   type Redirect as TrackingRedirect,
 } from "@/hooks/useRedirects";
 import {
+  useDeleteSeoRedirect,
   useSeoRedirects,
   useUpdateSeoRedirect,
   type SeoRedirect,
@@ -399,6 +400,7 @@ function SeoRedirectsTab() {
   });
 
   const updateSeoRedirect = useUpdateSeoRedirect();
+  const deleteSeoRedirect = useDeleteSeoRedirect();
 
   const activeRedirectCount = useMemo(
     () => redirects.filter((redirect) => redirect.is_active).length,
@@ -427,6 +429,34 @@ function SeoRedirectsTab() {
       toast({
         title: "Fehler",
         description: error instanceof Error ? error.message : "Lock-Status konnte nicht geändert werden.",
+        variant: "destructive",
+      });
+    }
+  }
+
+  async function handleDeleteSeoRedirect(redirect: SeoRedirect) {
+    const confirmed = window.confirm(
+      `SEO-Redirect wirklich löschen?
+
+${redirect.source_path} -> ${redirect.target_path}
+
+Nur löschen, wenn dieser Eintrag wirklich ein Versehen war und nicht indexiert wurde.`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      await deleteSeoRedirect.mutateAsync(redirect.id);
+      toast({
+        title: "SEO-Redirect gelöscht",
+        description: "Der Eintrag wurde vollständig entfernt.",
+      });
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: error instanceof Error ? error.message : "SEO-Redirect konnte nicht gelöscht werden.",
         variant: "destructive",
       });
     }
@@ -570,12 +600,13 @@ function SeoRedirectsTab() {
                   <TableHead>Status</TableHead>
                   <TableHead>Locked</TableHead>
                   <TableHead>Aktualisiert</TableHead>
+                  <TableHead className="text-right">Aktionen</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {redirects.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                       Keine SEO-Redirects gefunden.
                     </TableCell>
                   </TableRow>
@@ -636,6 +667,20 @@ function SeoRedirectsTab() {
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {formatDate(redirect.updated_at)}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteSeoRedirect(redirect)}
+                            disabled={deleteSeoRedirect.isPending}
+                            className="text-destructive hover:text-destructive"
+                            title="SEO-Redirect löschen"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))

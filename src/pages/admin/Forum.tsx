@@ -14,6 +14,7 @@ import {
   ForumThread,
   ForumCategory,
 } from "@/hooks/useForum";
+import { useCreateSeoRedirect } from "@/hooks/useSeoRedirects";
 import { useForumAds } from "@/hooks/useSettings"; 
 import {
   BookOpen,
@@ -74,6 +75,7 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { optimizeSupabaseImageUrl } from "@/lib/sanitizeHtml";
+import { getForumThreadRoute } from "@/lib/routes";
 import RichTextEditor from "@/components/ui/rich-text-editor";
 
 const EMPTY_THREAD = {
@@ -179,6 +181,7 @@ export default function AdminForum() {
   const createThread = useCreateThread();
   const updateThread = useUpdateThread();
   const deleteThread = useDeleteThread();
+  const createSeoRedirect = useCreateSeoRedirect();
   const updateReply = useUpdateReply();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
@@ -328,6 +331,18 @@ export default function AdminForum() {
       };
 
       if (editingThread?.id) { 
+          const previousSlug = String(editingThread.slug || "").trim();
+          const currentSlug = String(normalizedThreadData.slug || "").trim();
+
+          if (previousSlug && currentSlug && previousSlug !== currentSlug) {
+            await createSeoRedirect.mutateAsync({
+              sourcePath: getForumThreadRoute(previousSlug),
+              targetPath: getForumThreadRoute(currentSlug),
+              entityId: editingThread.id,
+              entityTable: "forum",
+            });
+          }
+
           await updateThread.mutateAsync({ id: editingThread.id, ...normalizedThreadData, }); 
           toast.success("Beitrag aktualisiert"); 
       } else { 

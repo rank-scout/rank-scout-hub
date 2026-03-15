@@ -1,475 +1,612 @@
-import { useState, useEffect, useRef } from "react";
-import { Link, useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { useForumThreads, useForumCategories } from "@/hooks/useForum";
-import { useForumBannerConfig, useForumAds } from "@/hooks/useSettings"; 
-import { Helmet } from "react-helmet-async"; 
-import { useForceSEO } from "@/hooks/useForceSEO"; 
-import { LoadingScreen } from "@/components/ui/LoadingScreen"; 
-import { 
-  MessageCircle, Pin, Clock, Search, Filter, User, X, TrendingUp, HelpCircle, 
-  Star, BarChart3, ArrowRight, ShieldCheck, Zap, LayoutGrid, Heart, Bitcoin, 
-  Globe, MessageSquare, ExternalLink, ChevronRight, Image as ImageIcon
+import { useState } from "react";
+import {
+  useForumThreads,
+  useCreateThread,
+  useUpdateThread,
+  useDeleteThread,
+  useAllReplies,
+  useUpdateReply,
+  useForumCategories,
+  useCreateCategory,
+  useUpdateCategory,
+  useDeleteCategory,
+  generateSlug,
+  ForumThread,
+  ForumCategory,
+} from "@/hooks/useForum";
+import { useForumAds } from "@/hooks/useSettings"; 
+import {
+  BookOpen,
+  Plus,
+  Edit,
+  Trash2,
+  Pin,
+  Lock,
+  Eye,
+  CheckCircle,
+  Search,
+  Image as ImageIcon,
+  Code,
+  FileText,
+  MessageCircle,
+  AlertTriangle,
+  FolderOpen,
+  ExternalLink,
+  Loader2,
+  DollarSign, 
+  Megaphone, 
+  Link as LinkIcon,
+  Search as SearchIcon
 } from "lucide-react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ScrollToTopHandler } from "@/components/ScrollToTopHandler";
-import { useTrackView } from "@/hooks/useTrackView";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { optimizeSupabaseImageUrl } from "@/lib/sanitizeHtml";
+import RichTextEditor from "@/components/ui/rich-text-editor";
 
-// --- HELPER ---
-const getCategoryStyle = (slug: string) => {
-  if (slug.includes('krypto') || slug.includes('bitcoin') || slug.includes('finance')) 
-    return { icon: Bitcoin, color: "text-orange-500", bg: "bg-orange-500/10", gradient: "from-orange-500/20 to-orange-900/5" };
-  if (slug.includes('dating') || slug.includes('liebe') || slug.includes('love')) 
-    return { icon: Heart, color: "text-rose-500", bg: "bg-rose-500/10", gradient: "from-rose-500/20 to-rose-900/5" };
-  if (slug.includes('ki') || slug.includes('ai') || slug.includes('tech')) 
-    return { icon: Zap, color: "text-blue-500", bg: "bg-blue-500/10", gradient: "from-blue-500/20 to-blue-900/5" };
-  if (slug.includes('agentur') || slug.includes('business')) 
-    return { icon: Globe, color: "text-indigo-500", bg: "bg-indigo-500/10", gradient: "from-indigo-500/20 to-indigo-900/5" };
-  
-  return { icon: LayoutGrid, color: "text-orange-500", bg: "bg-orange-500/10", gradient: "from-primary/10 to-background" };
+const EMPTY_THREAD = {
+  title: "",
+  slug: "",
+  content: "",
+  raw_html_content: "",
+  author_name: "Redaktion",
+  seo_title: "",
+  seo_description: "",
+  featured_image_url: "",
+  featured_image_alt: "",
+  is_pinned: false,
+  is_locked: false,
+  is_answered: false,
+  is_active: true,
+  admin_notes: "",
+  status: "published",
+  category_id: null as string | null,
+  show_ad: true, 
+  ad_type: "image",
+  ad_image_url: "",
+  ad_image_alt: "",
+  ad_link_url: "",
+  ad_html_code: "",
+  ad_cta_text: "Jetzt ansehen",
 };
 
-const ScriptAd = ({ code }: { code: string }) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe || !code) return;
-    const doc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!doc) return;
-    const htmlContent = `<!DOCTYPE html><html><head><base target="_blank"><style>body{margin:0;padding:0;display:flex;justify-content:center;align-items:center;font-family:sans-serif;background:transparent;}img{max-width:100%;height:auto;display:block;}a{text-decoration:none;}</style></head><body>${code}</body></html>`;
-    try { doc.open(); doc.write(htmlContent); doc.close(); } catch (e) { console.error("Ad rendering failed", e); }
-  }, [code]);
-  return (<div className="w-full flex justify-center bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden p-4"><iframe ref={iframeRef} title="Advertisement" style={{ width: '100%', height: '100%', minHeight: '250px', border: 'none' }} scrolling="no" /></div>);
+const EMPTY_CATEGORY = {
+  name: "",
+  slug: "",
+  description: "",
+  sort_order: 0,
+  is_active: true,
+  seo_title: "",
+  seo_description: "",
+  ad_enabled: false,
+  assigned_ad_id: "",
+  ad_image_url: "",
+  ad_link_url: "",
+  ad_html_code: "", 
+  ad_headline: "", 
+  ad_subheadline: "", 
+  ad_cta_text: "" 
 };
-const generateExcerpt = (htmlString: string) => {
-  if (!htmlString) return "";
-  const doc = new DOMParser().parseFromString(htmlString, 'text/html');
-  // Entfernt Code-Blöcke, Styles und Scripte komplett aus dem virtuellen DOM
-  const elementsToRemove = doc.querySelectorAll('script, style, pre, code');
-  elementsToRemove.forEach(el => el.remove());
-  
-  const text = doc.body.textContent || "";
-  return text.replace(/\s+/g, ' ').trim();
+
+const looksLikeHtml = (value: string) => /<\/?[a-z][\s\S]*>/i.test(value);
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const convertPlainTextToHtml = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  return trimmed
+    .split(/\n{2,}/)
+    .map((paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br />")}</p>`)
+    .join("");
 };
-export default function Forum() {
-  const { categorySlug } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation(); 
-  const [searchParams] = useSearchParams();
-  const urlCategoryId = searchParams.get("category");
-  
-  useTrackView(categorySlug || "forum-index", "forum");
-  
-  const { data: threads, isLoading } = useForumThreads();
-  const { data: categories, isLoading: categoriesLoading } = useForumCategories();
-  
-  const bannerConfig = useForumBannerConfig(); 
-  const globalAds = useForumAds(); 
-  
+
+const normalizeEditorHtml = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return looksLikeHtml(trimmed) ? trimmed : convertPlainTextToHtml(trimmed);
+};
+
+const stripHtmlToPlainText = (value: string) => {
+  if (!value) return "";
+
+  if (typeof window !== "undefined") {
+    const element = document.createElement("div");
+    element.innerHTML = value;
+    return (element.textContent || element.innerText || "")
+      .replace(/\u00a0/g, " ")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .replace(/[ \t]{2,}/g, " ")
+      .trim();
+  }
+
+  return value
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>/gi, "\n\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+};
+
+export default function AdminForum() {
+  const { data: threads, isLoading } = useForumThreads(undefined, true);
+  const { data: allReplies } = useAllReplies();
+  const { data: categories } = useForumCategories(true);
+  const adsPool = useForumAds(); 
+
+  const createThread = useCreateThread();
+  const updateThread = useUpdateThread();
+  const deleteThread = useDeleteThread();
+  const updateReply = useUpdateReply();
+  const createCategory = useCreateCategory();
+  const updateCategory = useUpdateCategory();
+  const deleteCategory = useDeleteCategory();
+
+  // Thread state
   const [searchQuery, setSearchQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [sortTab, setSortTab] = useState("newest");
-  const [randomGlobalAd, setRandomGlobalAd] = useState<any>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingThread, setEditingThread] = useState<Partial<ForumThread> | null>(null);
+  const [editorMode, setEditorMode] = useState<"visual" | "code">("visual");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [threadToDelete, setThreadToDelete] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [formData, setFormData] = useState(EMPTY_THREAD);
 
-  useEffect(() => {
-    if (categories && !categoriesLoading) {
-      if (categorySlug) {
-        const activeCategory = categories.find(c => c.slug === categorySlug);
-        if (activeCategory) setCategoryFilter(activeCategory.id);
-      } else if (urlCategoryId) {
-        const activeCategory = categories.find(c => c.id === urlCategoryId);
-        if (activeCategory) {
-            navigate(`/forum/kategorie/${activeCategory.slug}`, { replace: true });
-        } else {
-            setCategoryFilter(urlCategoryId);
-        }
-      } else {
-        setCategoryFilter("all");
-      }
-    }
-  }, [categorySlug, urlCategoryId, categories, categoriesLoading, navigate]);
+  // Category state
+  const [categoryEditorOpen, setCategoryEditorOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Partial<ForumCategory> | null>(null);
+  const [categoryFormData, setCategoryFormData] = useState(EMPTY_CATEGORY);
+  const [deleteCategoryDialogOpen, setDeleteCategoryDialogOpen] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [manualAdType, setManualAdType] = useState<"image" | "code">("image"); 
 
-  useEffect(() => {
-      if (globalAds && globalAds.length > 0) {
-          const activeAds = globalAds.filter(ad => ad.enabled);
-          if (activeAds.length > 0) {
-              setRandomGlobalAd(activeAds[Math.floor(Math.random() * activeAds.length)]);
-          } else {
-              setRandomGlobalAd(null);
-          }
-      }
-  }, [globalAds]); 
-
-  const handleCategoryChange = (value: string) => {
-    setCategoryFilter(value);
-    if (value === "all") navigate("/forum");
-    else {
-      const cat = categories?.find(c => c.id === value);
-      if (cat) navigate(`/forum/kategorie/${cat.slug}`);
-    }
-  };
-
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric", });
-  const getInitial = (name: string) => name ? name.charAt(0).toUpperCase() : "U";
-
-  // --- HARTE SEO LOGIK ---
-  const derivedCategoryName = categorySlug 
-    ? categorySlug.charAt(0).toUpperCase() + categorySlug.slice(1).replace(/-/g, ' ') 
-    : null;
-
-  const seoCategory = categorySlug && categories 
-    ? categories.find(c => c.slug === categorySlug) 
-    : null;
-
-  let seoTitle = "Community Forum | Rank-Scout";
-  if (seoCategory) {
-    seoTitle = seoCategory.seo_title && seoCategory.seo_title.trim() !== "" ? seoCategory.seo_title : `${seoCategory.name} Forum - Erfahrungen & Diskussionen | Rank-Scout`;
-  } else if (derivedCategoryName) {
-    seoTitle = `${derivedCategoryName} Forum | Rank-Scout`;
-  } else if (bannerConfig?.headline) {
-    seoTitle = `${bannerConfig.headline} | Rank-Scout`;
-  }
-
-  let seoDescription = "Das große Vergleichsportal Forum. Diskutiere mit Experten über Software, Finanzen und mehr.";
-  if (seoCategory) {
-    if (seoCategory.seo_description && seoCategory.seo_description.trim() !== "") {
-      seoDescription = seoCategory.seo_description;
-    } else if ((seoCategory as any).meta_description && (seoCategory as any).meta_description.trim() !== "") {
-       seoDescription = (seoCategory as any).meta_description;
-    } else if (seoCategory.description && seoCategory.description.trim() !== "") {
-      seoDescription = seoCategory.description.substring(0, 155);
-    } else {
-      seoDescription = `Diskutiere jetzt im Bereich ${seoCategory.name} auf Rank-Scout.`;
-    }
-  } else if (bannerConfig?.subheadline) {
-    seoDescription = bannerConfig.subheadline;
-  }
-
-  useForceSEO(seoDescription);
-  const canonicalUrl = categorySlug ? `${window.location.origin}/forum/kategorie/${categorySlug}` : `${window.location.origin}/forum`;
-
-  const seoHead = (
-    <Helmet key={location.pathname}>
-      <title>{seoTitle}</title>
-      <link rel="canonical" href={canonicalUrl} />
-      <meta property="og:title" content={seoTitle} />
-      <meta property="og:description" content={seoDescription} />
-      <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:type" content="website" />
-    </Helmet>
+  const filteredThreads = threads?.filter(
+    (t) =>
+      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.author_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (isLoading || categoriesLoading) {
-    return (<>{seoHead}<LoadingScreen /></>);
-  }
+  const pendingReplies = allReplies?.filter((r) => !r.is_active && !r.is_spam);
 
-  const filteredThreads = (threads || []).filter((thread) => {
-      const matchesSearch = thread.title.toLowerCase().includes(searchQuery.toLowerCase()) || thread.content.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = categoryFilter === "all" || thread.category_id === categoryFilter;
-      return matchesSearch && matchesCategory && thread.is_active;
-  }).sort((a, b) => {
-    if (sortTab === "popular") return (b.reply_count || 0) - (a.reply_count || 0);
-    if (sortTab === "unanswered") return 0; 
-    return new Date(b.created_at || "").getTime() - new Date(a.created_at || "").getTime();
-  });
+  const processImage = (file: File): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        // KYRA FIX: Neues Format 3:2 (1536 x 1024)
+        const TARGET_WIDTH = 1536;
+        const TARGET_HEIGHT = 1024; 
+        canvas.width = TARGET_WIDTH;
+        canvas.height = TARGET_HEIGHT;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { reject(new Error("Canvas Error")); return; }
+        
+        const scale = Math.max(TARGET_WIDTH / img.width, TARGET_HEIGHT / img.height);
+        const x = (TARGET_WIDTH / scale - img.width) / 2;
+        const y = (TARGET_HEIGHT / scale - img.height) / 2;
+        
+        ctx.fillStyle = "white"; 
+        ctx.fillRect(0, 0, TARGET_WIDTH, TARGET_HEIGHT);
+        ctx.drawImage(img, x * scale, y * scale, img.width * scale, img.height * scale);
+        
+        canvas.toBlob((blob) => { if (blob) resolve(blob); else reject(new Error("Error")); }, "image/webp", 0.90); // Qualität etwas hochgeschraubt
+      };
+      img.onerror = (err) => reject(err);
+    });
+  };
+
+  const handleNewThread = () => {
+    setEditingThread(null);
+    setEditorMode("visual");
+    setFormData(EMPTY_THREAD);
+    setEditorOpen(true);
+  };
   
-  const finalThreads = sortTab === "unanswered" ? filteredThreads.filter(t => !t.is_answered) : filteredThreads;
-  const activeCategoryData = categories?.find(c => c.id === categoryFilter);
-  const style = activeCategoryData ? getCategoryStyle(activeCategoryData.slug) : { icon: MessageSquare, color: "text-orange-500", bg: "bg-white/10", gradient: "" };
-  const CategoryIcon = style.icon;
-  const totalThreads = finalThreads.length;
+  const handleEditThread = (thread: ForumThread) => {
+    const editorHtml = normalizeEditorHtml(thread.raw_html_content || thread.content || "");
+    const plainTextContent = stripHtmlToPlainText(editorHtml || thread.content || "");
 
-  const currentAd = (() => {
-    if (activeCategoryData?.ad_enabled) {
-        if (activeCategoryData.assigned_ad_id) {
-            const assignedAd = globalAds.find(a => a.id === activeCategoryData.assigned_ad_id);
-            if (assignedAd && assignedAd.enabled) return assignedAd;
-        }
-        if (activeCategoryData.ad_html_code) return { type: 'code', enabled: true, html_code: activeCategoryData.ad_html_code };
-        else if (activeCategoryData.ad_image_url) return { type: 'image', enabled: true, image_url: activeCategoryData.ad_image_url, link_url: activeCategoryData.ad_link_url, headline: activeCategoryData.ad_headline, subheadline: activeCategoryData.ad_subheadline, cta_text: activeCategoryData.ad_cta_text };
+    setEditingThread(thread);
+    setEditorMode("visual");
+    setFormData({
+      title: thread.title,
+      slug: thread.slug,
+      content: plainTextContent,
+      raw_html_content: editorHtml,
+      author_name: thread.author_name || "Redaktion",
+      seo_title: thread.seo_title || "",
+      seo_description: thread.seo_description || "",
+      featured_image_url: optimizeSupabaseImageUrl(thread.featured_image_url || "", 1536, 80),
+      featured_image_alt: thread.featured_image_alt || "",
+      is_pinned: thread.is_pinned || false,
+      is_locked: thread.is_locked || false,
+      is_answered: thread.is_answered || false,
+      is_active: thread.is_active !== false,
+      admin_notes: thread.admin_notes || "",
+      status: thread.status || "published",
+      category_id: thread.category_id || null,
+      show_ad: thread.show_ad ?? true,
+      ad_type: thread.ad_type || "image",
+      ad_image_url: optimizeSupabaseImageUrl(thread.ad_image_url || "", 800, 80),
+      ad_image_alt: thread.ad_image_alt || "",
+      ad_link_url: thread.ad_link_url || "",
+      ad_html_code: thread.ad_html_code || "",
+      ad_cta_text: thread.ad_cta_text || "Jetzt ansehen",
+    });
+    setEditorOpen(true);
+  };
+  
+  const handleTitleChange = (title: string) => { setFormData((prev) => ({ ...prev, title, slug: !editingThread ? generateSlug(title) : prev.slug, })); };
+  
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return; setImageUploading(true);
+    try {
+      const processedBlob = await processImage(file);
+      const processedFile = new File([processedBlob], "image.webp", { type: "image/webp" });
+      const fileName = `forum-${Date.now()}.webp`;
+      const { error: uploadError } = await supabase.storage.from("forum-images").upload(fileName, processedFile);
+      if (uploadError) throw uploadError;
+      const { data: urlData } = supabase.storage.from("forum-images").getPublicUrl(fileName);
+      const optimizedImageUrl = optimizeSupabaseImageUrl(urlData.publicUrl, 1536, 80);
+      setFormData((prev) => ({ ...prev, featured_image_url: optimizedImageUrl }));
+      toast.success("Bild auf 1536x1024px zugeschnitten & hochgeladen!");
+    } catch (error) { toast.error("Fehler beim Bild-Upload"); } finally { setImageUploading(false); }
+  };
+
+  const syncEditorContent = (htmlValue: string) => {
+    const normalizedHtml = normalizeEditorHtml(htmlValue);
+    const plainTextContent = stripHtmlToPlainText(normalizedHtml);
+
+    setFormData((prev) => ({
+      ...prev,
+      raw_html_content: normalizedHtml,
+      content: plainTextContent,
+    }));
+  };
+
+  const handleSaveThread = async () => {
+    const normalizedHtml = normalizeEditorHtml(formData.raw_html_content || formData.content);
+    const plainTextContent = stripHtmlToPlainText(normalizedHtml);
+
+    if (!formData.title.trim() || !plainTextContent) {
+      toast.error("Titel und Inhalt sind erforderlich");
+      return;
     }
-    return randomGlobalAd;
-  })();
-  const currentAdAlt = currentAd?.ad_image_alt?.trim() || currentAd?.headline?.trim() || "Anzeige";
+
+    try {
+      const normalizedThreadData = {
+        ...formData,
+        content: plainTextContent,
+        raw_html_content: normalizedHtml,
+        featured_image_url: optimizeSupabaseImageUrl(formData.featured_image_url, 1536, 80),
+        featured_image_alt: formData.featured_image_alt.trim(),
+        ad_image_url: optimizeSupabaseImageUrl(formData.ad_image_url, 800, 80),
+        ad_image_alt: formData.ad_image_alt.trim(),
+      };
+
+      if (editingThread?.id) { 
+          await updateThread.mutateAsync({ id: editingThread.id, ...normalizedThreadData, }); 
+          toast.success("Beitrag aktualisiert"); 
+      } else { 
+          await createThread.mutateAsync(normalizedThreadData); 
+          toast.success("Beitrag erstellt"); 
+      }
+      setEditorOpen(false);
+    } catch (error: any) { 
+        console.error(error);
+        toast.error("Fehler beim Speichern: " + (error.message || "Datenbankfehler.")); 
+    }
+  };
+  
+  const handleDeleteThread = async () => { if (!threadToDelete) return; try { await deleteThread.mutateAsync(threadToDelete); toast.success("Beitrag gelöscht"); } catch (error) { toast.error("Fehler beim Löschen"); } finally { setDeleteDialogOpen(false); setThreadToDelete(null); } };
+
+  const handleNewCategory = () => { 
+      setEditingCategory(null); 
+      setCategoryFormData(EMPTY_CATEGORY); 
+      setManualAdType("image");
+      setCategoryEditorOpen(true); 
+  };
+  
+  const handleEditCategory = (category: ForumCategory) => {
+    setEditingCategory(category);
+    setCategoryFormData({
+      name: category.name, 
+      slug: category.slug, 
+      description: category.description || "", 
+      sort_order: category.sort_order, 
+      is_active: category.is_active,
+      seo_title: category.seo_title || "",
+      seo_description: category.seo_description || "",
+      ad_enabled: category.ad_enabled || false,
+      assigned_ad_id: category.assigned_ad_id || "",
+      ad_image_url: optimizeSupabaseImageUrl(category.ad_image_url || "", 800, 80),
+      ad_link_url: category.ad_link_url || "",
+      ad_html_code: category.ad_html_code || "",
+      ad_headline: category.ad_headline || "",
+      ad_subheadline: category.ad_subheadline || "",
+      ad_cta_text: category.ad_cta_text || "",
+    });
+    setManualAdType(category.ad_html_code ? "code" : "image");
+    setCategoryEditorOpen(true);
+  };
+  const handleCategoryNameChange = (name: string) => { setCategoryFormData((prev) => ({ ...prev, name, slug: !editingCategory ? generateSlug(name) : prev.slug, })); };
+  
+  const handleSaveCategory = async () => {
+    if (!categoryFormData.name || !categoryFormData.slug) { toast.error("Name und Slug sind erforderlich"); return; }
+    try {
+      const normalizedCategoryData = {
+        ...categoryFormData,
+        ad_image_url: optimizeSupabaseImageUrl(categoryFormData.ad_image_url, 800, 80),
+      };
+      if (editingCategory?.id) { await updateCategory.mutateAsync({ id: editingCategory.id, ...normalizedCategoryData, }); toast.success("Kategorie aktualisiert"); } else { await createCategory.mutateAsync(normalizedCategoryData); toast.success("Kategorie erstellt"); }
+      setCategoryEditorOpen(false);
+    } catch (error) { toast.error("Fehler beim Speichern"); }
+  };
+  const handleDeleteCategory = async () => { if (!categoryToDelete) return; try { await deleteCategory.mutateAsync(categoryToDelete); toast.success("Kategorie gelöscht"); } catch (error) { toast.error("Fehler beim Löschen"); } finally { setDeleteCategoryDialogOpen(false); setCategoryToDelete(null); } };
+
+  const handleApproveReply = async (id: string) => { await updateReply.mutateAsync({ id, is_active: true }); toast.success("Kommentar freigegeben"); };
+  const handleRejectReply = async (id: string) => { await updateReply.mutateAsync({ id, is_spam: true, is_active: false }); toast.success("Kommentar als Spam markiert"); };
+  const formatDate = (d: string) => new Date(d).toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric", });
+  const getCategoryName = (categoryId: string | null) => { if (!categoryId) return null; return categories?.find((c) => c.id === categoryId)?.name || null; };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAFAFA] font-sans">
-      
-      {seoHead}
-      <Header />
-      <ScrollToTopHandler />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-3xl font-bold flex items-center gap-2"><BookOpen className="w-8 h-8" />Magazin Verwaltung</h1><p className="text-muted-foreground">Beiträge erstellen, Kategorien verwalten und Kommentare moderieren</p></div>
+        <Button onClick={handleNewThread}><Plus className="w-4 h-4 mr-2" />Neuer Beitrag</Button>
+      </div>
 
-      <main className="flex-grow">
-        
-        {/* RANK-SCOUT HERO (Ultimativer 3D-Space mit Bild & animierten Sternen) */}
-        <section className="relative pt-32 pb-24 md:pt-40 md:pb-28 bg-[#0a0f1c] overflow-hidden z-10 rounded-b-[3.5rem] shadow-2xl shadow-slate-300/50">
-          
-          {/* 1. HINTERGRUNDBILD (Erde/Weltraum) */}
-          <div 
-            className="absolute inset-0 z-0 opacity-150 bg-cover bg-center bg-no-repeat"
-            style={{ 
-              backgroundImage: 'url("https://rank-scout.com/big-threes/forum_magazin_herobild_rank-scout.webp")',
-              maskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)', 
-              WebkitMaskImage: 'linear-gradient(to bottom, black 70%, transparent 100%)' 
-            }}
-          />
+      <Tabs defaultValue="threads">
+        <TabsList>
+          <TabsTrigger value="threads" className="gap-2"><FileText className="w-4 h-4" />Beiträge ({threads?.length || 0})</TabsTrigger>
+          <TabsTrigger value="categories" className="gap-2"><FolderOpen className="w-4 h-4" />Kategorien ({categories?.length || 0})</TabsTrigger>
+          <TabsTrigger value="moderation" className="gap-2"><MessageCircle className="w-4 h-4" />Moderation {(pendingReplies?.length || 0) > 0 && (<Badge variant="destructive" className="ml-1">{pendingReplies?.length}</Badge>)}</TabsTrigger>
+        </TabsList>
 
-          {/* 2. DUNKLES OVERLAY (Für Lesbarkeit) */}
-          <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1c]/30 via-[#0a0f1c]/70 to-[#0a0f1c] z-0 pointer-events-none" />
+        <TabsContent value="threads" className="space-y-4">
+          <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" /><Input placeholder="Beiträge suchen..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-10" /></div>
+          {isLoading ? (<div className="flex justify-center p-12"><Loader2 className="w-8 h-8 animate-spin text-primary"/></div>) : (<div className="space-y-3">{filteredThreads?.map((thread) => (<Card key={thread.id} className="hover:shadow-md transition-shadow"><CardContent className="p-4"><div className="flex items-start justify-between gap-4"><div className="flex-1 min-w-0"><div className="flex items-center gap-2 mb-1 flex-wrap">{thread.is_pinned && (<Pin className="w-3 h-3 text-secondary" />)}{thread.is_locked && (<Lock className="w-3 h-3 text-muted-foreground" />)}{thread.is_answered && (<CheckCircle className="w-3 h-3 text-green-500" />)}{!thread.is_active && (<Badge variant="destructive" className="bg-red-100 text-red-700 hover:bg-red-200 border-red-200">Offline</Badge>)}{thread.category_id && (<Badge variant="secondary" className="text-xs">{getCategoryName(thread.category_id)}</Badge>)}</div><h3 className={`font-semibold truncate ${!thread.is_active ? 'text-muted-foreground' : ''}`}>{thread.title}</h3><div className="flex items-center gap-4 text-xs text-muted-foreground mt-1"><span>{thread.author_name}</span><span>{formatDate(thread.created_at || "")}</span><span className="flex items-center gap-1"><Eye className="w-3 h-3" />{thread.view_count || 0}</span></div></div><div className="flex gap-2"><Button variant="outline" size="sm" asChild title="Beitrag ansehen"><a href={`/forum/${thread.slug}`} target="_blank" rel="noopener noreferrer"><ExternalLink className="w-4 h-4 text-blue-500" /></a></Button><Button variant="outline" size="sm" onClick={() => handleEditThread(thread)} title="Bearbeiten"><Edit className="w-4 h-4" /></Button><Button variant="outline" size="sm" onClick={() => { setThreadToDelete(thread.id); setDeleteDialogOpen(true); }} title="Löschen"><Trash2 className="w-4 h-4 text-destructive" /></Button></div></div></CardContent></Card>))}{filteredThreads?.length === 0 && (<Card><CardContent className="py-12 text-center"><FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground">Keine Beiträge gefunden</p></CardContent></Card>)}</div>)}
+        </TabsContent>
 
-          {/* 3. DIE 3D-STERNE (Animiertes Funkeln) */}
-          <div className="absolute inset-0 z-0 pointer-events-none opacity-60" 
-               style={{ maskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 50%, transparent 100%)' }}>
-            <div className="absolute inset-0 animate-[pulse_4s_ease-in-out_infinite]"
-                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Ccircle cx='3' cy='3' r='0.5'/%3E%3Ccircle cx='33' cy='21' r='0.5'/%3E%3Ccircle cx='48' cy='48' r='0.5'/%3E%3Ccircle cx='18' cy='52' r='0.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
-            <div className="absolute inset-0 animate-[pulse_2.5s_ease-in-out_infinite] [animation-delay:1s]"
-                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.8'%3E%3Ccircle cx='15' cy='15' r='1'/%3E%3Ccircle cx='75' cy='45' r='1'/%3E%3Ccircle cx='105' cy='105' r='1'/%3E%3Ccircle cx='45' cy='85' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
-            <div className="absolute inset-0 animate-[pulse_3.5s_ease-in-out_infinite] [animation-delay:0.5s]"
-                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg width='240' height='240' viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Ccircle cx='50' cy='50' r='1.5'/%3E%3Ccircle cx='180' cy='90' r='1.5'/%3E%3Ccircle cx='120' cy='200' r='1.5'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")` }} />
-          </div>
+        <TabsContent value="categories" className="space-y-4">
+          <div className="flex justify-end"><Button onClick={handleNewCategory}><Plus className="w-4 h-4 mr-2" />Neue Kategorie</Button></div>
+          <div className="space-y-3">{categories?.map((category) => (<Card key={category.id} className="hover:shadow-md transition-shadow"><CardContent className="p-4"><div className="flex items-center justify-between gap-4"><div className="flex-1"><div className="flex items-center gap-2 mb-1"><h3 className="font-semibold">{category.name}</h3>{!category.is_active && (<Badge variant="outline">Inaktiv</Badge>)}{category.ad_enabled && (<Badge variant="secondary" className="bg-green-100 text-green-700">Mit Werbung</Badge>)}</div><p className="text-sm text-muted-foreground">/{category.slug} • Reihenfolge: {category.sort_order}</p>{category.description && (<p className="text-sm text-muted-foreground mt-1">{category.description}</p>)}</div><div className="flex gap-2"><Button variant="outline" size="sm" onClick={() => handleEditCategory(category)}><Edit className="w-4 h-4" /></Button><Button variant="outline" size="sm" onClick={() => { setCategoryToDelete(category.id); setDeleteCategoryDialogOpen(true); }}><Trash2 className="w-4 h-4 text-destructive" /></Button></div></div></CardContent></Card>))}{categories?.length === 0 && (<Card><CardContent className="py-12 text-center"><FolderOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" /><p className="text-muted-foreground">Noch keine Kategorien</p></CardContent></Card>)}</div>
+        </TabsContent>
 
-          {/* 4. GLOW ORBS (Farbige Lichter an den Rändern) */}
-          <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-orange-500/20 rounded-full blur-[120px] mix-blend-screen pointer-events-none z-0" />
-          <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-blue-500/20 rounded-full blur-[100px] pointer-events-none z-0" />
-          
-          {/* 5. TEXT CONTENT */}
-          <div className="container mx-auto px-4 relative z-20 pointer-events-none">
-            <div className="max-w-4xl mx-auto text-center pointer-events-auto">
-              <div className="inline-flex justify-center mb-8">
-                <div className={`p-4 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 shadow-xl`}>
-                  <CategoryIcon className={`w-10 h-10 ${style.color || "text-orange-500"}`} />
-                </div>
-              </div>
-              
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold mb-6 tracking-tighter text-white leading-tight drop-shadow-lg">
-                {categoryFilter !== "all" && activeCategoryData ? activeCategoryData.name : (bannerConfig.headline || "Community Forum")}
-              </h1>
-              
-              <p className="text-lg md:text-2xl text-blue-100/80 font-medium max-w-3xl mx-auto leading-relaxed px-4">
-                {categoryFilter !== "all" && activeCategoryData?.description ? activeCategoryData.description : (bannerConfig.subheadline || "Diskutiere mit Experten, teile Erfahrungen und finde harte Fakten.")}
-              </p>
+        <TabsContent value="moderation" className="space-y-4">
+          {pendingReplies && pendingReplies.length > 0 ? (pendingReplies.map((reply: any) => (<Card key={reply.id}><CardContent className="p-4"><div className="flex items-start justify-between gap-4"><div className="flex-1"><p className="text-sm text-muted-foreground mb-1">Zu: {reply.forum_threads?.title || "Unbekannt"}</p><p className="font-medium">{reply.author_name}</p><p className="text-muted-foreground mt-1">{reply.content}</p></div><div className="flex gap-2"><Button size="sm" onClick={() => handleApproveReply(reply.id)}><CheckCircle className="w-4 h-4 mr-1" />Freigeben</Button><Button variant="destructive" size="sm" onClick={() => handleRejectReply(reply.id)}><AlertTriangle className="w-4 h-4 mr-1" />Spam</Button></div></div></CardContent></Card>))) : (<Card><CardContent className="py-12 text-center"><CheckCircle className="w-12 h-12 text-green-500 mx-auto mb-4" /><p className="text-muted-foreground">Keine Kommentare zur Moderation</p></CardContent></Card>)}
+        </TabsContent>
+      </Tabs>
 
-              {categoryFilter !== "all" && (
-                <div className="flex justify-center gap-4 mt-10">
-                    <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm text-sm font-bold text-white shadow-inner">
-                      <MessageSquare className="w-4 h-4 text-orange-500" /> {totalThreads} Beiträge
-                    </div>
-                    <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm text-sm font-bold text-white shadow-inner">
-                      <ShieldCheck className="w-4 h-4 text-green-400" /> Moderiert
-                    </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-
-        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-12 md:py-16 relative z-20 -mt-10">
-          <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-            
-            {/* MAIN CONTENT (Left) */}
-            <div className="lg:w-[70%] space-y-8">
-              
-              {/* Sticky Such- & Filterbar */}
-              <div className="bg-white/80 backdrop-blur-xl p-4 md:p-5 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 flex flex-col md:flex-row gap-4 items-center justify-between sticky top-[80px] z-30 transition-all">
-                <div className="relative flex-1 w-full">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <Input 
-                    placeholder="Wissen suchen..." 
-                    value={searchQuery} 
-                    onChange={(e) => setSearchQuery(e.target.value)} 
-                    className="pl-12 bg-slate-50 border-transparent focus:bg-white focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 h-14 rounded-2xl text-base font-medium transition-all" 
-                  />
-                  {searchQuery && (
-                    <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"><X className="w-4 h-4" /></button>
-                  )}
-                </div>
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                  <Select value={categoryFilter} onValueChange={handleCategoryChange}>
-                    <SelectTrigger className="w-full md:w-[220px] h-14 rounded-2xl bg-white border-slate-200 font-bold text-[#0A0F1C] focus:ring-orange-500/20">
-                        <div className="flex items-center"><Filter className="w-4 h-4 mr-2 text-slate-400" /><SelectValue placeholder="Kategorie wählen" /></div>
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl border-slate-100 shadow-xl">
-                        <SelectItem value="all" className="font-bold">Alle Themen</SelectItem>
-                        {categories?.map((cat) => (<SelectItem key={cat.id} value={cat.id} className="font-medium">{cat.name}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {/* Beiträge Tabs & Liste */}
-              <Tabs defaultValue="newest" value={sortTab} onValueChange={setSortTab} className="w-full">
-                <div className="flex items-center justify-between mb-6 px-2">
-                    <TabsList className="bg-transparent border-none p-0 h-auto gap-2">
-                      <TabsTrigger value="newest" className="rounded-full px-6 py-2.5 data-[state=active]:bg-[#0A0F1C] data-[state=active]:text-white data-[state=active]:shadow-md bg-white border border-slate-100 text-slate-500 font-bold transition-all"><Clock className="w-4 h-4 mr-2" /> Neueste</TabsTrigger>
-                      <TabsTrigger value="popular" className="rounded-full px-6 py-2.5 data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md bg-white border border-slate-100 text-slate-500 font-bold transition-all"><TrendingUp className="w-4 h-4 mr-2" /> Beliebt</TabsTrigger>
-                      <TabsTrigger value="unanswered" className="hidden sm:flex rounded-full px-6 py-2.5 data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-md bg-white border border-slate-100 text-slate-500 font-bold transition-all"><HelpCircle className="w-4 h-4 mr-2" /> Offen</TabsTrigger>
-                    </TabsList>
-                </div>
-
-                <TabsContent value={sortTab} className="mt-0 space-y-5">
-                  {finalThreads.length > 0 ? (
-                    finalThreads.map((thread) => (
-                      <Link key={thread.id} to={`/forum/${thread.slug}`} className="block group">
-                        <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden flex flex-col md:flex-row gap-6">
-                          
-                          {/* Seitenbalken für wichtige Themen */}
-                          {thread.is_pinned && <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500" />}
-                          
-                          {/* BILD / THUMBNAIL (Wenn vorhanden) */}
-{thread.featured_image_url && (
-   <div className="w-full md:w-[280px] lg:w-[360px] aspect-[3/2] flex-shrink-0 rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-slate-50 relative">
-      <img 
-        src={optimizeSupabaseImageUrl(thread.featured_image_url, 1536, 80)} 
-        alt={thread.featured_image_alt?.trim() || thread.title} 
-        className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-        loading="lazy"
-      />
-   </div>
-)}
-
-                          {/* AVATAR (Nur wenn kein Bild da ist) */}
-                          {!thread.featured_image_url && (
-                              <div className="hidden sm:flex w-14 h-14 rounded-full bg-slate-50 items-center justify-center flex-shrink-0 group-hover:bg-orange-50 group-hover:text-orange-500 text-slate-400 font-bold text-xl border border-slate-100 transition-colors">
-                                {thread.is_pinned ? <Pin className="w-6 h-6" /> : getInitial(thread.author_name)}
-                              </div>
-                          )}
-                          
-                          {/* Content */}
-                          <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <div className="flex flex-wrap gap-2 mb-3">
-                              {thread.is_pinned && <Badge className="bg-orange-50 text-orange-600 border border-orange-100 hover:bg-orange-100 px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold">Angepinnt</Badge>}
-                              {thread.is_answered && <Badge className="bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100 px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold">Gelöst</Badge>}
-                              {categoryFilter === "all" && thread.category_id && categories?.find(c => c.id === thread.category_id) && (
-                                  <Badge variant="outline" className="bg-slate-50 text-slate-500 border-slate-200 px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold">
-                                      {categories.find(c => c.id === thread.category_id)?.name}
-                                  </Badge>
-                              )}
-                            </div>
-                            
-                            <h3 className="text-xl md:text-2xl font-extrabold text-[#0A0F1C] group-hover:text-orange-500 transition-colors mb-2 line-clamp-2 leading-tight">
-                              {thread.title}
-                            </h3>
-                            <p className="text-slate-500 text-base line-clamp-2 mb-5 leading-relaxed">
-  {generateExcerpt(thread.content).substring(0, 180)}...
-</p>
-                            
-                            {/* Footer Meta */}
-                            <div className="flex items-center justify-between text-xs font-bold text-slate-400 border-t border-slate-100 pt-4 mt-auto">
-                              <div className="flex items-center gap-4 md:gap-6 uppercase tracking-wider">
-                                <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {thread.author_name}</span>
-                                <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {formatDate(thread.created_at || "")}</span>
-                              </div>
-                              <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-full text-slate-600 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors">
-                                  <MessageCircle className="w-4 h-4" /> 
-                                  <span>{thread.reply_count || 0}</span>
-                              </div>
-                            </div>
-                          </div>
-
-                        </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="text-center py-24 bg-white rounded-3xl border border-slate-100 shadow-sm">
-                      <div className="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border border-slate-100">
-                          <Search className="w-10 h-10 text-slate-300" />
-                      </div>
-                      <h3 className="text-2xl font-extrabold text-[#0A0F1C] mb-2">Keine Beiträge gefunden</h3>
-                      <p className="text-slate-500 max-w-sm mx-auto text-lg">Zu diesem Filter gibt es aktuell keine Diskussionen. Sei der Erste!</p>
-                      <Button className="mt-8 rounded-full h-12 px-8 font-bold border-slate-200" variant="outline" onClick={() => navigate("/forum")}>Alle anzeigen</Button>
-                    </div>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </div>
-
-            {/* SIDEBAR (Right) */}
-            <div className="lg:w-[30%] space-y-8">
-              
-              {/* Kategorie Info Card */}
-              {activeCategoryData && (
-                <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-xl shadow-slate-200/40 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-full h-1.5 bg-orange-500" />
-                  <h2 className="flex items-center gap-3 text-xl font-extrabold text-[#0A0F1C] mb-4">
-                    <Star className="w-6 h-6 text-orange-500" /> Über {activeCategoryData.name}
-                  </h2>
-                  <p className="text-slate-600 leading-relaxed font-medium mb-6">
-                    {activeCategoryData.description || `Willkommen im Bereich für ${activeCategoryData.name}. Hier findest du alle relevanten Diskussionen.`}
-                  </p>
-                  <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                    <p className="font-extrabold text-[#0A0F1C] mb-1">Du suchst Anbieter?</p>
-                    <p className="text-sm text-slate-500 mb-4">Vergleiche passende {activeCategoryData.name}-Lösungen im Überblick.</p>
-                    <Button asChild className="w-full bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 rounded-xl h-12 font-bold group">
-                        <Link to={`/${activeCategoryData.slug}`}>
-                            Zum Vergleich <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-                        </Link>
+      <Dialog open={editorOpen} onOpenChange={setEditorOpen}>
+        <DialogContent className="w-[96vw] max-w-6xl h-[92vh] overflow-hidden p-0 gap-0">
+          <DialogHeader className="shrink-0 border-b bg-white/95 px-6 py-5 backdrop-blur">
+            <DialogTitle>{editingThread ? "Beitrag bearbeiten" : "Neuer Beitrag"}</DialogTitle>
+            <DialogDescription>Erstelle oder bearbeite Magazin-Beiträge mit SEO-Optimierung</DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto px-6 py-5 custom-scrollbar">
+            <div className="space-y-6">
+            <Card><CardHeader className="pb-3"><CardTitle className="text-base">SEO Suite</CardTitle></CardHeader><CardContent className="space-y-4"><div><Label>Meta Title ({formData.seo_title?.length || 0}/60)</Label><Input value={formData.seo_title} onChange={(e) => setFormData((p) => ({ ...p, seo_title: e.target.value }))} maxLength={60} placeholder="SEO Titel für Suchergebnisse" /><div className="h-1 bg-muted rounded mt-1"><div className={`h-full rounded transition-all ${(formData.seo_title?.length || 0) > 50 ? "bg-green-500" : "bg-yellow-500"}`} style={{ width: `${Math.min(((formData.seo_title?.length || 0) / 60) * 100, 100)}%`, }} /></div></div><div><Label>Meta Description ({formData.seo_description?.length || 0}/155)</Label><Textarea value={formData.seo_description} onChange={(e) => setFormData((p) => ({ ...p, seo_description: e.target.value, }))} maxLength={155} rows={2} placeholder="Beschreibung für Suchergebnisse" /><div className="h-1 bg-muted rounded mt-1"><div className={`h-full rounded transition-all ${(formData.seo_description?.length || 0) > 120 ? "bg-green-500" : "bg-yellow-500"}`} style={{ width: `${Math.min(((formData.seo_description?.length || 0) / 155) * 100, 100)}%`, }} /></div></div></CardContent></Card>
+            <div className="grid md:grid-cols-2 gap-4"><div><Label>Titel *</Label><Input value={formData.title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="Beitragstitel" /></div><div><Label>Slug</Label><Input value={formData.slug} onChange={(e) => setFormData((p) => ({ ...p, slug: e.target.value }))} placeholder="url-slug" /></div></div>
+            <div className="grid md:grid-cols-3 gap-4">
+                <div><Label>Autor</Label><Input value={formData.author_name} onChange={(e) => setFormData((p) => ({ ...p, author_name: e.target.value }))} /></div>
+                <div><Label>Kategorie</Label><Select value={formData.category_id || "none"} onValueChange={(value) => setFormData((p) => ({ ...p, category_id: value === "none" ? null : value, }))}><SelectTrigger><SelectValue placeholder="Kategorie wählen" /></SelectTrigger><SelectContent><SelectItem value="none">Keine Kategorie</SelectItem>{categories?.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent></Select></div>
+                <div>
+                  <Label className="font-bold text-slate-900">Beitragsbild (Zuschnitt auf 1536x1024px)</Label>
+                  <div className="flex flex-col gap-2 mt-1">
+                    <Button 
+                      variant={formData.featured_image_url ? "secondary" : "outline"} 
+                      asChild 
+                      disabled={imageUploading} 
+                      className="w-full relative overflow-hidden h-12"
+                    >
+                      <label className="cursor-pointer flex items-center justify-center gap-2">
+                        {imageUploading ? (
+                          <><Loader2 className="w-4 h-4 animate-spin" /> Verarbeite Bild...</>
+                        ) : (
+                          <><ImageIcon className="w-4 h-4" /> {formData.featured_image_url ? "Bild ändern / Überschreiben" : "Bild vom PC hochladen"}</>
+                        )}
+                        <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                      </label>
                     </Button>
+                    
+                    {formData.featured_image_url && (
+                      <div className="flex items-center justify-between bg-green-50 px-3 py-2 rounded-xl border border-green-100 shadow-sm">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-bold text-green-700 uppercase tracking-wider">Status</span>
+                          <span className="text-[11px] text-green-600 font-medium truncate max-w-[200px]">Bild liegt sicher in Supabase</span>
+                        </div>
+                        <div className="h-10 w-15 overflow-hidden rounded-lg border-2 border-white shadow-sm">
+                          <img src={formData.featured_image_url} alt="Preview" className="h-full w-full object-cover" />
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-2 leading-tight">
+                    <strong>Image-Performance-Gesetz:</strong> Wir erlauben nur noch Uploads. So wird jedes Bild automatisch optimiert und über unsere Render-API blitzschnell geladen.
+                  </p>
                 </div>
-              )}
-
-              {/* Status Card */}
-              <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-lg shadow-slate-200/30">
-                <h2 className="text-lg font-extrabold flex items-center gap-2 text-[#0A0F1C] mb-6">
-                    <BarChart3 className="w-5 h-5 text-orange-500" /> Community Status
-                </h2>
-                <div className="space-y-5">
-                  <div className="flex justify-between items-center">
-                      <span className="text-slate-500 font-bold text-sm uppercase tracking-widest">Diskussionen</span>
-                      <span className="font-extrabold text-xl text-[#0A0F1C]">{totalThreads}</span>
-                  </div>
-                  <div className="h-px bg-slate-100" />
-                  <div className="bg-emerald-50 text-emerald-600 px-4 py-2.5 rounded-xl text-xs font-bold text-center border border-emerald-100 uppercase tracking-widest flex items-center justify-center gap-2">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                      </span>
-                      Live Community
-                  </div>
+                <div><Label>Featured Image Alt-Text</Label><Input value={formData.featured_image_alt} onChange={(e) => setFormData((p) => ({ ...p, featured_image_alt: e.target.value }))} placeholder="Präziser Alt-Text für das Beitragsbild" /></div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Inhalt *</Label>
+                <div className="flex gap-1">
+                  <Button type="button" variant={editorMode === "visual" ? "secondary" : "ghost"} size="sm" onClick={() => setEditorMode("visual")}><FileText className="w-4 h-4 mr-1" />Visual</Button>
+                  <Button type="button" variant={editorMode === "code" ? "secondary" : "ghost"} size="sm" onClick={() => setEditorMode("code")}><Code className="w-4 h-4 mr-1" />HTML</Button>
                 </div>
               </div>
 
-              {/* Werbung / Ads */}
-              {currentAd && currentAd.enabled && (
-                <div className="space-y-6">
-                  {currentAd.type === 'code' && currentAd.html_code && <ScriptAd code={currentAd.html_code} />}
-                  {currentAd.type === 'image' && currentAd.image_url && (
-                    <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-lg shadow-slate-200/30 transition-all hover:shadow-xl group">
-                      {(currentAd.headline || currentAd.subheadline) && (
-                        <div className="mb-5">
-                          {currentAd.headline && <h4 className="font-extrabold text-xl text-[#0A0F1C] mb-2">{currentAd.headline}</h4>}
-                          {currentAd.subheadline && <p className="text-sm text-slate-500 font-medium">{currentAd.subheadline}</p>}
-                        </div>
-                      )}
-                      <a href={currentAd.link_url || "#"} target={currentAd.link_url?.startsWith("http") ? "_blank" : "_self"} rel="noopener noreferrer" className="block relative overflow-hidden rounded-2xl mb-5 border border-slate-100">
-                        <img src={optimizeSupabaseImageUrl(currentAd.image_url, 800, 80)} alt={currentAdAlt} className="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" loading="lazy" />
-                        <div className="absolute top-3 right-3 bg-black/50 text-white text-[10px] px-2.5 py-1 rounded backdrop-blur-md z-20 font-bold uppercase tracking-widest">Anzeige</div>
-                      </a>
-                      {currentAd.cta_text && (
-                        <Button asChild className="w-full h-12 rounded-xl bg-orange-500 hover:bg-[#0A0F1C] text-white font-bold transition-colors">
-                          <a href={currentAd.link_url || "#"} target={currentAd.link_url?.startsWith("http") ? "_blank" : "_self"} rel="noopener noreferrer">
-                              {currentAd.cta_text} <ChevronRight className="w-4 h-4 ml-1" />
-                          </a>
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-3 mb-3 text-xs text-slate-600 leading-relaxed">
+                Visual und HTML laufen jetzt über dieselbe Quelle. Änderungen werden sofort bidirektional synchronisiert. Bilder aus dem visuellen Editor landen automatisch im Bucket <strong>forum-images</strong> und werden per Render-API eingebunden.
+              </div>
+
+              {editorMode === "visual" ? (
+                <RichTextEditor
+                  value={formData.raw_html_content}
+                  onChange={syncEditorContent}
+                  uploadBucket="forum-images"
+                  imageWidth={1280}
+                  imageQuality={80}
+                  className="min-h-[560px]"
+                />
+              ) : (
+                <Textarea
+                  value={formData.raw_html_content}
+                  onChange={(e) => syncEditorContent(e.target.value)}
+                  rows={22}
+                  className="font-mono text-sm min-h-[560px] resize-none"
+                  placeholder="<p>Raw HTML Content...</p>"
+                />
               )}
-              
+            </div>
+            
+            <div className="flex flex-wrap gap-6 items-center border-t pt-4">
+                <div className="flex items-center gap-2"><Switch checked={formData.is_pinned} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_pinned: v }))} /><Label>Angepinnt</Label></div>
+                <div className="flex items-center gap-2"><Switch checked={formData.is_locked} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_locked: v }))} /><Label>Geschlossen</Label></div>
+                <div className="flex items-center gap-2"><Switch checked={formData.is_answered} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_answered: v }))} /><Label>Beantwortet</Label></div>
+                <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200"><Switch checked={formData.is_active} onCheckedChange={(v) => setFormData((p) => ({ ...p, is_active: v }))} className="data-[state=checked]:bg-emerald-500" /><Label className="font-bold text-slate-800">Veröffentlicht / Online</Label></div>
+                
+                <div className="flex items-center gap-2 bg-orange-50 px-4 py-2 rounded-full border border-orange-200">
+                    <Megaphone className="w-4 h-4 text-orange-600" />
+                    <Switch checked={formData.show_ad} onCheckedChange={(v) => setFormData((p) => ({ ...p, show_ad: v }))} className="data-[state=checked]:bg-orange-600" />
+                    <Label className="text-orange-900 font-bold cursor-pointer">Werbung anzeigen</Label>
+                </div>
+            </div>
+
+            {formData.show_ad && (
+                <div className="bg-orange-50/50 border border-orange-100 p-4 rounded-xl space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                    <Label className="font-bold text-orange-800 block">Werbe-Inhalt konfigurieren</Label>
+                    <RadioGroup value={formData.ad_type || "image"} onValueChange={(v) => setFormData(p => ({...p, ad_type: v}))} className="flex gap-4 mb-4">
+                        <div className="flex items-center space-x-2 bg-white px-3 py-1 rounded border shadow-sm">
+                            <RadioGroupItem value="image" id="t_img" /><Label htmlFor="t_img" className="flex items-center gap-2 cursor-pointer"><ImageIcon className="w-3 h-3"/> Bild & Link</Label>
+                        </div>
+                        <div className="flex items-center space-x-2 bg-white px-3 py-1 rounded border shadow-sm">
+                            <RadioGroupItem value="code" id="t_code" /><Label htmlFor="t_code" className="flex items-center gap-2 cursor-pointer"><Code className="w-3 h-3"/> HTML / Script</Label>
+                        </div>
+                    </RadioGroup>
+                    {formData.ad_type === 'image' ? (
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div><Label>Bild URL</Label><Input value={formData.ad_image_url} onChange={(e) => setFormData(p => ({...p, ad_image_url: optimizeSupabaseImageUrl(e.target.value, 800, 80)}))} placeholder="https://..." /></div>
+                            <div><Label>Bild Alt-Text</Label><Input value={formData.ad_image_alt} onChange={(e) => setFormData(p => ({...p, ad_image_alt: e.target.value}))} placeholder="Präziser Alt-Text für das Werbebild" /></div>
+                            <div><Label>Ziel-Link</Label><div className="flex gap-2"><LinkIcon className="w-4 h-4 text-muted-foreground mt-3" /><Input value={formData.ad_link_url} onChange={(e) => setFormData(p => ({...p, ad_link_url: e.target.value}))} placeholder="https://dein-angebot.de" /></div></div>
+                            <div><Label>Button Text (CTA)</Label><Input value={formData.ad_cta_text} onChange={(e) => setFormData(p => ({...p, ad_cta_text: e.target.value}))} placeholder="Jetzt ansehen" /></div>
+                        </div>
+                    ) : (
+                        <div><Label>HTML / JS Code</Label><Textarea value={formData.ad_html_code} onChange={(e) => setFormData(p => ({...p, ad_html_code: e.target.value}))} rows={4} className="font-mono text-xs bg-slate-900 text-green-400" placeholder="<script>...</script>" /></div>
+                    )}
+                </div>
+            )}
+
+            <div><Label>Admin Notizen (intern)</Label><Textarea value={formData.admin_notes} onChange={(e) => setFormData((p) => ({ ...p, admin_notes: e.target.value }))} rows={2} placeholder="Interne Notizen..." /></div>
             </div>
           </div>
-        </div>
-      </main>
+          <div className="shrink-0 border-t bg-white/95 px-6 py-4 backdrop-blur">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-slate-500">Großes Editorfeld mit internem Scrollbereich – Speichern bleibt jederzeit erreichbar.</p>
+              <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => setEditorOpen(false)}>Abbrechen</Button><Button onClick={handleSaveThread} disabled={createThread.isPending || updateThread.isPending}>{createThread.isPending || updateThread.isPending ? "Speichern..." : "Speichern"}</Button></div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-      <Footer />
+      <Dialog open={categoryEditorOpen} onOpenChange={setCategoryEditorOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{editingCategory ? "Kategorie bearbeiten" : "Neue Kategorie"}</DialogTitle><DialogDescription>Kategorien helfen beim Organisieren der Magazin-Beiträge</DialogDescription></DialogHeader>
+          <Tabs defaultValue="basic">
+            <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="basic">Basisdaten</TabsTrigger><TabsTrigger value="seo" className="text-blue-700 bg-blue-50"><SearchIcon className="w-4 h-4 mr-2"/> SEO</TabsTrigger><TabsTrigger value="ads" className="text-green-700 bg-green-50"><DollarSign className="w-4 h-4 mr-2"/> Werbung</TabsTrigger></TabsList>
+            <TabsContent value="basic" className="space-y-4 pt-4">
+                <div><Label>Name *</Label><Input value={categoryFormData.name} onChange={(e) => handleCategoryNameChange(e.target.value)} placeholder="Kategoriename" /></div>
+                <div><Label>Slug *</Label><Input value={categoryFormData.slug} onChange={(e) => setCategoryFormData((p) => ({ ...p, slug: e.target.value }))} placeholder="url-slug" /></div>
+                <div><Label>Beschreibung (intern & Frontend)</Label><Textarea value={categoryFormData.description} onChange={(e) => setCategoryFormData((p) => ({ ...p, description: e.target.value }))} rows={2} placeholder="Kurze Beschreibung..." /></div>
+                <div><Label>Reihenfolge</Label><Input type="number" value={categoryFormData.sort_order} onChange={(e) => setCategoryFormData((p) => ({ ...p, sort_order: parseInt(e.target.value) || 0, }))} /></div>
+                <div className="flex items-center gap-2"><Switch checked={categoryFormData.is_active} onCheckedChange={(v) => setCategoryFormData((p) => ({ ...p, is_active: v }))} /><Label>Aktiv</Label></div>
+            </TabsContent>
+            <TabsContent value="seo" className="space-y-4 pt-4">
+                <Card><CardHeader className="pb-3"><CardTitle className="text-base">Kategorie SEO Einstellungen</CardTitle></CardHeader><CardContent className="space-y-4">
+                    <div><Label>Meta Title ({categoryFormData.seo_title?.length || 0}/60)</Label><Input value={categoryFormData.seo_title} onChange={(e) => setCategoryFormData((p) => ({ ...p, seo_title: e.target.value }))} maxLength={60} placeholder="SEO Titel" /></div>
+                    <div><Label>Meta Description ({categoryFormData.seo_description?.length || 0}/155)</Label><Textarea value={categoryFormData.seo_description} onChange={(e) => setCategoryFormData((p) => ({ ...p, seo_description: e.target.value, }))} maxLength={155} rows={3} placeholder="SEO Beschreibung" /></div>
+                </CardContent></Card>
+            </TabsContent>
+            <TabsContent value="ads" className="space-y-4 pt-4">
+                <div className="bg-slate-50 p-4 rounded-lg border">
+                    <div className="flex items-center justify-between mb-4"><Label className="font-bold text-base">Werbung aktivieren</Label><Switch checked={categoryFormData.ad_enabled} onCheckedChange={(v) => setCategoryFormData((p) => ({ ...p, ad_enabled: v }))} /></div>
+                    {categoryFormData.ad_enabled && (
+                        <div className="space-y-4">
+                            <Select value={categoryFormData.assigned_ad_id || "none"} onValueChange={(val) => setCategoryFormData(p => ({...p, assigned_ad_id: val === "none" ? "" : val}))}>
+                                <SelectTrigger><SelectValue placeholder="Wähle einen Banner..." /></SelectTrigger>
+                                <SelectContent><SelectItem value="none">-- Manuell --</SelectItem>{adsPool?.map(ad => (<SelectItem key={ad.id} value={ad.id}>{ad.name}</SelectItem>))}</SelectContent>
+                            </Select>
+                            {!categoryFormData.assigned_ad_id && (
+                                <div className="space-y-4">
+                                    <RadioGroup value={manualAdType} onValueChange={(v: "image" | "code") => setManualAdType(v)} className="flex gap-4">
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="image" id="m1" /><Label htmlFor="m1">Bild</Label></div>
+                                        <div className="flex items-center space-x-2"><RadioGroupItem value="code" id="m2" /><Label htmlFor="m2">Code</Label></div>
+                                    </RadioGroup>
+                                    {manualAdType === 'image' ? (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <Input value={categoryFormData.ad_image_url} onChange={(e) => setCategoryFormData(p => ({...p, ad_image_url: optimizeSupabaseImageUrl(e.target.value, 800, 80)}))} placeholder="Bild URL" />
+                                            <Input value={categoryFormData.ad_link_url} onChange={(e) => setCategoryFormData(p => ({...p, ad_link_url: e.target.value}))} placeholder="Ziel Link" />
+                                        </div>
+                                    ) : (
+                                        <Textarea value={categoryFormData.ad_html_code} onChange={(e) => setCategoryFormData(p => ({...p, ad_html_code: e.target.value}))} rows={4} className="font-mono text-xs" />
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </TabsContent>
+          </Tabs>
+          <div className="flex justify-end gap-2 pt-4 border-t"><Button variant="outline" onClick={() => setCategoryEditorOpen(false)}>Abbrechen</Button><Button onClick={handleSaveCategory} disabled={createCategory.isPending || updateCategory.isPending}>Speichern</Button></div>
+        </DialogContent>
+      </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Beitrag löschen?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={handleDeleteThread} className="bg-destructive text-destructive-foreground">Löschen</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      <AlertDialog open={deleteCategoryDialogOpen} onOpenChange={setDeleteCategoryDialogOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Kategorie löschen?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground">Löschen</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
     </div>
   );
 }
