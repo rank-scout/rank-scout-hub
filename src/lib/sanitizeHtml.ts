@@ -297,7 +297,7 @@ export function rewriteSupabaseStorageUrls(html?: string | null, width = 800, qu
 export function sanitizeCmsHtml(html?: string | null): string {
   if (!html) return "";
 
-  const normalizedHtml = rewriteSupabaseStorageUrls(html);
+  const normalizedHtml = rewriteSupabaseStorageUrls(html, 1400, 80);
 
   return DOMPurify.sanitize(normalizedHtml, {
     USE_PROFILES: { html: true },
@@ -320,7 +320,7 @@ export function sanitizeCmsHtmlWithBreaks(html?: string | null): string {
 export function sanitizeForumHtml(html?: string | null): string {
   if (!html) return "";
 
-  const normalizedHtml = rewriteSupabaseStorageUrls(html);
+  const normalizedHtml = rewriteSupabaseStorageUrls(html, 1400, 80);
 
   return DOMPurify.sanitize(normalizedHtml, {
     USE_PROFILES: { html: true },
