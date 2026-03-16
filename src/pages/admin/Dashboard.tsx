@@ -31,6 +31,9 @@ import {
   Percent,
   Zap,
   MapPin,
+  GitBranch,
+  RefreshCw,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
@@ -114,6 +117,9 @@ const TYPE_LABELS: Record<string, string> = {
   project: "Affiliate",
 };
 
+const TRAFFIC_TABLE_PAGE_SIZE = 10;
+const PROJECT_PULSE_LIMIT = 12;
+
 type TrafficItem = {
   name: string;
   type: string;
@@ -131,6 +137,15 @@ type CountryStat = {
   isUnknown: boolean;
   value: number;
   percent: number;
+};
+
+type GithubPulseCommit = {
+  sha: string;
+  message: string;
+  authorName: string;
+  authorLogin: string | null;
+  committedAt: string;
+  url: string;
 };
 
 // --- URL HELPER ---
@@ -158,11 +173,22 @@ const getPublicUrl = (type: string, id: string) => {
   }
 };
 
+const formatProjectPulseDate = (value: string) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unbekannt";
+  }
+
+  return format(date, "dd.MM.yyyy · HH:mm", { locale: de });
+};
+
 export default function AdminDashboard() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: new Date(),
     to: new Date(),
   });
+  const [trafficPages, setTrafficPages] = useState<Record<string, number>>({});
 
   const { data: categories = [] } = useCategories(true);
   const { data: projects = [] } = useProjects(true);
@@ -212,6 +238,29 @@ export default function AdminDashboard() {
   const { data: redirects = [] } = useQuery({
     queryKey: ["redirects"],
     queryFn: fetchRedirects,
+  });
+
+  const {
+    data: projectPulse = [],
+    isLoading: isProjectPulseLoading,
+    isFetching: isProjectPulseFetching,
+    isError: isProjectPulseError,
+    error: projectPulseError,
+    refetch: refetchProjectPulse,
+  } = useQuery<GithubPulseCommit[]>({
+    queryKey: ["github-pulse"],
+    staleTime: 1000 * 60 * 5,
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke("github-pulse", {
+        body: { perPage: PROJECT_PULSE_LIMIT },
+      });
+
+      if (error) throw error;
+
+      return Array.isArray((data as { commits?: GithubPulseCommit[] } | null)?.commits)
+        ? ((data as { commits: GithubPulseCommit[] }).commits || [])
+        : [];
+    },
   });
 
   const allTimeMap = useMemo(() => {
@@ -453,152 +502,212 @@ export default function AdminDashboard() {
   const TrafficTable = ({
     data,
     totalViewsContext,
+    paginationKey,
   }: {
     data: TrafficItem[];
     totalViewsContext: number;
+    paginationKey: string;
   }) => {
+
     const sumPeriod = data.reduce((acc, item) => acc + item.count, 0);
     const sumAllTime = data.reduce(
       (acc, item) => acc + item.total_all_time,
       0
     );
 
+    const totalPages = Math.max(1, Math.ceil(data.length / TRAFFIC_TABLE_PAGE_SIZE));
+    const currentPageValue = trafficPages[paginationKey] ?? 1;
+    const currentPage = Math.min(currentPageValue, totalPages);
+    const pageStartIndex = (currentPage - 1) * TRAFFIC_TABLE_PAGE_SIZE;
+    const pageEndIndex = pageStartIndex + TRAFFIC_TABLE_PAGE_SIZE;
+    const paginatedData = data.slice(pageStartIndex, pageEndIndex);
+
     return (
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <Table>
-          <TableHeader className="bg-slate-50/90">
-            <TableRow>
-              <TableHead className="px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">
-                Seite / Ziel
-              </TableHead>
-              <TableHead className="px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">Typ</TableHead>
-              <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">
-                Anteil
-              </TableHead>
-              <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-[#FF8400]">
-                Views (Zeitraum)
-              </TableHead>
-              <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-slate-500">
-                Views (Gesamt)
-              </TableHead>
-              <TableHead className="px-6 py-4 text-right">Live</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {data.length === 0 ? (
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-slate-50/90">
               <TableRow>
-                <TableCell
-                  colSpan={6}
-                  className="h-28 text-center italic text-slate-400"
-                >
-                  Keine Daten verfügbar.
-                </TableCell>
+                <TableHead className="px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">
+                  Seite / Ziel
+                </TableHead>
+                <TableHead className="px-6 py-4 text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">
+                  Typ
+                </TableHead>
+                <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-[#0E1F53]">
+                  Anteil
+                </TableHead>
+                <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-[#FF8400]">
+                  Views (Zeitraum)
+                </TableHead>
+                <TableHead className="px-6 py-4 text-right text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+                  Views (Gesamt)
+                </TableHead>
+                <TableHead className="px-6 py-4 text-right">Live</TableHead>
               </TableRow>
-            ) : (
-              data.map((item) => {
-                const share =
-                  totalViewsContext > 0
-                    ? (item.count / totalViewsContext) * 100
-                    : 0;
+            </TableHeader>
 
-                return (
-                  <TableRow
-                    key={`${item.name}-${item.type}`}
-                    className="group border-t border-slate-100 hover:bg-slate-50/60 transition-colors"
+            <TableBody>
+              {data.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className="h-28 text-center italic text-slate-400"
                   >
-                    <TableCell>
-                      <div className="min-w-0">
-                        <div className="font-bold text-slate-800 truncate">
-                          {item.displayName}
+                    Keine Daten verfügbar.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedData.map((item) => {
+                  const share =
+                    totalViewsContext > 0
+                      ? (item.count / totalViewsContext) * 100
+                      : 0;
+
+                  return (
+                    <TableRow
+                      key={`${item.name}-${item.type}`}
+                      className="group border-t border-slate-100 transition-colors hover:bg-slate-50/60"
+                    >
+                      <TableCell>
+                        <div className="min-w-0">
+                          <div className="font-bold text-slate-800 truncate">
+                            {item.displayName}
+                          </div>
+                          <div className="mt-1 truncate text-xs font-medium text-slate-400">
+                            {item.name}
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-400 truncate mt-1 font-medium">
-                          {item.name}
-                        </div>
-                      </div>
-                    </TableCell>
+                      </TableCell>
 
-                    <TableCell>
-                      <Badge
-                        className={cn(
-                          "text-white border-none px-3 py-0.5 font-bold",
-                          item.type === "project"
-                            ? "bg-green-600"
-                            : item.type === "page"
-                            ? "bg-blue-600"
-                            : item.type === "category"
-                            ? "bg-purple-600"
-                            : item.type === "comparison"
-                            ? "bg-amber-600"
-                            : item.type === "forum"
-                            ? "bg-indigo-600"
-                            : "bg-slate-500"
-                        )}
-                      >
-                        {item.typeLabel}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="text-[10px] text-slate-400 w-8 font-mono">
-                          {share.toFixed(0)}%
-                        </span>
-                        <Progress
-                          value={share}
-                          className="h-1.5 w-12 bg-slate-100"
-                        />
-                      </div>
-                    </TableCell>
-
-                    <TableCell className="text-right font-black text-slate-900 text-base">
-                      {item.count}
-                    </TableCell>
-
-                    <TableCell className="text-right text-slate-400 font-mono text-xs italic">
-                      {item.total_all_time}
-                    </TableCell>
-
-                    <TableCell className="px-6 py-4 text-right">
-                      {item.type !== "project" && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-9 w-9 rounded-xl border border-slate-200 opacity-60 transition-all group-hover:opacity-100"
-                          asChild
+                      <TableCell>
+                        <Badge
+                          className={cn(
+                            "border-none px-3 py-0.5 font-bold text-white",
+                            item.type === "project"
+                              ? "bg-green-600"
+                              : item.type === "page"
+                              ? "bg-blue-600"
+                              : item.type === "category"
+                              ? "bg-purple-600"
+                              : item.type === "comparison"
+                              ? "bg-amber-600"
+                              : item.type === "forum"
+                              ? "bg-indigo-600"
+                              : "bg-slate-500"
+                          )}
                         >
-                          <a
-                            href={getPublicUrl(item.type, item.name)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </a>
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
+                          {item.typeLabel}
+                        </Badge>
+                      </TableCell>
 
-          {data.length > 0 && (
-            <TableFooter className="bg-slate-50/90 font-black text-slate-900">
-              <TableRow>
-                <TableCell colSpan={2}>ZUSAMMENFASSUNG</TableCell>
-                <TableCell className="px-6 py-4 text-right">-</TableCell>
-                <TableCell className="text-right text-primary">
-                  {sumPeriod}
-                </TableCell>
-                <TableCell className="text-right text-slate-500 font-normal">
-                  {sumAllTime}
-                </TableCell>
-                <TableCell />
-              </TableRow>
-            </TableFooter>
-          )}
-        </Table>
+                      <TableCell className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <span className="w-8 text-[10px] font-mono text-slate-400">
+                            {share.toFixed(0)}%
+                          </span>
+                          <Progress
+                            value={share}
+                            className="h-1.5 w-12 bg-slate-100"
+                          />
+                        </div>
+                      </TableCell>
+
+                      <TableCell className="text-right text-base font-black text-slate-900">
+                        {item.count}
+                      </TableCell>
+
+                      <TableCell className="text-right font-mono text-xs italic text-slate-400">
+                        {item.total_all_time}
+                      </TableCell>
+
+                      <TableCell className="px-6 py-4 text-right">
+                        {item.type !== "project" && (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-9 w-9 rounded-xl border border-slate-200 opacity-60 transition-all group-hover:opacity-100"
+                            asChild
+                          >
+                            <a
+                              href={getPublicUrl(item.type, item.name)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </a>
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+
+            {data.length > 0 && (
+              <TableFooter className="bg-slate-50/90 font-black text-slate-900">
+                <TableRow>
+                  <TableCell colSpan={2}>ZUSAMMENFASSUNG</TableCell>
+                  <TableCell className="px-6 py-4 text-right">-</TableCell>
+                  <TableCell className="text-right text-primary">
+                    {sumPeriod}
+                  </TableCell>
+                  <TableCell className="text-right font-normal text-slate-500">
+                    {sumAllTime}
+                  </TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableFooter>
+            )}
+          </Table>
+        </div>
+
+        {data.length > TRAFFIC_TABLE_PAGE_SIZE && (
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+              Einträge {pageStartIndex + 1}-{Math.min(pageEndIndex, data.length)} von {data.length}
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() =>
+                  setTrafficPages((prev) => ({
+                    ...prev,
+                    [paginationKey]: Math.max(currentPage - 1, 1),
+                  }))
+                }
+                disabled={currentPage === 1}
+              >
+                Zurück
+              </Button>
+
+              <div className="min-w-[120px] text-center text-sm font-black text-[#0E1F53]">
+                Seite {currentPage} von {totalPages}
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() =>
+                  setTrafficPages((prev) => ({
+                    ...prev,
+                    [paginationKey]: Math.min(currentPage + 1, totalPages),
+                  }))
+                }
+                disabled={currentPage === totalPages}
+              >
+                Weiter
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -868,6 +977,7 @@ export default function AdminDashboard() {
               <TrafficTable
                 data={trafficList}
                 totalViewsContext={periodPageViews + periodProjectClicks}
+                paginationKey="all"
               />
             </TabsContent>
 
@@ -875,6 +985,7 @@ export default function AdminDashboard() {
               <TrafficTable
                 data={trafficList.filter((i) => i.type === "page")}
                 totalViewsContext={periodPageViews}
+                paginationKey="pages"
               />
             </TabsContent>
 
@@ -885,6 +996,7 @@ export default function AdminDashboard() {
               <TrafficTable
                 data={trafficList.filter((i) => i.type === "comparison")}
                 totalViewsContext={periodPageViews}
+                paginationKey="comparisons"
               />
             </TabsContent>
 
@@ -892,6 +1004,7 @@ export default function AdminDashboard() {
               <TrafficTable
                 data={trafficList.filter((i) => i.type === "category")}
                 totalViewsContext={periodPageViews}
+                paginationKey="categories"
               />
             </TabsContent>
 
@@ -899,6 +1012,7 @@ export default function AdminDashboard() {
               <TrafficTable
                 data={trafficList.filter((i) => i.type === "forum")}
                 totalViewsContext={periodPageViews}
+                paginationKey="forum"
               />
             </TabsContent>
 
@@ -910,6 +1024,7 @@ export default function AdminDashboard() {
               <TrafficTable
                 data={trafficList.filter((i) => i.type === "project")}
                 totalViewsContext={periodProjectClicks}
+                paginationKey="outbound"
               />
             </TabsContent>
           </Tabs>
@@ -1487,27 +1602,110 @@ export default function AdminDashboard() {
         </Card>
       </div>
 
-      {/* EXTERNAL REPORT */}
-      {(settings as any)?.custom_report_url && (
-        <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-slate-200 bg-slate-50/80 p-6">
-            <CardTitle className="flex items-center gap-2 text-lg font-black text-[#0E1F53]">
-              <Globe className="w-5 h-5 text-[#0E1F53]" />
-              Google Looker Studio Report
-            </CardTitle>
-          </CardHeader>
+      {/* PROJEKT-PULSE */}
+      <Card className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <CardHeader className="border-b border-slate-200 bg-slate-50/80 p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="space-y-2">
+              <CardTitle className="flex items-center gap-2 text-lg font-black text-[#0E1F53]">
+                <GitBranch className="h-5 w-5 text-[#FF8400]" />
+                Projekt-Pulse - Letzte System-Updates
+              </CardTitle>
+              <CardDescription className="text-sm text-slate-500">
+                Die letzten {PROJECT_PULSE_LIMIT} Commits laufen sicher über eine Supabase Edge Function.
+              </CardDescription>
+            </div>
 
-          <CardContent className="p-0">
-            <iframe
-              src={(settings as any).custom_report_url}
-              width="100%"
-              height="800"
-              className="border-0 bg-white"
-              allowFullScreen
-            ></iframe>
-          </CardContent>
-        </Card>
-      )}
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge className="border-none bg-emerald-100 px-3 py-1 text-emerald-700">
+                <ShieldCheck className="mr-1 h-3.5 w-3.5" />
+                Token bleibt serverseitig
+              </Badge>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-xl"
+                onClick={() => refetchProjectPulse()}
+                disabled={isProjectPulseFetching}
+              >
+                <RefreshCw className={cn("mr-2 h-4 w-4", isProjectPulseFetching && "animate-spin")} />
+                Aktualisieren
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="p-6">
+          {isProjectPulseLoading ? (
+            <div className="space-y-4">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5"
+                >
+                  <div className="h-4 w-3/4 rounded bg-slate-200" />
+                  <div className="mt-3 h-3 w-1/2 rounded bg-slate-100" />
+                </div>
+              ))}
+            </div>
+          ) : isProjectPulseError ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-medium text-red-700">
+              Commit-Feed konnte nicht geladen werden: {projectPulseError instanceof Error ? projectPulseError.message : "Unbekannter Fehler"}
+            </div>
+          ) : projectPulse.length === 0 ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-6 text-sm font-medium text-slate-500">
+              Noch keine Commit-Daten verfügbar. Prüfe GITHUB_ACCESS_TOKEN sowie GITHUB_REPO_OWNER und GITHUB_REPO_NAME in den Edge-Function-Secrets.
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {projectPulse.map((commit, index) => (
+                <div key={commit.sha} className="relative pl-8">
+                  {index !== projectPulse.length - 1 && (
+                    <span className="absolute left-[7px] top-6 h-[calc(100%+8px)] w-px bg-slate-200" />
+                  )}
+
+                  <span className="absolute left-0 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF8400] text-white shadow-sm">
+                    <GitBranch className="h-3 w-3" />
+                  </span>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 transition-colors hover:border-orange-200 hover:bg-white">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                      <div className="min-w-0">
+                        <a
+                          href={commit.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block text-base font-black text-[#0E1F53] transition-colors hover:text-[#FF8400]"
+                        >
+                          {commit.message}
+                        </a>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                          <span>{formatProjectPulseDate(commit.committedAt)}</span>
+                          <span className="text-slate-300">•</span>
+                          <span>{commit.authorName}</span>
+                          {commit.authorLogin && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <span>@{commit.authorLogin}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      <Badge className="w-fit border border-slate-200 bg-white px-3 py-1 font-mono text-xs text-slate-600">
+                        {commit.sha.slice(0, 7)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
