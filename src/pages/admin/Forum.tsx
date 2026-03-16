@@ -73,6 +73,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { optimizeSupabaseImageUrl } from "@/lib/sanitizeHtml";
 import { getForumThreadRoute } from "@/lib/routes";
@@ -408,7 +409,13 @@ export default function AdminForum() {
   const getCategoryName = (categoryId: string | null) => { if (!categoryId) return null; return categories?.find((c) => c.id === categoryId)?.name || null; };
 
   return (
-    <div className="space-y-6">
+    <>
+      <Helmet>
+        <title>Forum Admin | Rank-Scout</title>
+        <meta name="robots" content="noindex,nofollow" />
+      </Helmet>
+
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div><h1 className="text-3xl font-bold flex items-center gap-2"><BookOpen className="w-8 h-8" />Magazin Verwaltung</h1><p className="text-muted-foreground">Beiträge erstellen, Kategorien verwalten und Kommentare moderieren</p></div>
         <Button onClick={handleNewThread}><Plus className="w-4 h-4 mr-2" />Neuer Beitrag</Button>
@@ -612,6 +619,7 @@ export default function AdminForum() {
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Beitrag löschen?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={handleDeleteThread} className="bg-destructive text-destructive-foreground">Löschen</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
       <AlertDialog open={deleteCategoryDialogOpen} onOpenChange={setDeleteCategoryDialogOpen}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Kategorie löschen?</AlertDialogTitle></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Abbrechen</AlertDialogCancel><AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground">Löschen</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
-    </div>
+      </div>
+    </>
   );
 }
