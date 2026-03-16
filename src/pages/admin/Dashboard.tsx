@@ -119,6 +119,7 @@ const TYPE_LABELS: Record<string, string> = {
 
 const TRAFFIC_TABLE_PAGE_SIZE = 10;
 const PROJECT_PULSE_LIMIT = 12;
+const PULSE_PAGE_SIZE = 5;
 
 type TrafficItem = {
   name: string;
@@ -189,6 +190,7 @@ export default function AdminDashboard() {
     to: new Date(),
   });
   const [trafficPages, setTrafficPages] = useState<Record<string, number>>({});
+  const [pulsePage, setPulsePage] = useState(1);
 
   const { data: categories = [] } = useCategories(true);
   const { data: projects = [] } = useProjects(true);
@@ -498,6 +500,12 @@ export default function AdminDashboard() {
     settings?.global_analytics_code ||
     (settings as any)?.google_analytics_id ||
     (settings as any)?.google_search_console_verification;
+
+  const totalPulsePages = Math.max(1, Math.ceil(projectPulse.length / PULSE_PAGE_SIZE));
+  const currentPulsePage = Math.min(pulsePage, totalPulsePages);
+  const pulseStartIndex = (currentPulsePage - 1) * PULSE_PAGE_SIZE;
+  const pulseEndIndex = pulseStartIndex + PULSE_PAGE_SIZE;
+  const paginatedPulse = projectPulse.slice(pulseStartIndex, pulseEndIndex);
 
   const TrafficTable = ({
     data,
@@ -1659,50 +1667,90 @@ export default function AdminDashboard() {
               Noch keine Commit-Daten verfügbar. Prüfe GITHUB_ACCESS_TOKEN sowie GITHUB_REPO_OWNER und GITHUB_REPO_NAME in den Edge-Function-Secrets.
             </div>
           ) : (
-            <div className="space-y-4">
-              {projectPulse.map((commit, index) => (
-                <div key={commit.sha} className="relative pl-8">
-                  {index !== projectPulse.length - 1 && (
-                    <span className="absolute left-[7px] top-6 h-[calc(100%+8px)] w-px bg-slate-200" />
-                  )}
+            <>
+              <div className="space-y-4">
+                {paginatedPulse.map((commit, index) => (
+                  <div key={commit.sha} className="relative pl-8">
+                    {index !== paginatedPulse.length - 1 && (
+                      <span className="absolute left-[7px] top-6 h-[calc(100%+8px)] w-px bg-slate-200" />
+                    )}
 
-                  <span className="absolute left-0 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF8400] text-white shadow-sm">
-                    <GitBranch className="h-3 w-3" />
-                  </span>
+                    <span className="absolute left-0 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF8400] text-white shadow-sm">
+                      <GitBranch className="h-3 w-3" />
+                    </span>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 transition-colors hover:border-orange-200 hover:bg-white">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="min-w-0">
-                        <a
-                          href={commit.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="block text-base font-black text-[#0E1F53] transition-colors hover:text-[#FF8400]"
-                        >
-                          {commit.message}
-                        </a>
+                    <div className="rounded-2xl border border-slate-200 bg-slate-50/80 p-5 transition-colors hover:border-orange-200 hover:bg-white">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                          <a
+                            href={commit.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block text-base font-black text-[#0E1F53] transition-colors hover:text-[#FF8400]"
+                          >
+                            {commit.message}
+                          </a>
 
-                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
-                          <span>{formatProjectPulseDate(commit.committedAt)}</span>
-                          <span className="text-slate-300">•</span>
-                          <span>{commit.authorName}</span>
-                          {commit.authorLogin && (
-                            <>
-                              <span className="text-slate-300">•</span>
-                              <span>@{commit.authorLogin}</span>
-                            </>
-                          )}
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-slate-500">
+                            <span>{formatProjectPulseDate(commit.committedAt)}</span>
+                            <span className="text-slate-300">•</span>
+                            <span>{commit.authorName}</span>
+                            {commit.authorLogin && (
+                              <>
+                                <span className="text-slate-300">•</span>
+                                <span>@{commit.authorLogin}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      </div>
 
-                      <Badge className="w-fit border border-slate-200 bg-white px-3 py-1 font-mono text-xs text-slate-600">
-                        {commit.sha.slice(0, 7)}
-                      </Badge>
+                        <Badge className="w-fit border border-slate-200 bg-white px-3 py-1 font-mono text-xs text-slate-600">
+                          {commit.sha.slice(0, 7)}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
+                ))}
+              </div>
+
+              {projectPulse.length > PULSE_PAGE_SIZE && (
+                <div className="mt-4 flex flex-col gap-3 border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                  <div className="text-xs font-bold uppercase tracking-[0.14em] text-slate-500">
+                    Einträge {pulseStartIndex + 1}-{Math.min(pulseEndIndex, projectPulse.length)} von {projectPulse.length}
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl"
+                      onClick={() => setPulsePage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPulsePage === 1}
+                    >
+                      Zurück
+                    </Button>
+
+                    <div className="min-w-[120px] text-center text-sm font-black text-[#0E1F53]">
+                      Seite {currentPulsePage} von {totalPulsePages}
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl"
+                      onClick={() =>
+                        setPulsePage((prev) => Math.min(prev + 1, totalPulsePages))
+                      }
+                      disabled={currentPulsePage === totalPulsePages}
+                    >
+                      Weiter
+                    </Button>
+                  </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>

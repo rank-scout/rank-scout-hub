@@ -83,49 +83,38 @@ function resolveRepoConfig() {
   );
 }
 
+// Der Hotfix: Bulletproof Auth Check
 async function ensureAdminUser(
   supabaseUrl: string,
   supabaseAnonKey: string,
-  serviceRoleKey: string,
   authHeader: string,
 ) {
+  // 1. Reinen Token extrahieren (schneidet "Bearer " ab)
+  const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+
+  // 2. Client für Edge Functions absolut isolieren
   const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: authHeader,
-      },
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
     },
   });
 
+  // 3. Token DIREKT übergeben (der Gamechanger)
   const {
     data: { user },
     error: userError,
-  } = await userClient.auth.getUser();
+  } = await userClient.auth.getUser(token);
 
   if (userError || !user) {
+    console.error("Supabase Auth Error:", userError);
     throw new Error("Unauthorized");
   }
 
-  const adminClient = createClient(supabaseUrl, serviceRoleKey);
-
-  const { data: roleRow } = await adminClient
-    .from("user_roles")
-    .select("id")
-    .eq("user_id", user.id)
-    .eq("role", "ADMIN")
-    .maybeSingle();
-
-  if (roleRow) {
-    return user;
-  }
-
-  const { data: profileRow } = await adminClient
-    .from("profiles")
-    .select("id, is_admin")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (!profileRow?.is_admin) {
+  // 4. Zero-Latency Admin Check aus dem Token-Payload
+  if (user.app_metadata?.role !== "admin") {
+    console.error("Access denied: User is not admin. ID:", user.id);
     throw new Error("Forbidden");
   }
 
@@ -172,14 +161,12 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = getRequiredEnv("SUPABASE_URL");
     const supabaseAnonKey = getRequiredEnv("SUPABASE_ANON_KEY");
-    const serviceRoleKey = getRequiredEnv("SUPABASE_SERVICE_ROLE_KEY");
     const githubAccessToken = getRequiredEnv("GITHUB_ACCESS_TOKEN");
     const { owner, repo } = resolveRepoConfig();
 
     await ensureAdminUser(
       supabaseUrl,
       supabaseAnonKey,
-      serviceRoleKey,
       authHeader,
     );
 
@@ -211,13 +198,7 @@ Deno.serve(async (req) => {
         responseText ||
         `GitHub request failed with status ${response.status}`;
 
-      return json(
-        {
-          success: false,
-          error: message,
-        },
-        response.status,
-      );
+      throw new Error(message);
     }
 
     const commits = (Array.isArray(payload) ? payload : []).map((item) => ({
@@ -242,6 +223,8 @@ Deno.serve(async (req) => {
       commits,
     });
   } catch (error) {
+    console.error("Github Pulse Error Log:", error);
+    
     const message = error instanceof Error ? error.message : "Unknown error";
 
     return json(

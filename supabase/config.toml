@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.page-pulse]
 verify_jwt = false
+
+[functions.github-pulse]
+verify_jwt = false
