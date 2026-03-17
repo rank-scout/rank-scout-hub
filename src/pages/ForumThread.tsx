@@ -313,8 +313,8 @@ export default function ForumThread() {
 
                   <FadeIn>
                     <div className="mx-auto w-full max-w-4xl px-1 sm:px-2">
-                      <div
-                        className="prose prose-sm sm:prose-base max-w-none prose-slate
+                      <article
+                        className="forum-thread-html prose prose-slate prose-sm sm:prose-base max-w-none
                           prose-headings:font-extrabold prose-headings:text-[#0A0F1C] prose-headings:tracking-tight prose-headings:mt-8 prose-headings:mb-4
                           prose-p:my-4 prose-p:text-slate-600 prose-p:leading-relaxed
                           prose-li:my-1 prose-li:leading-relaxed prose-ul:my-4 prose-ol:my-4
@@ -324,7 +324,7 @@ export default function ForumThread() {
                           prose-figcaption:mt-3 prose-figcaption:px-2 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-slate-500
                           prose-img:block prose-img:mx-auto prose-img:w-auto prose-img:max-h-[500px] prose-img:object-contain prose-img:rounded-2xl prose-img:shadow-md prose-img:border prose-img:border-slate-200
                           prose-blockquote:my-6 prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
-                          prose-table:w-full prose-table:text-sm prose-th:px-3 prose-th:py-3 prose-td:px-3 prose-td:py-3"
+                          prose-table:w-full prose-table:text-sm prose-th:bg-slate-50 prose-th:text-left prose-th:text-slate-900 prose-th:px-3 prose-th:py-3 prose-td:px-3 prose-td:py-3"
                         dangerouslySetInnerHTML={renderContent()}
                       />
                     </div>

@@ -15,7 +15,21 @@ const CMS_ALLOWED_ATTR = [
   "src", "srcset", "alt", "title",
   "class", "id", "style",
   "width", "height", "loading", "decoding",
-  "colspan", "rowspan"
+  "colspan", "rowspan", "scope"
+];
+
+const DOMPURIFY_FORBID_TAGS = [
+  "script", "iframe", "object", "embed",
+  "form", "input", "button", "textarea", "select",
+  "style", "svg", "math"
+];
+
+const DOMPURIFY_FORBID_ATTR = [
+  "onclick", "ondblclick", "onmousedown", "onmouseup", "onmouseover", "onmousemove", "onmouseout",
+  "onmouseenter", "onmouseleave", "onkeydown", "onkeypress", "onkeyup", "onfocus", "onblur",
+  "onchange", "oninput", "onsubmit", "onreset", "onload", "onerror", "onabort", "onwheel",
+  "ondrag", "ondragstart", "ondragend", "ondragenter", "ondragleave", "ondragover", "ondrop",
+  "ontouchstart", "ontouchmove", "ontouchend", "onpointerdown", "onpointermove", "onpointerup"
 ];
 
 const STORAGE_SEGMENT = "/storage/v1/object/public/";
@@ -23,6 +37,7 @@ const RENDER_SEGMENT = "/storage/v1/render/image/public/";
 const MAX_FORUM_IMAGE_WIDTH = 1400;
 const MIN_FORUM_IMAGE_WIDTH = 180;
 const DEFAULT_FORUM_IMAGE_WIDTH = 1100;
+const RESPONSIVE_TABLE_WRAPPER_CLASS = "overflow-x-auto my-6 rounded-2xl border border-slate-200 bg-white shadow-sm";
 const SAFE_INLINE_STYLE_PROPERTIES = new Set([
   "background",
   "background-color",
@@ -62,7 +77,6 @@ const SAFE_INLINE_STYLE_PROPERTIES = new Set([
   "height",
 ]);
 const UNSAFE_STYLE_VALUE_PATTERN = /(?:expression\s*\(|javascript:|vbscript:|data:text\/html|@import|behavior\s*:|url\s*\()/i;
-
 const INTERNAL_PATH_PATTERN = /^\/(?!\/)/;
 
 function isInternalPathUrl(url?: string | null) {
@@ -84,6 +98,31 @@ function normalizeLinkRelValue(rel?: string | null) {
   );
 
   return safeTokens.length ? safeTokens.join(" ") : null;
+}
+
+function sanitizeInlineStyle(styleText?: string | null): string | null {
+  if (!styleText) return null;
+
+  const safeDeclarations = styleText
+    .split(";")
+    .map((declaration) => declaration.trim())
+    .filter(Boolean)
+    .map((declaration) => {
+      const colonIndex = declaration.indexOf(":");
+      if (colonIndex === -1) return null;
+
+      const property = declaration.slice(0, colonIndex).trim().toLowerCase();
+      const value = declaration.slice(colonIndex + 1).trim().replace(/\s+/g, " ");
+
+      if (!SAFE_INLINE_STYLE_PROPERTIES.has(property) || !value || UNSAFE_STYLE_VALUE_PATTERN.test(value)) {
+        return null;
+      }
+
+      return `${property}: ${value}`;
+    })
+    .filter((value): value is string => Boolean(value));
+
+  return safeDeclarations.length ? safeDeclarations.join("; ") : null;
 }
 
 function normalizeAnchorElement(anchor: HTMLAnchorElement) {
@@ -168,29 +207,31 @@ function normalizeImageWidth(value?: string | null): string | null {
   return String(safeWidth);
 }
 
-function sanitizeInlineStyle(styleText?: string | null): string | null {
-  if (!styleText) return null;
+function parentAlreadyHandlesTableOverflow(table: HTMLTableElement) {
+  const parent = table.parentElement;
+  if (!parent) return false;
 
-  const safeDeclarations = styleText
-    .split(";")
-    .map((declaration) => declaration.trim())
-    .filter(Boolean)
-    .map((declaration) => {
-      const colonIndex = declaration.indexOf(":");
-      if (colonIndex === -1) return null;
+  if (parent.tagName.toLowerCase() !== "div") return false;
 
-      const property = declaration.slice(0, colonIndex).trim().toLowerCase();
-      const value = declaration.slice(colonIndex + 1).trim().replace(/\s+/g, " ");
+  const className = parent.getAttribute("class") || "";
+  const style = parent.getAttribute("style") || "";
 
-      if (!SAFE_INLINE_STYLE_PROPERTIES.has(property) || !value || UNSAFE_STYLE_VALUE_PATTERN.test(value)) {
-        return null;
-      }
+  return /(^|\s)overflow-x-auto(\s|$)/.test(className) || /overflow-x\s*:\s*(auto|scroll)/i.test(style);
+}
 
-      return `${property}: ${value}`;
-    })
-    .filter((value): value is string => Boolean(value));
+function ensureResponsiveTableWrappers(root: ParentNode) {
+  root.querySelectorAll<HTMLTableElement>("table").forEach((table) => {
+    if (parentAlreadyHandlesTableOverflow(table)) return;
 
-  return safeDeclarations.length ? safeDeclarations.join("; ") : null;
+    const wrapper = table.ownerDocument.createElement("div");
+    wrapper.setAttribute("class", RESPONSIVE_TABLE_WRAPPER_CLASS);
+
+    const parent = table.parentNode;
+    if (!parent) return;
+
+    parent.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+  });
 }
 
 function normalizeForumMarkup(html?: string | null) {
@@ -241,7 +282,20 @@ function normalizeForumMarkup(html?: string | null) {
     }
   });
 
+  ensureResponsiveTableWrappers(documentFragment.body);
+
   return documentFragment.body.innerHTML;
+}
+
+function sanitizeWithCmsPolicy(html: string) {
+  return DOMPurify.sanitize(html, {
+    USE_PROFILES: { html: true },
+    ALLOWED_TAGS: CMS_ALLOWED_TAGS,
+    ALLOWED_ATTR: CMS_ALLOWED_ATTR,
+    ALLOW_DATA_ATTR: false,
+    FORBID_TAGS: DOMPURIFY_FORBID_TAGS,
+    FORBID_ATTR: DOMPURIFY_FORBID_ATTR,
+  });
 }
 
 export function optimizeSupabaseImageUrl(url?: string | null, width = 800, quality = 80): string {
@@ -298,18 +352,7 @@ export function sanitizeCmsHtml(html?: string | null): string {
   if (!html) return "";
 
   const normalizedHtml = rewriteSupabaseStorageUrls(html, 1400, 80);
-
-  return DOMPurify.sanitize(normalizedHtml, {
-    USE_PROFILES: { html: true },
-    ALLOWED_TAGS: CMS_ALLOWED_TAGS,
-    ALLOWED_ATTR: CMS_ALLOWED_ATTR,
-    ALLOW_DATA_ATTR: false,
-    FORBID_TAGS: [
-      "script", "iframe", "object", "embed",
-      "form", "input", "button", "textarea", "select",
-      "style", "svg", "math"
-    ],
-  });
+  return sanitizeWithCmsPolicy(normalizedHtml);
 }
 
 export function sanitizeCmsHtmlWithBreaks(html?: string | null): string {
@@ -321,16 +364,5 @@ export function sanitizeForumHtml(html?: string | null): string {
   if (!html) return "";
 
   const normalizedHtml = rewriteSupabaseStorageUrls(html, 1400, 80);
-
-  return DOMPurify.sanitize(normalizedHtml, {
-    USE_PROFILES: { html: true },
-    ALLOWED_TAGS: CMS_ALLOWED_TAGS,
-    ALLOWED_ATTR: CMS_ALLOWED_ATTR,
-    ALLOW_DATA_ATTR: false,
-    FORBID_TAGS: [
-      "script", "iframe", "object", "embed",
-      "form", "input", "button", "textarea", "select",
-      "style", "svg", "math"
-    ],
-  });
+  return sanitizeWithCmsPolicy(normalizedHtml);
 }

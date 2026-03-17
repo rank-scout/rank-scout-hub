@@ -1,14 +1,25 @@
 import { useMemo } from "react";
-import DOMPurify from "dompurify";
 import ProjectListEmbed from "./ProjectListEmbed";
 import type { Category } from "@/hooks/useCategories";
 import type { ProjectWithCategory } from "@/hooks/useProjects";
+import { sanitizeCmsHtml } from "@/lib/sanitizeHtml";
 
 interface CustomHtmlRendererProps {
   category: Category;
   projects: ProjectWithCategory[];
   htmlContent: string;
 }
+
+const CONTENT_PROSE_CLASSNAME =
+  "custom-html-content prose prose-slate max-w-none " +
+  "prose-headings:font-extrabold prose-headings:tracking-tight prose-headings:text-[#0A0F1C] " +
+  "prose-p:text-slate-700 prose-p:leading-relaxed prose-li:text-slate-700 prose-li:leading-relaxed " +
+  "prose-a:text-orange-600 prose-a:font-semibold prose-a:no-underline hover:prose-a:underline " +
+  "prose-strong:text-slate-900 prose-blockquote:border-l-4 prose-blockquote:border-orange-500 " +
+  "prose-blockquote:bg-orange-50/50 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl " +
+  "prose-table:w-full prose-table:text-sm prose-th:bg-slate-50 prose-th:text-slate-900 prose-th:text-left " +
+  "prose-th:font-bold prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3 " +
+  "prose-img:rounded-2xl prose-img:border prose-img:border-slate-200 prose-img:shadow-md";
 
 export default function CustomHtmlRenderer({
   category,
@@ -34,36 +45,12 @@ export default function CustomHtmlRenderer({
     };
   }, [htmlContent]);
 
-  const sanitizeHtml = (html: string) => {
-    if (!html) return "";
-
-    return DOMPurify.sanitize(html, {
-      USE_PROFILES: { html: true },
-      ALLOWED_TAGS: [
-        "h1", "h2", "h3", "h4", "h5", "h6",
-        "p", "a", "ul", "ol", "li",
-        "strong", "em", "b", "i", "u", "br",
-        "span", "div", "img",
-        "table", "thead", "tbody", "tr", "th", "td",
-        "blockquote", "pre", "code", "details", "summary"
-      ],
-      ALLOWED_ATTR: [
-        "href", "target", "rel", "class", "id",
-        "src", "alt", "title", "width", "height", "style"
-      ],
-      ADD_ATTR: ["target"],
-      ALLOW_DATA_ATTR: false,
-      FORBID_TAGS: ["script", "iframe", "style", "object", "embed", "noscript", "form", "input", "button"],
-      FORBID_ATTR: ["onclick", "onerror", "onload", "onmouseover", "onmouseout"],
-    });
-  };
-
   return (
     <div className="custom-html-override w-full m-0 p-0">
       {beforeApps && (
-        <div
-          className="custom-html-content"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(beforeApps) }}
+        <article
+          className={CONTENT_PROSE_CLASSNAME}
+          dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(beforeApps) }}
         />
       )}
 
@@ -76,9 +63,9 @@ export default function CustomHtmlRenderer({
       )}
 
       {afterApps && (
-        <div
-          className="custom-html-content"
-          dangerouslySetInnerHTML={{ __html: sanitizeHtml(afterApps) }}
+        <article
+          className={CONTENT_PROSE_CLASSNAME}
+          dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(afterApps) }}
         />
       )}
 

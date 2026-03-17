@@ -24,7 +24,10 @@ export default {
     'border-blue-100', 'border-blue-200', 'border-blue-500', 'border-blue-800',
     
     // NEU: Unsere exakten Brand-Klassen
-    'text-rsblue', 'bg-rsblue', 'border-rsblue', 'text-[#003366]', 'bg-[#003366]'
+    'text-rsblue', 'bg-rsblue', 'border-rsblue', 'text-[#003366]', 'bg-[#003366]',
+
+    // NEU: Responsive Table Wrapper aus sanitizeHtml.ts (runtime-injiziert)
+    'overflow-x-auto', 'my-6', 'rounded-2xl', 'border', 'border-slate-200', 'bg-white', 'shadow-sm'
   ],
   theme: {
     container: {
