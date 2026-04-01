@@ -70,7 +70,7 @@ const Impressum = () => {
               <div className="mt-8 p-6 bg-slate-50 border border-slate-200 rounded-xl text-sm">
                 <h4 className="font-bold text-slate-800 mb-2">Hinweis zu Versicherungs- und Finanzvergleichen</h4>
                 <p className="mb-4">Rank-Scout tritt bei Versicherungs- und Finanzvergleichen ausschließlich als Tippgeber auf und ist nicht der Versicherungsvermittler.</p>
-                <p className="font-semibold mb-2">Alle Vergleiche powered by TARIFCHECK24 GmbH</p>
+                <p className="font-semibold mb-2">Einzelne Vergleichsrechner und Formulare werden von externen Partnern wie TARIFCHECK24 GmbH oder CHECK24 bereitgestellt.</p>
                 <p>Zollstr. 11b<br/>21465 Wentorf bei Hamburg<br/>Tel. 040 - 73098288<br/>Fax 040 - 73098289<br/>E-Mail: info@tarifcheck.de</p>
                 <div className="mt-6 w-full overflow-hidden">
                   <iframe src="https://a.partner-versicherung.de/filestore/ad/1166/index.php?partner_id=199238" width="100%" height="300" scrolling="yes" frameBorder="0" className="border-0"></iframe>
