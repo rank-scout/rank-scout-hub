@@ -63,7 +63,7 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-hero-gradient p-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-64 h-64 bg-primary/10 rounded-full blur-3xl" />
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
@@ -72,7 +72,7 @@ export default function AdminLogin() {
       <Card className="w-full max-w-md relative z-10 bg-card/95 backdrop-blur border-border">
         <CardHeader className="text-center">
           <Link to="/" className="inline-flex items-center justify-center gap-2 mb-4">
-            <div className="w-10 h-10 bg-primary-gradient rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-[#0E1F53]">
               <Search className="w-5 h-5 text-primary-foreground" />
             </div>
           </Link>
@@ -108,7 +108,7 @@ export default function AdminLogin() {
 
             <Button
               type="submit"
-              className="w-full bg-primary-gradient hover:opacity-90"
+              className="w-full bg-[#0E1F53] text-white hover:bg-[#16306f]"
               disabled={isSubmitting}
             >
               {isSubmitting ? (

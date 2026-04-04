@@ -92,7 +92,7 @@ export default function AdminLayout() {
       <div className="flex min-h-screen">
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-50 flex w-[290px] flex-col border-r border-white/10 bg-[#0E1F53] text-white shadow-2xl transition-transform duration-300 lg:static lg:translate-x-0",
+            "fixed inset-y-0 left-0 z-50 flex w-[290px] flex-col border-r border-white/10 bg-[#0E1F53] text-white shadow-2xl transition-transform duration-300 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 lg:overflow-y-auto",
             sidebarOpen ? "translate-x-0" : "-translate-x-full"
           )}
         >
@@ -129,7 +129,7 @@ export default function AdminLayout() {
             </div>
           </div>
 
-          <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-6 custom-scrollbar">
+          <nav className="space-y-2 px-4 py-6">
             {navItems.map((item) => (
               <NavLink
                 key={item.path}
@@ -172,7 +172,7 @@ export default function AdminLayout() {
             ))}
           </nav>
 
-          <div className="border-t border-white/10 p-4">
+          <div className="sticky bottom-0 mt-auto border-t border-white/10 bg-[#0E1F53]/95 p-4 backdrop-blur">
             <div className="rounded-2xl bg-white/5 p-4">
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 border border-white/10 text-sm font-black text-white">
