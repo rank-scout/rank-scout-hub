@@ -1,12 +1,12 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 /**
  * useForceSEO - Standard Version
  * Setzt die Meta-Description auf jeder Seite, die diesen Hook aufruft.
- * Keine Einschränkung auf die Startseite mehr.
+ * useLayoutEffect sorgt dafür, dass der Head vor dem ersten Paint stabiler ist.
  */
 export const useForceSEO = (description: string | undefined) => {
-  useEffect(() => {
+  useLayoutEffect(() => {
     // 1. Sicherheitspuffer: Nur ausführen, wenn wir Text haben
     if (!description || description.trim() === "") return;
 

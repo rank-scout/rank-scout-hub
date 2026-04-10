@@ -102,6 +102,26 @@ export const Footer = () => {
                   </Link>
               </li>
 
+              <li>
+                  <Link 
+                    to="/wie-wir-vergleichen" 
+                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                  >
+                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                    Wie wir vergleichen
+                  </Link>
+              </li>
+
+              <li>
+                  <Link 
+                    to="/kategorien" 
+                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                  >
+                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                    Alle Kategorien
+                  </Link>
+              </li>
+
               {legalLinks.map((link: any, i: number) => (
                  <li key={i}>
                   <Link 

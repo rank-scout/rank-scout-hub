@@ -1,21 +1,30 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { ShieldCheck, TrendingUp, Scale, Info, Clock } from 'lucide-react';
+import { ShieldCheck, TrendingUp, Scale, Info, Clock, Layers, Mail, ArrowRight } from 'lucide-react';
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { useForceSEO } from "@/hooks/useForceSEO";
 
 export default function HowWeCompare() {
+  const location = useLocation();
+  const metaDescription = "So arbeitet Rank-Scout: Methodik, Finanzierung, Kennzeichnung von Partnerinhalten und redaktionelle Einordnung transparent erklärt.";
+
+  useForceSEO(metaDescription);
+
   return (
     <div className="font-sans antialiased text-slate-800 bg-[#fafafa] min-h-screen flex flex-col">
-      <Helmet>
+      <Helmet key={location.pathname} prioritizeSeoTags defer={false}>
         <html lang="de" />
         <title>Wie Rank-Scout arbeitet – Transparenz & Vergleich</title>
         <meta
           name="description"
-          content="So arbeitet Rank-Scout: Methodik, Finanzierung, Kennzeichnung von Partnerinhalten und redaktionelle Einordnung transparent erklärt."
+          content={metaDescription}
         />
         <link rel="canonical" href="https://rank-scout.com/wie-wir-vergleichen" />
         <meta name="robots" content="index, follow" />
+        <meta property="og:title" content="Wie Rank-Scout arbeitet – Transparenz & Vergleich" />
+        <meta property="og:description" content={metaDescription} />
       </Helmet>
 
       <Header />
@@ -99,6 +108,31 @@ export default function HowWeCompare() {
             </div>
           </div>
         </div>
+        <section className="mt-16 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            Weiterführende Bereiche
+          </div>
+          <h2 className="text-2xl font-display font-bold text-[#0A0F1C] mb-3">Mehr Orientierung auf Rank-Scout</h2>
+          <p className="text-slate-600 mb-6">Wer tiefer in Inhalte und Vergleiche einsteigen möchte, findet auf Rank-Scout weitere Einstiegsseiten zu Kategorien, Kontakt und Vergleichsthemen.</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            <Link to="/kategorien" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+              <Layers className="w-5 h-5 text-primary mb-3" />
+              <div className="font-semibold text-slate-900 mb-1">Alle Kategorien</div>
+              <div className="text-sm text-slate-600">Strukturierter Überblick über Versicherungen, Finanzen, Energie, Internet und weitere Themen.</div>
+            </Link>
+            <Link to="/kontakt" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+              <Mail className="w-5 h-5 text-primary mb-3" />
+              <div className="font-semibold text-slate-900 mb-1">Kontakt</div>
+              <div className="text-sm text-slate-600">Hinweise senden, Partnerschaften anfragen oder Feedback direkt übermitteln.</div>
+            </Link>
+            <Link to="/versicherungen" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+              <ArrowRight className="w-5 h-5 text-primary mb-3" />
+              <div className="font-semibold text-slate-900 mb-1">Vergleiche ansehen</div>
+              <div className="text-sm text-slate-600">Direkter Einstieg in Versicherungs- und Vergleichsseiten von Rank-Scout.</div>
+            </Link>
+          </div>
+        </section>
       </main>
 
       <Footer />

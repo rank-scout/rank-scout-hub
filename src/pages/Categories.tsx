@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useCategories } from "@/hooks/useCategories";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search, ArrowRight, Loader2 } from "lucide-react";
 import { Helmet } from "react-helmet-async"; 
 import { useTrackView } from "@/hooks/useTrackView";
+import { useForceSEO } from "@/hooks/useForceSEO";
 import { getCategoriesCanonicalUrl, getCategoryRoute } from "@/lib/routes";
 
 
@@ -23,7 +24,11 @@ const CATEGORY_FALLBACK_LINKS = [
 ];
 
 export default function Categories() {
+  const location = useLocation();
+  const metaDescription = "Alle Rank-Scout Kategorien im Überblick: Versicherungen, Finanzen, Energie, Internet, KI, Apps und weitere Themen sachlich geordnet.";
+
   useTrackView("categories-overview", "page");
+  useForceSEO(metaDescription);
 
   const { data: categories = [], isLoading } = useCategories();
   const { data: projects = [] } = useProjects();
@@ -91,10 +96,12 @@ export default function Categories() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans">
-      <Helmet>
+      <Helmet key={location.pathname} prioritizeSeoTags defer={false}>
         <title>Alle Kategorien 2026 im Überblick | Rank-Scout</title>
-        <meta name="description" content="Alle Rank-Scout Kategorien im Überblick: Versicherungen, Finanzen, Energie, Internet, KI, Apps und weitere Themen sachlich geordnet." />
+        <meta key="description" name="description" content={metaDescription} />
         <link rel="canonical" href={getCategoriesCanonicalUrl()} />
+        <meta property="og:title" content="Alle Kategorien 2026 im Überblick | Rank-Scout" />
+        <meta property="og:description" content={metaDescription} />
       </Helmet>
 
       <Header />
@@ -121,7 +128,21 @@ export default function Categories() {
               ))}
             </nav>
 
-<div className="relative max-w-md mx-auto">
+            <div className="max-w-3xl mx-auto mb-8 text-left rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+              <h2 className="text-base font-semibold text-slate-900 mb-2">Direkteinstieg in wichtige Bereiche</h2>
+              <p className="text-sm text-slate-600 mb-4">Diese häufig gesuchten Themen führen direkt in zentrale Vergleichs- und Hub-Seiten von Rank-Scout.</p>
+              <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+                {CATEGORY_FALLBACK_LINKS.map((link) => (
+                  <li key={`list-${link.to}`}>
+                    <Link to={link.to} className="text-sm font-medium text-primary hover:underline">
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="relative max-w-md mx-auto">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-muted-foreground" />
               </div>
@@ -209,6 +230,24 @@ export default function Categories() {
                 })}
               </div>
             )}
+          </div>
+          <div className="max-w-5xl mx-auto mt-12 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-2xl font-display font-bold text-slate-900 mb-3">Weitere Einstiege auf Rank-Scout</h2>
+            <p className="text-slate-600 mb-6">Neben der Kategorienübersicht gibt es direkte Einstiege in Methodik, Kontakt und ausgewählte Vergleichsbereiche.</p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Link to="/wie-wir-vergleichen" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+                <div className="font-semibold text-slate-900 mb-1">Wie wir vergleichen</div>
+                <div className="text-sm text-slate-600">Transparenz, Methodik und redaktionelle Einordnung im Überblick.</div>
+              </Link>
+              <Link to="/kontakt" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+                <div className="font-semibold text-slate-900 mb-1">Kontakt</div>
+                <div className="text-sm text-slate-600">Hinweise senden, Feedback geben oder Partnerschaften anfragen.</div>
+              </Link>
+              <Link to="/versicherungen" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+                <div className="font-semibold text-slate-900 mb-1">Versicherungen</div>
+                <div className="text-sm text-slate-600">Direkter Einstieg in zentrale Vergleichs- und Informationsseiten.</div>
+              </Link>
+            </div>
           </div>
         </section>
       </main>

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -9,11 +10,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Mail, MessageSquare, Bug, Handshake, CheckCircle2, Loader2, ArrowRight } from "lucide-react";
+import { Mail, MessageSquare, Bug, Handshake, CheckCircle2, Loader2, ArrowRight, Compass, Layers, ShieldCheck } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { FadeIn } from "@/components/ui/FadeIn";
+import { useForceSEO } from "@/hooks/useForceSEO";
 
 export default function Contact() {
+  const location = useLocation();
+  const metaDescription = "Kontakt zu Rank-Scout: Hinweise senden, Partnerschaften anfragen oder Feedback zum Portal sachlich und direkt übermitteln.";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [formData, setFormData] = useState({
@@ -22,6 +26,8 @@ export default function Contact() {
     subject: "",
     message: ""
   });
+
+  useForceSEO(metaDescription);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,9 +63,12 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900">
-      <Helmet>
+      <Helmet key={location.pathname} prioritizeSeoTags defer={false}>
         <title>Kontakt & Partner werden | Rank-Scout</title>
-        <meta name="description" content="Kontakt zu Rank-Scout: Hinweise senden, Partnerschaften anfragen oder Feedback zum Portal sachlich und direkt übermitteln." />
+        <meta key="description" name="description" content={metaDescription} />
+        <link rel="canonical" href="https://rank-scout.com/kontakt" />
+        <meta property="og:title" content="Kontakt & Partner werden | Rank-Scout" />
+        <meta property="og:description" content={metaDescription} />
       </Helmet>
 
       <Header />
@@ -196,6 +205,34 @@ export default function Contact() {
                   </CardContent>
                 </Card>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="container mx-auto px-4 pb-16">
+          <div className="max-w-5xl mx-auto rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-500 mb-4">
+              <Compass className="w-4 h-4 text-primary" />
+              Mehr auf Rank-Scout
+            </div>
+            <h2 className="text-2xl font-display font-bold text-slate-900 mb-3">Wichtige Bereiche im Überblick</h2>
+            <p className="text-slate-600 mb-6">Neben dem Kontaktbereich findest du auf Rank-Scout auch Informationen zur Methodik, zu Kategorien und zu unseren Vergleichsseiten.</p>
+            <div className="grid gap-4 md:grid-cols-3">
+              <Link to="/wie-wir-vergleichen" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+                <ShieldCheck className="w-5 h-5 text-primary mb-3" />
+                <div className="font-semibold text-slate-900 mb-1">Wie wir vergleichen</div>
+                <div className="text-sm text-slate-600">Methodik, Kennzeichnung und redaktionelle Einordnung transparent erklärt.</div>
+              </Link>
+              <Link to="/kategorien" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+                <Layers className="w-5 h-5 text-primary mb-3" />
+                <div className="font-semibold text-slate-900 mb-1">Alle Kategorien</div>
+                <div className="text-sm text-slate-600">Versicherungen, Finanzen, Energie, Internet, KI und weitere Themen im Überblick.</div>
+              </Link>
+              <Link to="/versicherungen" className="rounded-2xl border border-slate-200 p-5 transition-colors hover:border-primary hover:bg-slate-50">
+                <ArrowRight className="w-5 h-5 text-primary mb-3" />
+                <div className="font-semibold text-slate-900 mb-1">Vergleiche ansehen</div>
+                <div className="text-sm text-slate-600">Direkter Einstieg in Versicherungs- und Vergleichsseiten von Rank-Scout.</div>
+              </Link>
             </div>
           </div>
         </section>
