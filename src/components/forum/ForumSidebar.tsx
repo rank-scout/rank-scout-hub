@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useForumThreads } from "@/hooks/useForum";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Flame, Clock, ArrowRight, Handshake } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -27,10 +27,10 @@ export function ForumSidebar() {
       <Card className="border-none shadow-md bg-gradient-to-br from-white to-slate-50 overflow-hidden">
         <div className="h-1 w-full bg-primary" />
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <h2 className="flex items-center gap-2 text-lg font-semibold leading-none tracking-tight">
             <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
             Aktuell Heiß
-          </CardTitle>
+          </h2>
         </CardHeader>
         <CardContent className="grid gap-4">
           {trendingThreads.map((thread) => (
@@ -49,10 +49,10 @@ export function ForumSidebar() {
       {/* RECENT CARD */}
       <Card className="border shadow-sm">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
+          <h2 className="flex items-center gap-2 text-lg font-semibold leading-none tracking-tight">
             <Clock className="w-5 h-5 text-primary" />
             Neueste Beiträge
-          </CardTitle>
+          </h2>
         </CardHeader>
         <CardContent className="grid gap-4">
           {recentThreads.map((thread) => (
