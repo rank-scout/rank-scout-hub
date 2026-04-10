@@ -218,20 +218,34 @@ export default function Forum() {
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["forum-public-categories"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("forum_categories")
-        .select("id, name, slug, description, forum_threads(count)")
-        .eq("is_active", true)
-        .order("sort_order", { ascending: true });
+      const [{ data: categoryRows, error: categoryError }, { data: threadRows, error: threadError }] = await Promise.all([
+        supabase
+          .from("forum_categories")
+          .select("id, name, slug, description")
+          .eq("is_active", true)
+          .order("sort_order", { ascending: true }),
+        supabase
+          .from("forum_threads")
+          .select("category_id")
+          .eq("is_active", true)
+          .eq("status", "published"),
+      ]);
 
-      if (error) throw error;
+      if (categoryError) throw categoryError;
+      if (threadError) throw threadError;
 
-      return (data || []).map((category: any) => ({
+      const threadCountByCategory = (threadRows || []).reduce<Record<string, number>>((acc, thread: any) => {
+        if (!thread.category_id) return acc;
+        acc[thread.category_id] = (acc[thread.category_id] || 0) + 1;
+        return acc;
+      }, {});
+
+      return (categoryRows || []).map((category: any) => ({
         id: category.id,
         name: category.name,
         slug: category.slug,
         description: category.description || null,
-        thread_count: category.forum_threads?.[0]?.count || 0,
+        thread_count: threadCountByCategory[category.id] || 0,
       })) as PublicForumCategory[];
     },
     staleTime: 1000 * 60 * 5,
@@ -350,6 +364,11 @@ export default function Forum() {
   const hasInvalidCategory = Boolean(categorySlug) && !categoriesLoading && !selectedCategory;
   const totalCategoryCount = categories.length;
   const totalLoadedThreadCount = filteredThreads.length;
+  const totalPublishedThreadCount = threads.length;
+  const shouldIndexForumPage = selectedCategory
+    ? selectedCategory.thread_count > 0
+    : !hasInvalidCategory && totalPublishedThreadCount > 0;
+  const robotsContent = shouldIndexForumPage ? "index, follow" : "noindex, follow";
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -357,6 +376,7 @@ export default function Forum() {
         <title>{metaTitle}</title>
         <meta name="description" content={metaDescription} />
         <link rel="canonical" href={canonicalUrl} />
+        <meta name="robots" content={robotsContent} />
         <meta property="og:type" content="website" />
         <meta property="og:title" content={metaTitle} />
         <meta property="og:description" content={metaDescription} />

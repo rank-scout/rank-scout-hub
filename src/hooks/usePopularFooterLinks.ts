@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizeLinkField } from "@/lib/routes";
 
 interface PopularFooterLink {
   id: string;
@@ -32,7 +33,7 @@ export function usePopularFooterLinks(categoryId?: string | null) {
           .order("sort_order", { ascending: true });
 
         if (categoryLinks && categoryLinks.length > 0) {
-          return categoryLinks as PopularFooterLink[];
+          return categoryLinks.map((link) => normalizeLinkField(link, "url")) as PopularFooterLink[];
         }
       }
 
@@ -45,7 +46,7 @@ export function usePopularFooterLinks(categoryId?: string | null) {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return (data || []) as PopularFooterLink[];
+      return (data || []).map((link) => normalizeLinkField(link, "url")) as PopularFooterLink[];
     },
   });
 }
@@ -60,7 +61,7 @@ export function useAllPopularFooterLinks() {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return (data || []) as PopularFooterLink[];
+      return (data || []).map((link) => normalizeLinkField(link, "url")) as PopularFooterLink[];
     },
   });
 }

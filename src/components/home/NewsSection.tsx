@@ -19,6 +19,7 @@ import {
 import { format } from "date-fns";
 import { de } from "date-fns/locale";
 import { FadeIn } from "@/components/ui/FadeIn";
+import { normalizeInternalLinkTarget } from "@/lib/routes";
 
 type FeedItem = {
   id: string;
@@ -57,7 +58,7 @@ const NewsCard = ({ item }: { item: FeedItem }) => {
   
   return (
     <Link 
-        to={item.slug} 
+        to={normalizeInternalLinkTarget(item.slug)} 
         className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-full shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary/20"
     >
       <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-b border-slate-100 dark:border-slate-800">

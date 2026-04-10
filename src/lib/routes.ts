@@ -1,5 +1,7 @@
 const DEFAULT_SITE_URL = "https://rank-scout.com";
 
+const EXTERNAL_LINK_PATTERN = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
+
 const RESERVED_TOP_LEVEL_SLUGS = new Set([
   "sitemap.xml",
   "robots.txt",
@@ -32,6 +34,98 @@ export function normalizeRoutePath(rawPath: string): string {
   return collapsed.length > 1 && collapsed.endsWith("/")
     ? collapsed.slice(0, -1)
     : collapsed;
+}
+
+export function isExternalLinkTarget(rawTarget: string | null | undefined): boolean {
+  const cleaned = String(rawTarget ?? "").trim();
+  return EXTERNAL_LINK_PATTERN.test(cleaned);
+}
+
+export function isSpecialLinkTarget(rawTarget: string | null | undefined): boolean {
+  const cleaned = String(rawTarget ?? "").trim();
+  return cleaned.startsWith("#") || cleaned.startsWith("?");
+}
+
+export function normalizeInternalLinkTarget(
+  rawTarget: string | null | undefined,
+  fallback: string = "/",
+): string {
+  const cleaned = String(rawTarget ?? "").trim();
+
+  if (!cleaned) {
+    return fallback;
+  }
+
+  if (isExternalLinkTarget(cleaned) || isSpecialLinkTarget(cleaned)) {
+    return cleaned;
+  }
+
+  return normalizeRoutePath(cleaned);
+}
+
+type LinkTreeNode = {
+  url?: string | null;
+  items?: LinkTreeNode[] | null;
+  [key: string]: unknown;
+};
+
+type HeaderConfigLike = {
+  button_url?: string | null;
+  nav_links?: LinkTreeNode[] | null;
+  hub_links?: LinkTreeNode[] | null;
+  [key: string]: unknown;
+};
+
+type FooterConfigLike = {
+  legal_links?: LinkTreeNode[] | null;
+  popular_links?: LinkTreeNode[] | null;
+  [key: string]: unknown;
+};
+
+export function normalizeLinkField<T extends Record<string, unknown>, K extends keyof T>(
+  item: T,
+  field: K,
+  fallback: string = "/",
+): T {
+  const rawValue = item[field];
+  const normalizedValue = normalizeInternalLinkTarget(
+    typeof rawValue === "string" ? rawValue : null,
+    fallback,
+  );
+
+  return {
+    ...item,
+    [field]: normalizedValue,
+  };
+}
+
+export function normalizeLinkTree<T extends LinkTreeNode>(links: T[] | null | undefined): T[] {
+  if (!Array.isArray(links)) {
+    return [];
+  }
+
+  return links.map((link) => ({
+    ...link,
+    url: normalizeInternalLinkTarget(link.url),
+    items: Array.isArray(link.items) ? normalizeLinkTree(link.items) : link.items,
+  })) as T[];
+}
+
+export function normalizeHeaderConfigLinks<T extends HeaderConfigLike>(config: T): T {
+  return {
+    ...config,
+    button_url: normalizeInternalLinkTarget(config.button_url),
+    nav_links: normalizeLinkTree(config.nav_links),
+    hub_links: normalizeLinkTree(config.hub_links),
+  };
+}
+
+export function normalizeFooterConfigLinks<T extends FooterConfigLike>(config: T): T {
+  return {
+    ...config,
+    legal_links: normalizeLinkTree(config.legal_links),
+    popular_links: normalizeLinkTree(config.popular_links),
+  };
 }
 
 export function isBlockedTopLevelSlug(rawSlug: string | null | undefined): boolean {

@@ -1,6 +1,7 @@
 import { ChevronRight, Trophy, Star, TrendingUp, Zap, Globe, Shield, Heart, Gamepad2, Bot, Briefcase, ShoppingCart, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useHomeContent } from "@/hooks/useSettings";
+import { normalizeInternalLinkTarget } from "@/lib/routes";
 
 // Icon Mapping für Admin-Typen
 const getIcon = (type: string) => {
@@ -91,7 +92,7 @@ export const BigThreeSection = () => {
             return (
               <Link 
                 key={item.id} 
-                to={item.link}
+                to={normalizeInternalLinkTarget(item.link)}
                 className={`group relative h-[450px] flex flex-col justify-between bg-slate-900 rounded-3xl p-8 border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden ${theme.border}`}
               >
                 <div className="absolute inset-0 z-0">

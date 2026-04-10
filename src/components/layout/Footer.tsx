@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Heart, ShieldCheck } from "lucide-react";
 import { useFooterConfig } from "@/hooks/useSettings";
+import { normalizeInternalLinkTarget } from "@/lib/routes";
 
 export const Footer = () => {
   const config = useFooterConfig();
@@ -75,7 +76,7 @@ export const Footer = () => {
               {popularLinks.map((link: any, i: number) => (
                 <li key={i}>
                   <Link 
-                    to={link.url} 
+                    to={normalizeInternalLinkTarget(link.url)} 
                     className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
                   >
                     <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
@@ -104,7 +105,7 @@ export const Footer = () => {
               {legalLinks.map((link: any, i: number) => (
                  <li key={i}>
                   <Link 
-                    to={link.url} 
+                    to={normalizeInternalLinkTarget(link.url)} 
                     className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
                   >
                     <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>

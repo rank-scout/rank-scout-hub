@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { TrendingLink } from "@/lib/schemas";
+import { normalizeFooterConfigLinks, normalizeHeaderConfigLinks } from "@/lib/routes";
 export const PUBLIC_SETTINGS_KEYS = [
   "active_theme",
   "home_sections",
@@ -326,8 +327,15 @@ export function useHomeLayout() {
   }; 
 }
 
-export function useHeaderConfig() { const { data } = useSettings(); return { ...defaultHeaderConfig, ...(data?.header_config as any || {}) }; }
-export function useFooterConfig() { const { data } = useSettings(); return { ...defaultFooterConfig, ...(data?.footer_config as any || {}) }; }
+export function useHeaderConfig() {
+  const { data } = useSettings();
+  return normalizeHeaderConfigLinks({ ...defaultHeaderConfig, ...(data?.header_config as any || {}) });
+}
+
+export function useFooterConfig() {
+  const { data } = useSettings();
+  return normalizeFooterConfigLinks({ ...defaultFooterConfig, ...(data?.footer_config as any || {}) });
+}
 export function useScoutyConfig() { const { data } = useSettings(); return { ...defaultScoutyConfig, ...(data?.scouty_config as any || {}) }; }
 export function useHomeForumTeaser() { const { data } = useSettings(); return { ...defaultHomeForumTeaser, ...(data?.home_forum_teaser as any || {}) }; }
 
