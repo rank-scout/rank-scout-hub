@@ -1,7 +1,7 @@
 import { ChevronRight, Trophy, Star, TrendingUp, Zap, Globe, Shield, Heart, Gamepad2, Bot, Briefcase, ShoppingCart, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useHomeContent } from "@/hooks/useSettings";
-import { getCategoryRoute, normalizeNavigableHref } from "@/lib/routes";
+import { getCategoriesRoute, normalizeNavigableHref } from "@/lib/routes";
 
 // Icon Mapping für Admin-Typen
 const getIcon = (type: string) => {
@@ -68,9 +68,9 @@ export const BigThreeSection = () => {
   let items = content.big_three.items || [];
   if (items.length === 0) {
     items = [
-      { id: "v1", title: "Versicherungen", desc: "Tarife, Leistungen und Policen im Überblick.", link: getCategoryRoute("versicherungen"), button_text: "Vergleichen", theme: "blue", image_url: "", icon: "shield" },
-      { id: "f1", title: "Finanzen & Krypto", desc: "Broker, Kredite und Finanzthemen im Überblick.", link: getCategoryRoute("finanzen-krypto"), button_text: "Vergleichen", theme: "gold", image_url: "", icon: "trending" },
-      { id: "s1", title: "KI & Software", desc: "Tools und Softwarelösungen im Überblick.", link: getCategoryRoute("ki-software"), button_text: "Tools finden", theme: "dark", image_url: "", icon: "bot" }
+      { id: "v1", title: "Versicherungen", desc: "Tarife, Leistungen und Policen im Überblick.", link: getCategoriesRoute(), button_text: "Vergleichen", theme: "blue", image_url: "", icon: "shield" },
+      { id: "f1", title: "Finanzen & Krypto", desc: "Broker, Kredite und Finanzthemen im Überblick.", link: getCategoriesRoute(), button_text: "Vergleichen", theme: "gold", image_url: "", icon: "trending" },
+      { id: "s1", title: "KI & Software", desc: "Tools und Softwarelösungen im Überblick.", link: getCategoriesRoute(), button_text: "Tools finden", theme: "dark", image_url: "", icon: "bot" }
     ];
   }
 

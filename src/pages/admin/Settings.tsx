@@ -276,9 +276,9 @@ export default function AdminSettings() {
   // --- STANDARD CONFIG WERTE (DEFAULTS) ---
   const defaultHeaderConfig = { 
     nav_links: [
-      { label: "Versicherungen", url: getCategoryRoute("versicherungen") },
-      { label: "Finanzen & Krypto", url: getCategoryRoute("finanzen-krypto") },
-      { label: "KI & Software", url: getCategoryRoute("ki-software") }
+      { label: "Versicherungen", url: getCategoriesRoute() },
+      { label: "Finanzen & Krypto", url: getCategoriesRoute() },
+      { label: "KI & Software", url: getCategoriesRoute() }
     ],
     hub_links: [
       { label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, 
@@ -305,9 +305,9 @@ export default function AdminSettings() {
       { label: "Sicherheit", url: "/sicherheit" }
     ],
     popular_links: [
-      { label: "Versicherungen", url: getCategoryRoute("versicherungen") },
-      { label: "Finanzen & Krypto", url: getCategoryRoute("finanzen-krypto") },
-      { label: "KI & Software", url: getCategoryRoute("ki-software") }
+      { label: "Versicherungen", url: getCategoriesRoute() },
+      { label: "Finanzen & Krypto", url: getCategoriesRoute() },
+      { label: "KI & Software", url: getCategoriesRoute() }
     ]
   };
 

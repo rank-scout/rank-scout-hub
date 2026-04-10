@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { TrendingLink } from "@/lib/schemas";
-import { getCategoriesRoute, getCategoryRoute, normalizeNavigableHref } from "@/lib/routes";
+import { getCategoriesRoute, normalizeNavigableHref } from "@/lib/routes";
 export const PUBLIC_SETTINGS_KEYS = [
   "active_theme",
   "home_sections",
@@ -231,13 +231,13 @@ export const defaultHomeContent = {
   big_three: { 
     headline: "Wähle deinen Bereich", 
     items: [
-        { id: "1", title: "Versicherungen", desc: "Tarife, Leistungen und Policen im Überblick.", link: getCategoryRoute("versicherungen"), button_text: "Vergleichen", theme: "blue", image_url: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85" },
-        { id: "2", title: "Finanzen & Krypto", desc: "Broker, Kredite & Geschäftskonten im Überblick.", link: getCategoryRoute("finanzen-krypto"), button_text: "Vergleichen", theme: "gold", image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab" },
-        { id: "3", title: "KI & Software", desc: "Tools und Softwarelösungen im Überblick.", link: getCategoryRoute("ki-software"), button_text: "Tools finden", theme: "dark", image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b" }
+        { id: "1", title: "Versicherungen", desc: "Tarife, Leistungen und Policen im Überblick.", link: getCategoriesRoute(), button_text: "Vergleichen", theme: "blue", image_url: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85" },
+        { id: "2", title: "Finanzen & Krypto", desc: "Broker, Kredite & Geschäftskonten im Überblick.", link: getCategoriesRoute(), button_text: "Vergleichen", theme: "gold", image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab" },
+        { id: "3", title: "KI & Software", desc: "Tools und Softwarelösungen im Überblick.", link: getCategoriesRoute(), button_text: "Tools finden", theme: "dark", image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b" }
     ],
-    finance_title: "Finanzen & Krypto", finance_desc: "Broker, Kredite & Geschäftskonten im Überblick.", finance_link: getCategoryRoute("finanzen-krypto"), finance_button: "Jetzt vergleichen", 
-    software_title: "KI & Software", software_desc: "Tools und Softwarelösungen im Überblick.", software_link: getCategoryRoute("ki-software"), software_button: "Tools finden", 
-    services_title: "Versicherungen", services_desc: "Tarife, Leistungen und Policen im Überblick.", services_link: getCategoryRoute("versicherungen"), services_button: "Zum Vergleich" 
+    finance_title: "Finanzen & Krypto", finance_desc: "Broker, Kredite & Geschäftskonten im Überblick.", finance_link: getCategoriesRoute(), finance_button: "Jetzt vergleichen", 
+    software_title: "KI & Software", software_desc: "Tools und Softwarelösungen im Überblick.", software_link: getCategoriesRoute(), software_button: "Tools finden", 
+    services_title: "Versicherungen", services_desc: "Tarife, Leistungen und Policen im Überblick.", services_link: getCategoriesRoute(), services_button: "Zum Vergleich" 
   },
   why_us: {
     headline: "Warum Rank-Scout?",
@@ -264,7 +264,7 @@ export const defaultHomeContent = {
 export const defaultHeaderConfig = { 
   button_text: "Jetzt vergleichen", 
   button_url: getCategoriesRoute(), 
-  nav_links: [{ label: "Versicherungen", url: getCategoryRoute("versicherungen") }, { label: "Finanzen & Krypto", url: getCategoryRoute("finanzen-krypto") }, { label: "KI & Software", url: getCategoryRoute("ki-software") }], 
+  nav_links: [{ label: "Versicherungen", url: getCategoriesRoute() }, { label: "Finanzen & Krypto", url: getCategoriesRoute() }, { label: "KI & Software", url: getCategoriesRoute() }], 
   hub_links: [{ label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, { label: "Community", url: "/forum", icon: "Users" }] 
 };
 
@@ -278,7 +278,7 @@ export const defaultFooterConfig = {
   made_in_text: "in Germany", 
   disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn du über einen Link auf dieser Seite einkaufst, erhalten wir möglicherweise eine Provision. Der Preis für dich ändert sich dabei nicht. Unsere Inhalte werden redaktionell erstellt und fortlaufend gepflegt.", 
   legal_links: [{ label: "Impressum", url: "/impressum" }, { label: "Datenschutz", url: "/datenschutz" }, { label: "AGB", url: "/agb" }], 
-  popular_links: [{ label: "Versicherungen", url: getCategoryRoute("versicherungen") }, { label: "Finanzen & Krypto", url: getCategoryRoute("finanzen-krypto") }, { label: "KI & Software", url: getCategoryRoute("ki-software") }] 
+  popular_links: [{ label: "Versicherungen", url: getCategoriesRoute() }, { label: "Finanzen & Krypto", url: getCategoriesRoute() }, { label: "KI & Software", url: getCategoriesRoute() }] 
 };
 
 export const defaultScoutyConfig = { 

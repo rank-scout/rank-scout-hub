@@ -2,12 +2,12 @@ const DEFAULT_SITE_URL = "https://rank-scout.com";
 
 const LEGACY_ROUTE_REWRITES: Record<string, string> = {
   "/categories": "/kategorien",
-  "/categories/software": "/ki-software",
-  "/categories/finance": "/finanzen-krypto",
-  "/categories/agency": "/versicherungen",
-  "/software": "/ki-software",
-  "/finanzen": "/finanzen-krypto",
-  "/dienstleistungen": "/versicherungen",
+  "/categories/software": "/kategorien",
+  "/categories/finance": "/kategorien",
+  "/categories/agency": "/kategorien",
+  "/software": "/kategorien",
+  "/finanzen": "/kategorien",
+  "/dienstleistungen": "/kategorien",
 };
 
 const EXTERNAL_LINK_PATTERN = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
