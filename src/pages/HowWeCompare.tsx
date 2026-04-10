@@ -12,7 +12,7 @@ export default function HowWeCompare() {
         <title>Wie Rank-Scout arbeitet – Transparenz & Vergleich</title>
         <meta
           name="description"
-          content="Erfahre transparent, wie Rank-Scout Informationen aufbereitet, wie wir uns finanzieren und nach welchen Kriterien unsere redaktionellen Inhalte und Vergleiche entstehen."
+          content="So arbeitet Rank-Scout: Methodik, Finanzierung, Kennzeichnung von Partnerinhalten und redaktionelle Einordnung transparent erklärt."
         />
         <link rel="canonical" href="https://rank-scout.com/wie-wir-vergleichen" />
         <meta name="robots" content="index, follow" />

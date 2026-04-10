@@ -59,7 +59,7 @@ export default function Contact() {
     <div className="min-h-screen flex flex-col bg-slate-50 font-sans text-slate-900">
       <Helmet>
         <title>Kontakt & Partner werden | Rank-Scout</title>
-        <meta name="description" content="Nimm Kontakt mit Rank-Scout auf. Partner werden, Support erhalten oder Feedback geben." />
+        <meta name="description" content="Kontakt zu Rank-Scout: Hinweise senden, Partnerschaften anfragen oder Feedback zum Portal sachlich und direkt übermitteln." />
       </Helmet>
 
       <Header />

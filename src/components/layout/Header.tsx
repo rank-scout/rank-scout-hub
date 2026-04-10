@@ -4,7 +4,7 @@ import { Menu, X, Gamepad2, BrainCircuit, Users, LayoutGrid, ChevronDown } from 
 import { useState, useEffect } from "react";
 import { useHeaderConfig } from "@/hooks/useSettings";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { normalizeInternalLinkTarget } from "@/lib/routes";
+import { normalizeNavigableHref } from "@/lib/routes";
 
 const iconMap: Record<string, any> = {
   LayoutGrid, Gamepad2, BrainCircuit, Users
@@ -123,7 +123,7 @@ export const Header = ({ transparent = false }: HeaderProps) => {
               if (hasSubmenu) {
                 return (
                   <div key={idx} className="relative group h-full flex items-center">
-                    <Link to={normalizeInternalLinkTarget(link.url)} className={`flex items-center gap-1.5 text-sm font-bold transition-colors py-2 ${style.navLink}`}>
+                    <Link to={normalizeNavigableHref(link.url)} className={`flex items-center gap-1.5 text-sm font-bold transition-colors py-2 ${style.navLink}`}>
                       {link.label}
                       <ChevronDown className="w-4 h-4 text-secondary transition-transform duration-200 group-hover:rotate-180" />
                     </Link>
@@ -138,13 +138,13 @@ export const Header = ({ transparent = false }: HeaderProps) => {
                           {link.items.map((sub: any, sIdx: number) => (
                             <Link 
                               key={sIdx} 
-                              to={normalizeInternalLinkTarget(sub.url)} 
+                              to={normalizeNavigableHref(sub.url)} 
                               className="group/item flex items-center gap-4 p-3 rounded-xl hover:bg-slate-50 transition-all duration-200 border border-transparent hover:border-slate-100"
                             >
                               {/* Icon / Bild */}
                               {sub.image_url ? (
                                 <div className="w-12 h-12 rounded-lg bg-white border border-slate-100 shadow-sm overflow-hidden flex-shrink-0 group-hover/item:shadow-md transition-all">
-                                    <img src={sub.image_url} alt="" className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                                    <img src={sub.image_url} alt={sub.label ? `${sub.label} Vorschau` : "Navigationsbild"} className="w-full h-full object-cover group-hover/item:scale-110 transition-transform duration-500" />
                                 </div>
                               ) : (
                                 <div className="w-12 h-12 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0 text-slate-400 group-hover/item:text-white group-hover/item:bg-primary transition-all">
@@ -175,7 +175,7 @@ export const Header = ({ transparent = false }: HeaderProps) => {
               return (
                 <Link
                   key={idx}
-                  to={normalizeInternalLinkTarget(link.url)}
+                  to={normalizeNavigableHref(link.url)}
                   className={`text-sm font-medium transition-colors relative group py-2 ${style.navLink}`}
                 >
                   {link.label}
@@ -184,7 +184,7 @@ export const Header = ({ transparent = false }: HeaderProps) => {
               );
             })}
             
-            <Link to={normalizeInternalLinkTarget(config.button_url)}>
+            <Link to={normalizeNavigableHref(config.button_url)}>
               <Button className="bg-secondary hover:bg-secondary/90 text-white font-bold shadow-lg shadow-secondary/20 transition-all hover:-translate-y-0.5 hover:shadow-secondary/40 px-6">
                 {config.button_text}
               </Button>
@@ -223,7 +223,7 @@ export const Header = ({ transparent = false }: HeaderProps) => {
                         </div>
                       )}
                       <Link
-                          to={isComingSoon ? "#" : normalizeInternalLinkTarget(link.url)}
+                          to={isComingSoon ? "#" : normalizeNavigableHref(link.url)}
                           onClick={(e) => {
                             if (isComingSoon) {
                               e.preventDefault();
@@ -267,7 +267,7 @@ export const Header = ({ transparent = false }: HeaderProps) => {
                                 {link.items.map((sub: any, sIdx: number) => (
                                   <Link
                                     key={sIdx}
-                                    to={normalizeInternalLinkTarget(sub.url)}
+                                    to={normalizeNavigableHref(sub.url)}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className="py-2 text-base font-medium text-slate-600 hover:text-secondary block"
                                   >
@@ -283,7 +283,7 @@ export const Header = ({ transparent = false }: HeaderProps) => {
                     return (
                       <Link
                         key={idx}
-                        to={normalizeInternalLinkTarget(link.url)}
+                        to={normalizeNavigableHref(link.url)}
                         onClick={() => setIsMobileMenuOpen(false)}
                         className="text-lg font-bold text-slate-800 hover:text-primary py-4 border-b border-slate-100 flex justify-between items-center group"
                       >
@@ -295,7 +295,7 @@ export const Header = ({ transparent = false }: HeaderProps) => {
                 </Accordion>
             </div>
 
-            <Link to={normalizeInternalLinkTarget(config.button_url)} onClick={() => setIsMobileMenuOpen(false)} className="mt-4">
+            <Link to={normalizeNavigableHref(config.button_url)} onClick={() => setIsMobileMenuOpen(false)} className="mt-4">
               <Button className="w-full bg-secondary hover:bg-secondary/90 text-white font-bold h-14 text-lg rounded-xl shadow-xl shadow-secondary/20">
                 {config.button_text}
               </Button>

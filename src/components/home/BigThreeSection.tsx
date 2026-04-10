@@ -1,7 +1,7 @@
 import { ChevronRight, Trophy, Star, TrendingUp, Zap, Globe, Shield, Heart, Gamepad2, Bot, Briefcase, ShoppingCart, GraduationCap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useHomeContent } from "@/hooks/useSettings";
-import { normalizeInternalLinkTarget } from "@/lib/routes";
+import { getCategoryRoute, normalizeNavigableHref } from "@/lib/routes";
 
 // Icon Mapping für Admin-Typen
 const getIcon = (type: string) => {
@@ -68,9 +68,9 @@ export const BigThreeSection = () => {
   let items = content.big_three.items || [];
   if (items.length === 0) {
     items = [
-      { id: "f1", title: "Finanzen & Krypto", desc: "Broker, Kredite und Finanzthemen im Überblick.", link: "/finanzen", button_text: "Vergleichen", theme: "blue", image_url: "", icon: "trending" },
-      { id: "s1", title: "KI & Software", desc: "Tools und Softwarelösungen im Überblick.", link: "/software", button_text: "Tools finden", theme: "gold", image_url: "", icon: "bot" },
-      { id: "d1", title: "Dienstleistungen", desc: "Agenturen & B2B Services.", link: "/dienstleistungen", button_text: "Suchen", theme: "dark", image_url: "", icon: "briefcase" }
+      { id: "v1", title: "Versicherungen", desc: "Tarife, Leistungen und Policen im Überblick.", link: getCategoryRoute("versicherungen"), button_text: "Vergleichen", theme: "blue", image_url: "", icon: "shield" },
+      { id: "f1", title: "Finanzen & Krypto", desc: "Broker, Kredite und Finanzthemen im Überblick.", link: getCategoryRoute("finanzen-krypto"), button_text: "Vergleichen", theme: "gold", image_url: "", icon: "trending" },
+      { id: "s1", title: "KI & Software", desc: "Tools und Softwarelösungen im Überblick.", link: getCategoryRoute("ki-software"), button_text: "Tools finden", theme: "dark", image_url: "", icon: "bot" }
     ];
   }
 
@@ -92,7 +92,7 @@ export const BigThreeSection = () => {
             return (
               <Link 
                 key={item.id} 
-                to={normalizeInternalLinkTarget(item.link)}
+                to={normalizeNavigableHref(item.link)}
                 className={`group relative h-[450px] flex flex-col justify-between bg-slate-900 rounded-3xl p-8 border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden ${theme.border}`}
               >
                 <div className="absolute inset-0 z-0">

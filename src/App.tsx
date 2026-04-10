@@ -18,9 +18,11 @@ import { MascotWidget } from "@/components/layout/MascotWidget";
 
 // --- KRITISCHE SEITE ---
 import Index from "./pages/Index";
+import Categories from "./pages/Categories";
+import Contact from "./pages/Contact";
+import HowWeCompare from "./pages/HowWeCompare";
 
 // --- LAZY LOADED SEITEN ---
-const Categories = lazy(() => import("./pages/Categories"));
 const CategoryDetail = lazy(() => import("./pages/CategoryDetail"));
 const TopApps = lazy(() => import("./pages/TopApps"));
 const Forum = lazy(() => import("./pages/Forum"));
@@ -37,11 +39,9 @@ const AdminSettings = lazy(() => import("./pages/admin/Settings"));
 const AdminForum = lazy(() => import("./pages/admin/Forum"));
 const AdminPublisher = lazy(() => import("./pages/admin/MultiPublisher"));
 const AdminApps = lazy(() => import("./pages/admin/Apps"));
-const Contact = lazy(() => import("./pages/Contact"));
 const Impressum = lazy(() => import("./pages/Impressum"));
 const AGB = lazy(() => import("./pages/AGB"));
 const Datenschutz = lazy(() => import("./pages/Datenschutz"));
-const HowWeCompare = lazy(() => import("./pages/HowWeCompare"));
 const GoRedirect = lazy(() => import("./pages/GoRedirect"));
 const Welcome = lazy(() => import("./pages/Welcome"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -185,7 +185,7 @@ const App = () => {
 
     // 2. Kategorien sofort parallel ziehen
     queryClient.prefetchQuery({
-      queryKey: ["categories", false],
+      queryKey: ["categories_v2", false],
       queryFn: async () => {
         const { data, error } = await supabase
           .from("categories")

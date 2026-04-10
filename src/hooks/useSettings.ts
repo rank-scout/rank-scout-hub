@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { TrendingLink } from "@/lib/schemas";
-import { normalizeFooterConfigLinks, normalizeHeaderConfigLinks } from "@/lib/routes";
+import { getCategoriesRoute, getCategoryRoute, normalizeNavigableHref } from "@/lib/routes";
 export const PUBLIC_SETTINGS_KEYS = [
   "active_theme",
   "home_sections",
@@ -231,13 +231,13 @@ export const defaultHomeContent = {
   big_three: { 
     headline: "Wähle deinen Bereich", 
     items: [
-        { id: "1", title: "Finanzen & Krypto", desc: "Broker, Kredite & Geschäftskonten im Überblick.", link: "/finanzen", button_text: "Vergleichen", theme: "blue", image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab" },
-        { id: "2", title: "Software & SaaS", desc: "Beliebte Tools für Marketing, HR und Vertrieb.", link: "/software", button_text: "Tools finden", theme: "gold", image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b" },
-        { id: "3", title: "Dienstleistungen", desc: "Agenturen, Berater und Services im Vergleich.", link: "/dienstleistungen", button_text: "Suchen", theme: "dark", image_url: "https://images.unsplash.com/photo-1497366216548-37526070297c" }
+        { id: "1", title: "Versicherungen", desc: "Tarife, Leistungen und Policen im Überblick.", link: getCategoryRoute("versicherungen"), button_text: "Vergleichen", theme: "blue", image_url: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85" },
+        { id: "2", title: "Finanzen & Krypto", desc: "Broker, Kredite & Geschäftskonten im Überblick.", link: getCategoryRoute("finanzen-krypto"), button_text: "Vergleichen", theme: "gold", image_url: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab" },
+        { id: "3", title: "KI & Software", desc: "Tools und Softwarelösungen im Überblick.", link: getCategoryRoute("ki-software"), button_text: "Tools finden", theme: "dark", image_url: "https://images.unsplash.com/photo-1550751827-4bd374c3f58b" }
     ],
-    finance_title: "Finanzen & Krypto", finance_desc: "Broker, Kredite & Geschäftskonten im Überblick.", finance_link: "/finanzen", finance_button: "Jetzt vergleichen", 
-    software_title: "Software & SaaS", software_desc: "Beliebte Tools für Marketing, HR und Vertrieb.", software_link: "/software", software_button: "Tools finden", 
-    services_title: "Dienstleistungen", services_desc: "Agenturen, Berater und Services im Vergleich.", services_link: "/dienstleistungen", services_button: "Anbieter suchen" 
+    finance_title: "Finanzen & Krypto", finance_desc: "Broker, Kredite & Geschäftskonten im Überblick.", finance_link: getCategoryRoute("finanzen-krypto"), finance_button: "Jetzt vergleichen", 
+    software_title: "KI & Software", software_desc: "Tools und Softwarelösungen im Überblick.", software_link: getCategoryRoute("ki-software"), software_button: "Tools finden", 
+    services_title: "Versicherungen", services_desc: "Tarife, Leistungen und Policen im Überblick.", services_link: getCategoryRoute("versicherungen"), services_button: "Zum Vergleich" 
   },
   why_us: {
     headline: "Warum Rank-Scout?",
@@ -263,8 +263,8 @@ export const defaultHomeContent = {
 
 export const defaultHeaderConfig = { 
   button_text: "Jetzt vergleichen", 
-  button_url: "/kategorien", 
-  nav_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }], 
+  button_url: getCategoriesRoute(), 
+  nav_links: [{ label: "Versicherungen", url: getCategoryRoute("versicherungen") }, { label: "Finanzen & Krypto", url: getCategoryRoute("finanzen-krypto") }, { label: "KI & Software", url: getCategoryRoute("ki-software") }], 
   hub_links: [{ label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, { label: "Community", url: "/forum", icon: "Users" }] 
 };
 
@@ -278,7 +278,7 @@ export const defaultFooterConfig = {
   made_in_text: "in Germany", 
   disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn du über einen Link auf dieser Seite einkaufst, erhalten wir möglicherweise eine Provision. Der Preis für dich ändert sich dabei nicht. Unsere Inhalte werden redaktionell erstellt und fortlaufend gepflegt.", 
   legal_links: [{ label: "Impressum", url: "/impressum" }, { label: "Datenschutz", url: "/datenschutz" }, { label: "AGB", url: "/agb" }], 
-  popular_links: [{ label: "Software Vergleich", url: "/software" }, { label: "Finanz-Tools", url: "/finanzen" }, { label: "Agentur Finder", url: "/dienstleistungen" }] 
+  popular_links: [{ label: "Versicherungen", url: getCategoryRoute("versicherungen") }, { label: "Finanzen & Krypto", url: getCategoryRoute("finanzen-krypto") }, { label: "KI & Software", url: getCategoryRoute("ki-software") }] 
 };
 
 export const defaultScoutyConfig = { 
@@ -287,6 +287,43 @@ export const defaultScoutyConfig = {
   bubble_newsletter: "Spannende Deals per Mail?", 
   powered_by: "Powered By Rank-Scout AI" 
 };
+
+type LinkConfigItem = { url?: string | null; [key: string]: any };
+
+function normalizeLinkConfigItems<T extends LinkConfigItem>(items: T[] | undefined | null): T[] {
+  if (!Array.isArray(items)) return [];
+
+  return items.map((item) => ({
+    ...item,
+    url: normalizeNavigableHref(String(item?.url ?? "")),
+  }));
+}
+
+export function normalizeHeaderConfigValue(config: any = {}) {
+  return {
+    ...config,
+    button_url: normalizeNavigableHref(String(config?.button_url ?? getCategoriesRoute())),
+    nav_links: normalizeLinkConfigItems(config?.nav_links),
+    hub_links: normalizeLinkConfigItems(config?.hub_links),
+  };
+}
+
+export function normalizeFooterConfigValue(config: any = {}) {
+  return {
+    ...config,
+    legal_links: normalizeLinkConfigItems(config?.legal_links),
+    popular_links: normalizeLinkConfigItems(config?.popular_links),
+  };
+}
+
+export function normalizeBigThreeItemsValue(items: any[] | undefined | null) {
+  if (!Array.isArray(items)) return [];
+
+  return items.map((item) => ({
+    ...item,
+    link: normalizeNavigableHref(String(item?.link ?? "/")),
+  }));
+}
 
 export const defaultHomeForumTeaser = { 
   headline: "Community Hub", 
@@ -327,15 +364,8 @@ export function useHomeLayout() {
   }; 
 }
 
-export function useHeaderConfig() {
-  const { data } = useSettings();
-  return normalizeHeaderConfigLinks({ ...defaultHeaderConfig, ...(data?.header_config as any || {}) });
-}
-
-export function useFooterConfig() {
-  const { data } = useSettings();
-  return normalizeFooterConfigLinks({ ...defaultFooterConfig, ...(data?.footer_config as any || {}) });
-}
+export function useHeaderConfig() { const { data } = useSettings(); return normalizeHeaderConfigValue({ ...defaultHeaderConfig, ...(data?.header_config as any || {}) }); }
+export function useFooterConfig() { const { data } = useSettings(); return normalizeFooterConfigValue({ ...defaultFooterConfig, ...(data?.footer_config as any || {}) }); }
 export function useScoutyConfig() { const { data } = useSettings(); return { ...defaultScoutyConfig, ...(data?.scouty_config as any || {}) }; }
 export function useHomeForumTeaser() { const { data } = useSettings(); return { ...defaultHomeForumTeaser, ...(data?.home_forum_teaser as any || {}) }; }
 
@@ -353,7 +383,10 @@ export function useHomeContent() {
   }; 
   
   content.big_three = { ...defaultHomeContent.big_three, ...(content.big_three || {}) };
-  content.big_three.items = content.big_three.items || defaultHomeContent.big_three.items;
+  content.big_three.items = normalizeBigThreeItemsValue(content.big_three.items || defaultHomeContent.big_three.items);
+  content.big_three.finance_link = normalizeNavigableHref(String(content.big_three.finance_link || defaultHomeContent.big_three.finance_link || "/"));
+  content.big_three.software_link = normalizeNavigableHref(String(content.big_three.software_link || defaultHomeContent.big_three.software_link || "/"));
+  content.big_three.services_link = normalizeNavigableHref(String(content.big_three.services_link || defaultHomeContent.big_three.services_link || "/"));
   
   content.why_us = { ...defaultHomeContent.why_us, ...(content.why_us || {}) };
   content.categories = { ...defaultHomeContent.categories, ...content.categories }; 

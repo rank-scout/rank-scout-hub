@@ -1,5 +1,15 @@
 const DEFAULT_SITE_URL = "https://rank-scout.com";
 
+const LEGACY_ROUTE_REWRITES: Record<string, string> = {
+  "/categories": "/kategorien",
+  "/categories/software": "/ki-software",
+  "/categories/finance": "/finanzen-krypto",
+  "/categories/agency": "/versicherungen",
+  "/software": "/ki-software",
+  "/finanzen": "/finanzen-krypto",
+  "/dienstleistungen": "/versicherungen",
+};
+
 const EXTERNAL_LINK_PATTERN = /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i;
 
 const RESERVED_TOP_LEVEL_SLUGS = new Set([
@@ -46,11 +56,11 @@ export function isSpecialLinkTarget(rawTarget: string | null | undefined): boole
   return cleaned.startsWith("#") || cleaned.startsWith("?");
 }
 
-export function normalizeInternalLinkTarget(
-  rawTarget: string | null | undefined,
+export function normalizeNavigableHref(
+  rawHref: string | null | undefined,
   fallback: string = "/",
 ): string {
-  const cleaned = String(rawTarget ?? "").trim();
+  const cleaned = String(rawHref ?? "").trim();
 
   if (!cleaned) {
     return fallback;
@@ -60,8 +70,20 @@ export function normalizeInternalLinkTarget(
     return cleaned;
   }
 
-  return normalizeRoutePath(cleaned);
+  const normalized = normalizeRoutePath(cleaned);
+  const legacyTarget = LEGACY_ROUTE_REWRITES[normalized.toLowerCase()];
+
+  return legacyTarget ?? normalized;
 }
+
+export function normalizeInternalLinkTarget(
+  rawTarget: string | null | undefined,
+  fallback: string = "/",
+): string {
+  return normalizeNavigableHref(rawTarget, fallback);
+}
+
+export const normalizeInternalHref = normalizeInternalLinkTarget;
 
 type LinkTreeNode = {
   url?: string | null;
@@ -88,7 +110,7 @@ export function normalizeLinkField<T extends Record<string, unknown>, K extends 
   fallback: string = "/",
 ): T {
   const rawValue = item[field];
-  const normalizedValue = normalizeInternalLinkTarget(
+  const normalizedValue = normalizeNavigableHref(
     typeof rawValue === "string" ? rawValue : null,
     fallback,
   );
@@ -106,7 +128,7 @@ export function normalizeLinkTree<T extends LinkTreeNode>(links: T[] | null | un
 
   return links.map((link) => ({
     ...link,
-    url: normalizeInternalLinkTarget(link.url),
+    url: normalizeNavigableHref(link.url),
     items: Array.isArray(link.items) ? normalizeLinkTree(link.items) : link.items,
   })) as T[];
 }
@@ -114,7 +136,7 @@ export function normalizeLinkTree<T extends LinkTreeNode>(links: T[] | null | un
 export function normalizeHeaderConfigLinks<T extends HeaderConfigLike>(config: T): T {
   return {
     ...config,
-    button_url: normalizeInternalLinkTarget(config.button_url),
+    button_url: normalizeNavigableHref(config.button_url),
     nav_links: normalizeLinkTree(config.nav_links),
     hub_links: normalizeLinkTree(config.hub_links),
   };

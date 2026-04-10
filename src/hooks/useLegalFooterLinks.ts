@@ -1,12 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeLinkField } from "@/lib/routes";
+import { normalizeNavigableHref } from "@/lib/routes";
 
 interface LegalFooterLink {
   id: string;
   label: string;
   url: string;
   sort_order: number;
+}
+
+function normalizeLegalFooterLinks(items: LegalFooterLink[] | null | undefined): LegalFooterLink[] {
+  return (items || []).map((item) => ({
+    ...item,
+    url: normalizeNavigableHref(item.url),
+  }));
 }
 
 export function useLegalFooterLinks(categoryId: string | null) {
@@ -26,7 +33,7 @@ export function useLegalFooterLinks(categoryId: string | null) {
 
         // If category has its own links, return those
         if (categoryLinks && categoryLinks.length > 0) {
-          return categoryLinks.map((link) => normalizeLinkField(link, "url")) as LegalFooterLink[];
+          return normalizeLegalFooterLinks(categoryLinks as LegalFooterLink[]);
         }
       }
 
@@ -39,7 +46,7 @@ export function useLegalFooterLinks(categoryId: string | null) {
         .order("sort_order", { ascending: true });
 
       if (globalError) throw globalError;
-      return (globalLinks || []).map((link) => normalizeLinkField(link, "url")) as LegalFooterLink[];
+      return normalizeLegalFooterLinks((globalLinks || []) as LegalFooterLink[]);
     },
   });
 }

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeLinkField } from "@/lib/routes";
+import { normalizeNavigableHref } from "@/lib/routes";
 
 interface PopularFooterLink {
   id: string;
@@ -10,6 +10,13 @@ interface PopularFooterLink {
   sort_order: number;
   is_active: boolean;
   created_at: string;
+}
+
+function normalizePopularFooterLinks(items: PopularFooterLink[] | null | undefined): PopularFooterLink[] {
+  return (items || []).map((item) => ({
+    ...item,
+    url: normalizeNavigableHref(item.url),
+  }));
 }
 
 export function usePopularFooterLinks(categoryId?: string | null) {
@@ -33,7 +40,7 @@ export function usePopularFooterLinks(categoryId?: string | null) {
           .order("sort_order", { ascending: true });
 
         if (categoryLinks && categoryLinks.length > 0) {
-          return categoryLinks.map((link) => normalizeLinkField(link, "url")) as PopularFooterLink[];
+          return normalizePopularFooterLinks(categoryLinks as PopularFooterLink[]);
         }
       }
 
@@ -46,7 +53,7 @@ export function usePopularFooterLinks(categoryId?: string | null) {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return (data || []).map((link) => normalizeLinkField(link, "url")) as PopularFooterLink[];
+      return normalizePopularFooterLinks((data || []) as PopularFooterLink[]);
     },
   });
 }
@@ -61,7 +68,7 @@ export function useAllPopularFooterLinks() {
         .order("sort_order", { ascending: true });
 
       if (error) throw error;
-      return (data || []).map((link) => normalizeLinkField(link, "url")) as PopularFooterLink[];
+      return normalizePopularFooterLinks((data || []) as PopularFooterLink[]);
     },
   });
 }

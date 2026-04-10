@@ -86,7 +86,7 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
                 <img 
                     src={category.hero_image_url} 
                     className="w-full h-full object-cover opacity-70"
-                    alt="" 
+                    alt={category?.name ? `${category.name} Hero-Bild` : "Kategorie Hero-Bild"} 
                     fetchPriority="high"
                     loading="eager"
                     decoding="sync"
@@ -214,7 +214,7 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
                                         
                                         <div className="flex items-start justify-between mb-8 relative z-10">
                                             <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-3xl shadow-inner border border-slate-100 group-hover:scale-110 transition-transform text-orange-500">
-                                                {sub.icon ? <img src={sub.icon} alt="" className="w-8 h-8 object-contain" /> : getIcon(sub.slug)}
+                                                {sub.icon ? <img src={sub.icon} alt={sub.name ? `${sub.name} Icon` : "Kategorie-Icon"} className="w-8 h-8 object-contain" /> : getIcon(sub.slug)}
                                             </div>
                                             <div className="bg-slate-100 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-slate-500">
                                                 Analyse

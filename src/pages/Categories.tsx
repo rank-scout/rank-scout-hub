@@ -10,6 +10,18 @@ import { Helmet } from "react-helmet-async";
 import { useTrackView } from "@/hooks/useTrackView";
 import { getCategoriesCanonicalUrl, getCategoryRoute } from "@/lib/routes";
 
+
+const CATEGORY_FALLBACK_LINKS = [
+  { label: "Versicherungen", to: "/versicherungen" },
+  { label: "Finanzen & Krypto", to: "/finanzen-krypto" },
+  { label: "Haus & Energie", to: "/haus-energie" },
+  { label: "Internet & Tech", to: "/internet-und-tech-tarife" },
+  { label: "KI & Software", to: "/ki-software" },
+  { label: "Produkttests", to: "/produkttests" },
+  { label: "Apps & Gaming", to: "/apps-gaming" },
+  { label: "Reisen & Mobilität", to: "/reisen-mobilitaet" },
+];
+
 export default function Categories() {
   useTrackView("categories-overview", "page");
 
@@ -80,8 +92,8 @@ export default function Categories() {
   return (
     <div className="min-h-screen flex flex-col bg-background font-sans">
       <Helmet>
-        <title>Alle Kategorien im Vergleich | Rank-Scout</title>
-        <meta name="description" content="Finde den passenden Vergleich für deine Bedürfnisse. Alle Kategorien von Software bis Finanzen in der Übersicht." />
+        <title>Alle Kategorien 2026 im Überblick | Rank-Scout</title>
+        <meta name="description" content="Alle Rank-Scout Kategorien im Überblick: Versicherungen, Finanzen, Energie, Internet, KI, Apps und weitere Themen sachlich geordnet." />
         <link rel="canonical" href={getCategoriesCanonicalUrl()} />
       </Helmet>
 
@@ -93,11 +105,23 @@ export default function Categories() {
             <h1 className="font-display font-bold text-4xl md:text-5xl text-foreground mb-4">
               Unsere Vergleiche
             </h1>
-            <p className="text-lg text-muted-foreground mb-8">
-              Wähle eine Kategorie, um passende Angebote und Produkte im Überblick zu sehen.
+            <p className="text-lg text-muted-foreground mb-6">
+              Wähle eine Kategorie, um passende Angebote, Vergleiche und Hintergrundinformationen im Überblick zu sehen.
             </p>
-            
-            <div className="relative max-w-md mx-auto">
+
+            <nav aria-label="Beliebte Kategorien" className="flex flex-wrap justify-center gap-3 mb-8">
+              {CATEGORY_FALLBACK_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+<div className="relative max-w-md mx-auto">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-muted-foreground" />
               </div>
@@ -113,12 +137,36 @@ export default function Categories() {
 
           <div className="max-w-7xl mx-auto">
             {isLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+              <div className="py-20">
+                <div className="flex justify-center items-center mb-8">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                </div>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {CATEGORY_FALLBACK_LINKS.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             ) : filteredCategories.length === 0 ? (
               <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
-                <p className="text-muted-foreground">Keine Kategorien gefunden.</p>
+                <p className="text-muted-foreground mb-6">Keine Kategorien gefunden.</p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {CATEGORY_FALLBACK_LINKS.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

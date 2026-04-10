@@ -30,7 +30,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { normalizeFooterConfigLinks, normalizeHeaderConfigLinks, normalizeInternalLinkTarget } from "@/lib/routes";
+import { getCategoriesRoute, getCategoryRoute } from "@/lib/routes";
+import { normalizeFooterConfigValue, normalizeHeaderConfigValue } from "@/hooks/useSettings";
 
 // --- NEUE KOMPONENTE: COMPLIANCE MANAGER ---
 function ComplianceSettingsCard() {
@@ -275,9 +276,9 @@ export default function AdminSettings() {
   // --- STANDARD CONFIG WERTE (DEFAULTS) ---
   const defaultHeaderConfig = { 
     nav_links: [
-      { label: "Software Vergleich", url: "/categories/software" },
-      { label: "Finanz-Tools", url: "/categories/finance" },
-      { label: "Agentur Finder", url: "/categories/agency" }
+      { label: "Versicherungen", url: getCategoryRoute("versicherungen") },
+      { label: "Finanzen & Krypto", url: getCategoryRoute("finanzen-krypto") },
+      { label: "KI & Software", url: getCategoryRoute("ki-software") }
     ],
     hub_links: [
       { label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, 
@@ -286,7 +287,7 @@ export default function AdminSettings() {
       { label: "Community", url: "/forum", icon: "Users" }
     ],
     button_text: "Jetzt vergleichen", 
-    button_url: "/categories" 
+    button_url: getCategoriesRoute() 
   };
 
   const defaultFooterConfig = {
@@ -304,9 +305,9 @@ export default function AdminSettings() {
       { label: "Sicherheit", url: "/sicherheit" }
     ],
     popular_links: [
-      { label: "Software Vergleich", url: "/categories/software" },
-      { label: "Finanz-Tools", url: "/categories/finance" },
-      { label: "Agentur Finder", url: "/categories/agency" }
+      { label: "Versicherungen", url: getCategoryRoute("versicherungen") },
+      { label: "Finanzen & Krypto", url: getCategoryRoute("finanzen-krypto") },
+      { label: "KI & Software", url: getCategoryRoute("ki-software") }
     ]
   };
 
@@ -364,11 +365,11 @@ export default function AdminSettings() {
     // SICHERES MERGEN FÜR HEADER & FOOTER
     // @ts-ignore
     if (settings.header_config) {
-      setHeaderConfig((prev: any) => normalizeHeaderConfigLinks({ ...prev, ...(settings.header_config as any) }));
+      setHeaderConfig((prev: any) => normalizeHeaderConfigValue({ ...prev, ...(settings.header_config as any) }));
     }
     // @ts-ignore
     if (settings.footer_config) {
-      setFooterConfig((prev: any) => normalizeFooterConfigLinks({ ...prev, ...(settings.footer_config as any) }));
+      setFooterConfig((prev: any) => normalizeFooterConfigValue({ ...prev, ...(settings.footer_config as any) }));
     }
 
     setInitialized(true);
@@ -534,79 +535,75 @@ export default function AdminSettings() {
   // --- HEADER LINKS (Desktop) ---
   const addNavLink = () => {
     const newLinks = [...(headerConfig.nav_links || []), { label: "Neuer Link", url: "/" }];
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, nav_links: newLinks }));
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
 
   const removeNavLink = (index: number) => {
     const newLinks = [...(headerConfig.nav_links || [])];
     newLinks.splice(index, 1);
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, nav_links: newLinks }));
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
 
   const updateNavLink = (index: number, field: string, value: string) => {
     const newLinks = [...(headerConfig.nav_links || [])];
-    const nextValue = field === "url" ? normalizeInternalLinkTarget(value) : value;
-    newLinks[index] = { ...newLinks[index], [field]: nextValue };
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, nav_links: newLinks }));
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
 
   // --- HEADER LINKS (Mobile Hub) ---
   const updateHubLink = (index: number, field: string, value: string) => {
     const newLinks = [...(headerConfig.hub_links || [])];
-    const nextValue = field === "url" ? normalizeInternalLinkTarget(value) : value;
-    newLinks[index] = { ...newLinks[index], [field]: nextValue };
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, hub_links: newLinks }));
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setHeaderConfig({ ...headerConfig, hub_links: newLinks });
   };
 
   const toggleHubLink = (index: number) => {
     const newLinks = [...(headerConfig.hub_links || [])];
     const currentStatus = newLinks[index].enabled !== false; 
     newLinks[index] = { ...newLinks[index], enabled: !currentStatus };
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, hub_links: newLinks }));
+    setHeaderConfig({ ...headerConfig, hub_links: newLinks });
   };
 
   const toggleHubLinkComingSoon = (index: number) => {
     const newLinks = [...(headerConfig.hub_links || [])];
     const currentStatus = newLinks[index].isComingSoon === true; 
     newLinks[index] = { ...newLinks[index], isComingSoon: !currentStatus };
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, hub_links: newLinks }));
+    setHeaderConfig({ ...headerConfig, hub_links: newLinks });
   };
 
   // --- FOOTER LINKS ---
   const addLegalLink = () => {
     const newLinks = [...(footerConfig.legal_links || []), { label: "Neuer Link", url: "/" }];
-    setFooterConfig(normalizeFooterConfigLinks({ ...footerConfig, legal_links: newLinks }));
+    setFooterConfig({ ...footerConfig, legal_links: newLinks });
   };
 
   const removeLegalLink = (index: number) => {
     const newLinks = [...(footerConfig.legal_links || [])];
     newLinks.splice(index, 1);
-    setFooterConfig(normalizeFooterConfigLinks({ ...footerConfig, legal_links: newLinks }));
+    setFooterConfig({ ...footerConfig, legal_links: newLinks });
   };
 
   const updateLegalLink = (index: number, field: string, value: string) => {
     const newLinks = [...(footerConfig.legal_links || [])];
-    const nextValue = field === "url" ? normalizeInternalLinkTarget(value) : value;
-    newLinks[index] = { ...newLinks[index], [field]: nextValue };
-    setFooterConfig(normalizeFooterConfigLinks({ ...footerConfig, legal_links: newLinks }));
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setFooterConfig({ ...footerConfig, legal_links: newLinks });
   };
    
   const addPopularLink = () => {
     const newLinks = [...(footerConfig.popular_links || []), { label: "Neuer Link", url: "/" }];
-    setFooterConfig(normalizeFooterConfigLinks({ ...footerConfig, popular_links: newLinks }));
+    setFooterConfig({ ...footerConfig, popular_links: newLinks });
   };
 
   const removePopularLink = (index: number) => {
     const newLinks = [...(footerConfig.popular_links || [])];
     newLinks.splice(index, 1);
-    setFooterConfig(normalizeFooterConfigLinks({ ...footerConfig, popular_links: newLinks }));
+    setFooterConfig({ ...footerConfig, popular_links: newLinks });
   };
 
   const updatePopularLink = (index: number, field: string, value: string) => {
     const newLinks = [...(footerConfig.popular_links || [])];
-    const nextValue = field === "url" ? normalizeInternalLinkTarget(value) : value;
-    newLinks[index] = { ...newLinks[index], [field]: nextValue };
-    setFooterConfig(normalizeFooterConfigLinks({ ...footerConfig, popular_links: newLinks }));
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setFooterConfig({ ...footerConfig, popular_links: newLinks });
   };
 
   // --- HEADER SUB-LINKS LOGIC ---
@@ -614,33 +611,23 @@ export default function AdminSettings() {
     const newLinks = [...(headerConfig.nav_links || [])];
     if (!newLinks[parentIdx].items) newLinks[parentIdx].items = [];
     newLinks[parentIdx].items.push({ label: "Neuer Unterpunkt", url: "/" });
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, nav_links: newLinks }));
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
 
   const removeSubLink = (parentIdx: number, subIdx: number) => {
     const newLinks = [...(headerConfig.nav_links || [])];
     newLinks[parentIdx].items.splice(subIdx, 1);
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, nav_links: newLinks }));
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
 
   const updateSubLink = (parentIdx: number, subIdx: number, field: string, value: string) => {
     const newLinks = [...(headerConfig.nav_links || [])];
-    const nextValue = field === "url" ? normalizeInternalLinkTarget(value) : value;
-    newLinks[parentIdx].items[subIdx] = { ...newLinks[parentIdx].items[subIdx], [field]: nextValue };
-    setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, nav_links: newLinks }));
+    newLinks[parentIdx].items[subIdx] = { ...newLinks[parentIdx].items[subIdx], [field]: value };
+    setHeaderConfig({ ...headerConfig, nav_links: newLinks });
   };
 
-  const saveHeader = () => {
-    const normalizedConfig = normalizeHeaderConfigLinks(headerConfig);
-    setHeaderConfig(normalizedConfig);
-    return saveSetting("header_config", normalizedConfig);
-  };
-
-  const saveFooter = () => {
-    const normalizedConfig = normalizeFooterConfigLinks(footerConfig);
-    setFooterConfig(normalizedConfig);
-    return saveSetting("footer_config", normalizedConfig);
-  };
+  const saveHeader = () => saveSetting("header_config", normalizeHeaderConfigValue(headerConfig));
+  const saveFooter = () => saveSetting("footer_config", normalizeFooterConfigValue(footerConfig));
 
   const handleAdsToggle = (enabled: boolean) => {
     setAdsEnabled(enabled);
@@ -1106,7 +1093,7 @@ export default function AdminSettings() {
               <div className="pt-6 border-t border-border space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Button Text</Label><Input value={headerConfig.button_text} onChange={e => setHeaderConfig({ ...headerConfig, button_text: e.target.value })} /></div>
-                  <div className="space-y-2"><Label>Button Ziel</Label><Input value={headerConfig.button_url} onChange={e => setHeaderConfig(normalizeHeaderConfigLinks({ ...headerConfig, button_url: e.target.value }))} /></div>
+                  <div className="space-y-2"><Label>Button Ziel</Label><Input value={headerConfig.button_url} onChange={e => setHeaderConfig({ ...headerConfig, button_url: e.target.value })} /></div>
                 </div>
               </div>
               <Button onClick={saveHeader} className="w-full mt-4 bg-primary"><Save className="w-4 h-4 mr-2" /> Header Konfiguration Speichern</Button>
