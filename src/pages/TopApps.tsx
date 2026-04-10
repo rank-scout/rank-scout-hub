@@ -40,6 +40,38 @@ export default function TopApps() {
     month: "long",
     year: "numeric",
   });
+  const hasApps = Array.isArray(apps) && apps.length > 0;
+
+  const webpageSchema = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Top 100 Apps 2026: Wer dominiert den Software-Markt?",
+    description:
+      "Die Top 100 Apps und Software-Lösungen in einer redaktionell strukturierten Übersicht.",
+    url: canonicalUrl,
+  };
+
+  const itemListSchema = hasApps
+    ? {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        name: "Top 100 Apps 2026 Übersicht",
+        description:
+          "Die besten 100 Apps und Software-Lösungen in einer redaktionell strukturierten Übersicht.",
+        itemListElement: apps.map((app, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "SoftwareApplication",
+            name: app.name,
+            applicationCategory: app.category || "BusinessApplication",
+            description:
+              app.short_description ||
+              `Redaktionell strukturierte Übersicht zu ${app.name}.`,
+          },
+        })),
+      }
+    : null;
 
   return (
     <div className="min-h-screen flex flex-col bg-white selection:bg-secondary/30">
@@ -47,26 +79,13 @@ export default function TopApps() {
         <title>Top 100 Apps 2026: Wer dominiert den Software-Markt?</title>
         <link rel="canonical" href={canonicalUrl} />
         <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            name: "Top 100 Apps 2026 Übersicht",
-            description:
-              "Die besten 100 Apps und Software-Lösungen in einer redaktionell strukturierten Übersicht.",
-            itemListElement: apps?.map((app, i) => ({
-              "@type": "ListItem",
-              position: i + 1,
-              item: {
-                "@type": "SoftwareApplication",
-                name: app.name,
-                applicationCategory: app.category || "BusinessApplication",
-                description:
-                  app.short_description ||
-                  `Redaktionell strukturierte Übersicht zu ${app.name}.`,
-              },
-            })),
-          })}
+          {JSON.stringify(webpageSchema)}
         </script>
+        {itemListSchema ? (
+          <script type="application/ld+json">
+            {JSON.stringify(itemListSchema)}
+          </script>
+        ) : null}
       </Helmet>
 
       <Header />
@@ -203,7 +222,8 @@ function MethodologyCard({
 function AppRankCard({ app, index }: { app: any; index: number }) {
   const isTopThree = index < 3;
   const editorialBadge =
-    app.badge_text || (index === 0 ? "Top-Empfehlung" : index < 3 ? "Beliebt" : "Redaktionell sortiert");
+    app.badge_text ||
+    (index === 0 ? "Top-Empfehlung" : index < 3 ? "Beliebt" : "Redaktionell sortiert");
 
   return (
     <Card
