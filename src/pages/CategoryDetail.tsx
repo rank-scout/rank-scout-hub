@@ -319,10 +319,10 @@ export default function CategoryDetail() {
               <div className="lg:w-2/3" ref={contentTopRef}>
                 
                 {/* Intro Box */}
-                <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 mb-8 relative overflow-hidden">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
-                  <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-orange-50 rounded-2xl text-orange-500 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h3 className="font-bold text-[#0A0F1C] text-2xl tracking-tight">{introTitle}</h3></div></div>
-                </div>
+<div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 mb-8 relative overflow-hidden">
+  <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
+  <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-orange-50 rounded-2xl text-orange-500 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h2 className="font-bold text-[#0A0F1C] text-2xl tracking-tight">{introTitle}</h2></div></div>
+</div>
 
                 {category.long_content_top && (<div className="bg-transparent mb-16 px-2 mt-8"><article id="content-top" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top) }} /></article></div>)}
                 
