@@ -1,4 +1,5 @@
 import DOMPurify from "dompurify";
+import { normalizeNavigableHref } from "@/lib/routes";
 
 const CMS_ALLOWED_TAGS = [
   "h1", "h2", "h3", "h4", "h5", "h6",
@@ -126,7 +127,7 @@ function sanitizeInlineStyle(styleText?: string | null): string | null {
 }
 
 function normalizeAnchorElement(anchor: HTMLAnchorElement) {
-  const href = anchor.getAttribute("href");
+  const rawHref = anchor.getAttribute("href");
   const safeStyle = sanitizeInlineStyle(anchor.getAttribute("style"));
 
   if (safeStyle) {
@@ -135,10 +136,15 @@ function normalizeAnchorElement(anchor: HTMLAnchorElement) {
     anchor.removeAttribute("style");
   }
 
-  if (isInternalPathUrl(href)) {
-    anchor.removeAttribute("target");
-    anchor.removeAttribute("rel");
-    return;
+  if (rawHref) {
+    const normalizedHref = normalizeNavigableHref(rawHref, "/");
+    anchor.setAttribute("href", normalizedHref);
+
+    if (isInternalPathUrl(normalizedHref)) {
+      anchor.removeAttribute("target");
+      anchor.removeAttribute("rel");
+      return;
+    }
   }
 
   const safeRel = normalizeLinkRelValue(anchor.getAttribute("rel"));
