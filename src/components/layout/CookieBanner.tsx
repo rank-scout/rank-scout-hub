@@ -119,7 +119,7 @@ export const CookieBanner = () => {
                             onClick={() => setShowDetails(!showDetails)}
                             className="flex items-center justify-center gap-1 text-xs text-slate-500 hover:text-secondary transition-colors mt-1"
                         >
-                            {showDetails ? "Weniger anzeigen" : "Einstellungen verwalten"}
+                            {showDetails ? "Weniger anzeigen" : "Optionen anpassen"}
                             {showDetails ? <ChevronUp className="w-3 h-3"/> : <ChevronDown className="w-3 h-3"/>}
                         </button>
                     </div>
@@ -195,11 +195,11 @@ export const CookieBanner = () => {
                                 Alles akzeptieren
                             </Button>
                             <div className="grid grid-cols-2 gap-3">
-                                <Button onClick={handleDecline} variant="outline" className="w-full border-white/10 text-slate-300">
+                                <Button onClick={handleDecline} variant="outline" className="w-full border-white/15 bg-white text-slate-900 hover:bg-white/90 hover:text-slate-900 font-semibold shadow-sm">
                                     Ablehnen
                                 </Button>
-                                <Button onClick={() => setShowDetails(true)} variant="secondary" className="w-full bg-white/10 text-white">
-                                    Einstellen
+                                <Button onClick={() => setShowDetails(true)} variant="secondary" className="w-full bg-white/10 text-white hover:bg-white/15 border border-white/10">
+                                    Anpassen
                                 </Button>
                             </div>
                         </>

@@ -7,7 +7,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useCategoryProjects } from "@/hooks/useCategoryProjects";
 import { Button } from "@/components/ui/button";
 import { 
-    Loader2, ShieldCheck, Clock, Users, Lock, Trophy, CheckCircle2, ArrowRight, Home, Lightbulb, Zap,
+    Loader2, ShieldCheck, Clock, Users, Lock, Trophy, CheckCircle2, ArrowRight, Home, Lightbulb, Zap, Check,
     ActivityIcon,
     Scale3DIcon,
     ScaleIcon,
@@ -351,14 +351,35 @@ export default function CategoryDetail() {
                 
                 {category.faq_data && Array.isArray(category.faq_data) && (
                   <section id="faq" className="scroll-mt-32 mb-16">
-                    <div className="mb-10 px-2"><h2 className="text-4xl font-extrabold text-[#0A0F1C] tracking-tight">Häufige Fragen</h2></div>
+                    <div className="mb-10 px-2">
+                      <h2 className="text-4xl font-extrabold text-[#0A0F1C] tracking-tight">Häufige Fragen</h2>
+                      <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
+                        Hier findest du kompakte Antworten zu Vergleichen, Rechnern, Ratgebern und unverbindlichen Partner-Anfragen auf Rank-Scout.
+                      </p>
+                    </div>
                     <div className="space-y-4">
                       <Accordion type="single" collapsible className="w-full space-y-4">
                         {category.faq_data.map((faq: any, index: number) => (
-                          <AccordionItem key={index} value={`item-${index}`} className="bg-white border border-slate-100 shadow-sm rounded-2xl px-2">
-                            <AccordionTrigger className="text-left font-bold text-[#0A0F1C] px-6 py-5 text-lg hover:no-underline hover:text-orange-500 transition-colors">{faq.question}</AccordionTrigger>
-                            <AccordionContent className="text-slate-600 leading-loose px-6 pb-8 pt-2 text-base">
-                              <div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtmlWithBreaks(String(faq.answer || "")) }} />
+                          <AccordionItem
+                            key={index}
+                            value={`item-${index}`}
+                            className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_48px_rgba(15,23,42,0.1)]"
+                          >
+                            <AccordionTrigger className="group/faq px-7 py-6 text-left text-lg font-bold text-[#0A0F1C] transition-colors hover:text-[#FF8400] hover:no-underline [&>svg]:hidden">
+                              <div className="flex w-full items-center gap-4">
+                                <span className="flex-1 pr-2 leading-snug">{faq.question}</span>
+                                <span
+                                  aria-hidden="true"
+                                  className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-orange-200/80 bg-gradient-to-br from-white via-orange-50 to-[#fff2e6] shadow-[0_10px_25px_rgba(255,132,0,0.14)] transition-all duration-300 group-data-[state=open]/faq:scale-105 group-data-[state=open]/faq:border-[#FF8400] group-data-[state=open]/faq:shadow-[0_16px_34px_rgba(255,132,0,0.28)]"
+                                >
+                                  <span className="absolute inset-[5px] rounded-full bg-gradient-to-br from-white via-[#fff7ef] to-[#ffe4c7]" />
+                                  <span className="absolute inset-[11px] rounded-full border border-white/70 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.95),rgba(255,235,214,0.9)_45%,rgba(255,196,128,0.45)_100%)] shadow-inner" />
+                                  <Check className="relative z-10 h-6 w-6 text-[#FF8400] drop-shadow-[0_3px_8px_rgba(255,132,0,0.35)] transition-all duration-300 group-data-[state=closed]/faq:scale-90 group-data-[state=closed]/faq:opacity-80 group-data-[state=open]/faq:scale-110" />
+                                </span>
+                              </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-7 pb-10 pt-0 text-base leading-8 text-slate-600">
+                              <div className="border-t border-slate-100 pt-6 pb-1" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtmlWithBreaks(String(faq.answer || "")) }} />
                             </AccordionContent>
                           </AccordionItem>
                         ))}
