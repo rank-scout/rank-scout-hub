@@ -15,6 +15,7 @@ import { Helmet } from "react-helmet-async";
 import { AppTicker } from "@/components/home/AppTicker";
 import { HowItWorksSection } from "@/components/home/HowItWorksSection";
 import { HomeSEOText } from "@/components/home/HomeSEOText";
+import { HomeFAQSection } from "@/components/home/HomeFAQSection";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
 
@@ -25,7 +26,7 @@ const Index = () => {
   const { data: settings, isLoading: isLoadingSettings } = useSettings();
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
-  const { layout, sections, isLoading: isLoadingLayout } = useHomeLayout();
+  const { sections } = useHomeLayout();
 
   const safeTitle = typeof siteTitle === "string" && siteTitle.length > 0
     ? siteTitle
@@ -57,19 +58,23 @@ const Index = () => {
     </Helmet>
   );
 
-  if (isLoadingLayout || isLoadingSettings) {
+  if (isLoadingSettings || !sections.length) {
     return (<><>{seoHead}</><LoadingScreen /></>);
   }
 
   const sectionComponents: Record<string, React.ReactNode> = {
     hero: <HeroSection />,
-    amazon_top: <AmazonBanner format="horizontal" />,
-    trust: <AppTicker />,
     how_it_works: <HowItWorksSection />,
-    big_three: <BigThreeSection />,
-    adsense_middle: <AdSenseBanner slotId="placeholder-1" />,
-    categories: <CategoriesSection />,
     news: <NewsSection />,
+    big_three: <BigThreeSection />,
+    forum: <ForumSection />,
+    trust: <AppTicker />,
+    categories: <CategoriesSection />,
+    amazon_top: <AmazonBanner format="horizontal" />,
+    adsense_middle: <AdSenseBanner slotId="placeholder-1" />,
+    home_faq: <HomeFAQSection />,
+    seo: <HomeSEOText />,
+    mascot: null,
   };
 
   return (
@@ -77,28 +82,8 @@ const Index = () => {
       {seoHead}
       <Header />
       <main className="flex-grow">
-        <HeroSection />
-        <HowItWorksSection />
-
-        {sections.find((s) => s.id === "news")?.enabled && <NewsSection />}
-
-        <BigThreeSection />
-        <ForumSection />
-        <AppTicker />
-
-        {layout.seo_text && <HomeSEOText />}
-
         {sections
-          .filter((section) =>
-            section.enabled &&
-            section.id !== "mascot" &&
-            section.id !== "hero" &&
-            section.id !== "trust" &&
-            section.id !== "big_three" &&
-            section.id !== "how_it_works" &&
-            section.id !== "news" &&
-            section.id !== "forum"
-          )
+          .filter((section) => section.enabled)
           .map((section) => (
             <div key={section.id} className="w-full">
               {sectionComponents[section.id] || null}

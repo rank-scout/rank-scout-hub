@@ -32,6 +32,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCategoriesRoute, getCategoryRoute } from "@/lib/routes";
 import { normalizeFooterConfigValue, normalizeHeaderConfigValue } from "@/hooks/useSettings";
+import { HomeFAQEditor } from "@/components/admin/HomeFAQEditor";
 
 // --- NEUE KOMPONENTE: COMPLIANCE MANAGER ---
 function ComplianceSettingsCard() {
@@ -148,7 +149,7 @@ export default function AdminSettings() {
   const updateSetting = useUpdateSetting();
    
   // Hooks für Home-Steuerung & Ads
-  const { layout } = useHomeLayout();
+  const { layout, sections: normalizedHomeSections } = useHomeLayout();
   const { content: serverContent } = useHomeContent();
   const forumAds = useForumAds();
    
@@ -336,9 +337,8 @@ export default function AdminSettings() {
     }
 
     // Home Sections Init
-    if (settings.home_sections) {
-      const sortedSections = [...(settings.home_sections as any[])].sort((a, b) => a.order - b.order);
-      setHomeSections(sortedSections);
+    if (normalizedHomeSections.length > 0) {
+      setHomeSections(JSON.parse(JSON.stringify(normalizedHomeSections)));
     }
 
     // Load Analytics
@@ -382,7 +382,13 @@ export default function AdminSettings() {
         setSeoLongText(serverContent.seo.long_text);
       }
     }
-  }, [serverContent]);
+  }, [serverContent, localContent]);
+
+  useEffect(() => {
+    if (normalizedHomeSections.length > 0 && homeSections.length === 0) {
+      setHomeSections(JSON.parse(JSON.stringify(normalizedHomeSections)));
+    }
+  }, [normalizedHomeSections, homeSections.length]);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -1353,6 +1359,16 @@ export default function AdminSettings() {
                       <div className="space-y-2 md:col-span-2"><Label>Subheadline</Label><Textarea value={localContent.forum_teaser?.subheadline || ""} onChange={e => updateContent("forum_teaser", "subheadline", e.target.value)} rows={2} /></div>
                       <div className="space-y-2 md:col-span-2"><Label>Mobile Button</Label><Input value={localContent.forum_teaser?.mobile_button || ""} onChange={e => updateContent("forum_teaser", "mobile_button", e.target.value)} /></div>
                     </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="home_faq">
+                  <AccordionTrigger className="font-semibold">FAQ Startseite</AccordionTrigger>
+                  <AccordionContent className="pt-4">
+                    <HomeFAQEditor
+                      value={(localContent.home_faq as any) || (defaultHomeContent.home_faq as any)}
+                      onChange={(field, value) => updateContent("home_faq", field, value)}
+                    />
                   </AccordionContent>
                 </AccordionItem>
 

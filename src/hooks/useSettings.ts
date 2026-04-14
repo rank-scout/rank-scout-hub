@@ -181,15 +181,17 @@ export function useActiveTheme() {
 
 export const defaultHomeSections: HomeSection[] = [
   { id: "hero", label: "Hero Sektion", enabled: true, order: 0 },
-  { id: "amazon_top", label: "Amazon Banner (Top)", enabled: true, order: 1 },
-  { id: "trust", label: "Trust & Siegel", enabled: true, order: 2 },
+  { id: "how_it_works", label: "So funktioniert Rank-Scout", enabled: true, order: 1 },
+  { id: "news", label: "News / Magazin", enabled: true, order: 2 },
   { id: "big_three", label: "Big Three (Main Links)", enabled: true, order: 3 },
-  { id: "adsense_middle", label: "Google AdSense", enabled: true, order: 4 },
-  { id: "categories", label: "Kategorien Slider", enabled: true, order: 5 },
-  { id: "forum", label: "Forum Teaser", enabled: true, order: 6 },
-  { id: "news", label: "News / Newsletter", enabled: true, order: 7 },
-  { id: "seo", label: "SEO Text (Unten)", enabled: true, order: 8 },
-  { id: "mascot", label: "Scouty Maskottchen", enabled: true, order: 9 },
+  { id: "forum", label: "Forum Teaser", enabled: true, order: 4 },
+  { id: "trust", label: "Trust & Siegel", enabled: true, order: 5 },
+  { id: "categories", label: "Kategorien Slider", enabled: true, order: 6 },
+  { id: "amazon_top", label: "Amazon Banner (Top)", enabled: true, order: 7 },
+  { id: "adsense_middle", label: "Google AdSense", enabled: true, order: 8 },
+  { id: "home_faq", label: "FAQ Startseite", enabled: true, order: 9 },
+  { id: "seo", label: "SEO Text (Unten)", enabled: true, order: 10 },
+  { id: "mascot", label: "Scouty Maskottchen", enabled: true, order: 11 },
 ];
 
 export const defaultHomeLayout = {
@@ -248,6 +250,28 @@ export const defaultHomeContent = {
       { title: "Global & Lokal", text: "Von International bis Regional.", icon: "globe" },
       { title: "Laufende Updates", text: "Regelmäßig frische Daten.", icon: "chart" }
     ]
+  },
+  home_faq: {
+    badge: "FAQ • Startseite",
+    headline: "Häufige Fragen zu Rank-Scout",
+    subheadline: "Hier findest du kompakte Antworten zu Vergleichen, Rechnern, Ratgebern und Partner-Anfragen auf Rank-Scout.",
+    items: [
+      {
+        id: "home-faq-1",
+        question: "Was ist Rank-Scout?",
+        answer: "<p>Rank-Scout ist eine Plattform für Vergleiche, Rechner und Ratgeber zu Themen wie Finanzen, Versicherungen, Energie, Internet, Software und digitalen Diensten.</p>",
+      },
+      {
+        id: "home-faq-2",
+        question: "Welche Themen finde ich auf Rank-Scout?",
+        answer: "<p>Du findest Vergleiche, redaktionelle Einordnungen und praktische Rechner zu Alltags- und Digitalthemen – von Versicherung über Kredit bis hin zu Software und Internet.</p>",
+      },
+      {
+        id: "home-faq-3",
+        question: "Warum lohnt sich ein regelmäßiger Tarifvergleich?",
+        answer: "<p>Konditionen ändern sich laufend. Ein regelmäßiger Vergleich hilft dir, Preise, Leistungen und Vertragsdetails sauber einzuordnen und Sparpotenziale zu erkennen.</p>",
+      },
+    ],
   },
   seo: { 
     headline: "Über unseren Vergleichs-Hub", 
@@ -332,6 +356,71 @@ export const defaultHomeForumTeaser = {
   mobile_button: "Zum Community Forum" 
 };
 
+function cloneHomeSections(sections: HomeSection[]) {
+  return sections.map((section) => ({ ...section }));
+}
+
+function createHomeSection(sectionId: string) {
+  const fallback = defaultHomeSections.find((section) => section.id === sectionId);
+
+  if (fallback) {
+    return { ...fallback };
+  }
+
+  return {
+    id: sectionId,
+    label: sectionId,
+    enabled: true,
+    order: 0,
+  } as HomeSection;
+}
+
+export function normalizeHomeSectionsValue(rawSections?: HomeSection[] | null): HomeSection[] {
+  if (!Array.isArray(rawSections) || rawSections.length === 0) {
+    return cloneHomeSections(defaultHomeSections).map((section, index) => ({ ...section, order: index }));
+  }
+
+  const sortedSavedSections = rawSections
+    .filter((section): section is HomeSection => Boolean(section?.id))
+    .slice()
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    .map((section) => {
+      const fallback = defaultHomeSections.find((entry) => entry.id === section.id);
+      return {
+        ...(fallback || {}),
+        ...section,
+        label: section.label || fallback?.label || section.id,
+        enabled: typeof section.enabled === "boolean" ? section.enabled : fallback?.enabled ?? true,
+      } as HomeSection;
+    });
+
+  const hasSection = (id: string) => sortedSavedSections.some((section) => section.id === id);
+
+  if (!hasSection("how_it_works")) {
+    const heroIndex = sortedSavedSections.findIndex((section) => section.id === "hero");
+    const insertIndex = heroIndex >= 0 ? heroIndex + 1 : 0;
+    sortedSavedSections.splice(insertIndex, 0, createHomeSection("how_it_works"));
+  }
+
+  if (!hasSection("home_faq")) {
+    const seoIndex = sortedSavedSections.findIndex((section) => section.id === "seo");
+    const mascotIndex = sortedSavedSections.findIndex((section) => section.id === "mascot");
+    const insertIndex = seoIndex >= 0 ? seoIndex : mascotIndex >= 0 ? mascotIndex : sortedSavedSections.length;
+    sortedSavedSections.splice(insertIndex, 0, createHomeSection("home_faq"));
+  }
+
+  defaultHomeSections.forEach((defaultSection) => {
+    if (!hasSection(defaultSection.id)) {
+      sortedSavedSections.push({ ...defaultSection });
+    }
+  });
+
+  return sortedSavedSections.map((section, index) => ({
+    ...section,
+    order: index,
+  }));
+}
+
 // --- CONFIG HOOKS ---
 
 export function useHomeLayout() { 
@@ -340,12 +429,10 @@ export function useHomeLayout() {
   const layoutV2 = settings?.home_layout_v2 as typeof defaultHomeLayout | undefined;
   const layout = { ...defaultHomeLayout, ...(layoutV2 || {}) };
 
-  let sections: HomeSection[] = (settings?.home_sections as HomeSection[]) || defaultHomeSections;
-  if (!Array.isArray(sections)) sections = defaultHomeSections;
-  const sortedSections = [...sections].sort((a, b) => a.order - b.order);
+  const sections = normalizeHomeSectionsValue(settings?.home_sections as HomeSection[] | undefined);
 
-  const mappedSections = sortedSections.map(s => {
-      let isEnabled = true;
+  const mappedSections = sections.map((s) => {
+      let isEnabled = typeof s.enabled === 'boolean' ? s.enabled : true;
       if (s.id === 'hero') isEnabled = layout.hero;
       else if (s.id === 'trust') isEnabled = layout.trust;
       else if (s.id === 'big_three') isEnabled = layout.big_three;
@@ -389,6 +476,10 @@ export function useHomeContent() {
   content.big_three.services_link = normalizeNavigableHref(String(content.big_three.services_link || defaultHomeContent.big_three.services_link || "/"));
   
   content.why_us = { ...defaultHomeContent.why_us, ...(content.why_us || {}) };
+  content.home_faq = { ...defaultHomeContent.home_faq, ...(content.home_faq || {}) };
+  content.home_faq.items = Array.isArray(content.home_faq.items) && content.home_faq.items.length > 0
+    ? content.home_faq.items
+    : defaultHomeContent.home_faq.items;
   content.categories = { ...defaultHomeContent.categories, ...content.categories }; 
   content.news = { ...defaultHomeContent.news, ...content.news }; 
   content.trust = { ...defaultHomeContent.trust, ...content.trust }; 
