@@ -212,7 +212,6 @@ Deno.serve(async (req) => {
     addUrl(urlMap, "/agb", today, "monthly", "0.3");
     addUrl(urlMap, "/wie-wir-vergleichen", today, "monthly", "0.5");
     addUrl(urlMap, "/top-apps", today, "weekly", "0.6");
-    addUrl(urlMap, "/welcome", today, "monthly", "0.2");
 
     for (const category of categoriesResult.data ?? []) {
       const slug = String(category.slug ?? "").trim();
