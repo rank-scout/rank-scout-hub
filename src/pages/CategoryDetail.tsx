@@ -17,7 +17,6 @@ import {
 } from "lucide-react"; 
 
 import CustomHtmlRenderer from "@/components/templates/CustomHtmlRenderer";
-// ReviewTemplate-Import entfernt
 import { HubTemplate } from "@/components/templates/HubTemplate"; 
 import { Helmet } from "react-helmet-async";
 import { Badge } from "@/components/ui/badge";
@@ -149,7 +148,7 @@ export default function CategoryDetail() {
 
   useForceSEO(category?.meta_description || "");
 
-  // Dynamisches JSON-LD generieren (Defensiv und Google-konform)
+  // Dynamisches JSON-LD generieren
   const jsonLd = useMemo(() => {
     if (!category) return null;
 
@@ -184,7 +183,6 @@ export default function CategoryDetail() {
       ]
     };
 
-    // Dynamisch FAQPage anfügen, falls FAQs vorhanden sind (HTML aus Antworten filtern)
     const shouldRenderVisibleFaq =
       category?.is_internal_generated === true &&
       category?.template !== 'hub_overview' &&
@@ -290,7 +288,6 @@ export default function CategoryDetail() {
               <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-white tracking-tighter mb-6 md:mb-8 leading-tight md:leading-[1.1] drop-shadow-2xl px-2">{category.h1_title || category.name}</h1>
               {category.hero_headline && (<p className="text-lg sm:text-xl md:text-2xl text-slate-300 font-medium mb-10 md:mb-12 leading-relaxed max-w-3xl mx-auto antialiased px-4">{category.hero_headline}</p>)}
               <div className="flex flex-col sm:flex-row flex-wrap justify-center gap-3 md:gap-4 bg-white/5 backdrop-blur-sm p-3 rounded-3xl border border-white/10 shadow-2xl max-w-4xl mx-auto w-full sm:w-auto">
-                {/* Box 1: Das "Geprüft" Siegel */}
                 <div className="flex items-center gap-3 px-5 md:px-6 py-3 rounded-2xl bg-white border border-slate-100 shadow-sm w-full sm:w-auto">
                   <div className="p-2 bg-green-50 rounded-full text-green-600">
                     <ShieldCheck className="w-5 h-5" />
@@ -300,8 +297,6 @@ export default function CategoryDetail() {
                     <div className="text-sm font-bold">Aktualisiert</div>
                   </div>
                 </div>
-
-                {/* Box 2: Der "Immer-Frisch" Zeitstempel */}
                 <div className="flex items-center gap-3 px-5 md:px-6 py-3 rounded-2xl bg-white border border-slate-100 shadow-sm w-full sm:w-auto">
                   <div className="p-2 bg-blue-50 rounded-full text-blue-600">
                     <Clock className="w-5 h-5" />
@@ -319,10 +314,10 @@ export default function CategoryDetail() {
               <div className="lg:w-2/3" ref={contentTopRef}>
                 
                 {/* Intro Box */}
-<div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 mb-8 relative overflow-hidden">
-  <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
-  <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-orange-50 rounded-2xl text-orange-500 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h2 className="font-bold text-[#0A0F1C] text-2xl tracking-tight">{introTitle}</h2></div></div>
-</div>
+                <div className="bg-white rounded-3xl p-8 md:p-10 shadow-xl shadow-slate-200/40 border border-slate-100 mb-8 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-500"></div>
+                  <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-orange-50 rounded-2xl text-orange-500 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h2 className="font-bold text-[#0A0F1C] text-2xl tracking-tight">{introTitle}</h2></div></div>
+                </div>
 
                 {category.long_content_top && (<div className="bg-transparent mb-16 px-2 mt-8"><article id="content-top" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top) }} /></article></div>)}
                 
@@ -342,23 +337,22 @@ export default function CategoryDetail() {
                     projects.length > 0 && (<div id="vergleich" className="scroll-mt-32 mb-10"><div className="mb-8 px-2"><Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">{category.hero_badge_text || "Ausgewählte Anbieter"}</Badge><h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">{comparisonTitle}</h2></div><div className="space-y-6">{projects.map((proj, idx) => (<ProjectCard key={proj.id} project={proj} index={idx} category={category} />))}</div></div>)
                 )}
 
-                {/* --- NEU: Affiliate Disclaimer UNTER dem Vergleich --- */}
                 <div className="mb-16">
                     <AffiliateDisclaimer />
                 </div>
 
                 {category.long_content_bottom && (<div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/30 border border-slate-100 mb-16"><article id="content-bottom" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom) }} /></article></div>)}
                 
+                {/* --- HIER WURDE DIE FALSCHE FAQ-BOX ENTFERNT UND DURCH EINEN PASSENDEN HEADER ERSETZT --- */}
                 {category.faq_data && Array.isArray(category.faq_data) && (
                   <section id="faq" className="scroll-mt-32 mb-16">
-                    <div className="mb-8 rounded-[2rem] border border-slate-200/80 bg-white px-6 py-7 shadow-[0_24px_70px_-38px_rgba(15,23,42,0.28)] md:px-7 md:py-8">
-                      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[#0A0F1C]">
-                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#FF8400] shadow-[0_0_18px_rgba(255,132,0,0.45)]"></span>
-                        FAQ • Rank-Scout
-                      </div>
-                      <h2 className="max-w-4xl text-3xl font-extrabold leading-[1.05] tracking-tight text-[#0A0F1C] md:text-5xl">Häufige Fragen zu Rank-Scout, Vergleichen und Partner-Anfragen</h2>
-                      <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600 md:text-[1.08rem]">Hier findest du kompakte Antworten zu Vergleichen, Rechnern, Ratgebern und unverbindlichen Partner-Anfragen auf Rank-Scout.</p>
+                    <div className="mb-8 px-2">
+                        <Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">FAQ</Badge>
+                        <h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">
+                            Häufige Fragen zu {category.name}
+                        </h2>
                     </div>
+                    
                     <div className="space-y-4">
                       <Accordion type="single" collapsible className="w-full space-y-4">
                         {category.faq_data.map((faq: any, index: number) => (
@@ -388,14 +382,12 @@ export default function CategoryDetail() {
                   </section>
                 )}
 
-                {/* --- MOBILE WIDGET: Wird nur auf dem Handy angezeigt, da die Sidebar hier wegbricht --- */}
                 <div className="lg:hidden mb-16 mt-8">
                     <StarRatingWidget slug={category.slug} />
                 </div>
 
               </div>
               
-              {/* SIDEBAR */}
               <aside className="lg:w-1/3 lg:sticky top-24 self-start hidden lg:block max-h-[calc(100vh-120px)] overflow-y-auto pr-2 pb-10 custom-scrollbar">
                 {!hasWidgetCode && topPick && (<div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/50 mb-8 relative overflow-hidden"><div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-4 py-1.5 rounded-bl-2xl">AUSGEWÄHLT</div><div className="flex items-center gap-3 mb-6"><div className="p-2.5 bg-orange-50 rounded-xl text-orange-500"><Trophy className="w-6 h-6" /></div><p className="font-bold text-[#0A0F1C] text-lg">Hervorgehobener Anbieter</p></div><div className="flex items-center gap-5 mb-6">{topPick.logo_url ? (<img src={topPick.logo_url} alt={topPick.name} className="w-20 h-20 object-contain rounded-2xl border border-slate-50 p-2" />) : (<div className="w-20 h-20 bg-slate-50 rounded-2xl flex items-center justify-center font-bold text-slate-400">{topPick.name.charAt(0)}</div>)}<div className="flex-1"><p className="font-bold text-xl text-[#0A0F1C] leading-tight mb-1.5">{topPick.name}</p><div className="mb-1"><EditorialBadgeBlock badgeText={topPick.badge_text || category.hero_badge_text || "AUSGEWÄHLT"} isWinner={true} index={0} /></div></div></div><Button asChild className="w-full font-bold bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 transition-colors h-14 rounded-xl group/sidebar-btn"><a href={topPick.affiliate_link} target="_blank">Jetzt ansehen* <ArrowRight className="w-5 h-5 ml-2 transition-transform group-hover/sidebar-btn:translate-x-1" /></a></Button></div>)}
                 
@@ -404,7 +396,6 @@ export default function CategoryDetail() {
                   <ul className="text-sm space-y-4 font-medium">
                     {category.long_content_top && (<li><a href="#content-top" className={`flex items-center gap-3 transition-colors ${activeSection==='content-top'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='content-top'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Einleitung</a></li>)}
                     
-                    {/* KYRA FIX: Das versehentliche ")}" am Ende dieser Zeile wurde entfernt! */}
                     <li><a href="#vergleich" className={`flex items-center gap-3 transition-colors ${activeSection==='vergleich'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='vergleich'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Anbieter & Tarife</a></li>
                     
                     {category.long_content_bottom && (<li><a href="#content-bottom" className={`flex items-center gap-3 transition-colors ${activeSection==='content-bottom'?'text-orange-500 font-bold':'text-slate-500 hover:text-orange-500'}`}><div className={`w-1.5 h-1.5 rounded-full ${activeSection==='content-bottom'?'bg-orange-500 scale-125':'bg-slate-300'}`}></div> Ratgeber & Analyse</a></li>)}
@@ -412,7 +403,6 @@ export default function CategoryDetail() {
                   </ul>
                 </div>
 
-                {/* --- DESKTOP WIDGET: Perfekt platziert in der Sidebar --- */}
                 <StarRatingWidget slug={category.slug} />
 
                 {((category as any).sidebar_ad_html || (category as any).sidebar_ad_image) && (
