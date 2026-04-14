@@ -1,5 +1,5 @@
 import { useWeightedApps } from "@/hooks/usePromotedApps";
-import { useTickerConfig } from "@/hooks/useSettings";
+import { useHomeContent } from "@/hooks/useSettings";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { AltArrowRight, Star, GraphUp } from '@solar-icons/react';
@@ -9,7 +9,11 @@ import { useRef, useState, useEffect } from "react";
 
 export const AppTicker = () => {
   const { data: apps, isLoading } = useWeightedApps(15); 
-  const { linkText } = useTickerConfig();
+  const { content } = useHomeContent();
+  const trust = content?.trust || {};
+  const badgeText = trust.badge || "LIVE: Trend Apps letzte 24h";
+  const headline = trust.headline || "Top Apps & Deals";
+  const linkText = trust.link_text || "Alle Trends ansehen →";
   
   // Refs & States für das Hybrid-Scroll-System
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -95,11 +99,11 @@ const contentWidthRef = useRef<number>(0);
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-90"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-600"></span>
                 </span>
-                LIVE: Trend Apps letzte 24h
+{badgeText}
             </div>
             <h2 className="text-3xl md:text-4xl font-display font-extrabold text-[#0A0F1C] flex items-center justify-center md:justify-start gap-3 tracking-tight">
               <GraphUp weight="Bold" className="w-8 h-8 text-orange-500" /> 
-              Top Apps & Deals
+{headline}
             </h2>
          </div>
          <Link to="/top-apps" className="text-sm font-bold text-slate-500 hover:text-orange-500 transition-all flex items-center gap-2 group bg-white px-5 py-2.5 rounded-full border border-slate-200 shadow-sm hover:shadow-md">

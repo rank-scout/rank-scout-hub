@@ -219,16 +219,27 @@ export const defaultHomeContent = {
   subheadline: "Suche & finde passende Tools für deinen Erfolg. Vergleiche, entdecke und nutze etablierte Angebote aus KI, Software und Lifestyle. Transparent eingeordnet.",
   search_placeholder: "Was suchst du heute? (z.B. 'KI Tools', 'Dating')",
   search_label: "Finden",
-  button_text: "Jetzt vergleichen"
+  button_text: "Jetzt vergleichen",
+  stats: [
+    { title: "Viele", label: "Kategorien" },
+    { title: "Aktive", label: "Community" },
+    { title: "Laufend", label: "Aktualisiert" }
+  ]
 },
+  how_it_works: {
+    headline: "So funktioniert Rank-Scout",
+    subheadline: "In drei einfachen Schritten zur besten Entscheidung.",
+    steps: [
+      { title: "Suchen", text: "Wähle deine Kategorie oder suche direkt nach deinem Bedarf." },
+      { title: "Vergleichen", text: "Unsere KI-gestützten Daten zeigen dir Stärken, Schwächen und Preise auf einen Blick." },
+      { title: "Entscheiden", text: "Vergleiche passende Angebote und prüfe verfügbare Vorteile." }
+    ]
+  },
   trust: { 
-    headline: "Warum Rank-Scout?", 
-    subheadline: "Wir stehen für Transparenz und Qualität.", 
-    card1_title: "Daten statt Meinung", card1_text: "Unsere Algorithmen strukturieren tausende Datenpunkte. Nachvollziehbare Vergleiche statt reiner Meinungen.", 
-    card2_title: "Laufendes Scouting", card2_text: "Angebote und Entwicklungen ändern sich regelmäßig. Unsere Datenbank wird regelmäßig aktualisiert, damit du keinen Trend verpasst.", 
-    card3_title: "Etablierte Anbieter", card3_text: "Wir listen Dienstleister und Produkte mit nachvollziehbarem Track-Record in unseren Übersichten.", 
-    box_title: "Dein Informationsvorsprung", box_text: "Während andere noch suchen, hast du bereits verglichen. Rank-Scout liefert dir strukturierte Marktdaten für fundierte Entscheidungen.", 
-    live_badge: "Vergleiche aktiv" 
+    badge: "Live: Trend Apps letzte 24h",
+    headline: "Top Apps & Deals",
+    link_text: "Alle Trends ansehen →",
+    subheadline: "Top Apps & Deals"
   },
   big_three: { 
     headline: "Wähle deinen Bereich", 
@@ -483,7 +494,14 @@ export function useHomeContent() {
   content.categories = { ...defaultHomeContent.categories, ...content.categories }; 
   content.news = { ...defaultHomeContent.news, ...content.news }; 
   content.trust = { ...defaultHomeContent.trust, ...content.trust }; 
-  content.hero = { ...defaultHomeContent.hero, ...content.hero }; 
+  content.hero = { ...defaultHomeContent.hero, ...content.hero };
+  content.hero.stats = Array.isArray(content.hero.stats) && content.hero.stats.length > 0
+    ? content.hero.stats
+    : defaultHomeContent.hero.stats;
+  content.how_it_works = { ...defaultHomeContent.how_it_works, ...(content.how_it_works || {}) };
+  content.how_it_works.steps = Array.isArray(content.how_it_works.steps) && content.how_it_works.steps.length > 0
+    ? content.how_it_works.steps
+    : defaultHomeContent.how_it_works.steps;
   
   return { content }; 
 }

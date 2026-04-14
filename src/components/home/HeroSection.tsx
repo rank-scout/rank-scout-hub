@@ -46,6 +46,13 @@ export const HeroSection = () => {
   const searchButtonLabel = content.hero?.search_label || "Vergleichen";
 
   const showDropdown = isSearchFocused && searchQuery.length >= 2;
+  const heroStats = Array.isArray(content.hero?.stats) && content.hero.stats.length > 0
+    ? content.hero.stats.slice(0, 3)
+    : [
+        { title: "Viele", label: "Kategorien" },
+        { title: "Aktive", label: "Community" },
+        { title: "Laufend", label: "Aktualisiert" },
+      ];
 
   return (
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-10 bg-[#0a0f1c] selection:bg-secondary/30 z-40">
@@ -158,26 +165,27 @@ export const HeroSection = () => {
           </div>
 
           <div className="mt-12 flex flex-wrap justify-center gap-8 md:gap-16 animate-fade-in animation-delay-500 relative z-0">
-             <div className="flex items-center gap-3 group select-none">
-                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
-                    <GraphUp weight="Bold" className="w-5 h-5 text-blue-200" />
-                </div>
-                <div className="text-left"><div className="text-white font-bold leading-none">Viele</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Kategorien</div></div>
-             </div>
+            {heroStats.map((stat, index) => {
+              const icon = index === 0 ? (
+                <GraphUp weight="Bold" className="w-5 h-5 text-blue-200" />
+              ) : index === 1 ? (
+                <UsersGroupTwoRounded weight="Bold" className="w-5 h-5 text-blue-200" />
+              ) : (
+                <ShieldCheck weight="Bold" className="w-5 h-5 text-green-400" />
+              );
 
-             <div className="flex items-center gap-3 group select-none">
-                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
-                    <UsersGroupTwoRounded weight="Bold" className="w-5 h-5 text-blue-200" />
+              return (
+                <div key={`${stat.title}-${stat.label}-${index}`} className="flex items-center gap-3 group select-none">
+                  <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
+                    {icon}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-white font-bold leading-none">{stat.title}</div>
+                    <div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">{stat.label}</div>
+                  </div>
                 </div>
-                <div className="text-left"><div className="text-white font-bold leading-none">Aktive</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Community</div></div>
-             </div>
-
-             <div className="flex items-center gap-3 group select-none">
-                <div className="p-2 rounded-lg bg-white/10 group-hover:bg-white/20 transition-colors border border-white/10 shadow-sm">
-                    <ShieldCheck weight="Bold" className="w-5 h-5 text-green-400" />
-                </div>
-                <div className="text-left"><div className="text-white font-bold leading-none">Laufend</div><div className="text-slate-300 text-xs font-medium uppercase tracking-wider mt-1">Aktualisiert</div></div>
-             </div>
+              );
+            })}
           </div>
         </div>
       </div>

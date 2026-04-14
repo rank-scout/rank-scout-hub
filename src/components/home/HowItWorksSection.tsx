@@ -1,6 +1,7 @@
 import { Magnifer, ChartSquare, CheckCircle } from '@solar-icons/react';
+import { useHomeContent } from '@/hooks/useSettings';
 
-const steps = [
+const defaultSteps = [
   {
     icon: Magnifer,
     title: "Suchen",
@@ -25,15 +26,26 @@ const steps = [
 ];
 
 export const HowItWorksSection = () => {
+  const { content } = useHomeContent();
+  const howItWorks = content?.how_it_works || {};
+  const configuredSteps = Array.isArray(howItWorks.steps) && howItWorks.steps.length > 0
+    ? howItWorks.steps
+    : defaultSteps;
+
+  const steps = configuredSteps.slice(0, 3).map((step, index) => ({
+    ...defaultSteps[index],
+    ...step,
+  }));
+
   return (
     <section className="bg-white py-16 md:py-24 border-b border-slate-100">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-display font-bold text-foreground tracking-tight">
-            So funktioniert Rank-Scout
+            {howItWorks.headline || "So funktioniert Rank-Scout"}
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            In drei einfachen Schritten zur besten Entscheidung.
+            {howItWorks.subheadline || "In drei einfachen Schritten zur besten Entscheidung."}
           </p>
         </div>
 

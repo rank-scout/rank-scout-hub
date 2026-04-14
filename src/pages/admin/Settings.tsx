@@ -1223,19 +1223,14 @@ export default function AdminSettings() {
                         <p className="text-xs text-muted-foreground">Der fette, große Haupttitel.</p>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label>Zusatz-Headline (Unter H1)</Label>
-                        <Input placeholder="Die besten Angebote..." value={localContent.hero?.headline || ""} onChange={e => updateContent("hero", "headline", e.target.value)} />
-                      </div>
-                      
                       <div className="space-y-2 md:col-span-2">
                         <Label>Beschreibungstext (Intro)</Label>
                         <Textarea placeholder="Wir analysieren über 500 Anbieter..." value={localContent.hero?.subtitle || ""} onChange={e => updateContent("hero", "subtitle", e.target.value)} rows={3} />
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Button Text</Label>
-                        <Input placeholder="Jetzt vergleichen" value={localContent.hero?.button_text || ""} onChange={e => updateContent("hero", "button_text", e.target.value)} />
+                        <Label>Suchfeld Button Text</Label>
+                        <Input placeholder="Vergleichen" value={localContent.hero?.search_label || ""} onChange={e => updateContent("hero", "search_label", e.target.value)} />
                       </div>
 
                       <div className="space-y-2">
@@ -1243,38 +1238,80 @@ export default function AdminSettings() {
                         <Input placeholder="z.B. Kredit, VPN..." value={localContent.hero?.search_placeholder || ""} onChange={e => updateContent("hero", "search_placeholder", e.target.value)} />
                       </div>
                     </div>
+
+                    <div className="space-y-4 pt-4 border-t">
+                      <div>
+                        <Label className="font-semibold text-base">USP-Leiste unter der Suche</Label>
+                        <p className="text-xs text-muted-foreground mt-1">Diese drei Texte erscheinen direkt unter dem Suchfeld auf der Startseite.</p>
+                      </div>
+                      {[0,1,2].map((idx) => (
+                        <div key={idx} className="grid md:grid-cols-2 gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border">
+                          <div className="space-y-2">
+                            <Label>Zeile {idx + 1} – obere Zeile</Label>
+                            <Input
+                              value={localContent.hero?.stats?.[idx]?.title || ""}
+                              onChange={e => {
+                                const nextStats = Array.isArray(localContent.hero?.stats) ? [...localContent.hero.stats] : [];
+                                while (nextStats.length < 3) nextStats.push({ title: "", label: "" });
+                                nextStats[idx] = { ...nextStats[idx], title: e.target.value };
+                                updateContent("hero", "stats", nextStats);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Zeile {idx + 1} – untere Zeile</Label>
+                            <Input
+                              value={localContent.hero?.stats?.[idx]?.label || ""}
+                              onChange={e => {
+                                const nextStats = Array.isArray(localContent.hero?.stats) ? [...localContent.hero.stats] : [];
+                                while (nextStats.length < 3) nextStats.push({ title: "", label: "" });
+                                nextStats[idx] = { ...nextStats[idx], label: e.target.value };
+                                updateContent("hero", "stats", nextStats);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
 
                 <AccordionItem value="trust">
-                  <AccordionTrigger className="font-semibold">Trust & Siegel Sektion</AccordionTrigger>
+                  <AccordionTrigger className="font-semibold">Top Apps / Ticker Sektion</AccordionTrigger>
                   <AccordionContent className="space-y-4 pt-4">
-                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                    <p className="text-xs text-muted-foreground">Im Struktur-Manager heißt dieser Block aktuell „Trust“. Auf der Startseite rendert er tatsächlich den Apps-/Ticker-Bereich.</p>
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Badge</Label><Input value={localContent.trust?.badge || ""} onChange={e => updateContent("trust", "badge", e.target.value)} /></div>
                       <div className="space-y-2"><Label>Headline</Label><Input value={localContent.trust?.headline || ""} onChange={e => updateContent("trust", "headline", e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Subheadline</Label><Input value={localContent.trust?.subheadline || ""} onChange={e => updateContent("trust", "subheadline", e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Live Badge Text</Label><Input value={localContent.trust?.live_badge || ""} onChange={e => updateContent("trust", "live_badge", e.target.value)} /></div>
+                      <div className="space-y-2 md:col-span-2"><Label>Button / Link Text</Label><Input value={localContent.trust?.link_text || ""} onChange={e => updateContent("trust", "link_text", e.target.value)} /></div>
                     </div>
-                    <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-lg space-y-4">
-                      <h4 className="font-medium text-sm">Trust Karte 1</h4>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.card1_title || ""} onChange={e => updateContent("trust", "card1_title", e.target.value)} /></div>
-                        <div className="space-y-2"><Label>Text</Label><Input value={localContent.trust?.card1_text || ""} onChange={e => updateContent("trust", "card1_text", e.target.value)} /></div>
-                      </div>
-                      <h4 className="font-medium text-sm mt-4">Trust Karte 2</h4>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.card2_title || ""} onChange={e => updateContent("trust", "card2_title", e.target.value)} /></div>
-                        <div className="space-y-2"><Label>Text</Label><Input value={localContent.trust?.card2_text || ""} onChange={e => updateContent("trust", "card2_text", e.target.value)} /></div>
-                      </div>
-                      <h4 className="font-medium text-sm mt-4">Trust Karte 3</h4>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.card3_title || ""} onChange={e => updateContent("trust", "card3_title", e.target.value)} /></div>
-                        <div className="space-y-2"><Label>Text</Label><Input value={localContent.trust?.card3_text || ""} onChange={e => updateContent("trust", "card3_text", e.target.value)} /></div>
-                      </div>
-                      <h4 className="font-medium text-sm mt-4 border-t pt-4">Rechte Seiten-Box</h4>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2"><Label>Titel</Label><Input value={localContent.trust?.box_title || ""} onChange={e => updateContent("trust", "box_title", e.target.value)} /></div>
-                        <div className="space-y-2"><Label>Text</Label><Textarea value={localContent.trust?.box_text || ""} onChange={e => updateContent("trust", "box_text", e.target.value)} rows={2} /></div>
-                      </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="how_it_works">
+                  <AccordionTrigger className="font-semibold">So funktioniert Sektion</AccordionTrigger>
+                  <AccordionContent className="space-y-4 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Headline</Label><Input value={localContent.how_it_works?.headline || ""} onChange={e => updateContent("how_it_works", "headline", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Subheadline</Label><Input value={localContent.how_it_works?.subheadline || ""} onChange={e => updateContent("how_it_works", "subheadline", e.target.value)} /></div>
+                    </div>
+                    <div className="space-y-4 pt-2">
+                      {[0,1,2].map((idx) => (
+                        <div key={idx} className="grid md:grid-cols-2 gap-4 p-4 rounded-lg bg-slate-50 dark:bg-slate-900 border">
+                          <div className="space-y-2"><Label>Schritt {idx + 1} – Titel</Label><Input value={localContent.how_it_works?.steps?.[idx]?.title || ""} onChange={e => {
+                            const nextSteps = Array.isArray(localContent.how_it_works?.steps) ? [...localContent.how_it_works.steps] : [];
+                            while (nextSteps.length < 3) nextSteps.push({ title: "", text: "" });
+                            nextSteps[idx] = { ...nextSteps[idx], title: e.target.value };
+                            updateContent("how_it_works", "steps", nextSteps);
+                          }} /></div>
+                          <div className="space-y-2"><Label>Schritt {idx + 1} – Text</Label><Textarea rows={2} value={localContent.how_it_works?.steps?.[idx]?.text || ""} onChange={e => {
+                            const nextSteps = Array.isArray(localContent.how_it_works?.steps) ? [...localContent.how_it_works.steps] : [];
+                            while (nextSteps.length < 3) nextSteps.push({ title: "", text: "" });
+                            nextSteps[idx] = { ...nextSteps[idx], text: e.target.value };
+                            updateContent("how_it_works", "steps", nextSteps);
+                          }} /></div>
+                        </div>
+                      ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -1305,25 +1342,7 @@ export default function AdminSettings() {
                   </AccordionContent>
                 </AccordionItem>
 
-                <AccordionItem value="why_us">
-                  <AccordionTrigger className="font-semibold">Features (Why Us) Sektion</AccordionTrigger>
-                  <AccordionContent className="space-y-4 pt-4">
-                    <div className="grid md:grid-cols-2 gap-4 mb-4">
-                      <div className="space-y-2"><Label>Headline</Label><Input value={localContent.why_us?.headline || ""} onChange={e => updateContent("why_us", "headline", e.target.value)} /></div>
-                      <div className="space-y-2"><Label>Subheadline</Label><Input value={localContent.why_us?.subheadline || ""} onChange={e => updateContent("why_us", "subheadline", e.target.value)} /></div>
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {safeFeatures.map((feat: any, idx: number) => (
-                        <div key={idx} className="p-3 bg-slate-50 dark:bg-slate-900 rounded-lg space-y-2">
-                          <Label>Feature {idx + 1} Titel</Label>
-                          <Input value={feat.title} onChange={e => updateFeature(idx, "title", e.target.value)} />
-                          <Label>Text</Label>
-                          <Input value={feat.text} onChange={e => updateFeature(idx, "text", e.target.value)} />
-                        </div>
-                      ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
+                
 
                 <AccordionItem value="categories">
                   <AccordionTrigger className="font-semibold">Kategorien Slider Sektion</AccordionTrigger>
