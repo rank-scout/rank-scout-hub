@@ -7,7 +7,7 @@ import { useProjects } from "@/hooks/useProjects";
 import { useCategoryProjects } from "@/hooks/useCategoryProjects";
 import { Button } from "@/components/ui/button";
 import { 
-    Loader2, ShieldCheck, Clock, Users, Lock, Trophy, CheckCircle2, ArrowRight, Home, Lightbulb, Zap, Check,
+    Loader2, ShieldCheck, Clock, Users, Lock, Trophy, CheckCircle2, ArrowRight, Home, Lightbulb, Zap,
     ActivityIcon,
     Scale3DIcon,
     ScaleIcon,
@@ -351,11 +351,13 @@ export default function CategoryDetail() {
                 
                 {category.faq_data && Array.isArray(category.faq_data) && (
                   <section id="faq" className="scroll-mt-32 mb-16">
-                    <div className="mb-10 px-2">
-                      <h2 className="text-4xl font-extrabold text-[#0A0F1C] tracking-tight">Häufige Fragen</h2>
-                      <p className="mt-3 max-w-3xl text-base leading-7 text-slate-600">
-                        Hier findest du kompakte Antworten zu Vergleichen, Rechnern, Ratgebern und unverbindlichen Partner-Anfragen auf Rank-Scout.
-                      </p>
+                    <div className="mb-8 rounded-[2rem] border border-slate-200/80 bg-white px-6 py-7 shadow-[0_24px_70px_-38px_rgba(15,23,42,0.28)] md:px-7 md:py-8">
+                      <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-[11px] font-bold uppercase tracking-[0.28em] text-[#0A0F1C]">
+                        <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#FF8400] shadow-[0_0_18px_rgba(255,132,0,0.45)]"></span>
+                        FAQ • Rank-Scout
+                      </div>
+                      <h2 className="max-w-4xl text-3xl font-extrabold leading-[1.05] tracking-tight text-[#0A0F1C] md:text-5xl">Häufige Fragen zu Rank-Scout, Vergleichen und Partner-Anfragen</h2>
+                      <p className="mt-4 max-w-3xl text-base leading-8 text-slate-600 md:text-[1.08rem]">Hier findest du kompakte Antworten zu Vergleichen, Rechnern, Ratgebern und unverbindlichen Partner-Anfragen auf Rank-Scout.</p>
                     </div>
                     <div className="space-y-4">
                       <Accordion type="single" collapsible className="w-full space-y-4">
@@ -363,23 +365,21 @@ export default function CategoryDetail() {
                           <AccordionItem
                             key={index}
                             value={`item-${index}`}
-                            className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.06)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_48px_rgba(15,23,42,0.1)]"
+                            className="group overflow-hidden rounded-[1.65rem] border border-slate-200/80 bg-white px-0 shadow-[0_18px_44px_-34px_rgba(15,23,42,0.28)] transition-all duration-300 hover:-translate-y-0.5 hover:border-[#FF8400]/35 hover:shadow-[0_24px_60px_-34px_rgba(255,132,0,0.26)] data-[state=open]:border-[#FF8400]/40 data-[state=open]:shadow-[0_26px_70px_-34px_rgba(255,132,0,0.24)]"
                           >
-                            <AccordionTrigger className="group/faq px-7 py-6 text-left text-lg font-bold text-[#0A0F1C] transition-colors hover:text-[#FF8400] hover:no-underline [&>svg]:hidden">
-                              <div className="flex w-full items-center gap-4">
-                                <span className="flex-1 pr-2 leading-snug">{faq.question}</span>
-                                <span
-                                  aria-hidden="true"
-                                  className="relative flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-orange-200/80 bg-gradient-to-br from-white via-orange-50 to-[#fff2e6] shadow-[0_10px_25px_rgba(255,132,0,0.14)] transition-all duration-300 group-data-[state=open]/faq:scale-105 group-data-[state=open]/faq:border-[#FF8400] group-data-[state=open]/faq:shadow-[0_16px_34px_rgba(255,132,0,0.28)]"
-                                >
-                                  <span className="absolute inset-[5px] rounded-full bg-gradient-to-br from-white via-[#fff7ef] to-[#ffe4c7]" />
-                                  <span className="absolute inset-[11px] rounded-full border border-white/70 bg-[radial-gradient(circle_at_30%_30%,rgba(255,255,255,0.95),rgba(255,235,214,0.9)_45%,rgba(255,196,128,0.45)_100%)] shadow-inner" />
-                                  <Check className="relative z-10 h-6 w-6 text-[#FF8400] drop-shadow-[0_3px_8px_rgba(255,132,0,0.35)] transition-all duration-300 group-data-[state=closed]/faq:scale-90 group-data-[state=closed]/faq:opacity-80 group-data-[state=open]/faq:scale-110" />
+                            <AccordionTrigger className="px-6 py-5 text-left text-lg font-bold text-[#0A0F1C] transition-colors hover:text-[#FF8400] hover:no-underline [&>svg]:hidden">
+                              <span className="flex w-full items-center gap-4 pr-2">
+                                <span className="flex-1 leading-snug">{faq.question}</span>
+                                <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[#FF8400]/20 bg-[radial-gradient(circle_at_30%_30%,rgba(255,195,132,0.92),rgba(255,132,0,0.96)_62%,rgba(210,92,0,1))] shadow-[inset_0_2px_6px_rgba(255,255,255,0.55),0_12px_24px_-12px_rgba(255,132,0,0.8)] transition-all duration-300 group-hover:scale-[1.04] group-data-[state=open]:scale-105 group-data-[state=open]:rotate-3 group-data-[state=open]:shadow-[inset_0_2px_6px_rgba(255,255,255,0.55),0_18px_36px_-14px_rgba(255,132,0,0.9)]">
+                                  <span className="absolute inset-[5px] rounded-full border border-white/25 bg-white/10"></span>
+                                  <CheckCircle2 className="relative z-10 h-6 w-6 text-white drop-shadow-[0_3px_8px_rgba(0,0,0,0.22)]" />
                                 </span>
-                              </div>
+                              </span>
                             </AccordionTrigger>
-                            <AccordionContent className="px-7 pb-10 pt-0 text-base leading-8 text-slate-600">
-                              <div className="border-t border-slate-100 pt-6 pb-1" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtmlWithBreaks(String(faq.answer || "")) }} />
+                            <AccordionContent className="px-6 pb-10 pt-0 text-base leading-8 text-slate-600">
+                              <div className="border-t border-slate-200/80 pt-5">
+                                <div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtmlWithBreaks(String(faq.answer || "")) }} />
+                              </div>
                             </AccordionContent>
                           </AccordionItem>
                         ))}
