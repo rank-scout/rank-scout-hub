@@ -1,32 +1,54 @@
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
 
+type BrowserNavigationType = "navigate" | "reload" | "back_forward" | "prerender" | "unknown";
+
+const getBrowserNavigationType = (): BrowserNavigationType => {
+  if (typeof window === "undefined") return "unknown";
+
+  const navigationEntries = window.performance?.getEntriesByType?.("navigation") as
+    | PerformanceNavigationTiming[]
+    | undefined;
+
+  if (navigationEntries && navigationEntries.length > 0) {
+    return navigationEntries[0].type;
+  }
+
+  const legacyNavigation = (window.performance as Performance & {
+    navigation?: { type?: number };
+  })?.navigation;
+
+  switch (legacyNavigation?.type) {
+    case 0:
+      return "navigate";
+    case 1:
+      return "reload";
+    case 2:
+      return "back_forward";
+    default:
+      return "unknown";
+  }
+};
+
 export const ScrollToTopHandler = () => {
   const { pathname } = useLocation();
   const navigationType = useNavigationType();
-  
-  // Flag: Sind wir gerade dabei, die Position wiederherzustellen?
-  const isRestoring = useRef(false);
-  // Flag: Haben wir das Ziel schon einmal erreicht?
-  const hasRestored = useRef(false);
 
-  // 1. Browser-Automatik komplett töten
+  const isRestoring = useRef(false);
+  const hasRestored = useRef(false);
+  const isFirstRender = useRef(true);
+
   useEffect(() => {
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
     }
   }, []);
 
-  // 2. DAS IST NEU: Wir speichern GENAU dann, wenn der User klickt.
-  // Das ist viel präziser als beim "Verlassen" der Seite, da Mobile-Browser
-  // beim Seitenwechsel oft schon einfrieren.
   useEffect(() => {
     const handleClick = () => {
-      // Speichere die aktuelle harte Position unter dem aktuellen Pfad
       sessionStorage.setItem(`scroll-pos-${pathname}`, window.scrollY.toString());
     };
 
-    // Wir hören auf alle Klicks im Fenster (Capture Phase für max. Priorität)
     window.addEventListener("click", handleClick, true);
 
     return () => {
@@ -34,74 +56,117 @@ export const ScrollToTopHandler = () => {
     };
   }, [pathname]);
 
-  // 3. Die aggressive Wiederherstellung
   useEffect(() => {
-    const restore = () => {
-      // Wenn es eine neue Seite ist (PUSH) -> Sofort nach oben
-      if (navigationType !== "POP") {
-        window.scrollTo(0, 0);
+    const storageKey = `scroll-pos-${pathname}`;
+    const browserNavigationType = getBrowserNavigationType();
+    const isInitialDocumentLoad = isFirstRender.current;
+
+    if (isInitialDocumentLoad) {
+      isFirstRender.current = false;
+    }
+
+    if (isInitialDocumentLoad && browserNavigationType === "reload") {
+      sessionStorage.removeItem(storageKey);
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
+
+    if (isInitialDocumentLoad && browserNavigationType === "navigate") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
+
+    if (navigationType !== "POP") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
+
+    const savedPos = sessionStorage.getItem(storageKey);
+    const yTarget = savedPos ? parseInt(savedPos, 10) : 0;
+
+    if (!Number.isFinite(yTarget) || yTarget <= 0) {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      return;
+    }
+
+    isRestoring.current = true;
+    hasRestored.current = false;
+
+    let timeoutId: number | null = null;
+    let animationFrameId: number | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let mutationObserver: MutationObserver | null = null;
+
+    const cleanup = () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+      }
+
+      if (mutationObserver) {
+        mutationObserver.disconnect();
+        mutationObserver = null;
+      }
+
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+
+      isRestoring.current = false;
+    };
+
+    const attemptRestore = () => {
+      if (hasRestored.current) return;
+
+      const root = document.documentElement;
+      const maxScrollableTop = Math.max(root.scrollHeight - window.innerHeight, 0);
+
+      if (maxScrollableTop + 8 < yTarget) {
         return;
       }
 
-      // Wenn wir "Zurück" drücken (POP)
-      const savedPos = sessionStorage.getItem(`scroll-pos-${pathname}`);
-      const yTarget = savedPos ? parseInt(savedPos, 10) : 0;
+      window.scrollTo({ top: yTarget, left: 0, behavior: "auto" });
 
-      // Wenn keine Position da ist oder sie 0 ist -> Nichts tun (bleibt oben)
-      if (!yTarget || yTarget === 0) return;
-
-      isRestoring.current = true;
-      hasRestored.current = false;
-
-      // Strategie: MutationObserver
-      // Wir beobachten den DOM. Sobald Supabase Elemente reinlädt, 
-      // checken wir, ob wir springen können.
-      const observer = new MutationObserver(() => {
-        if (hasRestored.current) return;
-
-        const currentHeight = document.documentElement.scrollHeight;
-        const clientHeight = document.documentElement.clientHeight;
-
-        // Wenn die Seite hoch genug gewachsen ist, um die alte Position zu fassen
-        if (currentHeight >= yTarget + clientHeight) {
-          // WICHTIG: 'instant' statt 'smooth'. Smooth bricht auf Mobile oft ab.
-          window.scrollTo({ top: yTarget, behavior: "instant" });
-          
-          // Doppel-Check: Sind wir wirklich da?
-          if (Math.abs(window.scrollY - yTarget) < 50) {
-            hasRestored.current = true;
-            // Observer noch kurz laufen lassen für Layout-Shifts, dann killen
-            setTimeout(() => {
-                observer.disconnect();
-                isRestoring.current = false;
-            }, 500);
-          }
-        }
-      });
-
-      // Start Observing auf dem Body (für Supabase Inserts)
-      observer.observe(document.body, { 
-        childList: true, 
-        subtree: true, 
-        attributes: true // Auch Höhenänderungen durch CSS-Klassen beachten
-      });
-
-      // Fallback: Manchmal ist der Content sofort da (Cache)
-      window.scrollTo({ top: yTarget, behavior: "instant" });
-
-      // Kill-Switch: Nach 5 Sekunden geben wir auf, um Ressourcen zu sparen
-      const timeout = setTimeout(() => {
-        observer.disconnect();
-        isRestoring.current = false;
-      }, 5000);
-
-      return () => {
-        observer.disconnect();
-        clearTimeout(timeout);
-      };
+      if (Math.abs(window.scrollY - yTarget) <= 12) {
+        hasRestored.current = true;
+        cleanup();
+      }
     };
 
-    restore();
+    animationFrameId = window.requestAnimationFrame(attemptRestore);
+
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(() => {
+        attemptRestore();
+      });
+
+      resizeObserver.observe(document.documentElement);
+
+      if (document.body) {
+        resizeObserver.observe(document.body);
+      }
+    } else {
+      mutationObserver = new MutationObserver(() => {
+        attemptRestore();
+      });
+
+      mutationObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+    }
+
+    timeoutId = window.setTimeout(() => {
+      cleanup();
+    }, 3500);
+
+    return cleanup;
   }, [pathname, navigationType]);
 
   return null;

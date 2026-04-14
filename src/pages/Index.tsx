@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { HeroSection } from "@/components/home/HeroSection";
@@ -28,24 +27,17 @@ const Index = () => {
   const siteDescription = useSiteDescription();
   const { layout, sections, isLoading: isLoadingLayout } = useHomeLayout();
 
-  const safeTitle = (typeof siteTitle === 'string' && siteTitle.length > 0)
+  const safeTitle = typeof siteTitle === "string" && siteTitle.length > 0
     ? siteTitle
     : "Rank-Scout | Dein Vergleichsportal";
-    
-  const safeDescription = (typeof siteDescription === 'string' && siteDescription.length > 0)
+
+  const safeDescription = typeof siteDescription === "string" && siteDescription.length > 0
     ? siteDescription
     : "Vergleiche, Rechner und Ratgeber zu Tools, Software und Finanzthemen im Überblick.";
 
   const safeKeywords = (settings?.seo_keywords as string) || "Vergleich, Finanzen, Software, Rank-Scout, Erfahrungen, Ratgeber, Überblick";
 
   useForceSEO(safeDescription);
-
-  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => { setMinTimeElapsed(true); }, 500);
-    return () => clearTimeout(timer);
-  }, []);
 
   const seoHead = (
     <Helmet>
@@ -65,11 +57,10 @@ const Index = () => {
     </Helmet>
   );
 
-  if (isLoadingLayout || !minTimeElapsed || isLoadingSettings) {
-      return (<><>{seoHead}</><LoadingScreen /></>);
+  if (isLoadingLayout || isLoadingSettings) {
+    return (<><>{seoHead}</><LoadingScreen /></>);
   }
 
-  // Dictionary update: forum is removed here because we place it manually!
   const sectionComponents: Record<string, React.ReactNode> = {
     hero: <HeroSection />,
     amazon_top: <AmazonBanner format="horizontal" />,
@@ -79,7 +70,6 @@ const Index = () => {
     adsense_middle: <AdSenseBanner slotId="placeholder-1" />,
     categories: <CategoriesSection />,
     news: <NewsSection />,
-    // forum: <ForumSection />,  <-- REMOVED from dynamic map to place explicitly
   };
 
   return (
@@ -88,42 +78,32 @@ const Index = () => {
       <Header />
       <main className="flex-grow">
         <HeroSection />
-        {/* VORHER: Hier war der AppTicker */}
-        
         <HowItWorksSection />
 
-        {/* Neueste Vergleiche (News) */}
-        {sections.find(s => s.id === 'news')?.enabled && <NewsSection />}
+        {sections.find((s) => s.id === "news")?.enabled && <NewsSection />}
 
-        {/* Top 3 Vergleiche */}
         <BigThreeSection />
-
-        {/* KYRA UPDATE: Magazin Section hier fest verankert unter den Vergleichen */}
         <ForumSection />
-
-        {/* NACHHER: Jetzt hier unten platziert */}
         <AppTicker />
 
         {layout.seo_text && <HomeSEOText />}
 
-        {/* Dynamic Sections (Alles andere was noch übrig ist) */}
         {sections
-          .filter(section =>
+          .filter((section) =>
             section.enabled &&
-            section.id !== 'mascot' &&
-            section.id !== 'hero' &&
-            section.id !== 'trust' &&
-            section.id !== 'big_three' &&
-            section.id !== 'how_it_works' &&
-            section.id !== 'news' &&
-            section.id !== 'forum' // Filter forum out to avoid duplicate
+            section.id !== "mascot" &&
+            section.id !== "hero" &&
+            section.id !== "trust" &&
+            section.id !== "big_three" &&
+            section.id !== "how_it_works" &&
+            section.id !== "news" &&
+            section.id !== "forum"
           )
           .map((section) => (
             <div key={section.id} className="w-full">
-               {sectionComponents[section.id] || null}
+              {sectionComponents[section.id] || null}
             </div>
-          ))
-        }
+          ))}
       </main>
       <Footer />
       <ScrollToTop />
