@@ -55,7 +55,7 @@ export function HomeFAQSection() {
                   </AccordionTrigger>
                   <AccordionContent className="border-t border-slate-200 px-5 pb-7 pt-5 text-[16px] leading-8 text-slate-700 sm:px-6 sm:pb-8">
                     <div
-                      className="prose prose-slate max-w-none prose-p:leading-8 prose-p:text-slate-700 prose-a:text-[#FF8400] prose-a:font-semibold"
+                      className="home-faq-answer max-w-none"
                       dangerouslySetInnerHTML={{ __html: sanitizeCmsHtmlWithBreaks(String(faq.answer || "")) }}
                     />
                   </AccordionContent>

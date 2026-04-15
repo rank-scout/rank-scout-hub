@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import React from 'react';
 import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
 import { sanitizeCmsHtml } from '@/lib/sanitizeHtml';
@@ -366,8 +367,8 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         {/* LONG CONTENT */}
         <section className="py-16 bg-gray-50">
             <div className="max-w-4xl mx-auto px-4">
-                <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top || '') }} />
-<div className="prose prose-lg max-w-none mt-8" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom || '') }} />
+                <div className="article-content article-content--lg max-w-none" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top || '') }} />
+<div className="article-content article-content--lg max-w-none mt-8" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom || '') }} />
                 
             </div>
         </section>

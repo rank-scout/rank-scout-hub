@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -480,11 +481,11 @@ export default function AdminPublisher() {
                                     <TabsTrigger value="bottom" className="flex-1">Ratgeber (Bottom)</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="top" className="mt-4 animate-in slide-in-from-left-2">
-                                    <div className="p-4 bg-white rounded border h-[350px] overflow-y-auto prose prose-sm max-w-none shadow-inner" 
+                                    <div className="article-content article-content--sm p-4 bg-white rounded border h-[350px] overflow-y-auto max-w-none shadow-inner" 
                                          dangerouslySetInnerHTML={{ __html: generatedCategoryContent?.contentTop || '<span class="text-slate-400 italic">Noch kein Content generiert...</span>' }} />
                                 </TabsContent>
                                 <TabsContent value="bottom" className="mt-4 animate-in slide-in-from-right-2">
-                                    <div className="p-4 bg-white rounded border h-[350px] overflow-y-auto prose prose-sm max-w-none shadow-inner" 
+                                    <div className="article-content article-content--sm p-4 bg-white rounded border h-[350px] overflow-y-auto max-w-none shadow-inner" 
                                          dangerouslySetInnerHTML={{ __html: generatedCategoryContent?.contentBottom || '<span class="text-slate-400 italic">Noch kein Content generiert...</span>' }} />
                                 </TabsContent>
                             </Tabs>

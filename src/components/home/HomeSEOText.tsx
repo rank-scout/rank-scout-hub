@@ -37,7 +37,7 @@ export const HomeSEOText = () => {
               <div className="h-px w-8 bg-secondary"></div>
               <span className="text-xs font-bold text-secondary uppercase tracking-widest">Unsere Mission</span>
             </div>
-            <div className="prose prose-slate prose-lg dark:prose-invert max-w-none prose-headings:text-primary prose-headings:font-display prose-headings:font-bold prose-p:text-slate-600 prose-strong:text-primary">
+            <div className="home-rich-text max-w-none space-y-5">
               <div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(seoContent) }} />
             </div>
           </div>

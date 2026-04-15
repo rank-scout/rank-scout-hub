@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Mail, MapPin, ShieldCheck } from "lucide-react";
@@ -60,7 +61,7 @@ const Impressum = () => {
             </div>
           </div>
 
-          <div className="prose prose-lg max-w-none text-slate-700 space-y-12">
+          <div className="article-content article-content--lg article-content--legal max-w-none text-slate-700 space-y-12">
             <section>
               <h3 className="text-primary font-display font-bold text-2xl mb-4 underline decoration-secondary decoration-4 underline-offset-8">Haftungsausschluss & Hinweise</h3>
               <p><strong>Transparenzhinweis (Affiliate):</strong> Rank-Scout finanziert sich teilweise über Affiliate-Links. Bei qualifizierten Käufen über unsere Partnerlinks erhalten wir eine Vergütung. Dies hat keinen Einfluss auf unsere Bewertungen oder den Preis für Sie.</p>

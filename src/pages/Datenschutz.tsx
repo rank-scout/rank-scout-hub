@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Lock, ShieldCheck, Server, BarChart3, Globe, Mail } from "lucide-react";
@@ -87,7 +88,7 @@ const Datenschutz = () => {
                 <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><Server className="w-6 h-6" /></div>
                 3. Hosting & Content Delivery
               </h2>
-              <div className="prose prose-slate max-w-none text-slate-700 space-y-6">
+              <div className="article-content article-content--legal max-w-none text-slate-700 space-y-6">
                 <div className="p-6 rounded-xl border border-slate-100 bg-white">
                   <p><strong>Externes Hosting (Vercel / Supabase):</strong> Diese Website wird bei Vercel Inc. & Supabase Inc. gehostet. Erfasste Daten (IP-Adressen, Meta-Daten) werden auf deren Servern gespeichert (Art. 6 Abs. 1 lit. f DSGVO).</p>
                 </div>

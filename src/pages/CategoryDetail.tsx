@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
@@ -319,7 +320,7 @@ export default function CategoryDetail() {
                   <div className="flex items-start gap-6"><div className="hidden md:flex p-4 bg-orange-50 rounded-2xl text-orange-500 shrink-0"><Lightbulb className="w-8 h-8" /></div><div><h2 className="font-bold text-[#0A0F1C] text-2xl tracking-tight">{introTitle}</h2></div></div>
                 </div>
 
-                {category.long_content_top && (<div className="bg-transparent mb-16 px-2 mt-8"><article id="content-top" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top) }} /></article></div>)}
+                {category.long_content_top && (<div className="bg-transparent mb-16 px-2 mt-8"><article id="content-top" className="scroll-mt-32 article-content article-content--lg article-content--brand max-w-none"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top) }} /></article></div>)}
                 
                 {/* --- INTELLIGENTE WEICHE (Rechner vs. Liste) --- */}
                 {hasWidgetCode ? (
@@ -341,7 +342,7 @@ export default function CategoryDetail() {
                     <AffiliateDisclaimer />
                 </div>
 
-                {category.long_content_bottom && (<div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/30 border border-slate-100 mb-16"><article id="content-bottom" className="scroll-mt-32 prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-[#0A0F1C]"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom) }} /></article></div>)}
+                {category.long_content_bottom && (<div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl shadow-slate-200/30 border border-slate-100 mb-16"><article id="content-bottom" className="scroll-mt-32 article-content article-content--lg article-content--brand max-w-none"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom) }} /></article></div>)}
                 
                 {/* --- HIER WURDE DIE FALSCHE FAQ-BOX ENTFERNT UND DURCH EINEN PASSENDEN HEADER ERSETZT --- */}
                 {category.faq_data && Array.isArray(category.faq_data) && (

@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import { useMemo } from "react";
 import ProjectListEmbed from "./ProjectListEmbed";
 import type { Category } from "@/hooks/useCategories";
@@ -11,15 +12,7 @@ interface CustomHtmlRendererProps {
 }
 
 const CONTENT_PROSE_CLASSNAME =
-  "custom-html-content prose prose-slate max-w-none " +
-  "prose-headings:font-extrabold prose-headings:tracking-tight prose-headings:text-[#0A0F1C] " +
-  "prose-p:text-slate-700 prose-p:leading-relaxed prose-li:text-slate-700 prose-li:leading-relaxed " +
-  "prose-a:text-orange-600 prose-a:font-semibold prose-a:no-underline hover:prose-a:underline " +
-  "prose-strong:text-slate-900 prose-blockquote:border-l-4 prose-blockquote:border-orange-500 " +
-  "prose-blockquote:bg-orange-50/50 prose-blockquote:px-6 prose-blockquote:py-4 prose-blockquote:rounded-r-2xl " +
-  "prose-table:w-full prose-table:text-sm prose-th:bg-slate-50 prose-th:text-slate-900 prose-th:text-left " +
-  "prose-th:font-bold prose-th:px-4 prose-th:py-3 prose-td:px-4 prose-td:py-3 " +
-  "prose-img:rounded-2xl prose-img:border prose-img:border-slate-200 prose-img:shadow-md";
+  "custom-html-content article-content article-content--brand max-w-none";
 
 export default function CustomHtmlRenderer({
   category,

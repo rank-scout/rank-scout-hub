@@ -1,5 +1,7 @@
 "use client";
 
+import "@/styles/article-content.css";
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   useEditor,
@@ -400,9 +402,7 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm sm:prose-base max-w-none min-h-[520px] px-5 py-5 focus:outline-none " +
-          "prose-headings:tracking-tight prose-headings:text-slate-900 prose-p:text-slate-700 prose-p:leading-relaxed prose-p:my-4 " +
-          "prose-a:text-orange-500 prose-a:font-semibold prose-img:mx-auto prose-img:max-w-full prose-img:h-auto",
+          "article-editor article-editor--sm max-w-none min-h-[520px] px-5 py-5 focus:outline-none",
       },
     },
     onUpdate: ({ editor: currentEditor }) => {

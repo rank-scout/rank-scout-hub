@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -276,7 +277,7 @@ export const HubTemplate = ({ category }: HubTemplateProps) => {
                         <Zap className="w-10 h-10 text-orange-500 fill-orange-500" /> 
                         Wissenswertes: {category.name}
                     </h2>
-                    <div className="prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-orange-600 prose-a:no-underline hover:prose-a:underline prose-img:rounded-3xl prose-strong:text-slate-900 font-medium" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom) }} />
+                    <div className="article-content article-content--lg article-content--brand article-content--soft max-w-none font-medium" dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_bottom) }} />
                 </div>
             </div>
           </div>

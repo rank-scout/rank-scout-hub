@@ -14,7 +14,6 @@ export default {
     // Bestehende Orange-Klassen
     'bg-slate-900', 'text-[#FF8400]', 'border-[#FF8400]', 'bg-[#FF8400]', 
     'hover:bg-[#FF8400]/90', 'text-orange-50', 'bg-orange-50', 'border-orange-100',
-    'prose', 'prose-lg', 'prose-xl', 'prose-slate', 'max-w-none',
     
     // NEU: Rank-Scout Content-Hub Standard-Klassen (Sicherstellung für Supabase)
     'bg-slate-50', 'bg-slate-100',
@@ -138,6 +137,5 @@ export default {
   },
   plugins: [
     require("tailwindcss-animate"),
-    require("@tailwindcss/typography"),
   ],
 } satisfies Config;

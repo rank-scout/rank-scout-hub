@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import {
@@ -54,7 +55,7 @@ const AGB = () => {
                 </div>
                 1. Geltungsbereich
               </h2>
-              <div className="prose prose-slate max-w-none text-slate-700">
+              <div className="article-content article-content--legal max-w-none text-slate-700">
                 <p>
                   Diese Allgemeinen Geschäftsbedingungen (AGB) gelten für die Nutzung der Plattform <strong>Rank-Scout</strong>
                   sowie der darüber bereitgestellten Inhalte, Funktionen, Rechner, Formulare, Vergleichsstrecken,
@@ -162,7 +163,7 @@ const AGB = () => {
                 </div>
                 4. Keine Beratung, keine Garantie, keine Vollständigkeit des Marktes
               </h2>
-              <div className="prose prose-slate max-w-none text-slate-700">
+              <div className="article-content article-content--legal max-w-none text-slate-700">
                 <p>
                   Die auf Rank-Scout bereitgestellten Inhalte dienen der allgemeinen Information, Orientierung und
                   eigenständigen Vorbereitung von Entscheidungen. Sie stellen keine Rechts-, Steuer-, Finanz-,
@@ -188,7 +189,7 @@ const AGB = () => {
                 </div>
                 5. Pflichten der Nutzer
               </h2>
-              <div className="prose prose-slate max-w-none text-slate-700">
+              <div className="article-content article-content--legal max-w-none text-slate-700">
                 <p>
                   Nutzer sind verpflichtet, bei der Verwendung von Formularen, Rechnern, Kontaktstrecken oder
                   Anfragefunktionen ausschließlich wahrheitsgemäße, vollständige und aktuelle Angaben zu machen.
@@ -230,7 +231,7 @@ const AGB = () => {
                   </p>
                 </div>
               </div>
-              <div className="prose prose-slate max-w-none text-slate-700 mt-6">
+              <div className="article-content article-content--legal max-w-none text-slate-700 mt-6">
                 <p>
                   Soweit gesetzlich zulässig, ist die Haftung von Rank-Scout für leichte Fahrlässigkeit ausgeschlossen.
                   Dies gilt nicht bei Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit, bei
@@ -282,7 +283,7 @@ const AGB = () => {
                   </p>
                 </div>
               </div>
-              <div className="mt-8 prose prose-slate max-w-none text-slate-700">
+              <div className="mt-8 article-content article-content--legal max-w-none text-slate-700">
                 <p>
                   Sollten einzelne Bestimmungen dieser AGB ganz oder teilweise unwirksam sein oder werden, bleibt die
                   Wirksamkeit der übrigen Bestimmungen unberührt. An die Stelle der unwirksamen Bestimmung tritt die

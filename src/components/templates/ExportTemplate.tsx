@@ -1,3 +1,4 @@
+import "@/styles/article-content.css";
 import React from 'react';
 
 interface ExportTemplateProps {
@@ -197,7 +198,7 @@ export const ExportTemplate: React.FC<ExportTemplateProps> = ({
             )}
 
             {/* 2. SEO CONTENT ARTICLE */}
-            <article className="glass-card rounded-2xl shadow-xl border border-slate-100 p-8 md:p-12 prose prose-slate max-w-none prose-headings:font-display prose-headings:text-primary prose-a:text-secondary prose-strong:text-primary prose-img:rounded-xl">
+            <article className="glass-card article-content article-content--brand article-content--lg rounded-2xl shadow-xl border border-slate-100 p-8 md:p-12 max-w-none">
                 <div dangerouslySetInnerHTML={{ __html: content }} />
             </article>
 
