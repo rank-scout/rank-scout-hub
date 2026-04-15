@@ -77,17 +77,11 @@ export const CategoriesSection = () => {
             {mainCategories.slice(0, limit).map((category) => {
               const CategoryIcon = getIconForCategory(category.slug);
               
-              // KYRA FIX: Wasserdichte Prüfung für den Button-Text & Console-Log für Fehlersuche
               const customText = (category as any).button_text;
               const globalFallback = content.categories.button_card;
-              
-              // Striktes Prüfen: Nur wenn ein eigener Text existiert und NICHT leer ist, wird er benutzt!
-              const finalButtonText = (customText && customText.trim() !== "") 
-                                      ? customText 
-                                      : (globalFallback || "Vergleich ansehen");
-              
-              // Dieser Log zeigt dir in den Entwicklertools, was wirklich bei der Startseite ankommt
-              console.log(`[DEBUG] Kategorie: ${category.name} | DB-Text: "${customText}" | Finale Ausgabe: "${finalButtonText}"`);
+              const finalButtonText = (customText && customText.trim() !== "")
+                ? customText
+                : (globalFallback || "Vergleich ansehen");
               
               return (
                 <Link

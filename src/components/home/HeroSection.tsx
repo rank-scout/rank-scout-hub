@@ -58,12 +58,16 @@ export const HeroSection = () => {
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-10 bg-[#0a0f1c] selection:bg-secondary/30 z-40">
       
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div 
-            className="absolute inset-0 z-0 opacity-100 bg-cover bg-center bg-no-repeat"
-            style={{ 
-              backgroundImage: 'url("https://rank-scout.com/big-threes/forum_magazin_herobild_rank-scout.webp")',
-              maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)', 
-              WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)' 
+          <img
+            src="/big-threes/forum_magazin_herobild_rank-scout.webp"
+            alt=""
+            aria-hidden="true"
+            fetchPriority="high"
+            decoding="async"
+            className="absolute inset-0 z-0 h-full w-full object-cover object-center opacity-100"
+            style={{
+              maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
+              WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)'
             }}
           />
 

@@ -3,16 +3,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { useHomeContent } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
-import { 
-  Carousel, 
-  CarouselContent, 
-  CarouselItem, 
-  CarouselNext, 
-  CarouselPrevious 
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious
 } from "@/components/ui/carousel";
-import { 
-  ArrowRight, 
-  Calendar, 
+import {
+  ArrowRight,
+  Calendar,
   Layers,
   Newspaper
 } from "lucide-react";
@@ -33,41 +33,53 @@ type FeedItem = {
   button_text?: string | null;
 };
 
-// Hilfsfunktion: Teilt ein Array in Blöcke (für den Desktop Grid-Slider)
+type NewsCategoryRow = {
+  id: string;
+  name: string;
+  description: string | null;
+  meta_description: string | null;
+  slug: string;
+  created_at: string | null;
+  icon: string | null;
+  banner_override: string | null;
+  card_image_url: string | null;
+  button_text: string | null;
+};
+
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
   return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
     arr.slice(i * size, i * size + size)
   );
 };
 
-// KYRA FIX: Hilfsfunktion um saubere Teaser-Texte zu generieren (entfernt HTML Tags)
 const getExcerpt = (primary: string | null, secondary: string | null, fallback: string) => {
-  if (primary && primary.trim().length > 0) return primary;
-  if (secondary && secondary.trim().length > 0) {
-    // Entfernt alle HTML-Tags und ersetzt überflüssige Leerzeichen
-    const stripped = secondary.replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
-    if (stripped.length > 0) {
-      return stripped.length > 140 ? stripped.substring(0, 140) + "..." : stripped;
-    }
+  if (primary && primary.trim().length > 0) {
+    return primary.trim();
   }
+
+  if (secondary && secondary.trim().length > 0) {
+    return secondary.trim();
+  }
+
   return fallback;
 };
 
 const NewsCard = ({ item }: { item: FeedItem }) => {
   const dateFormatted = format(new Date(item.date), "d. MMM yyyy", { locale: de });
-  
+
   return (
-    <Link 
-        to={normalizeInternalLinkTarget(item.slug)} 
-        className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-full shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary/20"
+    <Link
+      to={normalizeInternalLinkTarget(item.slug)}
+      className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-full shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary/20"
     >
       <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-b border-slate-100 dark:border-slate-800">
         {item.image ? (
-          <img 
-            src={item.image} 
+          <img
+            src={item.image}
             alt={item.title}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
+            decoding="async"
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-slate-400">
@@ -78,29 +90,29 @@ const NewsCard = ({ item }: { item: FeedItem }) => {
 
       <div className="p-5 flex flex-col flex-grow">
         <div className="flex items-center justify-between mb-3">
-           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
-              <Calendar className="w-3.5 h-3.5" />
-              {dateFormatted}
-           </div>
-           <div className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-md">
-             <Layers className="w-3 h-3 text-primary" />
-             {item.categoryName}
-           </div>
+          <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+            <Calendar className="w-3.5 h-3.5" />
+            {dateFormatted}
+          </div>
+          <div className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-md">
+            <Layers className="w-3 h-3 text-primary" />
+            {item.categoryName}
+          </div>
         </div>
 
         <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[3rem]">
           {item.title}
         </h3>
-        
+
         <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed line-clamp-2 mb-4 flex-grow min-h-[2.5rem]">
           {item.description}
         </p>
 
         <div className="mt-auto pt-2 border-t border-slate-50 dark:border-slate-800">
-           <div className="flex items-center justify-center w-full bg-slate-50 dark:bg-slate-800 group-hover:bg-primary text-slate-700 dark:text-slate-300 group-hover:text-white py-2.5 rounded-lg text-sm font-bold transition-all duration-300">
-             {item.button_text?.trim() || "Vergleich ansehen"}
-             <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-           </div>
+          <div className="flex items-center justify-center w-full bg-slate-50 dark:bg-slate-800 group-hover:bg-primary text-slate-700 dark:text-slate-300 group-hover:text-white py-2.5 rounded-lg text-sm font-bold transition-all duration-300">
+            {item.button_text?.trim() || "Vergleich ansehen"}
+            <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+          </div>
         </div>
       </div>
     </Link>
@@ -109,42 +121,42 @@ const NewsCard = ({ item }: { item: FeedItem }) => {
 
 export function NewsSection() {
   const { content } = useHomeContent();
-  const fetchLimit = 18; 
+  const fetchLimit = 18;
 
   const { data: feedItems, isLoading } = useQuery({
     queryKey: ["latest-comparisons-feed", fetchLimit],
     queryFn: async () => {
       const { data: categories, error: catError } = await supabase
         .from("categories")
-        .select("id, name, description, meta_description, long_content_top, slug, created_at, icon, banner_override, card_image_url, button_text")
+        .select("id, name, description, meta_description, slug, created_at, icon, banner_override, card_image_url, button_text")
         .eq("is_active", true)
         .in("template", ["comparison", "review"])
         .order("created_at", { ascending: false })
         .limit(fetchLimit);
 
-      if (catError) console.error("Fehler beim Laden der Kategorien:", catError);
+      if (catError) {
+        console.error("Fehler beim Laden der Kategorien:", catError);
+      }
 
       const items: FeedItem[] = [];
 
-      if (categories) {
-        categories.forEach(cat => {
-          items.push({
-            id: `cat-${cat.id}`,
-            title: cat.name,
-            description: getExcerpt(
-                cat.description || cat.meta_description, 
-                cat.long_content_top, 
-                "Detaillierter Vergleich und redaktioneller Überblick."
-            ),
-            slug: `/${cat.slug}`,
-            image: cat.card_image_url || cat.banner_override || cat.icon || null,
-            date: cat.created_at || new Date().toISOString(),
-            type: "category",
-            categoryName: "Vergleich",
-button_text: cat.button_text ?? null
-          });
+      (categories as NewsCategoryRow[] | null)?.forEach((cat) => {
+        items.push({
+          id: `cat-${cat.id}`,
+          title: cat.name,
+          description: getExcerpt(
+            cat.description,
+            cat.meta_description,
+            "Detaillierter Vergleich und redaktioneller Überblick."
+          ),
+          slug: `/${cat.slug}`,
+          image: cat.card_image_url || cat.banner_override || cat.icon || null,
+          date: cat.created_at || new Date().toISOString(),
+          type: "category",
+          categoryName: "Vergleich",
+          button_text: cat.button_text ?? null,
         });
-      }
+      });
 
       return items
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -159,7 +171,7 @@ button_text: cat.button_text ?? null
   return (
     <section className="py-16 bg-white dark:bg-slate-950 relative overflow-hidden">
       <div className="container px-4 md:px-8 mx-auto relative z-10">
-        
+
         <FadeIn className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4 border border-primary/20">
@@ -175,9 +187,9 @@ button_text: cat.button_text ?? null
           </div>
 
           <div className="hidden md:flex gap-4">
-              <Button size="sm" variant="outline" className="rounded-xl font-bold border-slate-300 hover:bg-slate-50" asChild>
-                 <Link to="/experten-checks">Alle Vergleiche Ansehen</Link>
-              </Button>
+            <Button size="sm" variant="outline" className="rounded-xl font-bold border-slate-300 hover:bg-slate-50" asChild>
+              <Link to="/experten-checks">Alle Vergleiche Ansehen</Link>
+            </Button>
           </div>
         </FadeIn>
 
@@ -194,7 +206,7 @@ button_text: cat.button_text ?? null
                 </CarouselItem>
               ))}
             </CarouselContent>
-            
+
             {desktopChunks.length > 1 && (
               <>
                 <CarouselPrevious className="absolute -left-6 xl:-left-12 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
@@ -216,17 +228,17 @@ button_text: cat.button_text ?? null
                 </CarouselItem>
               ))}
             </CarouselContent>
-            
+
             <div className="flex justify-center gap-4 mt-8">
               <CarouselPrevious className="static translate-y-0 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 w-14 h-14 shadow-sm rounded-xl transition-all" />
               <CarouselNext className="static translate-y-0 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 w-14 h-14 shadow-sm rounded-xl transition-all" />
             </div>
           </Carousel>
-          
+
           <div className="mt-6 text-center md:hidden">
-              <Button size="lg" variant="outline" className="w-full rounded-xl font-bold border-slate-200 text-slate-700 bg-white" asChild>
-                 <Link to="/experten-checks">Alle Beiträge ansehen</Link>
-              </Button>
+            <Button size="lg" variant="outline" className="w-full rounded-xl font-bold border-slate-200 text-slate-700 bg-white" asChild>
+              <Link to="/experten-checks">Alle Beiträge ansehen</Link>
+            </Button>
           </div>
         </div>
 

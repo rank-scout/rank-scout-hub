@@ -1,5 +1,4 @@
 import { useHomeContent } from "@/hooks/useSettings";
-import { cn } from "@/lib/utils";
 import { ShieldCheck, Cup, GraphUp } from "@solar-icons/react";
 import { sanitizeCmsHtml } from "@/lib/sanitizeHtml";
 
@@ -51,7 +50,15 @@ export const HomeSEOText = () => {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[400px] bg-secondary/20 blur-[100px] rounded-full pointer-events-none"></div>
                 <div className="group relative w-[300px] h-[460px] bg-slate-900 rounded-3xl shadow-2xl border-[4px] border-slate-800 rotate-3 hover:rotate-0 transition-all duration-500 ease-out hover:scale-105 z-10 cursor-pointer overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-slate-900/50 z-10"></div>
-                    <img src={cardImage} alt="Rank Scout Elite" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700" />
+                    <img
+                      src={cardImage}
+                      alt="Rank Scout Elite"
+                      className="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700"
+                      loading="lazy"
+                      decoding="async"
+                      width={300}
+                      height={460}
+                    />
                     
                     <div className="absolute top-0 left-0 w-full p-5 flex justify-between items-start z-30">
                         <div className="flex flex-col">

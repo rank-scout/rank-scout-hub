@@ -8,7 +8,6 @@ import { ForumSection } from "@/components/home/ForumSection";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 import { AmazonBanner } from "@/components/ads/AmazonBanner";
-import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
 import { Helmet } from "react-helmet-async";
@@ -22,8 +21,8 @@ import { useTrackView } from "@/hooks/useTrackView";
 const Index = () => {
   useTrackView("home", "page");
 
-  const analyticsCode = useGlobalAnalyticsCode();
-  const { data: settings, isLoading: isLoadingSettings } = useSettings();
+  useGlobalAnalyticsCode();
+  const { data: settings } = useSettings();
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   const { sections } = useHomeLayout();
@@ -57,10 +56,6 @@ const Index = () => {
       <meta property="og:locale" content="de_DE" />
     </Helmet>
   );
-
-  if (isLoadingSettings || !sections.length) {
-    return (<><>{seoHead}</><LoadingScreen /></>);
-  }
 
   const sectionComponents: Record<string, React.ReactNode> = {
     hero: <HeroSection />,
