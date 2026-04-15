@@ -50,54 +50,30 @@ export function ForumSection() {
       year: "numeric"
     });
   };
-  const optimizeImageUrl = (url: string, width = 720, quality = 75) => {
+// KYRA UPDATE: Supabase Bild-Kompressor
+  const optimizeImageUrl = (url: string, width = 600) => {
     if (!url) return "";
-
-    try {
-      const parsed = new URL(url);
-
-      if (parsed.pathname.includes("/storage/v1/object/public/")) {
-        parsed.pathname = parsed.pathname.replace("/object/public/", "/render/image/public/");
-        parsed.searchParams.set("width", String(width));
-        parsed.searchParams.set("quality", String(quality));
-        return parsed.toString();
-      }
-
-      if (parsed.pathname.includes("/storage/v1/render/image/public/")) {
-        parsed.searchParams.set("width", String(width));
-        parsed.searchParams.set("quality", String(quality));
-        return parsed.toString();
-      }
-    } catch {
-      return url;
+    if (url.includes(".supabase.co/storage/v1/object/public/")) {
+      return url.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=80`;
     }
-
     return url;
   };
-
-  const getResponsiveImageProps = (url: string) => ({
-    src: optimizeImageUrl(url, 720),
-    srcSet: [480, 720, 960].map((width) => `${optimizeImageUrl(url, width)} ${width}w`).join(", "),
-    sizes: "(min-width: 1280px) 360px, (min-width: 1024px) 30vw, (min-width: 640px) 60vw, 85vw",
-  });
   // 1:1 Parität mit der NewsSection (Magazin Edge-to-Edge Kartendesign)
   const PostCard = ({ post }: { post: any }) => (
     <Link 
       to={`/forum/${post.slug}`} 
-      className="group flex flex-col bg-white rounded-2xl overflow-hidden border border-slate-200 h-full shadow-sm hover:shadow-xl hover:border-orange-500/40 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-orange-500/20"
+      className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-100/60 focus:outline-none focus:ring-4 focus:ring-orange-500/15"
     >
-      {/* Bild Container: Edge-to-Edge 3:2 Ratio */}
-      <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 border-b border-slate-100 flex items-center justify-center">
+      <div className="relative aspect-[3/2] overflow-hidden bg-slate-100">
         {post.featured_image_url ? (
-          <img
-            {...getResponsiveImageProps(post.featured_image_url)}
+          <img 
+            src={optimizeImageUrl(post.featured_image_url, 1536)} 
             alt={post.title}
-            className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+            className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105" 
             loading="lazy"
-            decoding="async"
           />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-orange-50 text-slate-300">
             <BookOpen className="w-10 h-10 opacity-20" />
           </div>
         )}
@@ -181,7 +157,7 @@ export function ForumSection() {
         </div>
 
         {/* --- UNIFIED SLIDER (Mobile & Desktop) --- */}
-        <div className="relative px-0 lg:px-10 xl:px-14 w-full">
+        <div className="relative w-full">
           <Carousel
             opts={{ align: "start", loop: false }}
             className="w-full pb-4"
@@ -199,8 +175,8 @@ export function ForumSection() {
             
             {/* Desktop Controls (Seitlich ausgelagert für bestes UI) */}
             <div className="hidden lg:block">
-              <CarouselPrevious className="absolute -left-4 xl:-left-8 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
-              <CarouselNext className="absolute -right-4 xl:-right-8 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
+              <CarouselPrevious className="absolute -left-6 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
+              <CarouselNext className="absolute -right-6 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
             </div>
 
             {/* Mobile Controls (Unter dem Slider platziert) */}

@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/hooks/useTheme";
 import { useSettings, PUBLIC_SETTINGS_KEYS } from "@/hooks/useSettings";
 import { LoadingScreen } from "./components/ui/LoadingScreen";
 import { supabase } from "@/integrations/supabase/client";
+import { isBotLikeRuntime } from "@/lib/runtimeFlags";
 
 // --- LAYOUT KOMPONENTEN ---
 import { CookieBanner } from "./components/layout/CookieBanner";
@@ -136,6 +137,7 @@ const AnalyticsWrapper = () => {
     }
   }, [hasConsent, settings?.google_analytics_id]);
 
+
   return (
     <>
       {settings?.google_search_console_verification && (
@@ -237,6 +239,8 @@ const App = () => {
     });
   }, []);
 
+  const suspenseFallback = isBotLikeRuntime() ? null : <LoadingScreen />;
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -253,7 +257,7 @@ const App = () => {
                 <ScoutyWrapper />
                 <ScrollToTopHandler />
 
-                <Suspense fallback={<LoadingScreen />}>
+                <Suspense fallback={suspenseFallback}>
                   <Routes>
                     <Route path="/" element={<Index />} />
                     <Route path="/kategorien" element={<Categories />} />

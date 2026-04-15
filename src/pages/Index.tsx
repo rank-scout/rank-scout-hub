@@ -18,14 +18,7 @@ import { HomeSEOText } from "@/components/home/HomeSEOText";
 import { HomeFAQSection } from "@/components/home/HomeFAQSection";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
-
-const BOT_WINDOW_KEYS = ["__RS_IS_BOT__", "__RS_IS_PRERENDER__"] as const;
-
-const isBotLikeRuntime = () => {
-  if (typeof window === "undefined") return false;
-
-  return BOT_WINDOW_KEYS.some((key) => Boolean(window[key]));
-};
+import { isBotLikeRuntime } from "@/lib/runtimeFlags";
 
 const Index = () => {
   useTrackView("home", "page");

@@ -20,6 +20,7 @@ import {
   CheckRead,
 } from "@solar-icons/react";
 import { useTrackView } from "@/hooks/useTrackView";
+import { isBotLikeRuntime } from "@/lib/runtimeFlags";
 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(" ");
@@ -27,20 +28,22 @@ function cn(...classes: any[]) {
 
 export default function TopApps() {
   const { data: apps, isLoading } = useTop100Apps();
+  const isBotRuntime = isBotLikeRuntime();
 
   useTrackView("top-apps", "page");
   useForceSEO(
     "Die Top 100 Apps im großen Vergleich 2026. Strukturierte Übersichten, redaktionelle Einordnungen und klare Orientierung für bessere Software-Entscheidungen."
   );
 
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading && !isBotRuntime) return <LoadingScreen />;
 
   const canonicalUrl = `${window.location.origin}/top-apps`;
   const lastUpdated = new Date().toLocaleDateString("de-DE", {
     month: "long",
     year: "numeric",
   });
-  const hasApps = Array.isArray(apps) && apps.length > 0;
+  const appsList = Array.isArray(apps) ? apps : [];
+  const hasApps = appsList.length > 0;
 
   const webpageSchema = {
     "@context": "https://schema.org",
@@ -58,7 +61,7 @@ export default function TopApps() {
         name: "Top 100 Apps 2026 Übersicht",
         description:
           "Die besten 100 Apps und Software-Lösungen in einer redaktionell strukturierten Übersicht.",
-        itemListElement: apps.map((app, i) => ({
+        itemListElement: appsList.map((app, i) => ({
           "@type": "ListItem",
           position: i + 1,
           item: {
@@ -169,7 +172,7 @@ export default function TopApps() {
             </div>
 
             <div className="space-y-6">
-              {apps?.map((app, index) => (
+              {appsList.map((app, index) => (
                 <AppRankCard key={app.id} app={app} index={index} />
               ))}
             </div>
