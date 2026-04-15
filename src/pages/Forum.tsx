@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  ArrowLeft,
   ArrowRight,
   BookOpen,
   CheckCircle,
@@ -214,6 +215,18 @@ const ForumListingSkeleton = () => (
 export default function Forum() {
   const { categorySlug } = useParams<{ categorySlug?: string }>();
   const [searchQuery, setSearchQuery] = useState("");
+  const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollCategories = (direction: "left" | "right") => {
+    const container = categoryScrollerRef.current;
+    if (!container) return;
+
+    const delta = Math.max(container.clientWidth * 0.72, 260);
+    container.scrollBy({
+      left: direction === "left" ? -delta : delta,
+      behavior: "smooth",
+    });
+  };
 
   const { data: categories = [], isLoading: categoriesLoading } = useQuery({
     queryKey: ["forum-public-categories"],
@@ -390,7 +403,16 @@ export default function Forum() {
 
       <main className="pt-[65px]">
         <section className="relative overflow-hidden border-b border-white/10 bg-[#0A0F1C] text-white">
+          <div className="absolute inset-0">
+            <img
+              src="/big-threes/forum_magazin_herobild_rank-scout.webp"
+              alt=""
+              aria-hidden="true"
+              className="h-full w-full object-cover object-center"
+            />
+          </div>
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(249,115,22,0.18),transparent_28%),radial-gradient(circle_at_left_center,rgba(255,255,255,0.08),transparent_22%)]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0A0F1C]/25 via-[#0A0F1C]/55 to-[#0A0F1C]/92" />
           <div className="absolute inset-0 opacity-[0.08]" style={{ backgroundImage: "radial-gradient(#ffffff 1px, transparent 1px)", backgroundSize: "18px 18px" }} />
 
           <div className="relative mx-auto flex w-full max-w-[1920px] flex-col gap-8 px-4 py-10 md:px-8 md:py-14 lg:px-12 lg:py-16">
@@ -416,7 +438,7 @@ export default function Forum() {
                   {selectedCategory ? `${selectedCategory.name} Forum & Ratgeber` : "Rank-Scout Forum & Ratgeber"}
                 </h1>
 
-                <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
+                <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-200 sm:text-base">
                   {selectedCategory?.description ||
                     "Vergleiche, Fachbeiträge und praxisnahe Analysen für starke Entscheidungen. Schnell filterbar, mobil optimiert und ohne Admin-Ballast im Public-View."}
                 </p>
@@ -464,28 +486,56 @@ export default function Forum() {
                 </div>
               </div>
 
-              <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-                {categories.map((category) => {
-                  const isActive = category.slug === selectedCategory?.slug;
+              <div className="mt-4 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => scrollCategories("left")}
+                  className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-300 hover:text-orange-600 lg:inline-flex"
+                  aria-label="Kategorien nach links scrollen"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                </button>
 
-                  return (
-                    <Link
-                      key={category.id}
-                      to={getForumCategoryRoute(category.slug)}
-                      className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-all ${
-                        isActive
-                          ? "border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/20"
-                          : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
-                      }`}
-                    >
-                      <FolderOpen className="h-4 w-4" />
-                      {category.name}
-                      <span className={`rounded-full px-2 py-0.5 text-xs ${isActive ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"}`}>
-                        {category.thread_count}
-                      </span>
-                    </Link>
-                  );
-                })}
+                <div className="relative min-w-0 flex-1">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-gradient-to-r from-white via-white/85 to-transparent" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-gradient-to-l from-white via-white/85 to-transparent" />
+
+                  <div
+                    ref={categoryScrollerRef}
+                    className="scrollbar-none flex gap-2 overflow-x-auto scroll-smooth px-1 py-1"
+                  >
+                    {categories.map((category) => {
+                      const isActive = category.slug === selectedCategory?.slug;
+
+                      return (
+                        <Link
+                          key={category.id}
+                          to={getForumCategoryRoute(category.slug)}
+                          className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-all ${
+                            isActive
+                              ? "border-orange-500 bg-orange-500 text-white shadow-lg shadow-orange-500/20"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-orange-300 hover:text-orange-600"
+                          }`}
+                        >
+                          <FolderOpen className="h-4 w-4" />
+                          {category.name}
+                          <span className={`rounded-full px-2 py-0.5 text-xs ${isActive ? "bg-white/15 text-white" : "bg-slate-100 text-slate-500"}`}>
+                            {category.thread_count}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => scrollCategories("right")}
+                  className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-orange-300 hover:text-orange-600 lg:inline-flex"
+                  aria-label="Kategorien nach rechts scrollen"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>

@@ -275,93 +275,21 @@
   -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
 }
 
-@layer components {
-  .home-rich-text {
-    color: rgb(71 85 105);
-  }
+/* --- FIX FÜR BUTTONS IM FORUM --- */
+.prose a.text-white {
+  color: #ffffff !important;
+  text-decoration: none !important;
+}
 
-  .home-rich-text h2,
-  .home-rich-text h3 {
-    color: hsl(var(--primary));
-    font-family: Outfit, system-ui, sans-serif;
-    font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.15;
-    margin: 0 0 1rem;
-  }
+.prose a.text-white:hover {
+  color: #ffffff !important;
+}
 
-  .home-rich-text h2 {
-    font-size: clamp(1.875rem, 3vw, 2.4rem);
-  }
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
 
-  .home-rich-text h3 {
-    font-size: clamp(1.25rem, 2vw, 1.65rem);
-    margin-top: 2rem;
-  }
-
-  .home-rich-text p {
-    margin: 0;
-    font-size: 1.125rem;
-    line-height: 1.95;
-    color: rgb(71 85 105);
-  }
-
-  .home-rich-text p + p {
-    margin-top: 1.1rem;
-  }
-
-  .home-rich-text strong {
-    color: hsl(var(--primary));
-    font-weight: 700;
-  }
-
-  .home-rich-text a,
-  .home-faq-answer a {
-    color: #ff8400;
-    font-weight: 600;
-    text-decoration: none;
-  }
-
-  .home-rich-text a:hover,
-  .home-faq-answer a:hover {
-    text-decoration: underline;
-  }
-
-  .home-faq-answer {
-    color: rgb(51 65 85);
-  }
-
-  .home-faq-answer p {
-    margin: 0;
-    line-height: 2;
-    color: rgb(51 65 85);
-  }
-
-  .home-faq-answer p + p {
-    margin-top: 1rem;
-  }
-
-  .home-faq-answer ul,
-  .home-faq-answer ol {
-    margin: 1rem 0;
-    padding-left: 1.35rem;
-  }
-
-  .home-faq-answer ul {
-    list-style: disc;
-  }
-
-  .home-faq-answer ol {
-    list-style: decimal;
-  }
-
-  .home-faq-answer li {
-    margin: 0.35rem 0;
-    line-height: 1.9;
-  }
-
-  .home-faq-answer strong {
-    color: #0a0f1c;
-    font-weight: 700;
-  }
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }

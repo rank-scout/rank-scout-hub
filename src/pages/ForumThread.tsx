@@ -1,4 +1,3 @@
-import "@/styles/article-content.css";
 import { useEffect, useState, useRef } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
@@ -201,7 +200,7 @@ export default function ForumThread() {
               asChild
               className="bg-[#0A0F1C] hover:bg-slate-900 text-white hover:text-orange-500 h-12 px-8 rounded-full font-bold"
             >
-              <Link to="/forum">Zurück zum Forum</Link>
+              <Link to="/">Zurück zum Forum</Link>
             </Button>
           </div>
         </main>
@@ -236,17 +235,17 @@ export default function ForumThread() {
         <div className="sticky top-[65px] z-30 w-full bg-primary/95 backdrop-blur-md border-b border-white/10 shadow-lg transition-all duration-300">
           <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 h-14 flex items-center justify-between">
             <Link
-              to="/forum"
+              to="/"
               className="inline-flex items-center gap-1.5 md:gap-2 text-xs md:text-sm font-bold text-slate-200 hover:text-orange-500 transition-colors group"
             >
               <ArrowLeft className="w-4 h-4 text-orange-500 group-hover:-translate-x-1 transition-transform" />
-              <span className="hidden sm:inline">Zurück zur Übersicht</span>
-              <span className="sm:hidden">Zurück</span>
+              <span className="hidden sm:inline">Zur Startseite</span>
+              <span className="sm:hidden">Startseite</span>
             </Link>
           </div>
         </div>
 
-        <section className="py-6 md:py-16">
+        <section className="pt-12 pb-6 md:pt-20 md:pb-16">
           <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
               {/* Haupt-Content Bereich */}
@@ -315,7 +314,17 @@ export default function ForumThread() {
                   <FadeIn>
                     <div className="mx-auto w-full max-w-4xl px-1 sm:px-2">
                       <article
-                        className="forum-thread-html article-content article-content--sm article-content--forum max-w-none"
+                        className="forum-thread-html prose prose-slate prose-sm sm:prose-base max-w-none
+                          prose-headings:font-extrabold prose-headings:text-[#0A0F1C] prose-headings:tracking-tight prose-headings:mt-8 prose-headings:mb-4
+                          prose-p:my-4 prose-p:text-slate-600 prose-p:leading-relaxed
+                          prose-li:my-1 prose-li:leading-relaxed prose-ul:my-4 prose-ol:my-4
+                          prose-a:text-orange-500 prose-a:font-bold prose-a:no-underline hover:prose-a:underline
+                          prose-strong:text-[#0A0F1C] prose-strong:font-bold
+                          prose-figure:my-8 prose-figure:mx-auto prose-figure:w-auto prose-figure:max-w-[90%]
+                          prose-figcaption:mt-3 prose-figcaption:px-2 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-slate-500
+                          prose-img:block prose-img:mx-auto prose-img:w-auto prose-img:max-h-[500px] prose-img:object-contain prose-img:rounded-2xl prose-img:shadow-md prose-img:border prose-img:border-slate-200
+                          prose-blockquote:my-6 prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
+                          prose-table:w-full prose-table:text-sm prose-th:bg-slate-50 prose-th:text-left prose-th:text-slate-900 prose-th:px-3 prose-th:py-3 prose-td:px-3 prose-td:py-3"
                         dangerouslySetInnerHTML={renderContent()}
                       />
                     </div>
@@ -482,8 +491,8 @@ export default function ForumThread() {
               </div>
 
               {/* Sidebar */}
-              <aside className="lg:w-[30%]">
-                <div className="sticky top-24">
+              <aside className="lg:w-[30%] lg:self-start">
+                <div className="sticky top-[90px]">
                   <ForumSidebar />
                 </div>
               </aside>
