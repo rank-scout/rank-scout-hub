@@ -4,17 +4,32 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Rank-Scout - Vergleiche, Rechner & Ratgeber im Überblick</title>
-    
+
     <link rel="preload" href="/fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="/fonts/inter-v20-latin-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/big-threes/forum_magazin_herobild_rank-scout.webp" as="image">
 
     <link rel="preconnect" href="https://oeshjjvhtmebjwbouayc.supabase.co" crossorigin />
     <link rel="dns-prefetch" href="https://oeshjjvhtmebjwbouayc.supabase.co" />
-    
+
     <meta name="description" content="Rank-Scout bündelt Vergleiche, Rechner und Ratgeber in Kategorien wie Finanzen, Versicherungen, Haus & Energie, Gaming und vieles mehr.">
     <meta property="og:title" content="Rank-Scout - Vergleiche, Rechner & Ratgeber im Überblick">
     <meta property="og:image" content="/og-image.png">
     <meta name="theme-color" content="#ffffff">
+    <script>
+      (function () {
+        var ua = navigator.userAgent || "";
+        var botPattern = /(googlebot|googleother|adsbot-google|bingbot|applebot|duckduckbot|baiduspider|yandex|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|discordbot|redditbot|prerender)/i;
+        var isBot = botPattern.test(ua);
+
+        window.__RS_IS_BOT__ = isBot;
+        window.__RS_IS_PRERENDER__ = /prerender/i.test(ua);
+
+        if (isBot) {
+          document.documentElement.setAttribute("data-rs-bot", "1");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

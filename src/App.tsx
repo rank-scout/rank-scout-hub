@@ -185,11 +185,24 @@ const App = () => {
 
     // 2. Kategorien sofort parallel ziehen
     queryClient.prefetchQuery({
-      queryKey: ["categories_v2", false],
+      queryKey: ["categories_v3", false],
       queryFn: async () => {
         const { data, error } = await supabase
           .from("categories")
-          .select("*")
+          .select(`
+            id,
+            slug,
+            name,
+            description,
+            icon,
+            theme,
+            template,
+            meta_description,
+            button_text,
+            is_active,
+            sort_order,
+            card_image_url
+          `)
           .eq("is_active", true)
           .order("sort_order");
 
@@ -204,7 +217,18 @@ const App = () => {
       queryFn: async () => {
         const { data, error } = await supabase
           .from("promoted_apps")
-          .select("*")
+          .select(`
+            id,
+            name,
+            slug,
+            logo_url,
+            affiliate_link,
+            category,
+            short_description,
+            rating,
+            daily_rank,
+            advertising_weight
+          `)
           .eq("is_active", true);
 
         if (error) throw error;

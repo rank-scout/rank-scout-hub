@@ -43,23 +43,45 @@ const getThemeClasses = (theme: string) => {
   }
 };
 
-const getOptimizedImageUrl = (url: string | undefined, title: string, width = 800) => {
+const getOptimizedImageUrl = (url: string | undefined, title: string, width = 720, quality = 75) => {
   const finalUrl = url && url.trim() !== "" ? url : (CATEGORY_IMAGES[title] || "");
-  
-  // 1. Unsplash Optimierung (War schon da)
-  if (finalUrl.includes("images.unsplash.com")) {
-    const separator = finalUrl.includes("?") ? "&" : "?";
-    return `${finalUrl}${separator}w=${width}&q=80&auto=format&fit=crop`;
+  if (!finalUrl) return "";
+
+  try {
+    const parsed = new URL(finalUrl);
+
+    if (parsed.hostname.includes("images.unsplash.com")) {
+      parsed.searchParams.set("w", String(width));
+      parsed.searchParams.set("q", String(quality));
+      parsed.searchParams.set("auto", "format");
+      parsed.searchParams.set("fit", "crop");
+      return parsed.toString();
+    }
+
+    if (parsed.pathname.includes("/storage/v1/object/public/")) {
+      parsed.pathname = parsed.pathname.replace("/object/public/", "/render/image/public/");
+      parsed.searchParams.set("width", String(width));
+      parsed.searchParams.set("quality", String(quality));
+      return parsed.toString();
+    }
+
+    if (parsed.pathname.includes("/storage/v1/render/image/public/")) {
+      parsed.searchParams.set("width", String(width));
+      parsed.searchParams.set("quality", String(quality));
+      return parsed.toString();
+    }
+  } catch {
+    return finalUrl;
   }
-  
-  // 2. NEU: Supabase Image Transformation
-  if (finalUrl.includes(".supabase.co/storage/v1/object/public/")) {
-    // Wandelt den normalen Pfad in den Render-Pfad um und erzwingt WebP/Kompression
-    return finalUrl.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=80`;
-  }
-  
+
   return finalUrl;
-};;
+};
+
+const getResponsiveImageSet = (url: string | undefined, title: string) => ({
+  src: getOptimizedImageUrl(url, title, 720),
+  srcSet: [480, 720, 960].map((width) => `${getOptimizedImageUrl(url, title, width)} ${width}w`).join(", "),
+  sizes: "(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, 100vw",
+});
 
 export const BigThreeSection = () => {
   const { content } = useHomeContent();
@@ -96,13 +118,14 @@ export const BigThreeSection = () => {
                 className={`group relative h-[450px] flex flex-col justify-between bg-slate-900 rounded-3xl p-8 border border-slate-200 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 overflow-hidden ${theme.border}`}
               >
                 <div className="absolute inset-0 z-0">
-                  <img 
-                    src={getOptimizedImageUrl(item.image_url, item.title, 800)}
-                    alt={item.title} 
+                  <img
+                    {...getResponsiveImageSet(item.image_url, item.title)}
+                    alt={item.title}
                     loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover opacity-90 group-hover:scale-105 group-hover:opacity-100 transition-all duration-700"
                     onError={(e) => {
-                        (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab";
+                      (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=70&w=720&auto=format&fit=crop";
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-slate-900/10" />

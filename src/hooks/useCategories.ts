@@ -32,7 +32,7 @@ export type Category = {
   features_title: string | null;
   sticky_cta_text: string | null;
   sticky_cta_link: string | null;
-  button_text: string | null;
+  button_text: string | null; // KYRA FIX: Ist hier sauber typisiert
   
   // Stats
   views: number;
@@ -56,78 +56,39 @@ export type Category = {
   custom_html_override?: string;
 };
 
-const CATEGORY_LIST_SELECT = [
-  "id",
-  "slug",
-  "name",
-  "description",
-  "icon",
-  "theme",
-  "button_text",
-  "is_active",
-  "sort_order",
-].join(", ");
-
-const CATEGORY_ADMIN_SELECT = [
-  "id",
-  "slug",
-  "name",
-  "description",
-  "icon",
-  "theme",
-  "template",
-  "color_theme",
-  "site_name",
-  "hero_headline",
-  "hero_pretitle",
-  "hero_cta_text",
-  "hero_badge_text",
-  "meta_title",
-  "meta_description",
-  "h1_title",
-  "long_content_top",
-  "long_content_bottom",
-  "intro_title",
-  "comparison_title",
-  "project_cta_text",
-  "features_title",
-  "sticky_cta_text",
-  "sticky_cta_link",
-  "button_text",
-  "is_active",
-  "sort_order",
-  "hero_image_url",
-  "card_image_url",
-  "custom_css",
-  "sidebar_ad_html",
-  "sidebar_ad_image",
-  "comparison_widget_code",
-  "custom_html_override",
-  "faq_data",
-  "navigation_settings",
-  "analytics_code",
-  "banner_override",
-  "footer_copyright_text",
-  "footer_site_name",
-  "custom_html",
-  "created_at",
-  "updated_at",
-].join(", ");
+const CATEGORY_PUBLIC_LIST_SELECT = `
+  id,
+  slug,
+  name,
+  description,
+  icon,
+  theme,
+  template,
+  meta_description,
+  button_text,
+  is_active,
+  sort_order,
+  card_image_url
+`;
 
 export const useCategories = (includeInactive: boolean = false) => {
   return useQuery({
-    queryKey: ["categories_v2", includeInactive],
+    queryKey: ["categories_v3", includeInactive],
     queryFn: async () => {
-      const selectFields = includeInactive ? CATEGORY_ADMIN_SELECT : CATEGORY_LIST_SELECT;
+      const selectClause = includeInactive ? "*" : CATEGORY_PUBLIC_LIST_SELECT;
 
-      let query = supabase.from("categories").select(selectFields).order("sort_order");
+      let query = supabase
+        .from("categories")
+        .select(selectClause)
+        .order("sort_order");
+
       if (!includeInactive) {
         query = query.eq("is_active", true);
       }
 
       const { data, error } = await query;
       if (error) throw error;
-      return (data ?? []) as Category[];
+      return data as Category[];
     },
   });
 };
@@ -137,7 +98,7 @@ export const useCategoryBySlug = (slug: string) => {
   const shouldBlockLookup = isBlockedTopLevelSlug(normalizedSlug);
 
   return useQuery({
-    queryKey: ["category_v2", normalizedSlug],
+    queryKey: ["category_v2", normalizedSlug], // KYRA FIX: Cache-Buster
     queryFn: async () => {
       if (shouldBlockLookup) return null;
 
@@ -163,7 +124,7 @@ export const useCreateCategory = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories_v2"] });
+      queryClient.invalidateQueries({ queryKey: ["categories_v3"] });
     },
   });
 };
@@ -176,7 +137,7 @@ export const useUpdateCategory = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories_v2"] });
+      queryClient.invalidateQueries({ queryKey: ["categories_v3"] });
       queryClient.invalidateQueries({ queryKey: ["category_v2"] });
     },
   });
@@ -190,11 +151,12 @@ export const useDeleteCategory = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories_v2"] });
+      queryClient.invalidateQueries({ queryKey: ["categories_v3"] });
     },
   });
 };
 
+// KYRA UPDATE: Hochperformante Duplizier-Engine für Hubs & Seiten
 export const useDuplicateCategory = () => {
   const queryClient = useQueryClient();
 
@@ -240,10 +202,7 @@ export const useDuplicateCategory = () => {
       return newCat;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["categories_v2"] });
-      queryClient.invalidateQueries({ queryKey: ["category_projects"] });
-      queryClient.invalidateQueries({ queryKey: ["popular_footer_links"] });
-      queryClient.invalidateQueries({ queryKey: ["legal_footer_links"] });
+      queryClient.invalidateQueries({ queryKey: ["categories_v3"] });
     },
   });
 };

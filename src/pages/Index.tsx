@@ -8,6 +8,7 @@ import { ForumSection } from "@/components/home/ForumSection";
 import { ScrollToTop } from "@/components/ui/ScrollToTop";
 import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 import { AmazonBanner } from "@/components/ads/AmazonBanner";
+import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
 import { useSettings, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
 import { Helmet } from "react-helmet-async";
@@ -18,14 +19,24 @@ import { HomeFAQSection } from "@/components/home/HomeFAQSection";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
 
+const BOT_WINDOW_KEYS = ["__RS_IS_BOT__", "__RS_IS_PRERENDER__"] as const;
+
+const isBotLikeRuntime = () => {
+  if (typeof window === "undefined") return false;
+
+  return BOT_WINDOW_KEYS.some((key) => Boolean(window[key]));
+};
+
 const Index = () => {
   useTrackView("home", "page");
 
-  useGlobalAnalyticsCode();
-  const { data: settings } = useSettings();
+  const analyticsCode = useGlobalAnalyticsCode();
+  const { data: settings, isLoading: isLoadingSettings } = useSettings();
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   const { sections } = useHomeLayout();
+  const isBotRuntime = isBotLikeRuntime();
+  const shouldShowInitialLoader = !isBotRuntime && (isLoadingSettings || sections.length === 0);
 
   const safeTitle = typeof siteTitle === "string" && siteTitle.length > 0
     ? siteTitle
@@ -54,6 +65,7 @@ const Index = () => {
       <meta property="og:type" content="website" />
       <meta property="og:site_name" content="Rank-Scout" />
       <meta property="og:locale" content="de_DE" />
+      {analyticsCode ? <script async src={analyticsCode} /> : null}
     </Helmet>
   );
 
@@ -71,6 +83,15 @@ const Index = () => {
     seo: <HomeSEOText />,
     mascot: null,
   };
+
+  if (shouldShowInitialLoader) {
+    return (
+      <>
+        {seoHead}
+        <LoadingScreen />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col relative bg-white animate-in fade-in duration-500">

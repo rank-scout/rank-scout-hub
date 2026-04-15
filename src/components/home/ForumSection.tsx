@@ -50,14 +50,36 @@ export function ForumSection() {
       year: "numeric"
     });
   };
-// KYRA UPDATE: Supabase Bild-Kompressor
-  const optimizeImageUrl = (url: string, width = 600) => {
+  const optimizeImageUrl = (url: string, width = 720, quality = 75) => {
     if (!url) return "";
-    if (url.includes(".supabase.co/storage/v1/object/public/")) {
-      return url.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=80`;
+
+    try {
+      const parsed = new URL(url);
+
+      if (parsed.pathname.includes("/storage/v1/object/public/")) {
+        parsed.pathname = parsed.pathname.replace("/object/public/", "/render/image/public/");
+        parsed.searchParams.set("width", String(width));
+        parsed.searchParams.set("quality", String(quality));
+        return parsed.toString();
+      }
+
+      if (parsed.pathname.includes("/storage/v1/render/image/public/")) {
+        parsed.searchParams.set("width", String(width));
+        parsed.searchParams.set("quality", String(quality));
+        return parsed.toString();
+      }
+    } catch {
+      return url;
     }
+
     return url;
   };
+
+  const getResponsiveImageProps = (url: string) => ({
+    src: optimizeImageUrl(url, 720),
+    srcSet: [480, 720, 960].map((width) => `${optimizeImageUrl(url, width)} ${width}w`).join(", "),
+    sizes: "(min-width: 1280px) 360px, (min-width: 1024px) 30vw, (min-width: 640px) 60vw, 85vw",
+  });
   // 1:1 Parität mit der NewsSection (Magazin Edge-to-Edge Kartendesign)
   const PostCard = ({ post }: { post: any }) => (
     <Link 
@@ -67,14 +89,13 @@ export function ForumSection() {
       {/* Bild Container: Edge-to-Edge 3:2 Ratio */}
       <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 border-b border-slate-100 flex items-center justify-center">
         {post.featured_image_url ? (
-          <img 
-  src={optimizeImageUrl(post.featured_image_url, 1536)} 
-  alt={post.title}
-  /* KYRA FIX: Zurück zu object-cover für volle Kartenfüllung. 
-     Wir nutzen top-center, damit Texte am oberen Bildrand eher erhalten bleiben. */
-  className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105" 
-  loading="lazy"
-/>
+          <img
+            {...getResponsiveImageProps(post.featured_image_url)}
+            alt={post.title}
+            className="absolute inset-0 w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
+          />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center text-slate-400">
             <BookOpen className="w-10 h-10 opacity-20" />

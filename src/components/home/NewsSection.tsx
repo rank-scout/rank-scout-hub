@@ -1,6 +1,6 @@
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Link } from "react-router-dom";
 import { useHomeContent } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,17 +33,10 @@ type FeedItem = {
   button_text?: string | null;
 };
 
-type NewsCategoryRow = {
-  id: string;
-  name: string;
-  description: string | null;
-  meta_description: string | null;
-  slug: string;
-  created_at: string | null;
-  icon: string | null;
-  banner_override: string | null;
-  card_image_url: string | null;
-  button_text: string | null;
+type ResponsiveImageProps = {
+  src: string;
+  srcSet?: string;
+  sizes: string;
 };
 
 const chunkArray = <T,>(arr: T[], size: number): T[][] => {
@@ -53,19 +46,57 @@ const chunkArray = <T,>(arr: T[], size: number): T[][] => {
 };
 
 const getExcerpt = (primary: string | null, secondary: string | null, fallback: string) => {
-  if (primary && primary.trim().length > 0) {
-    return primary.trim();
-  }
-
-  if (secondary && secondary.trim().length > 0) {
-    return secondary.trim();
-  }
-
+  if (primary && primary.trim().length > 0) return primary.trim();
+  if (secondary && secondary.trim().length > 0) return secondary.trim();
   return fallback;
+};
+
+const optimizeImageUrl = (url: string, width: number, quality = 75) => {
+  if (!url) return "";
+
+  try {
+    const parsed = new URL(url);
+
+    if (parsed.hostname.includes("images.unsplash.com")) {
+      parsed.searchParams.set("w", String(width));
+      parsed.searchParams.set("q", String(quality));
+      parsed.searchParams.set("auto", "format");
+      parsed.searchParams.set("fit", "crop");
+      return parsed.toString();
+    }
+
+    if (parsed.pathname.includes("/storage/v1/object/public/")) {
+      parsed.pathname = parsed.pathname.replace("/object/public/", "/render/image/public/");
+      parsed.searchParams.set("width", String(width));
+      parsed.searchParams.set("quality", String(quality));
+      return parsed.toString();
+    }
+
+    if (parsed.pathname.includes("/storage/v1/render/image/public/")) {
+      parsed.searchParams.set("width", String(width));
+      parsed.searchParams.set("quality", String(quality));
+      return parsed.toString();
+    }
+  } catch {
+    return url;
+  }
+
+  return url;
+};
+
+const getResponsiveImageProps = (url: string | null): ResponsiveImageProps | null => {
+  if (!url) return null;
+
+  return {
+    src: optimizeImageUrl(url, 720),
+    srcSet: [480, 720, 960].map((width) => `${optimizeImageUrl(url, width)} ${width}w`).join(", "),
+    sizes: "(min-width: 1280px) 360px, (min-width: 1024px) 30vw, (min-width: 640px) 60vw, 85vw",
+  };
 };
 
 const NewsCard = ({ item }: { item: FeedItem }) => {
   const dateFormatted = format(new Date(item.date), "d. MMM yyyy", { locale: de });
+  const imageProps = getResponsiveImageProps(item.image);
 
   return (
     <Link
@@ -73,9 +104,11 @@ const NewsCard = ({ item }: { item: FeedItem }) => {
       className="group flex flex-col bg-white dark:bg-slate-900 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 h-full shadow-sm hover:shadow-xl hover:border-primary/40 transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-primary/20"
     >
       <div className="aspect-[3/2] relative overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center border-b border-slate-100 dark:border-slate-800">
-        {item.image ? (
+        {imageProps ? (
           <img
-            src={item.image}
+            src={imageProps.src}
+            srcSet={imageProps.srcSet}
+            sizes={imageProps.sizes}
             alt={item.title}
             className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             loading="lazy"
@@ -134,29 +167,29 @@ export function NewsSection() {
         .order("created_at", { ascending: false })
         .limit(fetchLimit);
 
-      if (catError) {
-        console.error("Fehler beim Laden der Kategorien:", catError);
-      }
+      if (catError) console.error("Fehler beim Laden der Kategorien:", catError);
 
       const items: FeedItem[] = [];
 
-      (categories as NewsCategoryRow[] | null)?.forEach((cat) => {
-        items.push({
-          id: `cat-${cat.id}`,
-          title: cat.name,
-          description: getExcerpt(
-            cat.description,
-            cat.meta_description,
-            "Detaillierter Vergleich und redaktioneller Überblick."
-          ),
-          slug: `/${cat.slug}`,
-          image: cat.card_image_url || cat.banner_override || cat.icon || null,
-          date: cat.created_at || new Date().toISOString(),
-          type: "category",
-          categoryName: "Vergleich",
-          button_text: cat.button_text ?? null,
+      if (categories) {
+        categories.forEach((cat) => {
+          items.push({
+            id: `cat-${cat.id}`,
+            title: cat.name,
+            description: getExcerpt(
+              cat.description || null,
+              cat.meta_description || null,
+              "Detaillierter Vergleich und redaktioneller Überblick."
+            ),
+            slug: `/${cat.slug}`,
+            image: cat.card_image_url || cat.banner_override || cat.icon || null,
+            date: cat.created_at || new Date().toISOString(),
+            type: "category",
+            categoryName: "Vergleich",
+            button_text: cat.button_text ?? null,
+          });
         });
-      });
+      }
 
       return items
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -171,7 +204,6 @@ export function NewsSection() {
   return (
     <section className="py-16 bg-white dark:bg-slate-950 relative overflow-hidden">
       <div className="container px-4 md:px-8 mx-auto relative z-10">
-
         <FadeIn className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4 border border-primary/20">
@@ -217,10 +249,7 @@ export function NewsSection() {
         </div>
 
         <div className="block lg:hidden">
-          <Carousel
-            opts={{ align: "start", loop: false }}
-            className="w-full pb-4"
-          >
+          <Carousel opts={{ align: "start", loop: false }} className="w-full pb-4">
             <CarouselContent className="-ml-4">
               {feedItems.slice(0, 10).map((item) => (
                 <CarouselItem key={item.id} className="pl-4 basis-[85%] sm:basis-[60%] md:basis-[45%] h-full">
@@ -241,7 +270,6 @@ export function NewsSection() {
             </Button>
           </div>
         </div>
-
       </div>
     </section>
   );

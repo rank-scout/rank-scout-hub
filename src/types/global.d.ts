@@ -17,6 +17,8 @@ declare global {
     $: typeof import('jquery');
     C4fRegister: new (options: C4fRegisterOptions) => C4fRegisterInstance;
     cfr: C4fRegisterInstance;
+    __RS_IS_BOT__?: boolean;
+    __RS_IS_PRERENDER__?: boolean;
   }
 }
 

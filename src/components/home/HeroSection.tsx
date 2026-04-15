@@ -63,11 +63,12 @@ export const HeroSection = () => {
             alt=""
             aria-hidden="true"
             fetchPriority="high"
+            loading="eager"
             decoding="async"
             className="absolute inset-0 z-0 h-full w-full object-cover object-center opacity-100"
             style={{
-              maskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)',
-              WebkitMaskImage: 'linear-gradient(to bottom, black 85%, transparent 100%)'
+              maskImage: "linear-gradient(to bottom, black 85%, transparent 100%)",
+              WebkitMaskImage: "linear-gradient(to bottom, black 85%, transparent 100%)",
             }}
           />
 
