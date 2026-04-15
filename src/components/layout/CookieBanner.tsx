@@ -198,7 +198,7 @@ export const CookieBanner = () => {
                                 <Button onClick={handleDecline} variant="outline" className="w-full border-white/15 bg-white text-slate-900 hover:bg-white/90 hover:text-slate-900 font-semibold shadow-sm">
                                     Ablehnen
                                 </Button>
-                                <Button onClick={() => setShowDetails(true)} variant="secondary" className="w-full bg-white/10 text-white hover:bg-white/15 border border-white/10">
+                                <Button onClick={() => setShowDetails(true)} variant="outline" className="w-full border-white/15 bg-white text-slate-900 hover:bg-white/90 hover:text-slate-900 font-semibold shadow-sm">
                                     Anpassen
                                 </Button>
                             </div>

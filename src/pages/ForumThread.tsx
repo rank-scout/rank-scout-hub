@@ -34,6 +34,8 @@ import { Helmet } from "react-helmet-async";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { useTrackView } from "@/hooks/useTrackView";
+import "@/styles/article-content.css";
+import "@/styles/forum-thread.css";
 
 export default function ForumThread() {
   const { slug } = useParams<{ slug: string }>();
@@ -245,13 +247,13 @@ export default function ForumThread() {
           </div>
         </div>
 
-        <section className="pt-12 pb-6 md:pt-20 md:pb-16">
+        <section className="pt-20 pb-6 md:pt-20 md:pb-16">
           <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
               {/* Haupt-Content Bereich */}
               <div className="flex-1 lg:w-[70%]">
                 {/* Die Haupt-Frage / Der Beitrag */}
-                <div className="bg-white rounded-3xl p-5 sm:p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100 mb-10 relative overflow-hidden">
+                <div className="bg-white rounded-3xl p-4 sm:p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100 mb-10 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1 md:w-1.5 h-full bg-orange-500"></div>
 
                   <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -280,7 +282,7 @@ export default function ForumThread() {
                       {thread.title}
                     </h1>
 
-                    <div className="flex flex-wrap items-center gap-4 md:gap-6 text-sm text-slate-500 border-b border-slate-100 pb-6 md:pb-8 mb-8">
+                    <div className="flex flex-wrap items-center gap-3 md:gap-6 text-sm text-slate-500 border-b border-slate-100 pb-5 md:pb-8 mb-7 md:mb-8">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 md:w-11 md:h-11 rounded-full bg-[#0A0F1C] flex items-center justify-center text-white font-bold text-sm md:text-lg shadow-sm">
                           {getInitial(thread.author_name)}
@@ -314,17 +316,7 @@ export default function ForumThread() {
                   <FadeIn>
                     <div className="mx-auto w-full max-w-4xl px-1 sm:px-2">
                       <article
-                        className="forum-thread-html prose prose-slate prose-sm sm:prose-base max-w-none
-                          prose-headings:font-extrabold prose-headings:text-[#0A0F1C] prose-headings:tracking-tight prose-headings:mt-8 prose-headings:mb-4
-                          prose-p:my-4 prose-p:text-slate-600 prose-p:leading-relaxed
-                          prose-li:my-1 prose-li:leading-relaxed prose-ul:my-4 prose-ol:my-4
-                          prose-a:text-orange-500 prose-a:font-bold prose-a:no-underline hover:prose-a:underline
-                          prose-strong:text-[#0A0F1C] prose-strong:font-bold
-                          prose-figure:my-8 prose-figure:mx-auto prose-figure:w-auto prose-figure:max-w-[90%]
-                          prose-figcaption:mt-3 prose-figcaption:px-2 prose-figcaption:text-center prose-figcaption:text-sm prose-figcaption:text-slate-500
-                          prose-img:block prose-img:mx-auto prose-img:w-auto prose-img:max-h-[500px] prose-img:object-contain prose-img:rounded-2xl prose-img:shadow-md prose-img:border prose-img:border-slate-200
-                          prose-blockquote:my-6 prose-blockquote:border-l-4 prose-blockquote:border-orange-500 prose-blockquote:bg-orange-50/50 prose-blockquote:py-4 prose-blockquote:px-6 prose-blockquote:rounded-r-2xl prose-blockquote:not-italic prose-blockquote:text-slate-700
-                          prose-table:w-full prose-table:text-sm prose-th:bg-slate-50 prose-th:text-left prose-th:text-slate-900 prose-th:px-3 prose-th:py-3 prose-td:px-3 prose-td:py-3"
+                        className="forum-thread-html article-content article-content--lg article-content--brand article-content--forum article-content--soft max-w-none"
                         dangerouslySetInnerHTML={renderContent()}
                       />
                     </div>
@@ -356,7 +348,7 @@ export default function ForumThread() {
                       {replies.map((reply) => (
                         <div
                           key={reply.id}
-                          className="bg-white rounded-3xl p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300"
+                          className="bg-white rounded-3xl p-4 sm:p-6 md:p-8 border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300"
                         >
                           <div className="flex items-start gap-4 md:gap-6">
                             <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-100 shadow-inner flex items-center justify-center flex-shrink-0 text-slate-500 font-bold text-base md:text-lg">
@@ -376,7 +368,7 @@ export default function ForumThread() {
                                 {reply.content}
                               </div>
 
-                              <div className="flex items-center gap-4">
+                              <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                                 <Button
                                   variant="outline"
                                   size="sm"
