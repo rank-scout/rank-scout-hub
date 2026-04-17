@@ -335,7 +335,9 @@ export default function ForumThread() {
           </>
         )}
         {thread.ad_image_url && <meta name="rank-scout:ad-image-alt" content={adImageAlt} />}
-        {discussionSchemaJson ? <RawJsonLd json={discussionSchemaJson} /> : null}
+        {discussionSchemaJson && (
+  <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: discussionSchemaJson }} />
+)}
       </Helmet>
 
       <Header />

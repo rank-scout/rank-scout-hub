@@ -282,7 +282,9 @@ export default function CategoryDetail() {
             <Helmet>
                 <title>{category.meta_title || category.name}</title>
                 <link rel="canonical" href={currentUrl} />
-                {jsonLd && <RawJsonLd json={jsonLd} />}
+                {jsonLd && (
+  <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+)}
             </Helmet>
             <Header /><HubTemplate category={category} /><Footer />
         </div>
@@ -304,7 +306,9 @@ export default function CategoryDetail() {
           <title>{category.meta_title || `${category.name}`}</title>
           <meta name="description" content={category.meta_description || ""} />
           <link rel="canonical" href={currentUrl} />
-          {jsonLd && <RawJsonLd json={jsonLd} />}
+          {jsonLd && (
+  <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+)}
         </Helmet>
         <Header />
         <main className="flex-1">
@@ -467,7 +471,9 @@ export default function CategoryDetail() {
       <Helmet>
         <title>{category.meta_title || category.name}</title>
         <link rel="canonical" href={currentUrl} />
-        {jsonLd && <RawJsonLd json={jsonLd} />}
+        {jsonLd && (
+  <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd }} />
+)}
       </Helmet>
       {category.custom_html_override ? (
         <><Header /><CustomHtmlRenderer category={category} projects={projects} htmlContent={category.custom_html_override} /><Footer /></>

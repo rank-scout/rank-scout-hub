@@ -158,11 +158,12 @@ const Index = () => {
         <meta property="og:locale" content="de_DE" />
         {analyticsCode ? <script async src={analyticsCode} /> : null}
         {schemaPayloads.map((schema, index) => (
-          <RawJsonLd
-            key={`home-jsonld-${index}`}
-            json={sanitizeJsonForScript(schema)}
-          />
-        ))}
+  <script
+    key={`home-jsonld-${index}`}
+    type="application/ld+json"
+    dangerouslySetInnerHTML={{ __html: sanitizeJsonForScript(schema) }}
+  />
+))}
       </Helmet>
     </>
   );
