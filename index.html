@@ -15,6 +15,14 @@
     <meta property="og:image" content="/og-image.png">
     <meta name="theme-color" content="#ffffff">
     <script>
+      // Prerender-Ampel: Standard = ROT. Wird per React (prerender.ts) auf GRÜN gesetzt.
+      window.prerenderReady = false;
+      // Globaler Airbag: niemals endlos hängen (Prerender bricht zwar oft nach ~20s ab, aber wir setzen sauber selbst frei).
+      window.__RS_PRERENDER_BOOTSTRAP_TIMEOUT_ID__ = window.setTimeout(function () {
+        window.prerenderReady = true;
+      }, 12000);
+    </script>
+    <script>
       (function () {
         var ua = navigator.userAgent || "";
         var botPattern = /(googlebot|googleother|google-inspectiontool|apis-google|adsbot-google|mediapartners-google|bingbot|applebot|duckduckbot|baiduspider|yandex|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|discordbot|redditbot|semrushbot|ahrefsbot|mj12bot|dotbot|rogerbot|embedly|quora link preview|pinterestbot|petalbot|sogou|prerender)/i;

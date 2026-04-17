@@ -19,11 +19,15 @@ import { HomeFAQSection } from "@/components/home/HomeFAQSection";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
 import { isBotLikeRuntime } from "@/lib/runtimeFlags";
-import { SchemaInjector } from "@/components/seo/SchemaInjector";
-import { buildCanonicalUrl } from "@/lib/seo";
+import { useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
 
 const Index = () => {
   useTrackView("home", "page");
+
+  const location = useLocation();
+  const hasSignaledReadyRef = useRef(false);
 
   const analyticsCode = useGlobalAnalyticsCode();
   const { data: settings, isLoading: isLoadingSettings } = useSettings();
@@ -32,6 +36,26 @@ const Index = () => {
   const { sections } = useHomeLayout();
   const isBotRuntime = isBotLikeRuntime();
   const shouldShowInitialLoader = !isBotRuntime && (isLoadingSettings || sections.length === 0);
+
+
+  // --- PRERENDER READY GESETZ ---
+  // Bei Route-Wechsel (oder initial) sofort auf ROT und Timer starten
+  useEffect(() => {
+    hasSignaledReadyRef.current = false;
+    setPrerenderBlocked({ routeKey: `index:${location.pathname}`, timeoutMs: 12000 });
+  }, [location.pathname]);
+
+  // Sobald Settings & Sections final sind: GRÜN (einmalig, ohne unnötige Re-Fires)
+  useEffect(() => {
+    const isReady = isLoadingSettings === false && sections.length > 0;
+    if (!isReady) return;
+    if (hasSignaledReadyRef.current) return;
+
+    const didSet = setPrerenderReady(`index:${location.pathname}`);
+    if (didSet) {
+      hasSignaledReadyRef.current = true;
+    }
+  }, [isLoadingSettings, sections.length, location.pathname]);
 
   const safeTitle = typeof siteTitle === "string" && siteTitle.length > 0
     ? siteTitle
@@ -42,82 +66,26 @@ const Index = () => {
     : "Vergleiche, Rechner und Ratgeber zu Tools, Software und Finanzthemen im Überblick.";
 
   const safeKeywords = (settings?.seo_keywords as string) || "Vergleich, Finanzen, Software, Rank-Scout, Erfahrungen, Ratgeber, Überblick";
-  const canonicalUrl = buildCanonicalUrl("/");
-  const siteLogoUrl = typeof settings?.site_logo_url === "string" && settings.site_logo_url.trim().length > 0
-    ? settings.site_logo_url.trim()
-    : "https://rank-scout.com/favicon-32x32.png";
 
   useForceSEO(safeDescription);
 
-  const schemaPayloads = [
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "@id": `${canonicalUrl}#website`,
-      url: canonicalUrl,
-      name: "Rank-Scout",
-      alternateName: safeTitle,
-      description: safeDescription,
-      inLanguage: "de-DE",
-      publisher: {
-        "@id": `${canonicalUrl}#organization`,
-      },
-      potentialAction: {
-        "@type": "SearchAction",
-        target: `${canonicalUrl}?q={search_term_string}`,
-        "query-input": "required name=search_term_string",
-      },
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "@id": `${canonicalUrl}#organization`,
-      name: "Rank-Scout",
-      url: canonicalUrl,
-      logo: {
-        "@type": "ImageObject",
-        url: siteLogoUrl,
-      },
-      description: safeDescription,
-      sameAs: [],
-    },
-    {
-      "@context": "https://schema.org",
-      "@type": "WebPage",
-      "@id": `${canonicalUrl}#webpage`,
-      url: canonicalUrl,
-      name: safeTitle,
-      description: safeDescription,
-      isPartOf: {
-        "@id": `${canonicalUrl}#website`,
-      },
-      about: {
-        "@id": `${canonicalUrl}#organization`,
-      },
-      inLanguage: "de-DE",
-    },
-  ];
-
   const seoHead = (
-    <>
-      <Helmet prioritizeSeoTags defer={false}>
-        <title>{safeTitle}</title>
-        <meta name="description" content={safeDescription} />
-        <link rel="canonical" href={canonicalUrl} />
-        <meta name="robots" content="index, follow" />
-        <meta name="keywords" content={safeKeywords} />
-        <meta name="author" content="Rank-Scout" />
-        <meta name="publisher" content="Rank-Scout" />
-        <meta property="og:title" content={safeTitle} />
-        <meta property="og:description" content={safeDescription} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Rank-Scout" />
-        <meta property="og:locale" content="de_DE" />
-        {analyticsCode ? <script async src={analyticsCode} /> : null}
-      </Helmet>
-      <SchemaInjector schemas={schemaPayloads} />
-    </>
+    <Helmet>
+      <title>{safeTitle}</title>
+      <meta name="description" content={safeDescription} />
+      <link rel="canonical" href="https://rank-scout.com/" />
+      <meta name="robots" content="index, follow" />
+      <meta name="keywords" content={safeKeywords} />
+      <meta name="author" content="Rank-Scout" />
+      <meta name="publisher" content="Rank-Scout" />
+      <meta property="og:title" content={safeTitle} />
+      <meta property="og:description" content={safeDescription} />
+      <meta property="og:url" content="https://rank-scout.com/" />
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="Rank-Scout" />
+      <meta property="og:locale" content="de_DE" />
+      {analyticsCode ? <script async src={analyticsCode} /> : null}
+    </Helmet>
   );
 
   const sectionComponents: Record<string, React.ReactNode> = {

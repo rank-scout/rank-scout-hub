@@ -19,6 +19,15 @@ declare global {
     cfr: C4fRegisterInstance;
     __RS_IS_BOT__?: boolean;
     __RS_IS_PRERENDER__?: boolean;
+    prerenderReady?: boolean;
+    __RS_PRERENDER_BOOTSTRAP_TIMEOUT_ID__?: number;
+    __RS_PRERENDER_STATE__?: {
+      token: number;
+      isReady: boolean;
+      activeRouteKey: string;
+      readyRouteKey: string | null;
+      timeoutId: number | null;
+    };
   }
 }
 
