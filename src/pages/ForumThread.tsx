@@ -31,12 +31,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
 import { Helmet } from "react-helmet-async";
-import { SchemaInjector } from "@/components/seo/SchemaInjector";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { useTrackView } from "@/hooks/useTrackView";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
-import { buildCanonicalUrlFromLocation, stripHtmlToPlainText } from "@/lib/seo";
+import { buildCanonicalUrlFromLocation, sanitizeJsonForScript, stripHtmlToPlainText } from "@/lib/seo";
 import "@/styles/article-content.css";
 import "@/styles/forum-thread.css";
 
@@ -170,36 +169,44 @@ export default function ForumThread() {
   const featuredImageAlt = thread?.featured_image_alt?.trim() || thread?.title || "Rank-Scout Forum Beitrag";
   const adImageAlt = thread?.ad_image_alt?.trim() || thread?.title || "Rank-Scout Anzeige";
 
-  const discussionSchemas = useMemo(() => {
-    if (!thread) return [] as Array<Record<string, unknown>>;
+  const discussionSchemaJson = useMemo(() => {
+    if (!thread) return "";
 
     const replyCount = replies?.length ?? thread.reply_count ?? 0;
     const likeCount = Number.isFinite(thread.likes_count) ? Number(thread.likes_count) : 0;
-    const articleBody = stripHtmlToPlainText(thread.raw_html_content || thread.content || "", 5000);
-    const visibleComments = (replies || []).slice(0, 5).map((reply) => ({
+    const viewCount = Number.isFinite(thread.views) ? Number(thread.views) : 0;
+    const discussionText = stripHtmlToPlainText(thread.raw_html_content || thread.content || "", 5000);
+    const visibleComments = (replies || []).slice(0, 10).map((reply) => ({
       "@type": "Comment",
       text: stripHtmlToPlainText(reply.content, 1000),
-      dateCreated: reply.created_at,
+      datePublished: reply.created_at,
+      ...(reply.updated_at ? { dateModified: reply.updated_at } : {}),
       author: {
         "@type": "Person",
         name: reply.author_name || "Unbekannt",
       },
     }));
 
-    const schema: Record<string, unknown> = {
-      "@context": "https://schema.org",
+    const discussionNode: Record<string, unknown> = {
       "@type": "DiscussionForumPosting",
       "@id": `${canonicalUrl}#discussion`,
+      url: canonicalUrl,
       mainEntityOfPage: canonicalUrl,
       headline: thread.title,
+      text: discussionText,
       author: {
         "@type": "Person",
         name: thread.author_name || "Unbekannt",
       },
       datePublished: thread.created_at,
       dateModified: thread.updated_at || thread.created_at,
-      articleBody,
+      commentCount: replyCount,
       interactionStatistic: [
+        {
+          "@type": "InteractionCounter",
+          interactionType: "https://schema.org/ViewAction",
+          userInteractionCount: viewCount,
+        },
         {
           "@type": "InteractionCounter",
           interactionType: "https://schema.org/CommentAction",
@@ -214,15 +221,32 @@ export default function ForumThread() {
     };
 
     if (visibleComments.length > 0) {
-      schema.comment = visibleComments;
+      discussionNode.comment = visibleComments;
     }
 
     if (thread.featured_image_url) {
-      schema.image = optimizeSupabaseImageUrl(thread.featured_image_url, 1200, 80);
+      discussionNode.image = optimizeSupabaseImageUrl(thread.featured_image_url, 1200, 80);
     }
 
-    return [schema];
-  }, [canonicalUrl, replies, thread]);
+    const schema = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${canonicalUrl}#webpage`,
+          url: canonicalUrl,
+          name: seoTitle,
+          description: seoDescription,
+          mainEntity: {
+            "@id": `${canonicalUrl}#discussion`,
+          },
+        },
+        discussionNode,
+      ],
+    };
+
+    return sanitizeJsonForScript(schema);
+  }, [canonicalUrl, replies, seoDescription, seoTitle, thread]);
 
   useEffect(() => {
     hasSignaledReadyRef.current = false;
@@ -253,7 +277,7 @@ export default function ForumThread() {
       window.cancelAnimationFrame(raf1);
       window.cancelAnimationFrame(raf2);
     };
-  }, [discussionSchemas.length, location.pathname, repliesLoading, thread, threadLoading]);
+  }, [discussionSchemaJson, location.pathname, repliesLoading, thread, threadLoading]);
 
   const getInitial = (name: string) => (name ? name.charAt(0).toUpperCase() : "U");
 
@@ -317,8 +341,10 @@ export default function ForumThread() {
           </>
         )}
         {thread.ad_image_url && <meta name="rank-scout:ad-image-alt" content={adImageAlt} />}
+        {discussionSchemaJson ? (
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: discussionSchemaJson }} />
+        ) : null}
       </Helmet>
-      <SchemaInjector schemas={discussionSchemas} />
 
       <Header />
 

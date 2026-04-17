@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Helmet } from "react-helmet-async";
@@ -6,6 +6,8 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useForceSEO } from "@/hooks/useForceSEO";
+import { sanitizeJsonForScript } from "@/lib/seo";
+import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
 import {
   buildAbsoluteSiteUrl,
   getForumCategoryRoute,
@@ -216,6 +218,7 @@ export default function Forum() {
   const { categorySlug } = useParams<{ categorySlug?: string }>();
   const [searchQuery, setSearchQuery] = useState("");
   const categoryScrollerRef = useRef<HTMLDivElement | null>(null);
+  const hasSignaledReadyRef = useRef(false);
 
   const scrollCategories = (direction: "left" | "right") => {
     const container = categoryScrollerRef.current;
@@ -383,6 +386,90 @@ export default function Forum() {
     : !hasInvalidCategory && totalPublishedThreadCount > 0;
   const robotsContent = shouldIndexForumPage ? "index, follow" : "noindex, follow";
 
+  const forumSchemaJson = useMemo(() => {
+    if (!shouldIndexForumPage || filteredThreads.length === 0) {
+      return "";
+    }
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebPage",
+          "@id": `${canonicalUrl}#webpage`,
+          url: canonicalUrl,
+          name: metaTitle,
+          description: metaDescription,
+        },
+        {
+          "@type": "ItemList",
+          "@id": `${canonicalUrl}#forum-list`,
+          itemListElement: filteredThreads.slice(0, 20).map((thread, index) => ({
+            "@type": "ListItem",
+            position: index + 1,
+            item: {
+              "@type": "DiscussionForumPosting",
+              url: buildAbsoluteSiteUrl(getForumThreadRoute(thread.slug)),
+              headline: thread.title,
+              ...(thread.seo_description ? { text: thread.seo_description } : {}),
+              author: {
+                "@type": "Person",
+                name: thread.author_name || "Redaktion",
+              },
+              datePublished: thread.created_at,
+              ...(thread.featured_image_url ? { image: optimizeThreadImage(thread.featured_image_url) } : {}),
+              interactionStatistic: [
+                {
+                  "@type": "InteractionCounter",
+                  interactionType: "https://schema.org/ViewAction",
+                  userInteractionCount: Number(thread.views || 0),
+                },
+                {
+                  "@type": "InteractionCounter",
+                  interactionType: "https://schema.org/CommentAction",
+                  userInteractionCount: Number(thread.reply_count || 0),
+                },
+              ],
+            },
+          })),
+        },
+      ],
+    };
+
+    return sanitizeJsonForScript(schema);
+  }, [canonicalUrl, filteredThreads, metaDescription, metaTitle, shouldIndexForumPage]);
+
+  useEffect(() => {
+    hasSignaledReadyRef.current = false;
+    setPrerenderBlocked({ routeKey: `forum-list:${canonicalPath}`, timeoutMs: 12000 });
+  }, [canonicalPath]);
+
+  useEffect(() => {
+    const routeKey = `forum-list:${canonicalPath}`;
+    const isCriticalLoaded = categoriesLoading === false && threadsLoading === false;
+
+    if (!isCriticalLoaded || hasSignaledReadyRef.current) {
+      return;
+    }
+
+    let raf1 = 0;
+    let raf2 = 0;
+
+    raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        const didSet = setPrerenderReady(routeKey);
+        if (didSet) {
+          hasSignaledReadyRef.current = true;
+        }
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
+    };
+  }, [canonicalPath, categoriesLoading, forumSchemaJson, threadsLoading]);
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <Helmet>
@@ -397,6 +484,9 @@ export default function Forum() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={metaTitle} />
         <meta name="twitter:description" content={metaDescription} />
+        {forumSchemaJson ? (
+          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: forumSchemaJson }} />
+        ) : null}
       </Helmet>
 
       <Header />

@@ -21,8 +21,7 @@ import { HomeFAQSection } from "@/components/home/HomeFAQSection";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
 import { isBotLikeRuntime } from "@/lib/runtimeFlags";
-import { SchemaInjector } from "@/components/seo/SchemaInjector";
-import { buildCanonicalUrl, stripHtmlToPlainText } from "@/lib/seo";
+import { buildCanonicalUrl, sanitizeJsonForScript, stripHtmlToPlainText } from "@/lib/seo";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
 
 const Index = () => {
@@ -153,19 +152,25 @@ const Index = () => {
         <title>{safeTitle}</title>
         <meta name="description" content={safeDescription} />
         <link rel="canonical" href={canonicalUrl} />
-      <meta name="robots" content="index, follow" />
-      <meta name="keywords" content={safeKeywords} />
-      <meta name="author" content="Rank-Scout" />
-      <meta name="publisher" content="Rank-Scout" />
-      <meta property="og:title" content={safeTitle} />
-      <meta property="og:description" content={safeDescription} />
-      <meta property="og:url" content={canonicalUrl} />
-      <meta property="og:type" content="website" />
-      <meta property="og:site_name" content="Rank-Scout" />
-      <meta property="og:locale" content="de_DE" />
-      {analyticsCode ? <script async src={analyticsCode} /> : null}
+        <meta name="robots" content="index, follow" />
+        <meta name="keywords" content={safeKeywords} />
+        <meta name="author" content="Rank-Scout" />
+        <meta name="publisher" content="Rank-Scout" />
+        <meta property="og:title" content={safeTitle} />
+        <meta property="og:description" content={safeDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Rank-Scout" />
+        <meta property="og:locale" content="de_DE" />
+        {analyticsCode ? <script async src={analyticsCode} /> : null}
+        {schemaPayloads.map((schema, index) => (
+          <script
+            key={`home-jsonld-${index}`}
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: sanitizeJsonForScript(schema) }}
+          />
+        ))}
       </Helmet>
-      <SchemaInjector schemas={schemaPayloads} />
     </>
   );
 
