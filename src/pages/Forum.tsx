@@ -6,7 +6,6 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useForceSEO } from "@/hooks/useForceSEO";
-import { sanitizeJsonForScript } from "@/lib/seo";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
 import {
   buildAbsoluteSiteUrl,
@@ -20,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RawJsonLd } from "@/components/seo/SchemaInjector";
 import {
   ArrowLeft,
   ArrowRight,
@@ -437,7 +435,7 @@ export default function Forum() {
       ],
     };
 
-    return sanitizeJsonForScript(schema);
+    return JSON.stringify(schema);
   }, [canonicalUrl, filteredThreads, metaDescription, metaTitle, shouldIndexForumPage]);
 
   useEffect(() => {
@@ -478,8 +476,12 @@ export default function Forum() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={metaTitle} />
         <meta name="twitter:description" content={metaDescription} />
-        {forumSchemaJson ? <RawJsonLd json={forumSchemaJson} /> : null}
       </Helmet>
+
+      {/* JSON-LD ausgelagert aus Helmet! */}
+      {forumSchemaJson && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: forumSchemaJson }} />
+      )}
 
       <Header />
 
