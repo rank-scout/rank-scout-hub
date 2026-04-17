@@ -7,6 +7,29 @@ type SchemaInjectorProps = {
   schemas?: Array<JsonLdSchema | null | undefined | false>;
 };
 
+type RawJsonLdProps = {
+  json: string;
+};
+
+function normalizeJson(json: string): string {
+  return String(json || "").trim();
+}
+
+export function RawJsonLd({ json }: RawJsonLdProps) {
+  const normalizedJson = normalizeJson(json);
+
+  if (!normalizedJson) {
+    return null;
+  }
+
+  return (
+    <rs-jsonld
+      data-rs="1"
+      dangerouslySetInnerHTML={{ __html: normalizedJson }}
+    />
+  );
+}
+
 export function SchemaInjector({ schemas = [] }: SchemaInjectorProps) {
   const normalizedSchemas = schemas.filter(
     (schema): schema is JsonLdSchema => Boolean(schema) && typeof schema === "object",
@@ -19,10 +42,9 @@ export function SchemaInjector({ schemas = [] }: SchemaInjectorProps) {
   return (
     <Helmet>
       {normalizedSchemas.map((schema, index) => (
-        <script
+        <RawJsonLd
           key={`jsonld-${index}`}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: sanitizeJsonForScript(schema) }}
+          json={sanitizeJsonForScript(schema)}
         />
       ))}
     </Helmet>

@@ -18,6 +18,7 @@ import { AppTicker } from "@/components/home/AppTicker";
 import { HowItWorksSection } from "@/components/home/HowItWorksSection";
 import { HomeSEOText } from "@/components/home/HomeSEOText";
 import { HomeFAQSection } from "@/components/home/HomeFAQSection";
+import { RawJsonLd } from "@/components/seo/SchemaInjector";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
 import { isBotLikeRuntime } from "@/lib/runtimeFlags";
@@ -157,10 +158,9 @@ const Index = () => {
         <meta property="og:locale" content="de_DE" />
         {analyticsCode ? <script async src={analyticsCode} /> : null}
         {schemaPayloads.map((schema, index) => (
-          <script
+          <RawJsonLd
             key={`home-jsonld-${index}`}
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: sanitizeJsonForScript(schema) }}
+            json={sanitizeJsonForScript(schema)}
           />
         ))}
       </Helmet>

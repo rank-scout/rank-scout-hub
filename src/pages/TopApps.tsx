@@ -21,7 +21,8 @@ import {
 } from "@solar-icons/react";
 import { useTrackView } from "@/hooks/useTrackView";
 import { isBotLikeRuntime } from "@/lib/runtimeFlags";
-import { buildCanonicalUrl } from "@/lib/seo";
+import { buildCanonicalUrl, sanitizeJsonForScript } from "@/lib/seo";
+import { RawJsonLd } from "@/components/seo/SchemaInjector";
 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(" ");
@@ -82,13 +83,9 @@ export default function TopApps() {
       <Helmet>
         <title>Top 100 Apps 2026: Wer dominiert den Software-Markt?</title>
         <link rel="canonical" href={canonicalUrl} />
-        <script type="application/ld+json">
-          {JSON.stringify(webpageSchema)}
-        </script>
+        <RawJsonLd json={sanitizeJsonForScript(webpageSchema)} />
         {itemListSchema ? (
-          <script type="application/ld+json">
-            {JSON.stringify(itemListSchema)}
-          </script>
+          <RawJsonLd json={sanitizeJsonForScript(itemListSchema)} />
         ) : null}
       </Helmet>
 

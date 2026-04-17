@@ -29,4 +29,11 @@ declare global {
   }
 }
 
+
+declare namespace JSX {
+  interface IntrinsicElements {
+    "rs-jsonld": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
+  }
+}
+
 export {};

@@ -32,6 +32,7 @@ import { AffiliateDisclaimer } from "@/components/AffiliateDisclaimer";
 import { StarRatingWidget } from "@/components/StarRatingWidget";
 import { sanitizeCmsHtml, sanitizeCmsHtmlWithBreaks } from "@/lib/sanitizeHtml";
 import { getCategoryCanonicalUrl } from "@/lib/routes";
+import { RawJsonLd } from "@/components/seo/SchemaInjector";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
 
 const getCategoryHeroImage = (category: any) => {
@@ -281,7 +282,7 @@ export default function CategoryDetail() {
             <Helmet>
                 <title>{category.meta_title || category.name}</title>
                 <link rel="canonical" href={currentUrl} />
-                {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
+                {jsonLd && <RawJsonLd json={jsonLd} />}
             </Helmet>
             <Header /><HubTemplate category={category} /><Footer />
         </div>
@@ -303,7 +304,7 @@ export default function CategoryDetail() {
           <title>{category.meta_title || `${category.name}`}</title>
           <meta name="description" content={category.meta_description || ""} />
           <link rel="canonical" href={currentUrl} />
-          {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
+          {jsonLd && <RawJsonLd json={jsonLd} />}
         </Helmet>
         <Header />
         <main className="flex-1">
@@ -466,7 +467,7 @@ export default function CategoryDetail() {
       <Helmet>
         <title>{category.meta_title || category.name}</title>
         <link rel="canonical" href={currentUrl} />
-        {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
+        {jsonLd && <RawJsonLd json={jsonLd} />}
       </Helmet>
       {category.custom_html_override ? (
         <><Header /><CustomHtmlRenderer category={category} projects={projects} htmlContent={category.custom_html_override} /><Footer /></>

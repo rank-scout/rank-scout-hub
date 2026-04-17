@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { RawJsonLd } from "@/components/seo/SchemaInjector";
 import {
   ArrowLeft,
   ArrowRight,
@@ -477,9 +478,7 @@ export default function Forum() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={metaTitle} />
         <meta name="twitter:description" content={metaDescription} />
-        {forumSchemaJson ? (
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: forumSchemaJson }} />
-        ) : null}
+        {forumSchemaJson ? <RawJsonLd json={forumSchemaJson} /> : null}
       </Helmet>
 
       <Header />

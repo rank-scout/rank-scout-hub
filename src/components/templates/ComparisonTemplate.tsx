@@ -2,6 +2,7 @@ import "@/styles/article-content.css";
 import React from 'react';
 import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
 import { optimizeSupabaseImageUrl, sanitizeCmsHtml } from '@/lib/sanitizeHtml';
+import { RawJsonLd } from '@/components/seo/SchemaInjector';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
 interface Project {
@@ -168,21 +169,19 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         }} />
 
         {/* ItemList Schema (Legal & Safe für die Projektliste) */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            "name": category.meta_title || category.name,
-            "url": `https://rank-scout.com/${category.slug}/`,
-            "numberOfItems": projects.length,
-            "itemListElement": projects.map((p, i) => ({
-              "@type": "ListItem",
-              "position": i + 1,
-              "name": p.name,
-              "url": addSubId(p.affiliate_link || p.url)
-            }))
-          })
-        }} />
+        <RawJsonLd json={JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "ItemList",
+          "name": category.meta_title || category.name,
+          "url": `https://rank-scout.com/${category.slug}/`,
+          "numberOfItems": projects.length,
+          "itemListElement": projects.map((p, i) => ({
+            "@type": "ListItem",
+            "position": i + 1,
+            "name": p.name,
+            "url": addSubId(p.affiliate_link || p.url)
+          }))
+        })} />
       </head>
       
       <body className="font-sans antialiased text-gray-800 bg-brand-bg">

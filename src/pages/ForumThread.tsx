@@ -36,6 +36,7 @@ import { FadeIn } from "@/components/ui/FadeIn";
 import { useTrackView } from "@/hooks/useTrackView";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
 import { buildCanonicalUrlFromLocation, sanitizeJsonForScript, stripHtmlToPlainText } from "@/lib/seo";
+import { RawJsonLd } from "@/components/seo/SchemaInjector";
 import "@/styles/article-content.css";
 import "@/styles/forum-thread.css";
 
@@ -334,9 +335,7 @@ export default function ForumThread() {
           </>
         )}
         {thread.ad_image_url && <meta name="rank-scout:ad-image-alt" content={adImageAlt} />}
-        {discussionSchemaJson ? (
-          <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: discussionSchemaJson }} />
-        ) : null}
+        {discussionSchemaJson ? <RawJsonLd json={discussionSchemaJson} /> : null}
       </Helmet>
 
       <Header />
