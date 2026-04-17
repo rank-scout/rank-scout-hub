@@ -35,8 +35,7 @@ import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { useTrackView } from "@/hooks/useTrackView";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
-import { buildCanonicalUrlFromLocation, sanitizeJsonForScript, stripHtmlToPlainText } from "@/lib/seo";
-import { RawJsonLd } from "@/components/seo/SchemaInjector";
+import { buildCanonicalUrlFromLocation, stripHtmlToPlainText } from "@/lib/seo";
 import "@/styles/article-content.css";
 import "@/styles/forum-thread.css";
 
@@ -246,7 +245,7 @@ export default function ForumThread() {
       ],
     };
 
-    return sanitizeJsonForScript(schema);
+    return JSON.stringify(schema);
   }, [canonicalUrl, replies, seoDescription, seoTitle, thread]);
 
   useEffect(() => {
@@ -335,10 +334,12 @@ export default function ForumThread() {
           </>
         )}
         {thread.ad_image_url && <meta name="rank-scout:ad-image-alt" content={adImageAlt} />}
-        {discussionSchemaJson && (
-  <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: discussionSchemaJson }} />
-)}
       </Helmet>
+
+      {/* JSON-LD ausgelagert aus Helmet! */}
+      {discussionSchemaJson && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: discussionSchemaJson }} />
+      )}
 
       <Header />
 

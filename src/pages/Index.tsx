@@ -18,11 +18,10 @@ import { AppTicker } from "@/components/home/AppTicker";
 import { HowItWorksSection } from "@/components/home/HowItWorksSection";
 import { HomeSEOText } from "@/components/home/HomeSEOText";
 import { HomeFAQSection } from "@/components/home/HomeFAQSection";
-import { RawJsonLd } from "@/components/seo/SchemaInjector";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
 import { isBotLikeRuntime } from "@/lib/runtimeFlags";
-import { buildCanonicalUrl, sanitizeJsonForScript, stripHtmlToPlainText } from "@/lib/seo";
+import { buildCanonicalUrl, stripHtmlToPlainText } from "@/lib/seo";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
 
 const Index = () => {
@@ -157,14 +156,16 @@ const Index = () => {
         <meta property="og:site_name" content="Rank-Scout" />
         <meta property="og:locale" content="de_DE" />
         {analyticsCode ? <script async src={analyticsCode} /> : null}
-        {schemaPayloads.map((schema, index) => (
-  <script
-    key={`home-jsonld-${index}`}
-    type="application/ld+json"
-    dangerouslySetInnerHTML={{ __html: sanitizeJsonForScript(schema) }}
-  />
-))}
       </Helmet>
+      
+      {/* JSON-LD ausgelagert aus Helmet! */}
+      {schemaPayloads.map((schema, index) => (
+        <script
+          key={`home-jsonld-${index}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+        />
+      ))}
     </>
   );
 
