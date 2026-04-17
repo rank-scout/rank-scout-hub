@@ -255,29 +255,22 @@ export default function ForumThread() {
 
   useEffect(() => {
     const routeKey = `forum:${location.pathname}`;
-    const isCriticalLoaded = threadLoading === false && (thread ? repliesLoading === false : true);
 
-    if (!isCriticalLoaded || hasSignaledReadyRef.current) {
+    if (!thread || repliesLoading || hasSignaledReadyRef.current) {
       return;
     }
 
-    let raf1 = 0;
-    let raf2 = 0;
-
-    raf1 = window.requestAnimationFrame(() => {
-      raf2 = window.requestAnimationFrame(() => {
-        const didSet = setPrerenderReady(routeKey);
-        if (didSet) {
-          hasSignaledReadyRef.current = true;
-        }
-      });
-    });
+    const timeoutId = window.setTimeout(() => {
+      const didSet = setPrerenderReady(routeKey);
+      if (didSet) {
+        hasSignaledReadyRef.current = true;
+      }
+    }, 100);
 
     return () => {
-      window.cancelAnimationFrame(raf1);
-      window.cancelAnimationFrame(raf2);
+      window.clearTimeout(timeoutId);
     };
-  }, [discussionSchemaJson, location.pathname, repliesLoading, thread, threadLoading]);
+  }, [discussionSchemaJson, location.pathname, repliesLoading, thread]);
 
   const getInitial = (name: string) => (name ? name.charAt(0).toUpperCase() : "U");
 

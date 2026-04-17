@@ -122,29 +122,22 @@ const Index = () => {
 
   useEffect(() => {
     const routeKey = `index:${location.pathname}`;
-    const isReady = isLoadingSettings === false && sections.length > 0 && schemaPayloads.length >= 3;
 
-    if (!isReady || hasSignaledReadyRef.current) {
+    if (sections.length === 0 || hasSignaledReadyRef.current) {
       return;
     }
 
-    let raf1 = 0;
-    let raf2 = 0;
-
-    raf1 = window.requestAnimationFrame(() => {
-      raf2 = window.requestAnimationFrame(() => {
-        const didSet = setPrerenderReady(routeKey);
-        if (didSet) {
-          hasSignaledReadyRef.current = true;
-        }
-      });
-    });
+    const timeoutId = window.setTimeout(() => {
+      const didSet = setPrerenderReady(routeKey);
+      if (didSet) {
+        hasSignaledReadyRef.current = true;
+      }
+    }, 100);
 
     return () => {
-      window.cancelAnimationFrame(raf1);
-      window.cancelAnimationFrame(raf2);
+      window.clearTimeout(timeoutId);
     };
-  }, [isLoadingSettings, location.pathname, schemaPayloads.length, sections.length]);
+  }, [location.pathname, schemaPayloads.length, sections.length]);
 
   const seoHead = (
     <>

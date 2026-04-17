@@ -446,29 +446,22 @@ export default function Forum() {
 
   useEffect(() => {
     const routeKey = `forum-list:${canonicalPath}`;
-    const isCriticalLoaded = categoriesLoading === false && threadsLoading === false;
 
-    if (!isCriticalLoaded || hasSignaledReadyRef.current) {
+    if (categories.length === 0 || threads.length === 0 || hasSignaledReadyRef.current) {
       return;
     }
 
-    let raf1 = 0;
-    let raf2 = 0;
-
-    raf1 = window.requestAnimationFrame(() => {
-      raf2 = window.requestAnimationFrame(() => {
-        const didSet = setPrerenderReady(routeKey);
-        if (didSet) {
-          hasSignaledReadyRef.current = true;
-        }
-      });
-    });
+    const timeoutId = window.setTimeout(() => {
+      const didSet = setPrerenderReady(routeKey);
+      if (didSet) {
+        hasSignaledReadyRef.current = true;
+      }
+    }, 100);
 
     return () => {
-      window.cancelAnimationFrame(raf1);
-      window.cancelAnimationFrame(raf2);
+      window.clearTimeout(timeoutId);
     };
-  }, [canonicalPath, categoriesLoading, forumSchemaJson, threadsLoading]);
+  }, [canonicalPath, categories.length, forumSchemaJson, threads.length]);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
