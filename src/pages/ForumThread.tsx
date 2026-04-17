@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, Link, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -31,7 +31,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
 import { Helmet } from "react-helmet-async";
-import { buildCanonicalUrlFromLocation } from "@/lib/seo";
+import { SchemaInjector } from "@/components/seo/SchemaInjector";
+import { buildCanonicalUrlFromLocation, safeSchemaId, stripHtmlToPlainText } from "@/lib/seo";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { useTrackView } from "@/hooks/useTrackView";
@@ -163,7 +164,74 @@ export default function ForumThread() {
   }
 
   useForceSEO(seoDescription);
-  const canonicalUrl = buildCanonicalUrlFromLocation(location.pathname);
+  const canonicalUrl = buildCanonicalUrlFromLocation(location.pathname, location.search);
+
+  const discussionSchema = useMemo(() => {
+    if (!thread) return null;
+
+    const articleBody = stripHtmlToPlainText(thread.raw_html_content || thread.content || "").slice(0, 5000);
+    const replyCount = replies?.length ?? thread.reply_count ?? 0;
+    const totalLikes = replies?.reduce((sum, reply) => sum + (reply.like_count || 0), 0) ?? 0;
+    const commentSchemas = (replies || []).slice(0, 5).map((reply) => ({
+      "@type": "Comment",
+      author: {
+        "@type": "Person",
+        name: reply.author_name,
+      },
+      dateCreated: reply.created_at,
+      text: stripHtmlToPlainText(reply.content).slice(0, 1200),
+      interactionStatistic: {
+        "@type": "InteractionCounter",
+        interactionType: { "@type": "LikeAction" },
+        userInteractionCount: reply.like_count || 0,
+      },
+    }));
+
+    const payload: Record<string, unknown> = {
+      "@context": "https://schema.org",
+      "@type": "DiscussionForumPosting",
+      "@id": safeSchemaId(canonicalUrl, "#discussion"),
+      url: canonicalUrl,
+      headline: stripHtmlToPlainText(seoTitle || thread.title).slice(0, 110),
+      author: {
+        "@type": "Person",
+        name: thread.author_name || "Rank-Scout Community",
+      },
+      datePublished: thread.created_at,
+      dateModified: thread.updated_at || thread.created_at,
+      articleBody,
+      isAccessibleForFree: true,
+      commentCount: replyCount,
+      interactionStatistic: [
+        {
+          "@type": "InteractionCounter",
+          interactionType: { "@type": "CommentAction" },
+          userInteractionCount: replyCount,
+        },
+        {
+          "@type": "InteractionCounter",
+          interactionType: { "@type": "LikeAction" },
+          userInteractionCount: totalLikes,
+        },
+      ],
+      mainEntityOfPage: canonicalUrl,
+      publisher: {
+        "@type": "Organization",
+        name: "Rank-Scout",
+        url: "https://rank-scout.com/",
+      },
+      ...(seoDescription ? { description: seoDescription } : {}),
+      ...(thread.featured_image_url ? {
+        image: {
+          "@type": "ImageObject",
+          url: optimizeSupabaseImageUrl(thread.featured_image_url, 1200, 80),
+        },
+      } : {}),
+      ...(commentSchemas.length > 0 ? { comment: commentSchemas } : {}),
+    };
+
+    return payload;
+  }, [canonicalUrl, replies, seoDescription, seoTitle, thread]);
   const featuredImageAlt = thread?.featured_image_alt?.trim() || thread?.title || "Rank-Scout Forum Beitrag";
   const adImageAlt = thread?.ad_image_alt?.trim() || thread?.title || "Rank-Scout Anzeige";
 
@@ -230,6 +298,7 @@ export default function ForumThread() {
         )}
         {thread.ad_image_url && <meta name="rank-scout:ad-image-alt" content={adImageAlt} />}
       </Helmet>
+      <SchemaInjector schemas={discussionSchema} />
 
       <Header />
 

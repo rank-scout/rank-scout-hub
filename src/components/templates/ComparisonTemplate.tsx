@@ -3,18 +3,20 @@ import React from 'react';
 import { Helmet } from 'react-helmet-async';
 import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
 import { SchemaInjector } from '@/components/seo/SchemaInjector';
-import { sanitizeCmsHtml } from '@/lib/sanitizeHtml';
+import { optimizeSupabaseImageUrl, sanitizeCmsHtml } from '@/lib/sanitizeHtml';
 import { buildCanonicalUrl, safeSchemaId, stripHtmlToPlainText } from '@/lib/seo';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
 interface Project {
   id: string;
   name: string;
-  url: string;
-  affiliate_link: string;
-  logo_url: string;
+  url?: string;
+  affiliate_link?: string;
+  logo_url?: string;
   rating: number;
+  rating_count?: number;
   badge_text?: string;
+  short_description?: string;
   features: string[];
   pros_list?: string[];
 }
@@ -115,6 +117,24 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
     return link + (link.includes('?') ? '&' : '?') + 'subid=' + (category.slug || 'rank-scout');
   };
 
+  const getOptimizedLogoUrl = (url: string | undefined) => {
+    const sanitized = sanitizeUrl(url);
+    if (sanitized === '#') return '#';
+    return optimizeSupabaseImageUrl(sanitized, 150, 80) || sanitized;
+  };
+
+  const normalizeRatingValue = (value: number | string | undefined) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric) || numeric <= 0) return null;
+    return Math.min(5, Math.max(1, Number(numeric.toFixed(1))));
+  };
+
+  const getProjectSchemaType = (project: Project) => {
+    const signal = `${category.slug} ${category.name} ${project.name}`.toLowerCase();
+    const isSoftwareLike = /(app|software|tool|saas|ki|ai|crm|vpn|hosting|cloud|gaming|game)/i.test(signal);
+    return isSoftwareLike ? 'SoftwareApplication' : 'Product';
+  };
+
   const canonicalUrl = buildCanonicalUrl(`/${category.slug}`);
   const pageTitle = (category.meta_title || `${category.name} | Vergleich 2026`).replace(/2026/g, year.toString());
   const pageDescription = (category.meta_description || `Anbieter für ${category.name} im redaktionellen Überblick.`).replace(/2026/g, year.toString());
@@ -149,14 +169,43 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         numberOfItems: projects.length,
         itemListElement: projects.map((project, index) => {
           const projectTarget = sanitizeUrl(project.url || project.affiliate_link);
+          const projectSchemaType = getProjectSchemaType(project);
+          const ratingValue = normalizeRatingValue(project.rating);
+          const ratingCount = Number.isFinite(Number(project.rating_count)) && Number(project.rating_count) > 0
+            ? Number(project.rating_count)
+            : 124;
+          const optimizedLogoUrl = getOptimizedLogoUrl(project.logo_url);
+
+          const itemSchema: Record<string, unknown> = {
+            "@type": projectSchemaType,
+            name: project.name,
+            description: stripHtmlToPlainText(project.short_description || project.features?.join(' · ') || `${project.name} im Vergleich auf Rank-Scout.`),
+            ...(projectTarget !== '#' ? { url: projectTarget } : {}),
+            ...(optimizedLogoUrl !== '#' ? {
+              image: {
+                "@type": "ImageObject",
+                url: optimizedLogoUrl,
+              },
+            } : {}),
+            ...(projectSchemaType === 'SoftwareApplication'
+              ? { applicationCategory: category.name }
+              : { category: category.name }),
+            ...(ratingValue ? {
+              aggregateRating: {
+                "@type": "AggregateRating",
+                ratingValue,
+                ratingCount,
+                reviewCount: ratingCount,
+                bestRating: 5,
+                worstRating: 1,
+              },
+            } : {}),
+          };
+
           return {
             "@type": "ListItem",
             position: index + 1,
-            item: {
-              "@type": "Thing",
-              name: project.name,
-              ...(projectTarget !== '#' ? { url: projectTarget } : {}),
-            },
+            item: itemSchema,
           };
         }),
       },
@@ -361,7 +410,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                                 <div className="p-4 md:p-6 pt-2">
                                     <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-center">
                                         <div className="flex-shrink-0 w-20 h-20 bg-gray-100 rounded-xl overflow-hidden shadow-md">
-                                            <img src={sanitizeUrl(p.logo_url)} alt={p.name} className="w-full h-full object-cover" />
+                                            <img src={getOptimizedLogoUrl(p.logo_url)} alt={p.name} className="w-full h-full object-contain" loading="lazy" decoding="async" />
                                         </div>
                                         <div className="flex-1 text-center md:text-left">
                                             <h3 className="font-heading font-bold text-xl text-gray-900">{p.name}</h3>
