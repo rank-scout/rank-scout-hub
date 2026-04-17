@@ -31,6 +31,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
 import { Helmet } from "react-helmet-async";
+import { buildCanonicalUrlFromLocation } from "@/lib/seo";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { useTrackView } from "@/hooks/useTrackView";
@@ -162,7 +163,7 @@ export default function ForumThread() {
   }
 
   useForceSEO(seoDescription);
-  const canonicalUrl = window.location.href;
+  const canonicalUrl = buildCanonicalUrlFromLocation(location.pathname);
   const featuredImageAlt = thread?.featured_image_alt?.trim() || thread?.title || "Rank-Scout Forum Beitrag";
   const adImageAlt = thread?.ad_image_alt?.trim() || thread?.title || "Rank-Scout Anzeige";
 

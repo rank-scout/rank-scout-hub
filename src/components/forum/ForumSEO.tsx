@@ -1,6 +1,8 @@
 import { Helmet } from "react-helmet-async";
 import { useLocation } from "react-router-dom";
 import { ForumCategory } from "@/hooks/useForum";
+import { buildCanonicalUrl } from "@/lib/seo";
+import { getForumCategoryRoute, getForumIndexRoute } from "@/lib/routes";
 
 interface ForumSEOProps {
   activeCategory?: ForumCategory | null;
@@ -12,8 +14,8 @@ export const ForumSEO = ({ activeCategory, bannerConfig }: ForumSEOProps) => {
   
   // Canonical URL sauber aufbauen (ohne Query Params)
   const canonicalUrl = activeCategory
-    ? `${window.location.origin}/forum/kategorie/${activeCategory.slug}`
-    : `${window.location.origin}/forum`;
+    ? buildCanonicalUrl(getForumCategoryRoute(activeCategory.slug))
+    : buildCanonicalUrl(getForumIndexRoute());
 
   // --- LOGIK: Titel & Beschreibung bestimmen ---
   let title = "Community Forum | Rank-Scout";

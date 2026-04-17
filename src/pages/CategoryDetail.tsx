@@ -19,6 +19,7 @@ import {
 
 import CustomHtmlRenderer from "@/components/templates/CustomHtmlRenderer";
 import { HubTemplate } from "@/components/templates/HubTemplate"; 
+import { ComparisonTemplate } from "@/components/templates/ComparisonTemplate";
 import { Helmet } from "react-helmet-async";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -30,7 +31,8 @@ import { useTrackView } from "@/hooks/useTrackView";
 import { AffiliateDisclaimer } from "@/components/AffiliateDisclaimer";
 import { StarRatingWidget } from "@/components/StarRatingWidget";
 import { sanitizeCmsHtml, sanitizeCmsHtmlWithBreaks } from "@/lib/sanitizeHtml";
-import { getCategoryCanonicalUrl } from "@/lib/routes";
+import { SchemaInjector } from "@/components/seo/SchemaInjector";
+import { buildCanonicalUrl, safeSchemaId, stripHtmlToPlainText } from "@/lib/seo";
 
 const getCategoryHeroImage = (category: any) => {
     if (category.hero_image_url) return category.hero_image_url;
@@ -149,67 +151,84 @@ export default function CategoryDetail() {
 
   useForceSEO(category?.meta_description || "");
 
-  // Dynamisches JSON-LD generieren
-  const jsonLd = useMemo(() => {
-    if (!category) return null;
+  const pageDescription = category?.meta_description || (category ? `Anbieter für ${category.name} im Vergleich.` : "");
 
-    const schema: any = {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "WebPage",
-          "@id": `https://rank-scout.com/${category.slug}/#webpage`,
-          "url": `https://rank-scout.com/${category.slug}`,
-          "name": category.meta_title || category.name,
-          "description": category.meta_description || `Anbieter für ${category.name} im Vergleich.`
-        },
-        {
-          "@type": "BreadcrumbList",
-          "@id": `https://rank-scout.com/${category.slug}/#breadcrumb`,
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "name": "Startseite",
-              "item": "https://rank-scout.com/"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "name": category.name,
-              "item": `https://rank-scout.com/${category.slug}`
-            }
-          ]
-        }
-      ]
-    };
+  const canonicalUrl = useMemo(() => {
+    if (!category?.slug) return null;
+    return buildCanonicalUrl(`/${category.slug}`);
+  }, [category?.slug]);
 
-    const shouldRenderVisibleFaq =
-      category?.is_internal_generated === true &&
-      category?.template !== 'hub_overview' &&
-      Array.isArray(category.faq_data) &&
-      category.faq_data.length > 0;
+  const schemaPayloads = useMemo(() => {
+    if (!category || !canonicalUrl) return [];
 
-    if (shouldRenderVisibleFaq) {
-      schema["@graph"].push({
-        "@type": "FAQPage",
-        "@id": `https://rank-scout.com/${category.slug}/#faq`,
-        "mainEntity": category.faq_data.map((faq: any) => ({
-          "@type": "Question",
-          "name": String(faq.question || "").trim(),
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": String(faq.answer || "")
-              .replace(/<[^>]+>/g, '')
-              .replace(/\n/g, ' ')
-              .trim()
-          }
-        }))
+    const payloads: Record<string, unknown>[] = [
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "@id": safeSchemaId(canonicalUrl, "#webpage"),
+        url: canonicalUrl,
+        name: category.meta_title || category.name,
+        description: pageDescription,
+        inLanguage: "de-DE",
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "@id": safeSchemaId(canonicalUrl, "#breadcrumb"),
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Startseite",
+            item: buildCanonicalUrl("/"),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: category.name,
+            item: canonicalUrl,
+          },
+        ],
+      },
+    ];
+
+    if (projects.length > 0) {
+      payloads.push({
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "@id": safeSchemaId(canonicalUrl, "#itemlist"),
+        name: category.comparison_title || category.meta_title || category.name,
+        url: canonicalUrl,
+        numberOfItems: projects.length,
+        itemListElement: projects.map((project, index) => ({
+          "@type": "ListItem",
+          position: index + 1,
+          name: project.name,
+          url: buildCanonicalUrl(`/${category.slug}`),
+        })),
       });
     }
 
-    return JSON.stringify(schema);
-  }, [category]);
+    if (Array.isArray((category as any).faq_data) && (category as any).faq_data.length > 0) {
+      payloads.push({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "@id": safeSchemaId(canonicalUrl, "#faq"),
+        mainEntity: (category as any).faq_data
+          .filter((faq: any) => String(faq?.question || "").trim() && String(faq?.answer || "").trim())
+          .map((faq: any) => ({
+            "@type": "Question",
+            name: String(faq.question || "").trim(),
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: stripHtmlToPlainText(String(faq.answer || "")),
+            },
+          })),
+      });
+    }
+
+    return payloads;
+  }, [canonicalUrl, category, pageDescription, projects]);
 
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
@@ -238,16 +257,16 @@ export default function CategoryDetail() {
   }
 
   const isStandardLayoutPage = (category as any)?.is_internal_generated === true || category?.template === 'review';
-  const currentUrl = getCategoryCanonicalUrl(category.slug);
 
   if (category.template === 'hub_overview') {
       return (
         <div className="min-h-screen flex flex-col font-sans bg-slate-50">
             <Helmet>
                 <title>{category.meta_title || category.name}</title>
-                <link rel="canonical" href={currentUrl} />
-                {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
+                <meta name="description" content={pageDescription} />
+                <link rel="canonical" href={canonicalUrl || buildCanonicalUrl(`/`)} />
             </Helmet>
+            <SchemaInjector schemas={schemaPayloads} />
             <Header /><HubTemplate category={category} /><Footer />
         </div>
       );
@@ -266,10 +285,10 @@ export default function CategoryDetail() {
       <div className="min-h-screen flex flex-col font-sans text-slate-800 bg-[#FAFAFA]">
         <Helmet>
           <title>{category.meta_title || `${category.name}`}</title>
-          <meta name="description" content={category.meta_description || ""} />
-          <link rel="canonical" href={currentUrl} />
-          {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
+          <meta name="description" content={pageDescription} />
+          <link rel="canonical" href={canonicalUrl || buildCanonicalUrl(`/`)} />
         </Helmet>
+        <SchemaInjector schemas={schemaPayloads} />
         <Header />
         <main className="flex-1">
           {/* Breadcrumbs */}
@@ -430,11 +449,14 @@ export default function CategoryDetail() {
     <>
       <Helmet>
         <title>{category.meta_title || category.name}</title>
-        <link rel="canonical" href={currentUrl} />
-        {jsonLd && <script type="application/ld+json">{jsonLd}</script>}
+        <meta name="description" content={pageDescription} />
+        <link rel="canonical" href={canonicalUrl || buildCanonicalUrl(`/`)} />
       </Helmet>
       {category.custom_html_override ? (
-        <><Header /><CustomHtmlRenderer category={category} projects={projects} htmlContent={category.custom_html_override} /><Footer /></>
+        <>
+          <SchemaInjector schemas={schemaPayloads} />
+          <Header /><CustomHtmlRenderer category={category} projects={projects} htmlContent={category.custom_html_override} /><Footer />
+        </>
       ) : (
         <><Header /><ComparisonTemplate category={category} projects={projects} /><Footer /></>
       )}

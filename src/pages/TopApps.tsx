@@ -21,6 +21,7 @@ import {
 } from "@solar-icons/react";
 import { useTrackView } from "@/hooks/useTrackView";
 import { isBotLikeRuntime } from "@/lib/runtimeFlags";
+import { buildCanonicalUrl } from "@/lib/seo";
 
 function cn(...classes: any[]) {
   return classes.filter(Boolean).join(" ");
@@ -37,7 +38,7 @@ export default function TopApps() {
 
   if (isLoading && !isBotRuntime) return <LoadingScreen />;
 
-  const canonicalUrl = `${window.location.origin}/top-apps`;
+  const canonicalUrl = buildCanonicalUrl("/top-apps");
   const lastUpdated = new Date().toLocaleDateString("de-DE", {
     month: "long",
     year: "numeric",

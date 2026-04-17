@@ -1,7 +1,10 @@
 import "@/styles/article-content.css";
 import React from 'react';
+import { Helmet } from 'react-helmet-async';
 import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
+import { SchemaInjector } from '@/components/seo/SchemaInjector';
 import { sanitizeCmsHtml } from '@/lib/sanitizeHtml';
+import { buildCanonicalUrl, safeSchemaId, stripHtmlToPlainText } from '@/lib/seo';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
 interface Project {
@@ -71,24 +74,25 @@ interface CategoryData {
   popup_headline?: string;
   popup_text?: string;
   popup_link?: string;
+  faq_data?: Array<{ question?: string; answer?: string }>;
 }
 
 interface TemplateProps {
   category: CategoryData;
   projects: Project[];
-  testimonials: Testimonial[];
-  settings: any; // Globale Settings
-  legalLinks: FooterLink[];
-  popularLinks: FooterLink[];
+  testimonials?: Testimonial[];
+  settings?: any; // Globale Settings
+  legalLinks?: FooterLink[];
+  popularLinks?: FooterLink[];
 }
 
 export const ComparisonTemplate: React.FC<TemplateProps> = ({ 
   category, 
   projects, 
-  testimonials, 
-  settings, 
-  legalLinks, 
-  popularLinks 
+  testimonials = [], 
+  settings = {}, 
+  legalLinks = [], 
+  popularLinks = [] 
 }) => {
   const year = new Date().getFullYear();
   const locationName = category.name.replace(/^Singles\s*/i, '').trim();
@@ -111,27 +115,92 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
     return link + (link.includes('?') ? '&' : '?') + 'subid=' + (category.slug || 'rank-scout');
   };
 
-  return (
-    <html lang="de">
-      <head>
-        <meta charSet="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <link rel="canonical" href={`https://rank-scout.com/${category.slug}/`} />
+  const canonicalUrl = buildCanonicalUrl(`/${category.slug}`);
+  const pageTitle = (category.meta_title || `${category.name} | Vergleich 2026`).replace(/2026/g, year.toString());
+  const pageDescription = (category.meta_description || `Anbieter für ${category.name} im redaktionellen Überblick.`).replace(/2026/g, year.toString());
 
+  const schemaPayloads = React.useMemo(() => {
+    const payloads: Record<string, unknown>[] = [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "@id": safeSchemaId(canonicalUrl, '#breadcrumb'),
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: 'Startseite',
+            item: buildCanonicalUrl('/'),
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: category.name,
+            item: canonicalUrl,
+          },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "@id": safeSchemaId(canonicalUrl, '#itemlist'),
+        name: pageTitle,
+        url: canonicalUrl,
+        numberOfItems: projects.length,
+        itemListElement: projects.map((project, index) => {
+          const projectTarget = sanitizeUrl(project.url || project.affiliate_link);
+          return {
+            "@type": "ListItem",
+            position: index + 1,
+            item: {
+              "@type": "Thing",
+              name: project.name,
+              ...(projectTarget !== '#' ? { url: projectTarget } : {}),
+            },
+          };
+        }),
+      },
+    ];
+
+    const faqItems = Array.isArray(category.faq_data)
+      ? category.faq_data
+          .filter((faq) => String(faq?.question || '').trim() && String(faq?.answer || '').trim())
+          .map((faq) => ({
+            "@type": "Question",
+            name: String(faq?.question || '').trim(),
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: stripHtmlToPlainText(String(faq?.answer || '')),
+            },
+          }))
+      : [];
+
+    if (faqItems.length > 0) {
+      payloads.push({
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "@id": safeSchemaId(canonicalUrl, '#faq'),
+        mainEntity: faqItems,
+      });
+    }
+
+    return payloads;
+  }, [canonicalUrl, category.faq_data, category.name, pageTitle, projects]);
+
+  return (
+    <>
+      <Helmet prioritizeSeoTags defer={false}>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta name="robots" content="index, follow" />
         <link rel="icon" href="/favicon.ico" sizes="any" />
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-        
-        <title>{(category.meta_title || `${category.name} | Vergleich 2026`).replace(/2026/g, year.toString())}</title>
-        <meta name="description" content={(category.meta_description || '').replace(/2026/g, year.toString())} />
-        <meta name="robots" content="index, follow" />
-
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet" />
-        
         <script src="https://cdn.tailwindcss.com"></script>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-
         <script dangerouslySetInnerHTML={{
           __html: `
             tailwind.config = {
@@ -166,26 +235,9 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
             ${settings?.custom_css || ''}
           `
         }} />
-
-        {/* ItemList Schema (Legal & Safe für die Projektliste) */}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "ItemList",
-            "name": category.meta_title || category.name,
-            "url": `https://rank-scout.com/${category.slug}/`,
-            "numberOfItems": projects.length,
-            "itemListElement": projects.map((p, i) => ({
-              "@type": "ListItem",
-              "position": i + 1,
-              "name": p.name,
-              "url": addSubId(p.affiliate_link || p.url)
-            }))
-          })
-        }} />
-      </head>
-      
-      <body className="font-sans antialiased text-gray-800 bg-brand-bg">
+      </Helmet>
+      <SchemaInjector schemas={schemaPayloads} />
+      <div className="font-sans antialiased text-gray-800 bg-brand-bg">
         
         {/* TOP BAR */}
         {settings?.top_bar_active && (
@@ -418,7 +470,7 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
             if(sessionStorage.getItem('top_bar_closed')) closeTopBar();
           `
         }} />
-      </body>
-    </html>
+      </div>
+    </>
   );
 };
