@@ -17,14 +17,11 @@ function normalizeJson(json: string): string {
 
 export function RawJsonLd({ json }: RawJsonLdProps) {
   const normalizedJson = normalizeJson(json);
-
-  if (!normalizedJson) {
-    return null;
-  }
+  if (!normalizedJson) return null;
 
   return (
-    <rs-jsonld
-      data-rs="1"
+    <script
+      type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: normalizedJson }}
     />
   );
