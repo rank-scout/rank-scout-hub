@@ -22,10 +22,8 @@ declare global {
     prerenderReady?: boolean;
     __RS_PRERENDER_BOOTSTRAP_TIMEOUT_ID__?: number;
     __RS_PRERENDER_STATE__?: {
-      token: number;
-      isReady: boolean;
-      activeRouteKey: string;
-      readyRouteKey: string | null;
+      routeKey: string | null;
+      ready: boolean;
       timeoutId: number | null;
     };
   }

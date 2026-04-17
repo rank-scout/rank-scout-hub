@@ -1,87 +1,71 @@
-export const DEFAULT_PRERENDER_TIMEOUT_MS = 12_000;
-
 type PrerenderState = {
-  token: number;
-  isReady: boolean;
-  activeRouteKey: string;
-  readyRouteKey: string | null;
+  routeKey: string | null;
+  ready: boolean;
   timeoutId: number | null;
 };
 
-const STATE_KEY = "__RS_PRERENDER_STATE__" as const;
-const BOOTSTRAP_TIMEOUT_KEY = "__RS_PRERENDER_BOOTSTRAP_TIMEOUT_ID__" as const;
+type SetPrerenderBlockedOptions = {
+  routeKey: string;
+  timeoutMs?: number;
+};
 
-function isBrowser(): boolean {
+const DEFAULT_TIMEOUT_MS = 12000;
+
+function isBrowser() {
   return typeof window !== "undefined";
 }
 
-function ensureState(): PrerenderState {
-  const w = window as any;
+function clearTimer(id?: number | null) {
+  if (!isBrowser() || typeof id !== "number") return;
+  window.clearTimeout(id);
+}
 
-  if (!w[STATE_KEY]) {
-    w[STATE_KEY] = {
-      token: 0,
-      isReady: false,
-      activeRouteKey: "global",
-      readyRouteKey: null,
+function getState(): PrerenderState | null {
+  if (!isBrowser()) return null;
+
+  if (!window.__RS_PRERENDER_STATE__) {
+    window.__RS_PRERENDER_STATE__ = {
+      routeKey: null,
+      ready: false,
       timeoutId: null,
-    } satisfies PrerenderState;
+    };
   }
 
-  return w[STATE_KEY] as PrerenderState;
+  return window.__RS_PRERENDER_STATE__;
 }
 
-function clearAnyTimeout(state: PrerenderState) {
-  const w = window as any;
+function clearBootstrapTimeout() {
+  if (!isBrowser()) return;
 
-  if (typeof w[BOOTSTRAP_TIMEOUT_KEY] === "number") {
-    window.clearTimeout(w[BOOTSTRAP_TIMEOUT_KEY]);
-    w[BOOTSTRAP_TIMEOUT_KEY] = undefined;
-  }
-
-  if (typeof state.timeoutId === "number") {
-    window.clearTimeout(state.timeoutId);
-    state.timeoutId = null;
+  if (typeof window.__RS_PRERENDER_BOOTSTRAP_TIMEOUT_ID__ === "number") {
+    window.clearTimeout(window.__RS_PRERENDER_BOOTSTRAP_TIMEOUT_ID__);
+    window.__RS_PRERENDER_BOOTSTRAP_TIMEOUT_ID__ = undefined;
   }
 }
 
-export function setPrerenderBlocked(options?: {
-  routeKey?: string;
-  timeoutMs?: number;
-}): boolean {
+export function setPrerenderBlocked({ routeKey, timeoutMs = DEFAULT_TIMEOUT_MS }: SetPrerenderBlockedOptions): boolean {
   if (!isBrowser()) return false;
 
-  const routeKey = options?.routeKey || "global";
-  const timeoutMs = typeof options?.timeoutMs === "number" ? options!.timeoutMs : DEFAULT_PRERENDER_TIMEOUT_MS;
+  clearBootstrapTimeout();
 
-  const state = ensureState();
-  state.token += 1;
-  state.isReady = false;
-  state.activeRouteKey = routeKey;
-  state.readyRouteKey = null;
+  const state = getState();
+  if (!state) return false;
 
-  // ROT
-  (window as any).prerenderReady = false;
+  clearTimer(state.timeoutId);
+  state.routeKey = routeKey;
+  state.ready = false;
+  state.timeoutId = null;
+  window.prerenderReady = false;
 
-  clearAnyTimeout(state);
+  state.timeoutId = window.setTimeout(() => {
+    const liveState = getState();
+    if (!liveState) return;
+    if (liveState.routeKey !== routeKey || liveState.ready) return;
 
-  // Airbag
-  if (timeoutMs > 0) {
-    const token = state.token;
-    state.timeoutId = window.setTimeout(() => {
-      const current = ensureState();
-      if (current.token != token) return; // es gab inzwischen einen neuen Block
-      if (current.isReady) return;
-
-      current.isReady = true;
-      current.readyRouteKey = current.activeRouteKey;
-      current.timeoutId = null;
-      (window as any).prerenderReady = true;
-    }, timeoutMs);
-
-    // optional sichtbar für Debugging
-    (window as any)[BOOTSTRAP_TIMEOUT_KEY] = state.timeoutId;
-  }
+    liveState.ready = true;
+    liveState.timeoutId = null;
+    window.prerenderReady = true;
+  }, timeoutMs);
 
   return true;
 }
@@ -89,22 +73,27 @@ export function setPrerenderBlocked(options?: {
 export function setPrerenderReady(routeKey?: string): boolean {
   if (!isBrowser()) return false;
 
-  const state = ensureState();
-  const normalizedRouteKey = routeKey || state.activeRouteKey || "global";
+  clearBootstrapTimeout();
 
-  // Idempotent: nicht mehrfach unnötig feuern
-  if (state.isReady && state.readyRouteKey === normalizedRouteKey && (window as any).prerenderReady === true) {
+  const state = getState();
+  if (!state) return false;
+
+  if (routeKey && state.routeKey && state.routeKey !== routeKey) {
     return false;
   }
 
-  clearAnyTimeout(state);
+  if (state.ready && window.prerenderReady === true) {
+    return false;
+  }
 
-  state.isReady = true;
-  state.readyRouteKey = normalizedRouteKey;
-  state.activeRouteKey = normalizedRouteKey;
+  clearTimer(state.timeoutId);
+  state.timeoutId = null;
+  state.ready = true;
 
-  // GRÜN
-  (window as any).prerenderReady = true;
+  if (routeKey) {
+    state.routeKey = routeKey;
+  }
 
+  window.prerenderReady = true;
   return true;
 }

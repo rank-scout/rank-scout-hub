@@ -1,21 +1,15 @@
 import { Helmet } from "react-helmet-async";
+import { sanitizeJsonForScript } from "@/lib/seo";
 
-type SchemaValue = Record<string, unknown> | null | undefined;
+type JsonLdSchema = Record<string, unknown>;
 
-interface SchemaInjectorProps {
-  schemas: SchemaValue | SchemaValue[];
-}
+type SchemaInjectorProps = {
+  schemas?: Array<JsonLdSchema | null | undefined | false>;
+};
 
-function serializeSchema(schema: SchemaValue): string {
-  return JSON.stringify(schema)
-    .replace(/</g, "\\u003c")
-    .replace(/-->/g, "--\\>")
-    .replace(/<\/(script)/gi, "<\\/$1");
-}
-
-export function SchemaInjector({ schemas }: SchemaInjectorProps) {
-  const normalizedSchemas = (Array.isArray(schemas) ? schemas : [schemas]).filter(
-    (schema): schema is Record<string, unknown> => Boolean(schema),
+export function SchemaInjector({ schemas = [] }: SchemaInjectorProps) {
+  const normalizedSchemas = schemas.filter(
+    (schema): schema is JsonLdSchema => Boolean(schema) && typeof schema === "object",
   );
 
   if (normalizedSchemas.length === 0) {
@@ -23,12 +17,12 @@ export function SchemaInjector({ schemas }: SchemaInjectorProps) {
   }
 
   return (
-    <Helmet prioritizeSeoTags defer={false}>
+    <Helmet>
       {normalizedSchemas.map((schema, index) => (
         <script
-          key={`${String(schema["@type"] || "schema")}-${index}`}
+          key={`jsonld-${index}`}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeSchema(schema) }}
+          dangerouslySetInnerHTML={{ __html: sanitizeJsonForScript(schema) }}
         />
       ))}
     </Helmet>

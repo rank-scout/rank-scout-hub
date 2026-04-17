@@ -12,13 +12,7 @@ import { AdSenseBanner } from "@/components/ads/AdSenseBanner";
 import { AmazonBanner } from "@/components/ads/AmazonBanner";
 import { LoadingScreen } from "@/components/ui/LoadingScreen";
 import { useGlobalAnalyticsCode } from "@/hooks/useGlobalAnalytics";
-import {
-  useSettings,
-  useHomeLayout,
-  useHomeContent,
-  useSiteTitle,
-  useSiteDescription,
-} from "@/hooks/useSettings";
+import { useSettings, useHomeContent, useHomeLayout, useSiteTitle, useSiteDescription } from "@/hooks/useSettings";
 import { Helmet } from "react-helmet-async";
 import { AppTicker } from "@/components/home/AppTicker";
 import { HowItWorksSection } from "@/components/home/HowItWorksSection";
@@ -28,23 +22,22 @@ import { useForceSEO } from "@/hooks/useForceSEO";
 import { useTrackView } from "@/hooks/useTrackView";
 import { isBotLikeRuntime } from "@/lib/runtimeFlags";
 import { SchemaInjector } from "@/components/seo/SchemaInjector";
-import { buildCanonicalUrl, safeSchemaId, stripHtmlToPlainText } from "@/lib/seo";
+import { buildCanonicalUrl, stripHtmlToPlainText } from "@/lib/seo";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
 
 const Index = () => {
   useTrackView("home", "page");
 
-  const location = useLocation();
-  const hasSignaledReadyRef = useRef(false);
-
   const analyticsCode = useGlobalAnalyticsCode();
   const { data: settings, isLoading: isLoadingSettings } = useSettings();
+  const { content } = useHomeContent();
   const siteTitle = useSiteTitle();
   const siteDescription = useSiteDescription();
   const { sections } = useHomeLayout();
-  const { content } = useHomeContent();
+  const location = useLocation();
   const isBotRuntime = isBotLikeRuntime();
   const shouldShowInitialLoader = !isBotRuntime && (isLoadingSettings || sections.length === 0);
+  const hasSignaledReadyRef = useRef(false);
 
   const safeTitle = typeof siteTitle === "string" && siteTitle.length > 0
     ? siteTitle
@@ -56,101 +49,57 @@ const Index = () => {
 
   const safeKeywords = (settings?.seo_keywords as string) || "Vergleich, Finanzen, Software, Rank-Scout, Erfahrungen, Ratgeber, Überblick";
   const canonicalUrl = buildCanonicalUrl("/");
-  const siteLogoUrl = typeof settings?.site_logo_url === "string" && settings.site_logo_url.trim().length > 0
-    ? settings.site_logo_url.trim()
-    : "https://rank-scout.com/favicon-32x32.png";
 
-  const isHomeFaqSectionEnabled = sections.some((section) => section.id === "home_faq" && section.enabled);
+  const homeFaqSection = sections.find((section) => section.id === "home_faq");
   const homeFaqItems = useMemo(() => {
-    const faqSection = (content as any)?.home_faq;
-    if (!isHomeFaqSectionEnabled || !Array.isArray(faqSection?.items)) {
-      return [] as Array<{ question: string; answer: string }>;
-    }
-
-    return faqSection.items
-      .filter((item: any) => String(item?.question || "").trim() && String(item?.answer || "").trim())
+    const items = Array.isArray(content?.home_faq?.items) ? content.home_faq.items : [];
+    return items
       .map((item: any) => ({
-        question: String(item.question || "").trim(),
-        answer: stripHtmlToPlainText(String(item.answer || "")),
+        question: String(item?.question || "").trim(),
+        answer: stripHtmlToPlainText(String(item?.answer || ""), 2000),
       }))
-      .filter((item: { question: string; answer: string }) => item.question.length > 0 && item.answer.length > 0);
-  }, [content, isHomeFaqSectionEnabled]);
-
-  useForceSEO(safeDescription);
-
-  useEffect(() => {
-    hasSignaledReadyRef.current = false;
-    setPrerenderBlocked({ routeKey: `index:${location.pathname}`, timeoutMs: 12000 });
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const hasSettledSettings = isLoadingSettings === false;
-    const hasLoadedSections = sections.length > 0;
-
-    if (!hasSettledSettings || !hasLoadedSections) return;
-    if (hasSignaledReadyRef.current) return;
-
-    const didSet = setPrerenderReady(`index:${location.pathname}`);
-    if (didSet) {
-      hasSignaledReadyRef.current = true;
-    }
-  }, [isLoadingSettings, sections.length, location.pathname]);
+      .filter((item) => item.question.length > 0 && item.answer.length > 0);
+  }, [content]);
 
   const schemaPayloads = useMemo(() => {
-    const payloads: Record<string, unknown>[] = [
+    const payloads: Array<Record<string, unknown>> = [
       {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        "@id": safeSchemaId(canonicalUrl, "#website"),
+        name: safeTitle,
         url: canonicalUrl,
-        name: "Rank-Scout",
-        alternateName: safeTitle,
         description: safeDescription,
-        inLanguage: "de-DE",
         publisher: {
-          "@id": safeSchemaId(canonicalUrl, "#organization"),
-        },
-        potentialAction: {
-          "@type": "SearchAction",
-          target: `${canonicalUrl}?q={search_term_string}`,
-          "query-input": "required name=search_term_string",
+          "@type": "Organization",
+          name: "Rank-Scout",
+          url: canonicalUrl,
         },
       },
       {
         "@context": "https://schema.org",
         "@type": "Organization",
-        "@id": safeSchemaId(canonicalUrl, "#organization"),
         name: "Rank-Scout",
         url: canonicalUrl,
-        logo: {
-          "@type": "ImageObject",
-          url: siteLogoUrl,
-        },
         description: safeDescription,
-        sameAs: [],
       },
       {
         "@context": "https://schema.org",
         "@type": "WebPage",
-        "@id": safeSchemaId(canonicalUrl, "#webpage"),
-        url: canonicalUrl,
         name: safeTitle,
+        url: canonicalUrl,
         description: safeDescription,
         isPartOf: {
-          "@id": safeSchemaId(canonicalUrl, "#website"),
+          "@type": "WebSite",
+          name: "Rank-Scout",
+          url: canonicalUrl,
         },
-        about: {
-          "@id": safeSchemaId(canonicalUrl, "#organization"),
-        },
-        inLanguage: "de-DE",
       },
     ];
 
-    if (homeFaqItems.length > 0) {
+    if (homeFaqSection?.enabled !== false && homeFaqItems.length > 0) {
       payloads.push({
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        "@id": safeSchemaId(canonicalUrl, "#faq"),
         mainEntity: homeFaqItems.map((item) => ({
           "@type": "Question",
           name: item.question,
@@ -163,25 +112,58 @@ const Index = () => {
     }
 
     return payloads;
-  }, [canonicalUrl, homeFaqItems, safeDescription, safeTitle, siteLogoUrl]);
+  }, [canonicalUrl, homeFaqItems, homeFaqSection?.enabled, safeDescription, safeTitle]);
+
+  useForceSEO(safeDescription);
+
+  useEffect(() => {
+    hasSignaledReadyRef.current = false;
+    setPrerenderBlocked({ routeKey: `index:${location.pathname}`, timeoutMs: 12000 });
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const routeKey = `index:${location.pathname}`;
+    const isReady = isLoadingSettings === false && sections.length > 0 && schemaPayloads.length >= 3;
+
+    if (!isReady || hasSignaledReadyRef.current) {
+      return;
+    }
+
+    let raf1 = 0;
+    let raf2 = 0;
+
+    raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        const didSet = setPrerenderReady(routeKey);
+        if (didSet) {
+          hasSignaledReadyRef.current = true;
+        }
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
+    };
+  }, [isLoadingSettings, location.pathname, schemaPayloads.length, sections.length]);
 
   const seoHead = (
     <>
-      <Helmet prioritizeSeoTags defer={false}>
+      <Helmet>
         <title>{safeTitle}</title>
         <meta name="description" content={safeDescription} />
         <link rel="canonical" href={canonicalUrl} />
-        <meta name="robots" content="index, follow" />
-        <meta name="keywords" content={safeKeywords} />
-        <meta name="author" content="Rank-Scout" />
-        <meta name="publisher" content="Rank-Scout" />
-        <meta property="og:title" content={safeTitle} />
-        <meta property="og:description" content={safeDescription} />
-        <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:type" content="website" />
-        <meta property="og:site_name" content="Rank-Scout" />
-        <meta property="og:locale" content="de_DE" />
-        {analyticsCode ? <script async src={analyticsCode} /> : null}
+      <meta name="robots" content="index, follow" />
+      <meta name="keywords" content={safeKeywords} />
+      <meta name="author" content="Rank-Scout" />
+      <meta name="publisher" content="Rank-Scout" />
+      <meta property="og:title" content={safeTitle} />
+      <meta property="og:description" content={safeDescription} />
+      <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:type" content="website" />
+      <meta property="og:site_name" content="Rank-Scout" />
+      <meta property="og:locale" content="de_DE" />
+      {analyticsCode ? <script async src={analyticsCode} /> : null}
       </Helmet>
       <SchemaInjector schemas={schemaPayloads} />
     </>

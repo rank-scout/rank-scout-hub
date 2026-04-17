@@ -32,10 +32,11 @@ import { toast } from "sonner";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
 import { Helmet } from "react-helmet-async";
 import { SchemaInjector } from "@/components/seo/SchemaInjector";
-import { buildCanonicalUrlFromLocation, safeSchemaId, stripHtmlToPlainText } from "@/lib/seo";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
 import { useTrackView } from "@/hooks/useTrackView";
+import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
+import { buildCanonicalUrlFromLocation, stripHtmlToPlainText } from "@/lib/seo";
 import "@/styles/article-content.css";
 import "@/styles/forum-thread.css";
 
@@ -46,6 +47,7 @@ export default function ForumThread() {
 
   useTrackView(slug, "forum");
   const viewIncremented = useRef(false);
+  const hasSignaledReadyRef = useRef(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -164,76 +166,94 @@ export default function ForumThread() {
   }
 
   useForceSEO(seoDescription);
-  const canonicalUrl = buildCanonicalUrlFromLocation(location.pathname, location.search);
+  const canonicalUrl = buildCanonicalUrlFromLocation(location.pathname);
+  const featuredImageAlt = thread?.featured_image_alt?.trim() || thread?.title || "Rank-Scout Forum Beitrag";
+  const adImageAlt = thread?.ad_image_alt?.trim() || thread?.title || "Rank-Scout Anzeige";
 
-  const discussionSchema = useMemo(() => {
-    if (!thread) return null;
+  const discussionSchemas = useMemo(() => {
+    if (!thread) return [] as Array<Record<string, unknown>>;
 
-    const articleBody = stripHtmlToPlainText(thread.raw_html_content || thread.content || "").slice(0, 5000);
     const replyCount = replies?.length ?? thread.reply_count ?? 0;
-    const totalLikes = replies?.reduce((sum, reply) => sum + (reply.like_count || 0), 0) ?? 0;
-    const commentSchemas = (replies || []).slice(0, 5).map((reply) => ({
+    const likeCount = Number.isFinite(thread.likes_count) ? Number(thread.likes_count) : 0;
+    const articleBody = stripHtmlToPlainText(thread.raw_html_content || thread.content || "", 5000);
+    const visibleComments = (replies || []).slice(0, 5).map((reply) => ({
       "@type": "Comment",
+      text: stripHtmlToPlainText(reply.content, 1000),
+      dateCreated: reply.created_at,
       author: {
         "@type": "Person",
-        name: reply.author_name,
-      },
-      dateCreated: reply.created_at,
-      text: stripHtmlToPlainText(reply.content).slice(0, 1200),
-      interactionStatistic: {
-        "@type": "InteractionCounter",
-        interactionType: { "@type": "LikeAction" },
-        userInteractionCount: reply.like_count || 0,
+        name: reply.author_name || "Unbekannt",
       },
     }));
 
-    const payload: Record<string, unknown> = {
+    const schema: Record<string, unknown> = {
       "@context": "https://schema.org",
       "@type": "DiscussionForumPosting",
-      "@id": safeSchemaId(canonicalUrl, "#discussion"),
-      url: canonicalUrl,
-      headline: stripHtmlToPlainText(seoTitle || thread.title).slice(0, 110),
+      "@id": `${canonicalUrl}#discussion`,
+      mainEntityOfPage: canonicalUrl,
+      headline: thread.title,
       author: {
         "@type": "Person",
-        name: thread.author_name || "Rank-Scout Community",
+        name: thread.author_name || "Unbekannt",
       },
       datePublished: thread.created_at,
       dateModified: thread.updated_at || thread.created_at,
       articleBody,
-      isAccessibleForFree: true,
-      commentCount: replyCount,
       interactionStatistic: [
         {
           "@type": "InteractionCounter",
-          interactionType: { "@type": "CommentAction" },
+          interactionType: "https://schema.org/CommentAction",
           userInteractionCount: replyCount,
         },
         {
           "@type": "InteractionCounter",
-          interactionType: { "@type": "LikeAction" },
-          userInteractionCount: totalLikes,
+          interactionType: "https://schema.org/LikeAction",
+          userInteractionCount: likeCount,
         },
       ],
-      mainEntityOfPage: canonicalUrl,
-      publisher: {
-        "@type": "Organization",
-        name: "Rank-Scout",
-        url: "https://rank-scout.com/",
-      },
-      ...(seoDescription ? { description: seoDescription } : {}),
-      ...(thread.featured_image_url ? {
-        image: {
-          "@type": "ImageObject",
-          url: optimizeSupabaseImageUrl(thread.featured_image_url, 1200, 80),
-        },
-      } : {}),
-      ...(commentSchemas.length > 0 ? { comment: commentSchemas } : {}),
     };
 
-    return payload;
-  }, [canonicalUrl, replies, seoDescription, seoTitle, thread]);
-  const featuredImageAlt = thread?.featured_image_alt?.trim() || thread?.title || "Rank-Scout Forum Beitrag";
-  const adImageAlt = thread?.ad_image_alt?.trim() || thread?.title || "Rank-Scout Anzeige";
+    if (visibleComments.length > 0) {
+      schema.comment = visibleComments;
+    }
+
+    if (thread.featured_image_url) {
+      schema.image = optimizeSupabaseImageUrl(thread.featured_image_url, 1200, 80);
+    }
+
+    return [schema];
+  }, [canonicalUrl, replies, thread]);
+
+  useEffect(() => {
+    hasSignaledReadyRef.current = false;
+    setPrerenderBlocked({ routeKey: `forum:${location.pathname}`, timeoutMs: 12000 });
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const routeKey = `forum:${location.pathname}`;
+    const isCriticalLoaded = threadLoading === false && (thread ? repliesLoading === false : true);
+
+    if (!isCriticalLoaded || hasSignaledReadyRef.current) {
+      return;
+    }
+
+    let raf1 = 0;
+    let raf2 = 0;
+
+    raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        const didSet = setPrerenderReady(routeKey);
+        if (didSet) {
+          hasSignaledReadyRef.current = true;
+        }
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
+    };
+  }, [discussionSchemas.length, location.pathname, repliesLoading, thread, threadLoading]);
 
   const getInitial = (name: string) => (name ? name.charAt(0).toUpperCase() : "U");
 
@@ -298,7 +318,7 @@ export default function ForumThread() {
         )}
         {thread.ad_image_url && <meta name="rank-scout:ad-image-alt" content={adImageAlt} />}
       </Helmet>
-      <SchemaInjector schemas={discussionSchema} />
+      <SchemaInjector schemas={discussionSchemas} />
 
       <Header />
 
