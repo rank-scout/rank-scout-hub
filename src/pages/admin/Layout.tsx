@@ -20,6 +20,7 @@ import {
   Network,
   ChevronRight,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -34,6 +35,7 @@ const navItems = [
   { label: "Massen-Generator", icon: UploadCloud, path: "/admin/multi-publisher" },
   { label: "Redirects", icon: BarChart3, path: "/admin/redirects" },
   { label: "Footer-Links", icon: Link2, path: "/admin/footer-links" },
+  { label: "Über uns", icon: Users, path: "/admin/about" },
   { label: "Leads", icon: Mail, path: "/admin/leads" },
   { label: "Einstellungen", icon: Settings, path: "/admin/settings" },
 ];

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import type { TrendingLink } from "@/lib/schemas";
 import { getCategoriesRoute, normalizeNavigableHref } from "@/lib/routes";
+import { ABOUT_PAGE_SETTING_KEY } from "@/lib/aboutContent";
 export const PUBLIC_SETTINGS_KEYS = [
   "active_theme",
   "home_sections",
@@ -41,7 +42,8 @@ export const PUBLIC_SETTINGS_KEYS = [
   "top_bar_link",
   "top_bar_active",
   "newsletter_active",
-  "popup_active"
+  "popup_active",
+  ABOUT_PAGE_SETTING_KEY
 ];
 
 // --- HELPER FÜR TOXIC_WORD_ERROR ---
