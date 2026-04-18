@@ -19,6 +19,8 @@ const corsHeaders = {
 
 const BUCKET_NAME = "seo-assets";
 const SITEMAP_PATH = "sitemap.xml";
+const ABOUT_PAGE_SETTING_KEY = "about_page_content";
+const DEFAULT_ABOUT_SLUG = "ueber-uns";
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -50,6 +52,31 @@ function getIsoDate(value?: string | null) {
     return new Date().toISOString().slice(0, 10);
   }
   return date.toISOString().slice(0, 10);
+}
+
+function getStringValue(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function getBooleanValue(value: unknown, fallback: boolean): boolean {
+  if (typeof value === "boolean") return value;
+  return fallback;
+}
+
+function getAboutPagePath(value: unknown): string | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return normalizeRoutePath(DEFAULT_ABOUT_SLUG);
+  }
+
+  const content = value as Record<string, unknown>;
+  const isEnabled = getBooleanValue(content.enabled ?? content.is_enabled, true);
+
+  if (!isEnabled) {
+    return null;
+  }
+
+  const slug = getStringValue(content.slug) || DEFAULT_ABOUT_SLUG;
+  return normalizeRoutePath(slug);
 }
 
 async function ensureAdminUser(supabaseUrl: string, supabaseAnonKey: string, serviceRoleKey: string, authHeader: string) {
@@ -182,7 +209,7 @@ Deno.serve(async (req) => {
       authHeader,
     );
 
-    const [categoriesResult, projectsResult, forumThreadsResult] = await Promise.all([
+    const [categoriesResult, projectsResult, forumThreadsResult, aboutPageResult] = await Promise.all([
       adminClient
         .from("categories")
         .select("slug, updated_at, created_at")
@@ -194,11 +221,17 @@ Deno.serve(async (req) => {
       adminClient
         .from("forum_threads")
         .select("slug, updated_at, created_at"),
+      adminClient
+        .from("settings")
+        .select("value, updated_at")
+        .eq("key", ABOUT_PAGE_SETTING_KEY)
+        .maybeSingle(),
     ]);
 
     if (categoriesResult.error) throw categoriesResult.error;
     if (projectsResult.error) throw projectsResult.error;
     if (forumThreadsResult.error) throw forumThreadsResult.error;
+    if (aboutPageResult.error) throw aboutPageResult.error;
 
     const urlMap = new Map<string, UrlEntry>();
     const today = getIsoDate();
@@ -212,6 +245,17 @@ Deno.serve(async (req) => {
     addUrl(urlMap, "/agb", today, "monthly", "0.3");
     addUrl(urlMap, "/wie-wir-vergleichen", today, "monthly", "0.5");
     addUrl(urlMap, "/top-apps", today, "weekly", "0.6");
+
+    const aboutPath = getAboutPagePath(aboutPageResult.data?.value ?? null);
+    if (aboutPath) {
+      addUrl(
+        urlMap,
+        aboutPath,
+        getIsoDate(aboutPageResult.data?.updated_at),
+        "monthly",
+        "0.5",
+      );
+    }
 
     for (const category of categoriesResult.data ?? []) {
       const slug = String(category.slug ?? "").trim();
