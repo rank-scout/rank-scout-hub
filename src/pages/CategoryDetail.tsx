@@ -30,6 +30,7 @@ import { useTrackView } from "@/hooks/useTrackView";
 
 import { AffiliateDisclaimer } from "@/components/AffiliateDisclaimer";
 import { StarRatingWidget } from "@/components/StarRatingWidget";
+import { RelatedComparisons } from "@/components/comparison/RelatedComparisons";
 import { sanitizeCmsHtml, sanitizeCmsHtmlWithBreaks } from "@/lib/sanitizeHtml";
 import { getCategoryCanonicalUrl } from "@/lib/routes";
 import { setPrerenderBlocked, setPrerenderReady } from "@/lib/prerender";
@@ -381,6 +382,8 @@ export default function CategoryDetail() {
                     projects.length > 0 && (<div id="vergleich" className="scroll-mt-32 mb-10"><div className="mb-8 px-2"><Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">{category.hero_badge_text || "Ausgewählte Anbieter"}</Badge><h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">{comparisonTitle}</h2></div><div className="space-y-6">{projects.map((proj, idx) => (<ProjectCard key={proj.id} project={proj} index={idx} category={category} />))}</div></div>)
                 )}
 
+                <RelatedComparisons currentSlug={category.slug} />
+
                 <div className="mb-16">
                     <AffiliateDisclaimer />
                 </div>
@@ -482,7 +485,12 @@ export default function CategoryDetail() {
       )}
       
       {category.custom_html_override ? (
-        <><Header /><CustomHtmlRenderer category={category} projects={projects} htmlContent={category.custom_html_override} /><Footer /></>
+        <>
+          <Header />
+          <CustomHtmlRenderer category={category} projects={projects} htmlContent={category.custom_html_override} />
+          <RelatedComparisons currentSlug={category.slug} />
+          <Footer />
+        </>
       ) : (
         <><Header /><ComparisonTemplate category={category} projects={projects} /><Footer /></>
       )}

@@ -3,6 +3,7 @@ import React from 'react';
 import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
 import { optimizeSupabaseImageUrl, sanitizeCmsHtml } from '@/lib/sanitizeHtml';
 import { RawJsonLd } from '@/components/seo/SchemaInjector';
+import { RelatedComparisons } from '@/components/comparison/RelatedComparisons';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
 interface Project {
@@ -341,6 +342,8 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
                 </div>
             </div>
         </section>
+
+        <RelatedComparisons currentSlug={category.slug} />
 
         {/* TESTIMONIALS (Server Side Rendered) */}
         {testimonials.length > 0 && (

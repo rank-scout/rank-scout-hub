@@ -64,11 +64,16 @@ const CATEGORY_PUBLIC_LIST_SELECT = `
   icon,
   theme,
   template,
+  meta_title,
   meta_description,
+  h1_title,
+  comparison_title,
   button_text,
   is_active,
   sort_order,
-  card_image_url
+  card_image_url,
+  hero_image_url,
+  custom_css
 `;
 
 export const useCategories = (includeInactive: boolean = false) => {
