@@ -8,6 +8,7 @@ export const Footer = () => {
 
   const legalLinks = config.legal_links || [];
   const popularLinks = config.popular_links || [];
+  const toolsLinks = config.tools_links || [];
 
   // KYRA FIX: Trigger-Funktion für Cookie-Einstellungen
   const openCookieSettings = (e: React.MouseEvent) => {
@@ -53,7 +54,7 @@ export const Footer = () => {
       <div className="container mx-auto px-4 relative z-10">
         
         {/* Main Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10 mb-16">
           
           {/* 1. BRANDING (CONSISTENT) */}
           <div className="space-y-6 sm:col-span-2 lg:col-span-1">
@@ -91,53 +92,24 @@ export const Footer = () => {
           <div>
             <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Rechtliches</h4>
             <ul className="space-y-3">
-              {/* KONTAKT LINK */}
-              <li>
-                  <Link 
-                    to="/kontakt" 
-                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
-                  >
-                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
-                    Kontakt
-                  </Link>
-              </li>
-
-              <li>
-                  <Link 
-                    to="/wie-wir-vergleichen" 
-                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
-                  >
-                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
-                    Wie wir vergleichen
-                  </Link>
-              </li>
-
-              <li>
-                  <Link 
-                    to="/kategorien" 
-                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
-                  >
-                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
-                    Alle Kategorien
-                  </Link>
-              </li>
-
+              {/* Dynamische Links aus der Datenbank */}
               {legalLinks.map((link: any, i: number) => (
-                 <li key={i}>
-                  <Link 
-                    to={normalizeNavigableHref(link.url)} 
+                <li key={i}>
+                  <Link
+                    to={normalizeNavigableHref(String(link?.url ?? "").trim())}
                     className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
                   >
                     <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
-                    {link.label}
+                    {String(link?.label ?? "").trim()}
                   </Link>
                 </li>
               ))}
-              {/* COOKIE SETTINGS BUTTON */}
+              
+              {/* Fester Button für Cookie-Einstellungen */}
               <li>
-                <button 
+                <button
                   onClick={openCookieSettings}
-                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group w-full text-left"
+                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group w-full text-left cursor-pointer"
                 >
                   <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
                   Cookie-Einstellungen
@@ -150,42 +122,17 @@ export const Footer = () => {
           <div>
             <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Tools & Services</h4>
             <ul className="space-y-3">
-              <li>
-                <Link 
-                  to="/kuendigung-vorlage" 
-                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
-                  Kündigung Vorlage
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/kategorien" 
-                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
-                  Alle Vergleiche
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/wie-wir-vergleichen" 
-                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
-                  Wie wir vergleichen
-                </Link>
-              </li>
-              <li>
-                <Link 
-                  to="/kontakt" 
-                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
-                >
-                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
-                  Kontakt
-                </Link>
-              </li>
+              {toolsLinks.map((link: any, i: number) => (
+                <li key={i}>
+                  <Link 
+                    to={normalizeNavigableHref(String(link?.url ?? "").trim())} 
+                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                  >
+                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                    {String(link?.label ?? "").trim()}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 

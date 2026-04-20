@@ -95,12 +95,14 @@ type HeaderConfigLike = {
   button_url?: string | null;
   nav_links?: LinkTreeNode[] | null;
   hub_links?: LinkTreeNode[] | null;
+  tools_links?: LinkTreeNode[] | null;
   [key: string]: unknown;
 };
 
 type FooterConfigLike = {
   legal_links?: LinkTreeNode[] | null;
   popular_links?: LinkTreeNode[] | null;
+  tools_links?: LinkTreeNode[] | null;
   [key: string]: unknown;
 };
 
@@ -139,6 +141,7 @@ export function normalizeHeaderConfigLinks<T extends HeaderConfigLike>(config: T
     button_url: normalizeNavigableHref(config.button_url),
     nav_links: normalizeLinkTree(config.nav_links),
     hub_links: normalizeLinkTree(config.hub_links),
+    tools_links: normalizeLinkTree(config.tools_links),
   };
 }
 
@@ -147,6 +150,7 @@ export function normalizeFooterConfigLinks<T extends FooterConfigLike>(config: T
     ...config,
     legal_links: normalizeLinkTree(config.legal_links),
     popular_links: normalizeLinkTree(config.popular_links),
+    tools_links: normalizeLinkTree(config.tools_links),
   };
 }
 

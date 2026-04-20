@@ -22,7 +22,7 @@ import {
   DollarSign, Image as ImageIcon, Upload, Link as LinkIcon,
   Target, Users, Plus, Menu as MenuIcon, MessageSquare, ShieldCheck, List,
   Mail, Megaphone, PaintBucket, ArrowUp, ArrowDown, Type, Rocket, X,
-  ShieldAlert, ShieldOff
+  ShieldAlert, ShieldOff, FileText
 } from "lucide-react";
 import type { Json } from "@/integrations/supabase/types";
 import { Switch } from "@/components/ui/switch";
@@ -300,16 +300,39 @@ export default function AdminSettings() {
     made_in_text: "in Germany", 
     disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn Sie über einen Link auf dieser Seite einkaufen, erhalten wir möglicherweise eine Provision. Der Preis für Sie ändert sich dabei nicht. Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.",
     legal_links: [
+      { label: "Kontakt", url: "/kontakt" },
+      { label: "Wie wir vergleichen", url: "/wie-wir-vergleichen" },
+      { label: "Alle Kategorien", url: "/kategorien" },
       { label: "Impressum", url: "/impressum" },
       { label: "Datenschutz", url: "/datenschutz" },
       { label: "AGB", url: "/agb" },
-      { label: "Sicherheit", url: "/sicherheit" }
+      { label: "Über uns", url: "/ueber-uns" },
+      { label: "Cookie-Einstellungen", url: "/cookie-einstellungen" }
     ],
     popular_links: [
       { label: "Versicherungen", url: getCategoriesRoute() },
       { label: "Finanzen & Krypto", url: getCategoriesRoute() },
       { label: "KI & Software", url: getCategoriesRoute() }
+    ],
+    tools_links: [
+      { label: "Kündigung Vorlage", url: "/kuendigung-vorlage" },
+      { label: "Alle Vergleiche", url: "/kategorien" },
+      { label: "Wie wir vergleichen", url: "/wie-wir-vergleichen" },
+      { label: "Kontakt", url: "/kontakt" },
+      { label: "Cookie-Einstellungen", url: "/cookie-einstellungen" }
     ]
+  };
+
+  const mergeLinksByIdentity = (defaults: any[] = [], current: any[] = []) => {
+    const normalizedCurrent = Array.isArray(current) ? current : [];
+    const seen = new Set(
+      normalizedCurrent.map((item: any) => `${String(item?.label ?? "").trim().toLowerCase()}|${String(item?.url ?? "").trim().toLowerCase()}`)
+    );
+    const missingDefaults = defaults.filter((item: any) => {
+      const key = `${String(item?.label ?? "").trim().toLowerCase()}|${String(item?.url ?? "").trim().toLowerCase()}`;
+      return !seen.has(key);
+    });
+    return [...normalizedCurrent, ...missingDefaults];
   };
 
   const [headerConfig, setHeaderConfig] = useState<any>(defaultHeaderConfig);
@@ -369,7 +392,11 @@ export default function AdminSettings() {
     }
     // @ts-ignore
     if (settings.footer_config) {
-      setFooterConfig((prev: any) => normalizeFooterConfigValue({ ...prev, ...(settings.footer_config as any) }));
+      const nextFooter = normalizeFooterConfigValue({ ...defaultFooterConfig, ...(settings.footer_config as any) });
+      nextFooter.legal_links = mergeLinksByIdentity(defaultFooterConfig.legal_links, nextFooter.legal_links);
+      nextFooter.popular_links = mergeLinksByIdentity(defaultFooterConfig.popular_links, nextFooter.popular_links);
+      nextFooter.tools_links = mergeLinksByIdentity(defaultFooterConfig.tools_links, nextFooter.tools_links);
+      setFooterConfig(nextFooter);
     }
 
     setInitialized(true);
@@ -577,6 +604,30 @@ export default function AdminSettings() {
     setHeaderConfig({ ...headerConfig, hub_links: newLinks });
   };
 
+  const addHeaderToolLink = () => {
+    const newLinks = [...(headerConfig.tools_links || []), { label: "Neuer Tool-Link", url: "/", icon: "FileText", enabled: true }];
+    setHeaderConfig({ ...headerConfig, tools_links: newLinks });
+  };
+
+  const removeHeaderToolLink = (index: number) => {
+    const newLinks = [...(headerConfig.tools_links || [])];
+    newLinks.splice(index, 1);
+    setHeaderConfig({ ...headerConfig, tools_links: newLinks });
+  };
+
+  const updateHeaderToolLink = (index: number, field: string, value: string) => {
+    const newLinks = [...(headerConfig.tools_links || [])];
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setHeaderConfig({ ...headerConfig, tools_links: newLinks });
+  };
+
+  const toggleHeaderToolLink = (index: number) => {
+    const newLinks = [...(headerConfig.tools_links || [])];
+    const currentStatus = newLinks[index].enabled !== false;
+    newLinks[index] = { ...newLinks[index], enabled: !currentStatus };
+    setHeaderConfig({ ...headerConfig, tools_links: newLinks });
+  };
+
   // --- FOOTER LINKS ---
   const addLegalLink = () => {
     const newLinks = [...(footerConfig.legal_links || []), { label: "Neuer Link", url: "/" }];
@@ -610,6 +661,24 @@ export default function AdminSettings() {
     const newLinks = [...(footerConfig.popular_links || [])];
     newLinks[index] = { ...newLinks[index], [field]: value };
     setFooterConfig({ ...footerConfig, popular_links: newLinks });
+  };
+
+
+  const addFooterToolLink = () => {
+    const newLinks = [...(footerConfig.tools_links || []), { label: "Neuer Tool-Link", url: "/" }];
+    setFooterConfig({ ...footerConfig, tools_links: newLinks });
+  };
+
+  const removeFooterToolLink = (index: number) => {
+    const newLinks = [...(footerConfig.tools_links || [])];
+    newLinks.splice(index, 1);
+    setFooterConfig({ ...footerConfig, tools_links: newLinks });
+  };
+
+  const updateFooterToolLink = (index: number, field: string, value: string) => {
+    const newLinks = [...(footerConfig.tools_links || [])];
+    newLinks[index] = { ...newLinks[index], [field]: value };
+    setFooterConfig({ ...footerConfig, tools_links: newLinks });
   };
 
   // --- HEADER SUB-LINKS LOGIC ---
@@ -1097,7 +1166,18 @@ export default function AdminSettings() {
               </div>
 
               <div className="pt-6 border-t border-border space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300"><FileText className="w-4 h-4" /> Mobile Tools & Services</h4>
+                {headerConfig.tools_links?.map((link: any, idx: number) => (
+                  <div key={idx} className="grid md:grid-cols-[1fr_1fr_180px_auto_auto] gap-3 items-end">
+                    <div className="space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateHeaderToolLink(idx, 'label', e.target.value)} /></div>
+                    <div className="space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateHeaderToolLink(idx, 'url', e.target.value)} /></div>
+                    <div className="space-y-1"><Label className="text-xs">Icon</Label><Input value={link.icon || 'FileText'} onChange={e => updateHeaderToolLink(idx, 'icon', e.target.value)} /></div>
+                    <div className="flex items-center justify-between rounded-md border border-border px-3 h-10"><span className="text-xs text-muted-foreground">Aktiv</span><Switch checked={link.enabled !== false} onCheckedChange={() => toggleHeaderToolLink(idx)} /></div>
+                    <Button variant="ghost" size="icon" onClick={() => removeHeaderToolLink(idx)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={addHeaderToolLink}><Plus className="w-3 h-3 mr-2" /> Tool-Link hinzufügen</Button>
+                <div className="grid md:grid-cols-2 gap-4 pt-2">
                   <div className="space-y-2"><Label>Button Text</Label><Input value={headerConfig.button_text} onChange={e => setHeaderConfig({ ...headerConfig, button_text: e.target.value })} /></div>
                   <div className="space-y-2"><Label>Button Ziel</Label><Input value={headerConfig.button_url} onChange={e => setHeaderConfig({ ...headerConfig, button_url: e.target.value })} /></div>
                 </div>
@@ -1131,6 +1211,18 @@ export default function AdminSettings() {
                   </div>
                 ))}
                 <Button variant="outline" size="sm" onClick={addPopularLink}><Plus className="w-3 h-3 mr-2" /> Neu</Button>
+              </div>
+
+              <div className="space-y-4 border-t pt-6">
+                <h4 className="font-medium flex items-center gap-2 text-slate-700 dark:text-slate-300"><FileText className="w-4 h-4" /> Tools & Services</h4>
+                {footerConfig.tools_links?.map((link: any, idx: number) => (
+                  <div key={idx} className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-1"><Label className="text-xs">Beschriftung</Label><Input value={link.label} onChange={e => updateFooterToolLink(idx, 'label', e.target.value)} /></div>
+                    <div className="flex-1 space-y-1"><Label className="text-xs">Ziel-URL</Label><Input value={link.url} onChange={e => updateFooterToolLink(idx, 'url', e.target.value)} /></div>
+                    <Button variant="ghost" size="icon" onClick={() => removeFooterToolLink(idx)}><Trash2 className="w-4 h-4 text-destructive" /></Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={addFooterToolLink}><Plus className="w-3 h-3 mr-2" /> Neu</Button>
               </div>
 
               <Button onClick={saveFooter} className="w-full mt-2 bg-primary"><Save className="w-4 h-4 mr-2" /> Footer Links Speichern</Button>

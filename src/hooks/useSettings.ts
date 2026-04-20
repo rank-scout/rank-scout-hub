@@ -302,7 +302,8 @@ export const defaultHeaderConfig = {
   button_text: "Jetzt vergleichen", 
   button_url: getCategoriesRoute(), 
   nav_links: [{ label: "Versicherungen", url: getCategoriesRoute() }, { label: "Finanzen & Krypto", url: getCategoriesRoute() }, { label: "KI & Software", url: getCategoriesRoute() }], 
-  hub_links: [{ label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, { label: "Community", url: "/forum", icon: "Users" }] 
+  hub_links: [{ label: "Vergleichs-Hub", url: "/kategorien", icon: "LayoutGrid" }, { label: "Arcade", url: "/arcade", icon: "Gamepad2" }, { label: "Brain-Boost", url: "/brain-boost", icon: "BrainCircuit" }, { label: "Community", url: "/forum", icon: "Users" }],
+  tools_links: [{ label: "Kündigung Vorlage", url: "/kuendigung-vorlage", icon: "FileText" }] 
 };
 
 export const defaultFooterConfig = { 
@@ -314,8 +315,18 @@ export const defaultFooterConfig = {
   made_with_text: "Made with", 
   made_in_text: "in Germany", 
   disclaimer: "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn du über einen Link auf dieser Seite einkaufst, erhalten wir möglicherweise eine Provision. Der Preis für dich ändert sich dabei nicht. Unsere Inhalte werden redaktionell erstellt und fortlaufend gepflegt.", 
-  legal_links: [{ label: "Impressum", url: "/impressum" }, { label: "Datenschutz", url: "/datenschutz" }, { label: "AGB", url: "/agb" }], 
-  popular_links: [{ label: "Versicherungen", url: getCategoriesRoute() }, { label: "Finanzen & Krypto", url: getCategoriesRoute() }, { label: "KI & Software", url: getCategoriesRoute() }] 
+  legal_links: [
+    { label: "Kontakt", url: "/kontakt" },
+    { label: "Wie wir vergleichen", url: "/wie-wir-vergleichen" },
+    { label: "Alle Kategorien", url: "/kategorien" },
+    { label: "Impressum", url: "/impressum" },
+    { label: "Datenschutz", url: "/datenschutz" },
+    { label: "AGB", url: "/agb" },
+    { label: "Über uns", url: "/ueber-uns" },
+    { label: "Cookie-Einstellungen", url: "/cookie-einstellungen" }
+  ], 
+  popular_links: [{ label: "Versicherungen", url: getCategoriesRoute() }, { label: "Finanzen & Krypto", url: getCategoriesRoute() }, { label: "KI & Software", url: getCategoriesRoute() }],
+  tools_links: [{ label: "Kündigung Vorlage", url: "/kuendigung-vorlage" }, { label: "Alle Vergleiche", url: "/kategorien" }, { label: "Wie wir vergleichen", url: "/wie-wir-vergleichen" }, { label: "Kontakt", url: "/kontakt" }, { label: "Cookie-Einstellungen", url: "/cookie-einstellungen" }] 
 };
 
 export const defaultScoutyConfig = { 
@@ -342,6 +353,7 @@ export function normalizeHeaderConfigValue(config: any = {}) {
     button_url: normalizeNavigableHref(String(config?.button_url ?? getCategoriesRoute())),
     nav_links: normalizeLinkConfigItems(config?.nav_links),
     hub_links: normalizeLinkConfigItems(config?.hub_links),
+    tools_links: normalizeLinkConfigItems(config?.tools_links),
   };
 }
 
@@ -350,6 +362,7 @@ export function normalizeFooterConfigValue(config: any = {}) {
     ...config,
     legal_links: normalizeLinkConfigItems(config?.legal_links),
     popular_links: normalizeLinkConfigItems(config?.popular_links),
+    tools_links: normalizeLinkConfigItems(config?.tools_links),
   };
 }
 

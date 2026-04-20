@@ -7,7 +7,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { normalizeNavigableHref } from "@/lib/routes";
 
 const iconMap: Record<string, any> = {
-  LayoutGrid, Gamepad2, BrainCircuit, Users
+  LayoutGrid, Gamepad2, BrainCircuit, Users, FileText
 };
 
 interface HeaderProps {
@@ -22,6 +22,7 @@ export const Header = ({ transparent = false }: HeaderProps) => {
 
   const navLinks = config.nav_links || [];
   const hubLinks = config.hub_links || [];
+  const toolsLinks = config.tools_links || [];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -250,6 +251,29 @@ export const Header = ({ transparent = false }: HeaderProps) => {
                 })}
             </div>
 
+
+            {toolsLinks.filter((link: any) => link.enabled !== false).length > 0 && (
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500 mb-3">Tools & Services</div>
+                <div className="flex flex-col gap-2">
+                  {toolsLinks.filter((link: any) => link.enabled !== false).map((link: any, idx: number) => {
+                    const Icon = iconMap[link.icon] || FileText;
+                    return (
+                      <Link
+                        key={`${link.label}-${idx}`}
+                        to={normalizeNavigableHref(link.url)}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 hover:border-secondary/40 hover:text-primary transition-all"
+                      >
+                        <Icon className="w-4 h-4 text-secondary" />
+                        <span>{link.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Main Navigation (with Accordion for Submenus) */}
             <div className="flex flex-col">
                 <Accordion type="single" collapsible className="w-full space-y-2">
@@ -293,25 +317,6 @@ export const Header = ({ transparent = false }: HeaderProps) => {
                     );
                   })}
                 </Accordion>
-            </div>
-
-
-            {/* Tools & Services */}
-            <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500 mb-3">Tools &amp; Services</div>
-              <Link
-                to="/kuendigung-vorlage"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center justify-between rounded-xl bg-white border border-slate-200 px-4 py-3 text-base font-semibold text-slate-800 hover:border-orange-300 hover:bg-orange-50 transition-colors group"
-              >
-                <span className="flex items-center gap-3">
-                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-secondary border border-orange-200">
-                    <FileText className="w-5 h-5" />
-                  </span>
-                  Kündigung Vorlage
-                </span>
-                <span className="text-slate-300 group-hover:text-secondary group-hover:translate-x-1 transition-all">→</span>
-              </Link>
             </div>
 
             <Link to={normalizeNavigableHref(config.button_url)} onClick={() => setIsMobileMenuOpen(false)} className="mt-4">
