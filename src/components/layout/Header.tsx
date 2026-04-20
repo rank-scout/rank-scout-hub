@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Gamepad2, BrainCircuit, Users, LayoutGrid, ChevronDown } from "lucide-react";
+import { Menu, X, Gamepad2, BrainCircuit, Users, LayoutGrid, ChevronDown, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useHeaderConfig } from "@/hooks/useSettings";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -293,6 +293,25 @@ export const Header = ({ transparent = false }: HeaderProps) => {
                     );
                   })}
                 </Accordion>
+            </div>
+
+
+            {/* Tools & Services */}
+            <div className="mt-2 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div className="text-xs font-extrabold uppercase tracking-[0.18em] text-slate-500 mb-3">Tools &amp; Services</div>
+              <Link
+                to="/kuendigung-vorlage"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center justify-between rounded-xl bg-white border border-slate-200 px-4 py-3 text-base font-semibold text-slate-800 hover:border-orange-300 hover:bg-orange-50 transition-colors group"
+              >
+                <span className="flex items-center gap-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-secondary border border-orange-200">
+                    <FileText className="w-5 h-5" />
+                  </span>
+                  Kündigung Vorlage
+                </span>
+                <span className="text-slate-300 group-hover:text-secondary group-hover:translate-x-1 transition-all">→</span>
+              </Link>
             </div>
 
             <Link to={normalizeNavigableHref(config.button_url)} onClick={() => setIsMobileMenuOpen(false)} className="mt-4">

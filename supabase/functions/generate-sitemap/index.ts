@@ -59,11 +59,12 @@ function getStringValue(value: unknown): string {
 }
 
 function getBooleanValue(value: unknown, fallback: boolean): boolean {
-  if (typeof value === "boolean") return value;
-  return fallback;
+  return typeof value === "boolean" ? value : fallback;
 }
 
 function getAboutPagePath(value: unknown): string | null {
+  // Wenn der Admin-Setting-Eintrag fehlt, ist /ueber-uns trotzdem eine echte React-Route.
+  // Deshalb wird der Default-Slug bewusst aufgenommen, statt die Seite aus der Sitemap zu verlieren.
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return normalizeRoutePath(DEFAULT_ABOUT_SLUG);
   }
@@ -310,6 +311,8 @@ Deno.serve(async (req) => {
       url_count: urlEntries.length,
       public_url: publicUrlData.publicUrl,
       site_url: siteUrl,
+      about_page_path: aboutPath,
+      about_page_included: Boolean(aboutPath && urlMap.has(aboutPath)),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

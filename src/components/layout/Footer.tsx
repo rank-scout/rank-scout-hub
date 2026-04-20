@@ -53,7 +53,7 @@ export const Footer = () => {
       <div className="container mx-auto px-4 relative z-10">
         
         {/* Main Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-10 lg:gap-12 mb-16">
           
           {/* 1. BRANDING (CONSISTENT) */}
           <div className="space-y-6 sm:col-span-2 lg:col-span-1">
@@ -146,7 +146,50 @@ export const Footer = () => {
             </ul>
           </div>
 
-          {/* 4. Quality Badge */}
+          {/* 4. Tools & Services */}
+          <div>
+            <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Tools & Services</h4>
+            <ul className="space-y-3">
+              <li>
+                <Link 
+                  to="/kuendigung-vorlage" 
+                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                >
+                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                  Kündigung Vorlage
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/kategorien" 
+                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                >
+                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                  Alle Vergleiche
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/wie-wir-vergleichen" 
+                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                >
+                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                  Wie wir vergleichen
+                </Link>
+              </li>
+              <li>
+                <Link 
+                  to="/kontakt" 
+                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                >
+                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                  Kontakt
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* 5. Quality Badge */}
           <div className="flex flex-col justify-start">
             <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Transparenz</h4>
             <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md hover:bg-white/10 transition-colors cursor-default group">
