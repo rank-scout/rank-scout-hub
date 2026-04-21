@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
+import { ForumComparisonSlider } from "@/components/forum/ForumComparisonSlider";
 import { Helmet } from "react-helmet-async";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
@@ -133,13 +134,23 @@ export default function ForumThread() {
     }
   };
 
-  const renderContent = () => {
-    if (!thread) return { __html: "" };
+  const getArticleHtml = () => {
+    if (!thread) return "";
+    return thread.raw_html_content || thread.content || "";
+  };
 
-    const htmlContent = thread.raw_html_content || thread.content;
+  const splitArticleBeforeFaq = () => {
+    const htmlContent = getArticleHtml();
+    const faqRegex = /<h[23][^>]*>\s*(?:\d+\.\s*)?(?:Häufige Fragen|FAQ)[\s\S]*?<\/h[23]>/i;
+    const match = faqRegex.exec(htmlContent);
+
+    if (!match || typeof match.index !== "number") {
+      return { beforeFaq: sanitizeForumHtml(htmlContent), faqAndAfter: "" };
+    }
 
     return {
-      __html: sanitizeForumHtml(htmlContent),
+      beforeFaq: sanitizeForumHtml(htmlContent.slice(0, match.index)),
+      faqAndAfter: sanitizeForumHtml(htmlContent.slice(match.index)),
     };
   };
 
@@ -428,10 +439,27 @@ export default function ForumThread() {
                     <div className="mx-auto w-full max-w-4xl px-1 sm:px-2">
                       <article
                         className="forum-thread-html article-content article-content--lg article-content--brand article-content--forum article-content--soft max-w-none"
-                        dangerouslySetInnerHTML={renderContent()}
+                        dangerouslySetInnerHTML={{ __html: splitArticleBeforeFaq().beforeFaq }}
                       />
                     </div>
                   </FadeIn>
+
+                  <ForumComparisonSlider
+                    currentSlug={thread.slug}
+                    categoryId={thread.category_id}
+                    threadTitle={thread.title}
+                  />
+
+                  {splitArticleBeforeFaq().faqAndAfter ? (
+                    <FadeIn>
+                      <div className="mx-auto mt-8 w-full max-w-4xl px-1 sm:px-2">
+                        <article
+                          className="forum-thread-html article-content article-content--lg article-content--brand article-content--forum article-content--soft max-w-none"
+                          dangerouslySetInnerHTML={{ __html: splitArticleBeforeFaq().faqAndAfter }}
+                        />
+                      </div>
+                    </FadeIn>
+                  ) : null}
                 </div>
 
                 {/* Kommentare Sektion */}
@@ -596,7 +624,7 @@ export default function ForumThread() {
               {/* Sidebar */}
               <aside className="lg:w-[30%] lg:self-start">
                 <div className="sticky top-[90px]">
-                  <ForumSidebar />
+                  <ForumSidebar categoryId={thread.category_id} threadTitle={thread.title} />
                 </div>
               </aside>
             </div>

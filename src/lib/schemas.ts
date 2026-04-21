@@ -185,6 +185,8 @@ export const homeContentSchema = z.object({
     headline: z.string().default("Aktuelles & Ratgeber"),
     subheadline: z.string().default("Expertenwissen für deinen Erfolg."),
     count: z.number().default(3),
+    button_text: z.string().default("Alle Vergleiche ansehen"),
+    button_url: z.string().default("/kategorien"),
     read_more: z.string().default("Artikel lesen")
   }).default({}),
   forum_teaser: z.object({

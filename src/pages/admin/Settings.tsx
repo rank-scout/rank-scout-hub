@@ -31,7 +31,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getCategoriesRoute, getCategoryRoute } from "@/lib/routes";
-import { normalizeFooterConfigValue, normalizeHeaderConfigValue } from "@/hooks/useSettings";
+import { normalizeFooterConfigValue, normalizeHeaderConfigValue, useForumSidebarConfig, defaultForumSidebarConfig } from "@/hooks/useSettings";
+import { useCategories } from "@/hooks/useCategories";
 import { HomeFAQEditor } from "@/components/admin/HomeFAQEditor";
 
 // --- NEUE KOMPONENTE: COMPLIANCE MANAGER ---
@@ -151,10 +152,13 @@ export default function AdminSettings() {
   // Hooks für Home-Steuerung & Ads
   const { layout, sections: normalizedHomeSections } = useHomeLayout();
   const { content: serverContent } = useHomeContent();
+  const forumSidebarConfig = useForumSidebarConfig();
+  const { data: comparisonCategories = [] } = useCategories(false);
   const forumAds = useForumAds();
    
   // Lokaler State
   const [localContent, setLocalContent] = useState<typeof defaultHomeContent | null>(null);
+  const [forumSidebarLocal, setForumSidebarLocal] = useState<any>(defaultForumSidebarConfig);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // SEO Text State (Lokal, Performance für langes Tippen)
@@ -412,6 +416,10 @@ export default function AdminSettings() {
   }, [serverContent, localContent]);
 
   useEffect(() => {
+    setForumSidebarLocal(JSON.parse(JSON.stringify(forumSidebarConfig || defaultForumSidebarConfig)));
+  }, [forumSidebarConfig]);
+
+  useEffect(() => {
     if (normalizedHomeSections.length > 0 && homeSections.length === 0) {
       setHomeSections(JSON.parse(JSON.stringify(normalizedHomeSections)));
     }
@@ -463,6 +471,10 @@ export default function AdminSettings() {
 
   const saveForumBannerConfig = () => {
     saveSetting("forum_banner_config", forumBanner);
+  };
+
+  const saveForumSidebarConfig = () => {
+    saveSetting("forum_sidebar", forumSidebarLocal);
   };
 
   const moveHomeSection = (index: number, direction: 'up' | 'down') => {
@@ -1456,7 +1468,48 @@ export default function AdminSettings() {
                       <div className="space-y-2"><Label>Subheadline</Label><Input value={localContent.news?.subheadline || ""} onChange={e => updateContent("news", "subheadline", e.target.value)} /></div>
                       <div className="space-y-2"><Label>Anzahl Posts</Label><Input type="number" value={localContent.news?.count || 3} onChange={e => updateContent("news", "count", parseInt(e.target.value))} /></div>
                       <div className="space-y-2"><Label>Top Button Text</Label><Input value={localContent.news?.button_text || ""} onChange={e => updateContent("news", "button_text", e.target.value)} /></div>
+                      <div className="space-y-2"><Label>Top Button Link</Label><Input value={localContent.news?.button_url || ""} onChange={e => updateContent("news", "button_url", e.target.value)} /></div>
                       <div className="space-y-2"><Label>Link Text (Karte)</Label><Input value={localContent.news?.read_more || ""} onChange={e => updateContent("news", "read_more", e.target.value)} /></div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+
+                <AccordionItem value="forum-sidebar">
+                  <AccordionTrigger className="font-semibold">Forum Sidebar</AccordionTrigger>
+                  <AccordionContent className="space-y-6 pt-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2"><Label>Titel Heiße Vergleiche</Label><Input value={forumSidebarLocal?.hot_title || ""} onChange={e => setForumSidebarLocal((p: any) => ({ ...p, hot_title: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Titel Beliebte Vergleiche</Label><Input value={forumSidebarLocal?.popular_title || ""} onChange={e => setForumSidebarLocal((p: any) => ({ ...p, popular_title: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Titel Zufällige Vergleiche</Label><Input value={forumSidebarLocal?.random_title || ""} onChange={e => setForumSidebarLocal((p: any) => ({ ...p, random_title: e.target.value }))} /></div>
+                      <div className="space-y-2"><Label>Anzahl Zufällige Vergleiche</Label><Input type="number" min={0} max={5} value={forumSidebarLocal?.random_count ?? 2} onChange={e => setForumSidebarLocal((p: any) => ({ ...p, random_count: parseInt(e.target.value || '0', 10) }))} /></div>
+                    </div>
+                    <div className="grid md:grid-cols-3 gap-4">
+                      <div className="flex items-center justify-between rounded-xl border p-3"><Label>Heiße Vergleiche anzeigen</Label><Switch checked={!!forumSidebarLocal?.show_hot} onCheckedChange={(checked) => setForumSidebarLocal((p: any) => ({ ...p, show_hot: checked }))} /></div>
+                      <div className="flex items-center justify-between rounded-xl border p-3"><Label>Beliebte Vergleiche anzeigen</Label><Switch checked={!!forumSidebarLocal?.show_popular} onCheckedChange={(checked) => setForumSidebarLocal((p: any) => ({ ...p, show_popular: checked }))} /></div>
+                      <div className="flex items-center justify-between rounded-xl border p-3"><Label>Zufällige Vergleiche anzeigen</Label><Switch checked={!!forumSidebarLocal?.show_random} onCheckedChange={(checked) => setForumSidebarLocal((p: any) => ({ ...p, show_random: checked }))} /></div>
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <Label className="mb-3 block">Heiße Vergleiche</Label>
+                        <div className="grid md:grid-cols-2 gap-2 max-h-64 overflow-auto rounded-xl border p-3">
+                          {comparisonCategories.filter((cat) => ["comparison", "hub_overview"].includes(cat.template)).map((cat) => {
+                            const checked = Array.isArray(forumSidebarLocal?.hot_comparison_ids) && forumSidebarLocal.hot_comparison_ids.includes(cat.id);
+                            return <label key={`hot-${cat.id}`} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={checked} onChange={(e) => setForumSidebarLocal((p: any) => ({ ...p, hot_comparison_ids: e.target.checked ? [...(p.hot_comparison_ids || []), cat.id] : (p.hot_comparison_ids || []).filter((id: string) => id !== cat.id) }))} /> <span>{cat.name}</span></label>;
+                          })}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="mb-3 block">Beliebte Vergleiche</Label>
+                        <div className="grid md:grid-cols-2 gap-2 max-h-64 overflow-auto rounded-xl border p-3">
+                          {comparisonCategories.filter((cat) => ["comparison", "hub_overview"].includes(cat.template)).map((cat) => {
+                            const checked = Array.isArray(forumSidebarLocal?.popular_comparison_ids) && forumSidebarLocal.popular_comparison_ids.includes(cat.id);
+                            return <label key={`popular-${cat.id}`} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={checked} onChange={(e) => setForumSidebarLocal((p: any) => ({ ...p, popular_comparison_ids: e.target.checked ? [...(p.popular_comparison_ids || []), cat.id] : (p.popular_comparison_ids || []).filter((id: string) => id !== cat.id) }))} /> <span>{cat.name}</span></label>;
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex justify-end">
+                      <Button onClick={saveForumSidebarConfig} className="rounded-xl">Forum Sidebar speichern</Button>
                     </div>
                   </AccordionContent>
                 </AccordionItem>

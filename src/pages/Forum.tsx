@@ -100,97 +100,77 @@ const ForumThreadCard = ({ thread }: { thread: PublicForumThread }) => {
     <article className="group h-full">
       <Link
         to={getForumThreadRoute(thread.slug)}
-        className="flex h-full flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-100/60 focus:outline-none focus:ring-4 focus:ring-orange-500/15"
+        className="flex h-full flex-col rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-xl hover:shadow-orange-100/60 focus:outline-none focus:ring-4 focus:ring-orange-500/15"
       >
-        <div className="relative aspect-[3/2] overflow-hidden bg-slate-100">
-          {thread.featured_image_url ? (
-            <img
-              src={optimizeThreadImage(thread.featured_image_url)}
-              alt={thread.featured_image_alt || thread.title}
-              className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
-              loading="lazy"
-            />
+        <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
+          {thread.forum_categories?.name ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+              <FolderOpen className="h-3.5 w-3.5 text-orange-500" />
+              {thread.forum_categories.name}
+            </span>
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-orange-50 text-slate-300">
-              <BookOpen className="h-12 w-12" />
-            </div>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
+              <BookOpen className="h-3.5 w-3.5 text-orange-500" />
+              Magazin
+            </span>
           )}
+          {thread.is_pinned && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-orange-600">
+              <Pin className="h-3.5 w-3.5" /> Angepinnt
+            </span>
+          )}
+          {thread.is_locked && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-300 bg-slate-50 px-3 py-1 text-slate-600">
+              <Lock className="h-3.5 w-3.5" /> Geschlossen
+            </span>
+          )}
+          {thread.is_answered && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-emerald-600">
+              <CheckCircle className="h-3.5 w-3.5" /> Beantwortet
+            </span>
+          )}
+        </div>
 
-          <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-            {thread.is_pinned && (
-              <Badge className="border border-orange-200 bg-white/95 text-orange-600 shadow-sm backdrop-blur">
-                <Pin className="mr-1 h-3.5 w-3.5" /> Angepinnt
-              </Badge>
-            )}
-            {thread.is_locked && (
-              <Badge variant="outline" className="border-slate-300 bg-white/95 text-slate-600 backdrop-blur">
-                <Lock className="mr-1 h-3.5 w-3.5" /> Geschlossen
-              </Badge>
-            )}
-            {thread.is_answered && (
-              <Badge className="border border-emerald-200 bg-white/95 text-emerald-600 shadow-sm backdrop-blur">
-                <CheckCircle className="mr-1 h-3.5 w-3.5" /> Beantwortet
-              </Badge>
-            )}
+        <h2 className="mb-3 line-clamp-2 text-xl font-black leading-tight tracking-tight text-[#0A0F1C] transition-colors group-hover:text-orange-600 md:text-[1.35rem]">
+          {thread.title}
+        </h2>
+
+        <p className="mb-5 line-clamp-3 text-sm leading-6 text-slate-600 sm:text-[15px]">
+          {excerpt}
+        </p>
+
+        <div className="mb-5 grid grid-cols-3 gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 sm:text-sm">
+          <div className="flex items-center gap-2">
+            <Clock3 className="h-4 w-4 text-orange-500" />
+            <span>{formatDate(thread.created_at)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4 text-orange-500" />
+            <span>{thread.reply_count} Antworten</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Eye className="h-4 w-4 text-orange-500" />
+            <span>{thread.views} Aufrufe</span>
           </div>
         </div>
 
-        <CardContent className="flex flex-1 flex-col p-5 sm:p-6">
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">
-            {thread.forum_categories?.name ? (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-                <FolderOpen className="h-3.5 w-3.5 text-orange-500" />
-                {thread.forum_categories.name}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-slate-600">
-                <BookOpen className="h-3.5 w-3.5 text-orange-500" />
-                Magazin
-              </span>
-            )}
-          </div>
-
-          <h2 className="mb-3 line-clamp-2 text-xl font-black leading-tight tracking-tight text-[#0A0F1C] transition-colors group-hover:text-orange-600 md:text-[1.35rem]">
-            {thread.title}
-          </h2>
-
-          <p className="mb-5 line-clamp-3 text-sm leading-6 text-slate-600 sm:text-[15px]">
-            {excerpt}
-          </p>
-
-          <div className="mb-5 grid grid-cols-3 gap-2 rounded-2xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500 sm:text-sm">
-            <div className="flex items-center gap-2">
-              <Clock3 className="h-4 w-4 text-orange-500" />
-              <span>{formatDate(thread.created_at)}</span>
+        <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0A0F1C] text-sm font-black text-white">
+              {getInitials(thread.author_name || "Redaktion")}
             </div>
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-4 w-4 text-orange-500" />
-              <span>{thread.reply_count} Antworten</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Eye className="h-4 w-4 text-orange-500" />
-              <span>{thread.views} Aufrufe</span>
+            <div className="min-w-0">
+              <p className="truncate text-sm font-bold text-[#0A0F1C]">
+                {thread.author_name || "Redaktion"}
+              </p>
+              <p className="text-xs text-slate-500">Rank-Scout Redaktion</p>
             </div>
           </div>
 
-          <div className="mt-auto flex items-center justify-between border-t border-slate-100 pt-4">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0A0F1C] text-sm font-black text-white">
-                {getInitials(thread.author_name || "Redaktion")}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-bold text-[#0A0F1C]">
-                  {thread.author_name || "Redaktion"}
-                </p>
-                <p className="text-xs text-slate-500">Rank-Scout Redaktion</p>
-              </div>
-            </div>
-
-            <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 transition-transform duration-300 group-hover:translate-x-1">
-              Lesen <ArrowRight className="h-4 w-4" />
-            </span>
-          </div>
-        </CardContent>
+          <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-600 transition-transform duration-300 group-hover:translate-x-1">
+            Lesen <ArrowRight className="h-4 w-4" />
+          </span>
+        </div>
       </Link>
     </article>
   );

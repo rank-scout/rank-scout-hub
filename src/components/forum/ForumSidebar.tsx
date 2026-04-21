@@ -1,20 +1,25 @@
 import { Link } from "react-router-dom";
 import { useForumThreads } from "@/hooks/useForum";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { Flame, Clock, ArrowRight, Handshake } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { ForumComparisonSidebar } from "@/components/forum/ForumComparisonSidebar";
 
-export function ForumSidebar() {
+type ForumSidebarProps = {
+  categoryId?: string | null;
+  threadTitle?: string | null;
+};
+
+export function ForumSidebar({ categoryId, threadTitle }: ForumSidebarProps) {
   const { data: threads, isLoading } = useForumThreads();
 
   const trendingThreads = threads
-    ? [...threads].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 4)
+    ? [...threads].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 3)
     : [];
 
   const recentThreads = threads
-    ? [...threads].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 4)
+    ? [...threads].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3)
     : [];
 
   if (isLoading) {
@@ -23,6 +28,8 @@ export function ForumSidebar() {
 
   return (
     <div className="space-y-4">
+      <ForumComparisonSidebar categoryId={categoryId} threadTitle={threadTitle} />
+
       {/* TRENDING CARD */}
       <Card className="overflow-hidden border-none bg-gradient-to-br from-white to-slate-50 shadow-md">
         <div className="h-1 w-full bg-primary" />
@@ -34,14 +41,12 @@ export function ForumSidebar() {
         </CardHeader>
         <CardContent className="grid gap-3 px-5 pb-5">
           {trendingThreads.map((thread) => (
-            <div key={thread.id} className="group">
-              <Link to={`/forum/${thread.slug}`} className="block">
-                <h3 className="line-clamp-2 text-[13px] font-medium leading-5 text-foreground transition-colors group-hover:text-primary">
-                  {thread.title}
-                </h3>
-              </Link>
-              <Separator className="mt-2 opacity-50" />
-            </div>
+            <Link key={thread.id} to={`/forum/${thread.slug}`} className="group block rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-orange-300 hover:shadow-sm">
+              <h3 className="line-clamp-2 text-[14px] font-bold leading-5 text-foreground transition-colors group-hover:text-primary">
+                {thread.title}
+              </h3>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">Aktuell stark gefragt im Forum</p>
+            </Link>
           ))}
         </CardContent>
       </Card>
@@ -56,16 +61,12 @@ export function ForumSidebar() {
         </CardHeader>
         <CardContent className="grid gap-3 px-5 pb-5">
           {recentThreads.map((thread) => (
-            <div key={thread.id} className="group">
-              <Link to={`/forum/${thread.slug}`} className="block">
-                <h3 className="line-clamp-2 text-[13px] font-medium leading-5 text-foreground transition-colors group-hover:text-primary">
-                  {thread.title}
-                </h3>
-                <p className="mt-0.5 text-[11px] text-muted-foreground">
-                  von {thread.author_name}
-                </p>
-              </Link>
-            </div>
+            <Link key={thread.id} to={`/forum/${thread.slug}`} className="group block rounded-2xl border border-slate-200 bg-slate-50/60 p-4 transition-all hover:border-orange-300 hover:bg-white hover:shadow-sm">
+              <h3 className="line-clamp-2 text-[14px] font-bold leading-5 text-foreground transition-colors group-hover:text-primary">
+                {thread.title}
+              </h3>
+              <p className="mt-2 text-[11px] text-muted-foreground">von {thread.author_name}</p>
+            </Link>
           ))}
           
           <Link 

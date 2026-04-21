@@ -38,6 +38,7 @@ export const PUBLIC_SETTINGS_KEYS = [
   "compliance_config",
   "google_analytics_id",
   "google_search_console_verification",
+  "forum_sidebar",
   "top_bar_text",
   "top_bar_link",
   "top_bar_active",
@@ -294,7 +295,7 @@ export const defaultHomeContent = {
     long_text: "" 
   },
   categories: { headline: "Alle Kategorien im Überblick", count: 6, button_more: "Alle Kategorien anzeigen", button_card: "Bereich erkunden" },
-  news: { headline: "Aktuelles & Ratgeber", subheadline: "News & Updates", count: 3, button_text: "Zum Magazin", read_more: "Artikel lesen" },
+  news: { headline: "Aktuelles & Ratgeber", subheadline: "News & Updates", count: 3, button_text: "Alle Vergleiche ansehen", button_url: "/kategorien", read_more: "Artikel lesen" },
   forum_teaser: { headline: "Community Hub", subheadline: "Tauche in beliebte Themenbereiche ein und teile deine Erfahrungen mit der Community.", link_text: "Alle Foren anzeigen", mobile_button: "Zum Community Forum" }
 };
 
@@ -508,6 +509,7 @@ export function useHomeContent() {
     : defaultHomeContent.home_faq.items;
   content.categories = { ...defaultHomeContent.categories, ...content.categories }; 
   content.news = { ...defaultHomeContent.news, ...content.news }; 
+  content.news.button_url = normalizeNavigableHref(String(content.news.button_url || defaultHomeContent.news.button_url || getCategoriesRoute()));
   content.trust = { ...defaultHomeContent.trust, ...content.trust }; 
   content.hero = { ...defaultHomeContent.hero, ...content.hero };
   content.hero.stats = Array.isArray(content.hero.stats) && content.hero.stats.length > 0
@@ -524,6 +526,43 @@ export function useHomeContent() {
 export function useAdSenseConfig() { const { data: settings } = useSettings(); return { clientId: (settings?.ads_sense_client_id as string) || "", defaultSlotId: (settings?.ads_sense_slot_id as string) || "", enabled: (settings?.ads_enabled as boolean) || false }; }
 export function useAmazonConfig() { const { data: settings } = useSettings(); return { headline: (settings?.ads_amazon_headline as string) || "", text: (settings?.ads_amazon_text as string) || "", buttonText: (settings?.ads_amazon_button_text as string) || "Zum Angebot", link: (settings?.ads_amazon_link as string) || "", enabled: (settings?.ads_enabled as boolean) || false }; }
 export function useForumBannerConfig() { const { data: settings } = useSettings(); return { headline: (settings?.forum_banner_headline as string) || "Diskussionen & Erfahrungen", subheadline: (settings?.forum_banner_subheadline as string) || "Tausche dich mit anderen aus, stelle Fragen und teile deine Erfahrungen", badge: (settings?.forum_banner_badge as string) || "Community Forum", enabled: true }; }
+
+
+export type ForumSidebarConfig = {
+  hot_comparison_ids: string[];
+  popular_comparison_ids: string[];
+  show_hot: boolean;
+  show_popular: boolean;
+  show_random: boolean;
+  random_count: number;
+  hot_title?: string;
+  popular_title?: string;
+  random_title?: string;
+};
+
+export const defaultForumSidebarConfig: ForumSidebarConfig = {
+  hot_comparison_ids: [],
+  popular_comparison_ids: [],
+  show_hot: true,
+  show_popular: true,
+  show_random: true,
+  random_count: 2,
+  hot_title: "Heiße Vergleiche",
+  popular_title: "Beliebte Vergleiche",
+  random_title: "Zufällige Vergleiche",
+};
+
+export function useForumSidebarConfig() {
+  const { data } = useSettings();
+  const config = (data?.forum_sidebar as Partial<ForumSidebarConfig> | undefined) || {};
+  return {
+    ...defaultForumSidebarConfig,
+    ...config,
+    hot_comparison_ids: Array.isArray(config.hot_comparison_ids) ? config.hot_comparison_ids : [],
+    popular_comparison_ids: Array.isArray(config.popular_comparison_ids) ? config.popular_comparison_ids : [],
+    random_count: Number.isFinite(Number(config.random_count)) ? Math.max(0, Number(config.random_count)) : defaultForumSidebarConfig.random_count,
+  } as ForumSidebarConfig;
+}
 
 export function useForumAds() { 
     const { data } = useSettings(); 

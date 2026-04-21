@@ -184,7 +184,7 @@ button_text: cat.button_text ?? null
 
           <div className="hidden md:flex gap-4">
               <Button size="sm" variant="outline" className="rounded-xl font-bold border-slate-300 hover:bg-slate-50" asChild>
-                 <Link to="/experten-checks">Alle Vergleiche Ansehen</Link>
+                 <Link to={normalizeInternalLinkTarget(content?.news?.button_url || "/kategorien")}>{content?.news?.button_text || "Alle Vergleiche ansehen"}</Link>
               </Button>
           </div>
         </FadeIn>
