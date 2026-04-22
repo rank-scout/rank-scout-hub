@@ -4,7 +4,7 @@ import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
 import { optimizeSupabaseImageUrl, sanitizeCmsHtml } from '@/lib/sanitizeHtml';
 import { RawJsonLd } from '@/components/seo/SchemaInjector';
 import { RelatedComparisons } from '@/components/comparison/RelatedComparisons';
-import { RelatedForumThreads } from '@/components/forum/RelatedForumThreads';
+import RelatedForumThreads from '@/components/forum/RelatedForumThreads';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
 interface Project {

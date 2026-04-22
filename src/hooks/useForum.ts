@@ -23,6 +23,7 @@ export interface ForumThread {
   seo_description?: string;
   featured_image_url?: string;
   featured_image_alt?: string;
+  last_activity_at?: string;
   admin_notes?: string;
   status?: string;
   raw_html_content?: string;
@@ -48,6 +49,7 @@ export interface ForumThreadWritePayload {
   seo_description?: string;
   featured_image_url?: string;
   featured_image_alt?: string;
+  last_activity_at?: string;
   is_pinned?: boolean;
   is_locked?: boolean;
   is_answered?: boolean;
@@ -186,7 +188,6 @@ export const useForumThread = (slug: string) => {
   });
 };
 
-
 export const useRelatedThreads = ({
   categoryId,
   currentThreadId,
@@ -199,14 +200,14 @@ export const useRelatedThreads = ({
   return useQuery({
     queryKey: ["forum-related-threads", categoryId, currentThreadId, limit],
     queryFn: async () => {
-      if (!categoryId) return [];
+      if (!categoryId) return [] as ForumThread[];
 
       let query = supabase
         .from("forum_threads")
         .select("*, forum_replies(count)")
         .eq("category_id", categoryId)
         .eq("is_active", true)
-        .order("created_at", { ascending: false })
+        .order("updated_at", { ascending: false })
         .limit(limit + (currentThreadId ? 1 : 0));
 
       if (currentThreadId) {
@@ -216,10 +217,11 @@ export const useRelatedThreads = ({
       const { data, error } = await query;
       if (error) throw error;
 
-      return (data || []).slice(0, limit).map((thread) => ({
+      return (data || []).slice(0, limit).map(thread => ({
         ...thread,
         views: thread.views || 0,
         reply_count: thread.forum_replies?.[0]?.count || 0,
+        last_activity_at: thread.updated_at || thread.created_at,
       })) as ForumThread[];
     },
     enabled: !!categoryId,

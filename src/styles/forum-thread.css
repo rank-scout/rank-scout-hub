@@ -34,32 +34,14 @@
 
 .forum-thread-html :where(img) {
   display: block;
-  width: calc(100% + 10rem) !important;
-  max-width: calc(100% + 10rem) !important;
+  width: 100% !important;
+  max-width: 100% !important;
   height: auto !important;
   max-height: none !important;
   object-fit: contain !important;
   object-position: center center !important;
-  margin-left: -5rem !important;
-  margin-right: -5rem !important;
-}
-
-@media (max-width: 1024px) {
-  .forum-thread-html :where(img) {
-    width: calc(100% + 4rem) !important;
-    max-width: calc(100% + 4rem) !important;
-    margin-left: -2rem !important;
-    margin-right: -2rem !important;
-  }
-}
-
-@media (max-width: 640px) {
-  .forum-thread-html :where(img) {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin-left: 0 !important;
-    margin-right: 0 !important;
-  }
+  margin-left: 0 !important;
+  margin-right: 0 !important;
 }
 
 .forum-thread-html :where(.overflow-x-auto) {

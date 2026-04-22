@@ -360,7 +360,6 @@ export default function ForumThread() {
         {thread.ad_image_url && <meta name="rank-scout:ad-image-alt" content={adImageAlt} />}
       </Helmet>
 
-      {/* JSON-LD ausgelagert aus Helmet! */}
       {discussionSchemaJson && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: discussionSchemaJson }} />
       )}
@@ -368,7 +367,6 @@ export default function ForumThread() {
       <Header />
 
       <main className="flex-grow">
-        {/* Sticky Top Bar */}
         <div className="sticky top-[65px] z-30 w-full bg-primary/95 backdrop-blur-md border-b border-white/10 shadow-lg transition-all duration-300">
           <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 h-14 flex items-center justify-between">
             <Link
@@ -385,9 +383,7 @@ export default function ForumThread() {
         <section className="pt-20 pb-6 md:pt-20 md:pb-16">
           <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12">
             <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
-              {/* Haupt-Content Bereich */}
               <div className="flex-1 lg:w-[70%]">
-                {/* Die Haupt-Frage / Der Beitrag */}
                 <div className="bg-white rounded-3xl p-4 sm:p-8 md:p-12 shadow-xl shadow-slate-200/40 border border-slate-100 mb-10 relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-1 md:w-1.5 h-full bg-orange-500"></div>
 
@@ -494,7 +490,6 @@ export default function ForumThread() {
                   ) : null}
                 </div>
 
-                {/* Kommentare Sektion */}
                 <div className="mb-12">
                   <div className="flex items-center gap-4 mb-8 px-2">
                     <div className="p-3 bg-orange-50 rounded-2xl text-orange-500 shrink-0">
@@ -590,7 +585,6 @@ export default function ForumThread() {
                   className="pt-0"
                 />
 
-                {/* Reply Form */}
                 {!thread.is_locked ? (
                   <div className="bg-white border border-slate-100 shadow-xl shadow-slate-200/40 rounded-3xl overflow-hidden mt-8">
                     <div className="bg-slate-50/50 border-b border-slate-100 px-6 md:px-8 py-6">
@@ -661,7 +655,6 @@ export default function ForumThread() {
                 )}
               </div>
 
-              {/* Sidebar */}
               <aside className="lg:w-[30%] lg:self-start">
                 <div className="sticky top-[90px]">
                   <ForumSidebar categoryId={thread.category_id} threadTitle={thread.title} />
