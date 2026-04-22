@@ -35,7 +35,7 @@
 .forum-thread-html :where(img) {
   display: block;
   width: 100% !important;
-  max-width: 95% !important;
+  max-width: 80% !important;
   height: auto !important;
   max-height: none !important;
   object-fit: contain !important;
