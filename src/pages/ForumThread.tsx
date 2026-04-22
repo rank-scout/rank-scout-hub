@@ -409,7 +409,17 @@ export default function ForumThread() {
                       )}
                     </div>
 
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-[2.75rem] font-extrabold mb-5 md:mb-7 leading-[1.12] text-[#0A0F1C] tracking-tight">
+                    {thread.featured_image_url ? (
+                      <img
+                        src={optimizeSupabaseImageUrl(thread.featured_image_url, 1536, 80)}
+                        alt={featuredImageAlt}
+                        className="forum-thread-hero mb-6 md:mb-8"
+                        loading="eager"
+                        decoding="async"
+                      />
+                    ) : null}
+
+                    <h1 className="forum-thread-title text-[#0A0F1C] font-extrabold mb-5 md:mb-7">
                       {thread.title}
                     </h1>
 
