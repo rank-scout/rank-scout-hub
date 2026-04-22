@@ -186,6 +186,46 @@ export const useForumThread = (slug: string) => {
   });
 };
 
+
+export const useRelatedThreads = ({
+  categoryId,
+  currentThreadId,
+  limit = 3,
+}: {
+  categoryId?: string | null;
+  currentThreadId?: string | null;
+  limit?: number;
+}) => {
+  return useQuery({
+    queryKey: ["forum-related-threads", categoryId, currentThreadId, limit],
+    queryFn: async () => {
+      if (!categoryId) return [];
+
+      let query = supabase
+        .from("forum_threads")
+        .select("*, forum_replies(count)")
+        .eq("category_id", categoryId)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(limit + (currentThreadId ? 1 : 0));
+
+      if (currentThreadId) {
+        query = query.neq("id", currentThreadId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return (data || []).slice(0, limit).map((thread) => ({
+        ...thread,
+        views: thread.views || 0,
+        reply_count: thread.forum_replies?.[0]?.count || 0,
+      })) as ForumThread[];
+    },
+    enabled: !!categoryId,
+  });
+};
+
 export const useIncrementThreadView = () => {
   return useMutation({
     mutationFn: async (threadId: string) => {

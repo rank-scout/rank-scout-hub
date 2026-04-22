@@ -14,6 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import {
   MessageSquare,
+  MessageCircle,
   Pin,
   Clock,
   ArrowLeft,
@@ -22,6 +23,7 @@ import {
   CheckCircle,
   ThumbsUp,
   ShieldCheck,
+  Eye,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ForumSidebar } from "@/components/forum/ForumSidebar";
 import { ForumComparisonSlider } from "@/components/forum/ForumComparisonSlider";
+import { RelatedForumThreads } from "@/components/forum/RelatedForumThreads";
 import { Helmet } from "react-helmet-async";
 import { useForceSEO } from "@/hooks/useForceSEO";
 import { FadeIn } from "@/components/ui/FadeIn";
@@ -195,6 +198,7 @@ export default function ForumThread() {
       author: {
         "@type": "Person",
         name: reply.author_name || "Unbekannt",
+        url: "https://rank-scout.com/ueber-uns",
       },
     }));
 
@@ -208,6 +212,7 @@ export default function ForumThread() {
       author: {
         "@type": "Person",
         name: thread.author_name || "Unbekannt",
+        url: "https://rank-scout.com/ueber-uns",
       },
       datePublished: thread.created_at,
       dateModified: thread.updated_at || thread.created_at,
@@ -333,8 +338,8 @@ export default function ForumThread() {
       <Helmet key={location.pathname}>
         <title>{seoTitle}</title>
         <meta name="description" content={seoDescription} />
-        <link rel="canonical" href={canonicalUrl} />
         <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={canonicalUrl} />
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDescription} />
         <meta property="og:url" content={canonicalUrl} />
@@ -438,6 +443,25 @@ export default function ForumThread() {
                           <span className="font-bold text-[#0A0F1C] text-sm">
                             {formatDate(thread.created_at || "")}
                           </span>
+                        </div>
+                      </div>
+                      <div className="hidden md:block h-8 w-px bg-slate-200"></div>
+                      <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-100 bg-white text-slate-500">
+                          <Eye className="h-4 w-4" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Aufrufe</span>
+                          <span className="font-bold text-[#0A0F1C] text-sm">{thread.views || thread.view_count || 0}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 rounded-2xl border border-slate-100 bg-slate-50 px-3 py-2">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-100 bg-white text-slate-500">
+                          <MessageCircle className="h-4 w-4" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Antworten</span>
+                          <span className="font-bold text-[#0A0F1C] text-sm">{replies?.length || 0}</span>
                         </div>
                       </div>
                     </div>
@@ -557,6 +581,14 @@ export default function ForumThread() {
                     </div>
                   )}
                 </div>
+
+                <RelatedForumThreads
+                  categoryId={thread.category_id}
+                  currentThreadId={thread.id}
+                  title="Ähnliche Diskussionen"
+                  description="Weitere aktive Ratgeber und Diskussionen aus derselben Kategorie, die thematisch zu diesem Beitrag passen."
+                  className="pt-0"
+                />
 
                 {/* Reply Form */}
                 {!thread.is_locked ? (

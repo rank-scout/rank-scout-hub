@@ -4,6 +4,7 @@ import { AffiliateDisclaimer } from '@/components/AffiliateDisclaimer';
 import { optimizeSupabaseImageUrl, sanitizeCmsHtml } from '@/lib/sanitizeHtml';
 import { RawJsonLd } from '@/components/seo/SchemaInjector';
 import { RelatedComparisons } from '@/components/comparison/RelatedComparisons';
+import { RelatedForumThreads } from '@/components/forum/RelatedForumThreads';
 
 // --- Typen definieren (für Sicherheit & Autocomplete) ---
 interface Project {
@@ -344,6 +345,13 @@ export const ComparisonTemplate: React.FC<TemplateProps> = ({
         </section>
 
         <RelatedComparisons currentSlug={category.slug} />
+
+        <RelatedForumThreads
+          categoryId={category.id}
+          title="Passende Ratgeber aus dem Forum"
+          description="Aus derselben Kategorie: aktuelle Forum-Ratgeber, Diskussionen und weiterführende Einordnungen für mehr Tiefe vor der Entscheidung."
+          className="bg-white"
+        />
 
         {/* TESTIMONIALS (Server Side Rendered) */}
         {testimonials.length > 0 && (
