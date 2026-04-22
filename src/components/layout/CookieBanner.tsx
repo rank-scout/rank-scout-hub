@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Cookie, ShieldCheck, ChevronDown, ChevronUp } from "lucide-react";
 import { Link } from "react-router-dom";
+import { isBotLikeRuntime } from "@/lib/runtimeFlags";
 
 // Typisierung für die Consent-Einstellungen
 interface ConsentSettings {
@@ -11,6 +12,7 @@ interface ConsentSettings {
 }
 
 export const CookieBanner = () => {
+  const isBotRuntime = isBotLikeRuntime();
   const [isVisible, setIsVisible] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   
@@ -78,7 +80,7 @@ export const CookieBanner = () => {
     setSettings(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  if (!isVisible) return null;
+  if (isBotRuntime || !isVisible) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[9999] animate-in slide-in-from-bottom-5 duration-500">

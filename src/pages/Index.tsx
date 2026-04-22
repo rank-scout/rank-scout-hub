@@ -50,6 +50,7 @@ const Index = () => {
   const canonicalUrl = buildCanonicalUrl("/");
 
   const homeFaqSection = sections.find((section) => section.id === "home_faq");
+  const hasEnabledForumSection = sections.some((section) => section.id === "forum" && section.enabled);
   const homeFaqItems = useMemo(() => {
     const items = Array.isArray(content?.home_faq?.items) ? content.home_faq.items : [];
     return items
@@ -205,6 +206,11 @@ const Index = () => {
               {sectionComponents[section.id] || null}
             </div>
           ))}
+        {!hasEnabledForumSection && (
+          <div className="w-full">
+            <ForumSection />
+          </div>
+        )}
       </main>
       <Footer />
       <ScrollToTop />

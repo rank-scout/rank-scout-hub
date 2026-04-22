@@ -332,15 +332,23 @@ export default function ForumThread() {
     <div className="min-h-screen flex flex-col bg-[#FAFAFA] text-slate-800 font-sans">
       <Helmet key={location.pathname}>
         <title>{seoTitle}</title>
+        <meta name="description" content={seoDescription} />
         <link rel="canonical" href={canonicalUrl} />
+        <meta name="robots" content="index, follow" />
         <meta property="og:title" content={seoTitle} />
         <meta property="og:description" content={seoDescription} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Rank-Scout" />
+        <meta property="og:locale" content="de_DE" />
+        <meta name="twitter:card" content={thread.featured_image_url ? "summary_large_image" : "summary"} />
+        <meta name="twitter:title" content={seoTitle} />
+        <meta name="twitter:description" content={seoDescription} />
         {thread.featured_image_url && (
           <>
             <meta property="og:image" content={optimizeSupabaseImageUrl(thread.featured_image_url, 1200, 80)} />
             <meta property="og:image:alt" content={featuredImageAlt} />
+            <meta name="twitter:image" content={optimizeSupabaseImageUrl(thread.featured_image_url, 1200, 80)} />
             <meta name="twitter:image:alt" content={featuredImageAlt} />
           </>
         )}

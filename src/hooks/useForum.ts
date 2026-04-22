@@ -176,6 +176,7 @@ export const useForumThread = (slug: string) => {
         .from("forum_threads")
         .select("*")
         .eq("slug", slug)
+        .eq("is_active", true)
         .single();
 
       if (error) throw error;

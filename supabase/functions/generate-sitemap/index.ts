@@ -221,7 +221,8 @@ Deno.serve(async (req) => {
         .eq("is_active", true),
       adminClient
         .from("forum_threads")
-        .select("slug, updated_at, created_at"),
+        .select("slug, updated_at, created_at")
+        .eq("is_active", true),
       adminClient
         .from("settings")
         .select("value, updated_at")
