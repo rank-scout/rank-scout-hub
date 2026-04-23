@@ -1,4 +1,3 @@
-
 .forum-thread-html {
   overflow-wrap: anywhere;
   word-break: break-word;
@@ -32,16 +31,54 @@
   margin-top: 0.875rem;
 }
 
-.forum-thread-html :where(img) {
-  display: block;
+/* TITEL HIERARCHIE (Sorgt dafür, dass der H1 Titel immer der Boss bleibt) */
+.forum-thread-title {
+  font-size: 2.25rem !important;
+  line-height: 1.2 !important;
+  margin-bottom: 2.5rem !important;
+  color: #0A0F1C !important;
+}
+
+@media (max-width: 767px) {
+  .forum-thread-title {
+    font-size: 1.75rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+}
+
+.forum-thread-html.article-content--forum :where(figure) {
   width: 100% !important;
-  max-width: 80% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* MOBILE FIRST BILDER: 
+  Das Bild skaliert zu 100% natürlich. Kein Zwang, kein Abschneiden, keine grauen Ränder! 
+*/
+.forum-thread-html.article-content--forum :where(figure img, img:not(.avatar, .badge, .icon, [role="presentation"])) {
+  display: block !important;
+  width: 100% !important;
+  max-width: 100% !important;
   height: auto !important;
   max-height: none !important;
-  object-fit: contain !important;
+  aspect-ratio: auto !important; /* Löst den extremen Schlitz auf Mobile auf */
+  object-fit: contain !important; /* Zeigt IMMER das ganze Bild auf Mobile */
   object-position: center center !important;
-margin-left: auto !important;
-margin-right: auto !important;
+  margin: 1rem auto 2.5rem auto !important;
+  border-radius: 12px !important;
+  background-color: transparent !important;
+}
+
+/* DESKTOP: 
+  Hier kappen wir ab Tablet-Größe die Höhe auf 420px, damit der Text drunter sichtbar wird.
+  Wir nutzen 'cover', damit bei der 420px-Kappung links/rechts keine Lücken entstehen.
+*/
+@media (min-width: 768px) {
+  .forum-thread-html.article-content--forum :where(figure img, img:not(.avatar, .badge, .icon, [role="presentation"])) {
+    max-height: 420px !important;
+    object-fit: cover !important; 
+  }
 }
 
 .forum-thread-html :where(.overflow-x-auto) {
@@ -49,6 +86,7 @@ margin-right: auto !important;
   -webkit-overflow-scrolling: touch;
 }
 
+/* BUTTONS STANDARD (Z.B. "Zum Vergleich") */
 .forum-thread-html :where(a[class*="inline-flex"], a[class*="button"], a[class*="btn"], a[class*="bg-"], a[class*="px-"], a[class*="py-"]) ,
 .forum-thread-html :where(a[style*="display: inline-flex"], a[style*="display:inline-flex"], a[style*="display: flex"], a[style*="display:flex"], a[style*="background"], a[style*="background-color"]) {
   display: inline-flex;
@@ -61,10 +99,7 @@ margin-right: auto !important;
   line-height: 1.35;
 }
 
-.forum-thread-html :where(a[style*="white-space: nowrap"], a[style*="white-space:nowrap"], span[style*="white-space: nowrap"], span[style*="white-space:nowrap"]) {
-  white-space: normal !important;
-}
-
+/* MOBILE FIXES: Zwingt Buttons auf dem Handy zu 100% Breite, damit sie sich nicht stauen */
 @media (max-width: 767px) {
   .forum-thread-html.article-content--lg {
     font-size: 1rem;

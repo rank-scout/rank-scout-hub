@@ -43,6 +43,45 @@ import { buildCanonicalUrlFromLocation, stripHtmlToPlainText } from "@/lib/seo";
 import "@/styles/article-content.css";
 import "@/styles/forum-thread.css";
 
+interface ExtractedFaqItem {
+  question: string;
+  answer: string;
+}
+
+const extractFAQs = (htmlString: string): ExtractedFaqItem[] => {
+  if (!htmlString || typeof window === "undefined") return [];
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, "text/html");
+    const headings = Array.from(doc.querySelectorAll("h2, h3"));
+    const faqs: ExtractedFaqItem[] = [];
+
+    for (const heading of headings) {
+      const question = heading.textContent?.replace(/\s+/g, " ").trim() || "";
+      if (!question.endsWith("?")) continue;
+
+      let sibling = heading.nextElementSibling;
+      while (sibling && sibling.tagName !== "P") {
+        if (["H1", "H2", "H3", "H4", "H5", "H6"].includes(sibling.tagName)) {
+          sibling = null;
+          break;
+        }
+        sibling = sibling.nextElementSibling;
+      }
+
+      const answer = sibling?.textContent?.replace(/\s+/g, " ").trim() || "";
+      if (!answer) continue;
+
+      faqs.push({ question, answer });
+    }
+
+    return faqs;
+  } catch {
+    return [];
+  }
+};
+
 export default function ForumThread() {
   const { slug } = useParams<{ slug: string }>();
   const location = useLocation();
@@ -264,6 +303,26 @@ export default function ForumThread() {
     return JSON.stringify(schema);
   }, [canonicalUrl, replies, seoDescription, seoTitle, thread]);
 
+  const faqSchemaJson = useMemo(() => {
+    const htmlContent = thread?.raw_html_content || thread?.content || "";
+    const faqs = extractFAQs(htmlContent);
+
+    if (faqs.length === 0) return "";
+
+    return JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: faqs.map((faq) => ({
+        "@type": "Question",
+        name: faq.question,
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: faq.answer,
+        },
+      })),
+    });
+  }, [thread?.content, thread?.raw_html_content]);
+
   useEffect(() => {
     hasSignaledReadyRef.current = false;
     setPrerenderBlocked({ routeKey: `forum:${location.pathname}`, timeoutMs: 12000 });
@@ -362,6 +421,9 @@ export default function ForumThread() {
 
       {discussionSchemaJson && (
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: discussionSchemaJson }} />
+      )}
+      {faqSchemaJson && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqSchemaJson }} />
       )}
 
       <Header />
