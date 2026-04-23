@@ -26,6 +26,8 @@ declare global {
       ready: boolean;
       timeoutId: number | null;
     };
+    mrmoScrollToViewport?: number;
+    mrmoScrollToViewportOffset?: number;
   }
 }
 

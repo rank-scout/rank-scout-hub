@@ -62,6 +62,8 @@ export const categorySchema = z.object({
   custom_html: z.string().optional().nullable(), 
   custom_css: z.string().optional().nullable(), 
   comparison_widget_code: z.string().optional().nullable(),
+  comparison_widget_type: z.enum(["html", "mr-money"]).optional().nullable(),
+  comparison_widget_config: z.record(z.string(), z.any()).optional().nullable(),
   footer_site_name: z.string().optional().nullable(),
   footer_copyright_text: z.string().optional().nullable(),
   footer_designer_name: z.string().optional().nullable(),

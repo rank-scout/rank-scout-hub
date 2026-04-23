@@ -55,6 +55,28 @@ const getCleanToxicWordMessage = (rawMessage?: string) => {
   return cleanMsg || "Der Inhalt enthält einen blockierten Begriff.";
 };
 
+const parseWidgetConfigInput = (value?: string | null): Record<string, unknown> | null => {
+  const trimmed = String(value ?? "").trim();
+  if (!trimmed) return null;
+
+  const parsed = JSON.parse(trimmed);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("Widget Config muss ein gültiges JSON-Objekt sein, z. B. {\"sp\": \"tkvk\"}.");
+  }
+
+  return parsed as Record<string, unknown>;
+};
+
+const stringifyWidgetConfig = (value: unknown): string => {
+  if (!value || typeof value !== "object") return "";
+
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return "";
+  }
+};
+
 // --- KI CONFIG DIALOG ---
 const AIConfigDialog = () => {
     const [open, setOpen] = useState(false);
@@ -179,8 +201,8 @@ const CategoryTable = ({
                                 ) : (
                                     <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-200 shadow-none"><FileText className="w-3 h-3 mr-1"/> Artikel</Badge>
                                 ))}
-                                {(cat as any).comparison_widget_code && (
-                                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 shadow-none"><Code className="w-3 h-3 mr-1" /> Widget</Badge>
+                                {(((cat as any).comparison_widget_type) || (cat as any).comparison_widget_code) && (
+                                    <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 shadow-none"><Code className="w-3 h-3 mr-1" /> {(cat as any).comparison_widget_type === "mr-money" ? "Mr. Money" : "Widget"}</Badge>
                                 )}
                             </div>
                         </TableCell>
@@ -248,6 +270,7 @@ export default function Categories() {
   // HTML VIEW STATES
   const [showHtmlTop, setShowHtmlTop] = useState(false);
   const [showHtmlBottom, setShowHtmlBottom] = useState(false);
+  const [widgetConfigText, setWidgetConfigText] = useState("");
 
   // Stats Calculation
   const stats = useMemo(() => {
@@ -297,6 +320,8 @@ export default function Categories() {
         meta_title: "", 
         meta_description: "", 
         comparison_widget_code: "",
+        comparison_widget_type: null,
+        comparison_widget_config: null,
         hero_image_url: "",
         card_image_url: "",
         hero_pretitle: "",
@@ -313,6 +338,7 @@ export default function Categories() {
 
   const { register, handleSubmit, setValue, watch, control } = form;
   const currentTemplate = watch("template");
+  const currentWidgetType = watch("comparison_widget_type") || "none";
 
   useEffect(() => {
     if (editingCategory) {
@@ -336,6 +362,8 @@ export default function Categories() {
         faq_data: editingCategory.faq_data || [],
         custom_html_override: editingCategory.custom_html_override || "",
         comparison_widget_code: (editingCategory as any).comparison_widget_code || "",
+        comparison_widget_type: (editingCategory as any).comparison_widget_type || null,
+        comparison_widget_config: (editingCategory as any).comparison_widget_config || null,
         hero_pretitle: editingCategory.hero_pretitle || "",
         hero_headline: editingCategory.hero_headline || "",
         hero_cta_text: editingCategory.hero_cta_text || "",
@@ -347,6 +375,7 @@ export default function Categories() {
         button_text: (editingCategory as any).button_text || "Vergleich ansehen",
       } as any);
       setTopicPrompt(`Content für ${editingCategory.name}`);
+      setWidgetConfigText(stringifyWidgetConfig((editingCategory as any).comparison_widget_config));
       const savedSlugs = (editingCategory as any).custom_css ? (editingCategory as any).custom_css.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
       setSelectedHubSlugs(savedSlugs);
     } else {
@@ -365,6 +394,8 @@ export default function Categories() {
         card_image_url: '', 
         custom_css: '', 
         comparison_widget_code: '',
+        comparison_widget_type: null,
+        comparison_widget_config: null,
         hero_pretitle: "",
         hero_headline: "",
         hero_cta_text: "",
@@ -376,6 +407,7 @@ export default function Categories() {
         button_text: "Vergleich ansehen" // KYRA FIX: hinzugefügt
       } as any);
       setSelectedProjectIds([]); setSelectedHubSlugs([]); setTopicPrompt("");
+      setWidgetConfigText("");
     }
     setShowHtmlTop(false);
     setShowHtmlBottom(false);
@@ -392,7 +424,33 @@ export default function Categories() {
       delete rawData.legal_links; delete rawData.projects; delete rawData.category_projects; 
       delete rawData.reviews; delete rawData.testimonials;
 
-      const payload = { ...rawData, updated_at: now, is_internal_generated: true, custom_css: finalHubConfig };
+      let normalizedWidgetType = rawData.comparison_widget_type ?? null;
+      if (normalizedWidgetType === "none") {
+        normalizedWidgetType = null;
+      }
+
+      let normalizedWidgetConfig: Record<string, unknown> | null = null;
+      if (normalizedWidgetType === "mr-money") {
+        normalizedWidgetConfig = parseWidgetConfigInput(widgetConfigText);
+        if (typeof normalizedWidgetConfig.sp !== "string" || !String(normalizedWidgetConfig.sp).trim()) {
+          throw new Error('Für Mr. Money muss in der Widget Config mindestens {"sp": "tkvk"} gesetzt sein.');
+        }
+      } else if (widgetConfigText.trim()) {
+        normalizedWidgetConfig = parseWidgetConfigInput(widgetConfigText);
+      }
+
+      if (normalizedWidgetType !== "html" && !normalizedWidgetType) {
+        rawData.comparison_widget_code = rawData.comparison_widget_code || null;
+      }
+
+      const payload = {
+        ...rawData,
+        comparison_widget_type: normalizedWidgetType,
+        comparison_widget_config: normalizedWidgetConfig,
+        updated_at: now,
+        is_internal_generated: true,
+        custom_css: finalHubConfig,
+      };
       
       let catId = editingCategory?.id;
       if (editingCategory) {
@@ -678,18 +736,69 @@ export default function Categories() {
                                         <p className="text-sm text-slate-400 mb-4">
                                             Füge hier den <strong>kompletten Embed-Code</strong> ein (inkl. <code>&lt;script&gt;</code> Tags). Dieser überschreibt die manuelle Projektliste.
                                         </p>
-                                        <Controller
-                                            name="comparison_widget_code"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <Textarea 
-                                                    {...field} 
-                                                    value={field.value || ""} 
-                                                    placeholder={'<div id="rechner"></div>\n<script src="..."></script>'}
-                                                    className="font-mono text-xs bg-black/50 text-green-400 min-h-[200px] p-4 border-slate-700 focus:ring-green-500/50 focus:border-green-500/50 placeholder:text-slate-600"
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                            <div className="space-y-2">
+                                                <Label>Widget Typ</Label>
+                                                <Controller
+                                                    name="comparison_widget_type"
+                                                    control={control}
+                                                    render={({ field }) => (
+                                                        <Select
+                                                            value={field.value || "none"}
+                                                            onValueChange={(value) => {
+                                                                field.onChange(value === "none" ? null : value);
+                                                                if (value !== "mr-money" && widgetConfigText.trim() === `{\n  "sp": "tkvk"\n}`) {
+                                                                  setWidgetConfigText("");
+                                                                }
+                                                                if (value === "mr-money" && !widgetConfigText.trim()) {
+                                                                  setWidgetConfigText(`{\n  "sp": "tkvk"\n}`);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <SelectTrigger className="bg-slate-900 border-slate-700 text-white">
+                                                                <SelectValue placeholder="Widget wählen" />
+                                                            </SelectTrigger>
+                                                            <SelectContent>
+                                                                <SelectItem value="none">Keines</SelectItem>
+                                                                <SelectItem value="html">HTML Embed</SelectItem>
+                                                                <SelectItem value="mr-money">Mr. Money</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                    )}
                                                 />
-                                            )}
-                                        />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Widget Config (JSON)</Label>
+                                                <Textarea
+                                                    value={widgetConfigText}
+                                                    onChange={(e) => setWidgetConfigText(e.target.value)}
+                                                    placeholder={`{\n  "sp": "tkvk"\n}`}
+                                                    className="font-mono text-xs bg-black/50 text-green-400 min-h-[110px] p-4 border-slate-700 focus:ring-green-500/50 focus:border-green-500/50 placeholder:text-slate-600"
+                                                />
+                                                <p className="text-xs text-slate-500">
+                                                    Für Mr. Money z. B. <code>{'{"sp":"tkvk"}'}</code>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {currentWidgetType !== "mr-money" ? (
+                                            <Controller
+                                                name="comparison_widget_code"
+                                                control={control}
+                                                render={({ field }) => (
+                                                    <Textarea
+                                                        {...field}
+                                                        value={field.value || ""}
+                                                        placeholder={`<div id=\"rechner\"></div>\n<script src=\"...\"></script>`}
+                                                        className="font-mono text-xs bg-black/50 text-green-400 min-h-[200px] p-4 border-slate-700 focus:ring-green-500/50 focus:border-green-500/50 placeholder:text-slate-600"
+                                                    />
+                                                )}
+                                            />
+                                        ) : (
+                                            <div className="rounded-xl border border-emerald-900/60 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-300">
+                                                Mr. Money nutzt die JSONB-Bridge. Der Renderpfad verwendet hier die Config aus <code>comparison_widget_config</code>.
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             )}

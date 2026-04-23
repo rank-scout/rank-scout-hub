@@ -72,6 +72,9 @@ export type Database = {
           button_text: string | null
           color_theme: string | null
           comparison_title: string | null
+          comparison_widget_code: string | null
+          comparison_widget_config: Json | null
+          comparison_widget_type: string | null
           created_at: string | null
           custom_css: string | null
           custom_html: string | null
@@ -111,6 +114,9 @@ export type Database = {
           button_text?: string | null
           color_theme?: string | null
           comparison_title?: string | null
+          comparison_widget_code?: string | null
+          comparison_widget_config?: Json | null
+          comparison_widget_type?: string | null
           created_at?: string | null
           custom_css?: string | null
           custom_html?: string | null
@@ -150,6 +156,9 @@ export type Database = {
           button_text?: string | null
           color_theme?: string | null
           comparison_title?: string | null
+          comparison_widget_code?: string | null
+          comparison_widget_config?: Json | null
+          comparison_widget_type?: string | null
           created_at?: string | null
           custom_css?: string | null
           custom_html?: string | null

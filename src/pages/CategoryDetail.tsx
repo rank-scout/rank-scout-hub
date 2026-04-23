@@ -295,7 +295,10 @@ export default function CategoryDetail() {
   if (isStandardLayoutPage) {
     const currentMonthYear = new Date().toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
     const heroImage = getCategoryHeroImage(category);
+    const widgetType = ((category as any).comparison_widget_type ?? null) as string | null;
+    const widgetConfig = ((category as any).comparison_widget_config ?? null) as Record<string, unknown> | null;
     const hasWidgetCode = !!(category as any).comparison_widget_code;
+    const hasExternalWidget = widgetType === "mr-money" || widgetType === "html" || hasWidgetCode;
 
     const introTitle = category.intro_title || "Das Wichtigste in Kürze";
     const comparisonTitle = category.comparison_title || "Alle Anbieter im Vergleich";
@@ -367,14 +370,18 @@ export default function CategoryDetail() {
                 {category.long_content_top && (<div className="bg-transparent mb-16 px-2 mt-8"><article id="content-top" className="scroll-mt-32 article-content article-content--lg article-content--brand max-w-none"><div dangerouslySetInnerHTML={{ __html: sanitizeCmsHtml(category.long_content_top) }} /></article></div>)}
                 
                 {/* --- INTELLIGENTE WEICHE (Rechner vs. Liste) --- */}
-                {hasWidgetCode ? (
+                {hasExternalWidget ? (
                     <div id="vergleich" className="scroll-mt-32 mb-10">
                         <div className="mb-8 px-2">
                             <Badge variant="outline" className="mb-3 border-orange-200 text-orange-600 bg-orange-50 px-3 py-1">Live Rechner</Badge>
                             <h2 className="text-3xl md:text-4xl font-extrabold text-[#0A0F1C] tracking-tight flex items-center gap-3">{comparisonTitle}</h2>
                         </div>
                         <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100 overflow-hidden">
-                            <UniversalWidgetLoader htmlCode={(category as any).comparison_widget_code} />
+                            <UniversalWidgetLoader
+                              htmlCode={(category as any).comparison_widget_code}
+                              widgetType={widgetType}
+                              widgetConfig={widgetConfig}
+                            />
                         </div>
                         <p className="text-center text-xs text-slate-400 mt-4">Daten werden bereitgestellt durch unseren Partner.</p>
                     </div>

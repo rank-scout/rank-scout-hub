@@ -52,7 +52,9 @@ export type Category = {
   custom_css?: string;
   sidebar_ad_html?: string;
   sidebar_ad_image?: string;
-  comparison_widget_code?: string;
+  comparison_widget_code?: string | null;
+  comparison_widget_type?: "html" | "mr-money" | null;
+  comparison_widget_config?: Record<string, unknown> | null;
   custom_html_override?: string;
 };
 
