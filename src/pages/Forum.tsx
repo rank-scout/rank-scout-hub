@@ -392,9 +392,10 @@ export default function Forum() {
               headline: thread.title,
               ...(thread.seo_description ? { text: thread.seo_description } : {}),
               author: {
-                "@type": "Person",
-                name: thread.author_name || "Redaktion",
-              },
+  "@type": "Person",
+  name: thread.author_name || "Redaktion",
+  url: buildAbsoluteSiteUrl("/ueber-uns"),
+},
               datePublished: thread.created_at,
               ...(thread.featured_image_url ? { image: optimizeThreadImage(thread.featured_image_url) } : {}),
               interactionStatistic: [
