@@ -1,117 +1,116 @@
-import { Star, ExternalLink } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+import { useForumThreads } from "@/hooks/useForum";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Flame, Clock, ArrowRight, Handshake } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useProjects } from "@/hooks/useProjects";
+import { Button } from "@/components/ui/button";
+import { ForumComparisonSidebar } from "@/components/forum/ForumComparisonSidebar";
 
-export function ForumSidebar() {
-  const { data: projects, isLoading } = useProjects();
+type ForumSidebarProps = {
+  categoryId?: string | null;
+  threadTitle?: string | null;
+};
 
-  // Get top 3 projects by rating
-  const topProjects = projects
-    ?.filter((p) => p.is_active)
-    .sort((a, b) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, 3);
+export function ForumSidebar({ categoryId, threadTitle }: ForumSidebarProps) {
+  const { data: threads, isLoading } = useForumThreads();
 
-  const renderStars = (rating: number) => {
-    const fullStars = Math.floor(rating / 2);
-    const hasHalfStar = rating % 2 >= 1;
-    const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
+  const trendingThreads = threads
+    ? [...threads].sort((a, b) => (b.view_count || 0) - (a.view_count || 0)).slice(0, 3)
+    : [];
 
-    return (
-      <div className="flex items-center gap-0.5">
-        {[...Array(fullStars)].map((_, i) => (
-          <Star key={`full-${i}`} className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-        ))}
-        {hasHalfStar && (
-          <Star className="w-3.5 h-3.5 fill-yellow-400/50 text-yellow-400" />
-        )}
-        {[...Array(emptyStars)].map((_, i) => (
-          <Star key={`empty-${i}`} className="w-3.5 h-3.5 text-muted-foreground/30" />
-        ))}
-        <span className="ml-1.5 text-sm font-medium text-foreground">
-          {rating.toFixed(1)}
-        </span>
-      </div>
-    );
-  };
+  const recentThreads = threads
+    ? [...threads].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 3)
+    : [];
 
   if (isLoading) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <Skeleton className="h-5 w-32" />
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-20" />
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!topProjects || topProjects.length === 0) {
-    return null;
+    return <SidebarSkeleton />;
   }
 
   return (
-    <Card className="sticky top-4">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Star className="w-4 h-4 text-yellow-500" />
-          Top Empfehlungen
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {topProjects.map((project, index) => (
-          <div
-            key={project.id}
-            className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+    <div className="space-y-4">
+      <ForumComparisonSidebar categoryId={categoryId} threadTitle={threadTitle} />
+
+      {/* TRENDING CARD */}
+      <Card className="overflow-hidden border-none bg-gradient-to-br from-white to-slate-50 shadow-md">
+        <div className="h-1 w-full bg-primary" />
+        <CardHeader className="px-5 pb-2 pt-5">
+          <h2 className="flex items-center gap-2 text-base font-semibold leading-none tracking-tight">
+            <Flame className="w-5 h-5 text-orange-500 fill-orange-500" />
+            Aktuell Heiß
+          </h2>
+        </CardHeader>
+        <CardContent className="grid gap-3 px-5 pb-5">
+          {trendingThreads.map((thread) => (
+            <Link key={thread.id} to={`/forum/${thread.slug}`} className="group block rounded-2xl border border-slate-200 bg-white p-4 transition-all hover:border-orange-300 hover:shadow-sm">
+              <h3 className="line-clamp-2 text-[14px] font-bold leading-5 text-foreground transition-colors group-hover:text-primary">
+                {thread.title}
+              </h3>
+              <p className="mt-2 text-xs leading-5 text-muted-foreground">Aktuell stark gefragt im Forum</p>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* RECENT CARD */}
+      <Card className="border shadow-sm">
+        <CardHeader className="px-5 pb-2 pt-5">
+          <h2 className="flex items-center gap-2 text-base font-semibold leading-none tracking-tight">
+            <Clock className="w-5 h-5 text-primary" />
+            Neueste Beiträge
+          </h2>
+        </CardHeader>
+        <CardContent className="grid gap-3 px-5 pb-5">
+          {recentThreads.map((thread) => (
+            <Link key={thread.id} to={`/forum/${thread.slug}`} className="group block rounded-2xl border border-slate-200 bg-slate-50/60 p-4 transition-all hover:border-orange-300 hover:bg-white hover:shadow-sm">
+              <h3 className="line-clamp-2 text-[14px] font-bold leading-5 text-foreground transition-colors group-hover:text-primary">
+                {thread.title}
+              </h3>
+              <p className="mt-2 text-[11px] text-muted-foreground">von {thread.author_name}</p>
+            </Link>
+          ))}
+          
+          <Link 
+            to="/forum" 
+            className="mt-1 flex items-center justify-center gap-1 border-t border-dashed pt-2 text-[11px] font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            {/* Rank Badge */}
-            <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">
-              {index + 1}
-            </div>
+            Alle Diskussionen anzeigen <ArrowRight className="w-3 h-3" />
+          </Link>
+        </CardContent>
+      </Card>
 
-            {/* Logo */}
-            {project.logo_url ? (
-              <img
-                src={project.logo_url}
-                alt={project.name}
-                className="w-10 h-10 rounded-lg object-contain bg-white border flex-shrink-0"
-              />
-            ) : (
-              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                <span className="text-lg font-bold text-muted-foreground">
-                  {project.name.charAt(0)}
-                </span>
-              </div>
-            )}
+      {/* PARTNER BLOCK (FIXED) */}
+      <div className="group relative overflow-hidden rounded-xl border border-slate-800 bg-[#0A0F1C] p-5 text-center">
+        {/* Background Effect */}
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        
+        {/* Content Wrapper (Clickable Fix) */}
+        <div className="relative z-10">
+          <Handshake className="mx-auto mb-2.5 h-9 w-9 text-orange-400" />
+          <h4 className="mb-1.5 font-bold text-white">Partner werden?</h4>
+          <p className="mb-3 text-xs leading-relaxed text-slate-400">
+            Platziere deine Produkte in unseren Premium-Vergleichen.
+          </p>
+          
+          <Link to="/kontakt">
+            <Button className="h-10 w-full cursor-pointer border-none bg-orange-500 font-bold text-white hover:bg-orange-600">
+              Jetzt anfragen
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-sm truncate">{project.name}</h4>
-              {renderStars(project.rating || 0)}
-              
-              <Button
-                asChild
-                size="sm"
-                className="mt-2 w-full h-7 text-xs"
-              >
-                <a
-                  href={project.affiliate_link || project.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Zum Anbieter
-                  <ExternalLink className="w-3 h-3 ml-1" />
-                </a>
-              </Button>
-            </div>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+function SidebarSkeleton() {
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader><Skeleton className="h-6 w-32" /></CardHeader>
+        <CardContent className="space-y-4">
+          {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

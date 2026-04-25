@@ -1,72 +1,86 @@
 import { Link } from "react-router-dom";
-import { Facebook, Twitter, Instagram, Linkedin, Heart, CheckCircle2 } from "lucide-react";
-import { useSiteLogo, useSiteTitle } from "@/hooks/useSettings";
-
-const defaultLegalLinks = [
-  { label: "Impressum", url: "/impressum" },
-  { label: "Datenschutz", url: "/datenschutz" },
-  { label: "AGB", url: "/agb" }
-];
-
-const defaultPopularLinks = [
-  { label: "Software Vergleich", url: "/software" },
-  { label: "Finanz-Tools", url: "/finanzen" },
-  { label: "Agentur Finder", url: "/dienstleistungen" }
-];
+import { Heart, ShieldCheck } from "lucide-react";
+import { useFooterConfig } from "@/hooks/useSettings";
+import { normalizeNavigableHref } from "@/lib/routes";
 
 export const Footer = () => {
-  const logo = useSiteLogo();
-  const title = useSiteTitle();
+  const config = useFooterConfig();
+
+  const legalLinks = config.legal_links || [];
+  const popularLinks = config.popular_links || [];
+  const toolsLinks = config.tools_links || [];
+
+  // KYRA FIX: Trigger-Funktion für Cookie-Einstellungen
+  const openCookieSettings = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.dispatchEvent(new Event("showCookieSettings"));
+  };
+
+  // --- DISCLAIMER LOGIK SAUBER AUSGELAGERT ---
+  let finalDisclaimer = "*Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn du über einen Link auf dieser Seite einkaufst, erhalten wir möglicherweise eine Provision. Der Preis für dich ändert sich dabei nicht. Unsere Inhalte werden redaktionell erstellt und fortlaufend gepflegt.";
+
+  if (config.disclaimer && config.disclaimer.trim() !== "") {
+    finalDisclaimer = config.disclaimer
+      // 1. Du/Sie UX Konsistenz
+      .replace(/Wenn Sie/g, "Wenn du")
+      .replace(/für Sie/g, "für dich")
+      .replace(/Ihnen/g, "dir")
+      .replace(/ Sie /g, " dich ")
+      // 2. Toxischen Unabhängigkeits-Claim der DB direkt abfangen (Safety Net!)
+      .replace(
+        "Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.", 
+        "Unsere Inhalte werden redaktionell erstellt und fortlaufend gepflegt."
+      );
+  }
 
   return (
-    <footer className="bg-primary text-white pt-20 pb-10 relative overflow-hidden mt-20 border-t border-white/10">
+    <footer className="relative bg-primary pt-20 pb-12 overflow-hidden border-t border-white/10 mt-0">
       
-      {/* Background Effects */}
-      <div className="absolute inset-0 dots-white opacity-30 pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-[120px] pointer-events-none" />
+      {/* --- BACKGROUND EFFECTS --- */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+      
+      <div 
+        className="absolute inset-0 z-0 opacity-[0.15]" 
+        style={{
+          backgroundImage: `radial-gradient(rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: '24px 24px',
+          maskImage: 'linear-gradient(to top, black 40%, transparent 100%)', 
+          WebkitMaskImage: 'linear-gradient(to top, black 40%, transparent 100%)'
+        }}
+      />
+
+      <div className="absolute bottom-[-20%] left-[-10%] w-[600px] h-[600px] bg-secondary/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+        
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-10 mb-16">
           
-          {/* Brand Column */}
-          <div className="space-y-6">
-            <Link to="/" className="flex items-center gap-3 group">
-              
-              {/* Logo Bild (Groß: h-12) */}
-              <div className="group-hover:scale-105 transition-transform duration-300">
-                 {logo && (
-                   <img 
-                    src={logo}
-                    alt="Rank-Scout" 
-                    className="h-12 w-auto object-contain" 
-                   />
-                 )}
-              </div>
-
-              {/* Text (Rank-Scout + Oranger Punkt) */}
-              <span className="font-display font-bold text-2xl tracking-tight text-white">
-                Rank-Scout<span className="text-secondary">.</span>
-              </span>
+          {/* 1. BRANDING (CONSISTENT) */}
+          <div className="space-y-6 sm:col-span-2 lg:col-span-1">
+            <Link to="/" className="block w-fit group">
+               <span className="text-3xl font-display font-extrabold tracking-tight text-white">
+                  Rank-
+                  <span className="text-secondary">Scout</span>
+                  <span className="text-secondary">.</span>
+               </span>
             </Link>
-
             <p className="text-slate-300 text-sm leading-relaxed max-w-xs">
-              Deutschlands führendes B2B-Vergleichsportal. Wir bringen Licht in den Dschungel digitaler Dienstleistungen.
+              {config.text_description || "Vergleiche, Rechner und Ratgeber für Software, Finanzen und Lifestyle im strukturierten Überblick."}
             </p>
-            <div className="flex gap-4">
-              <a href="#" className="p-2 bg-white/5 rounded-full hover:bg-secondary hover:text-white transition-all text-slate-300 border border-white/5 hover:border-secondary"><Twitter className="w-4 h-4" /></a>
-              <a href="#" className="p-2 bg-white/5 rounded-full hover:bg-secondary hover:text-white transition-all text-slate-300 border border-white/5 hover:border-secondary"><Linkedin className="w-4 h-4" /></a>
-              <a href="#" className="p-2 bg-white/5 rounded-full hover:bg-secondary hover:text-white transition-all text-slate-300 border border-white/5 hover:border-secondary"><Instagram className="w-4 h-4" /></a>
-            </div>
           </div>
 
-          {/* Links Columns */}
+          {/* 2. Links: Vergleiche */}
           <div>
-            <h3 className="font-bold text-white mb-6">Vergleiche</h3>
-            <ul className="space-y-4 text-sm text-slate-300">
-              {defaultPopularLinks.map((link, i) => (
+            <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Vergleiche</h4>
+            <ul className="space-y-3">
+              {popularLinks.map((link: any, i: number) => (
                 <li key={i}>
-                  <Link to={link.url} className="hover:text-secondary transition-colors flex items-center gap-2 group">
-                    <span className="w-1 h-1 bg-secondary rounded-full opacity-0 group-hover:opacity-100 transition-opacity"/> 
+                  <Link 
+                    to={normalizeNavigableHref(link.url)} 
+                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                  >
+                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
                     {link.label}
                   </Link>
                 </li>
@@ -74,50 +88,92 @@ export const Footer = () => {
             </ul>
           </div>
 
+          {/* 3. Links: Rechtliches */}
           <div>
-            <h3 className="font-bold text-white mb-6">Rechtliches</h3>
-            <ul className="space-y-4 text-sm text-slate-300">
-              {defaultLegalLinks.map((link, i) => (
+            <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Rechtliches</h4>
+            <ul className="space-y-3">
+              {/* Dynamische Links aus der Datenbank */}
+              {legalLinks.map((link: any, i: number) => (
                 <li key={i}>
-                  <Link to={link.url} className="hover:text-secondary transition-colors">
-                    {link.label}
+                  <Link
+                    to={normalizeNavigableHref(String(link?.url ?? "").trim())}
+                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                  >
+                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                    {String(link?.label ?? "").trim()}
+                  </Link>
+                </li>
+              ))}
+              
+              {/* Fester Button für Cookie-Einstellungen */}
+              <li>
+                <button
+                  onClick={openCookieSettings}
+                  className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group w-full text-left cursor-pointer"
+                >
+                  <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                  Cookie-Einstellungen
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* 4. Tools & Services */}
+          <div>
+            <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Tools & Services</h4>
+            <ul className="space-y-3">
+              {toolsLinks.map((link: any, i: number) => (
+                <li key={i}>
+                  <Link 
+                    to={normalizeNavigableHref(String(link?.url ?? "").trim())} 
+                    className="text-slate-300 hover:text-white text-sm transition-all duration-200 flex items-center group"
+                  >
+                    <span className="w-0 group-hover:w-2 transition-all duration-200 overflow-hidden h-[1px] bg-secondary mr-0 group-hover:mr-2"></span>
+                    {String(link?.label ?? "").trim()}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Trust Badge */}
-          <div>
-            <h3 className="font-bold text-white mb-6">Geprüfte Qualität</h3>
-            <div className="bg-white/5 border border-white/10 rounded-xl p-6 backdrop-blur-sm hover:bg-white/10 transition-colors">
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400 border border-green-500/30">
-                        <CheckCircle2 className="w-5 h-5" />
+          {/* 5. Quality Badge */}
+          <div className="flex flex-col justify-start">
+            <h4 className="font-bold text-base text-secondary mb-6 uppercase tracking-wider">Transparenz</h4>
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md hover:bg-white/10 transition-colors cursor-default group">
+                <div className="flex items-start gap-4">
+                    <div className="p-2.5 bg-green-500/10 rounded-full text-green-400 border border-green-500/20 group-hover:scale-110 transition-transform duration-300 shrink-0">
+                        <ShieldCheck className="w-6 h-6" />
                     </div>
                     <div>
-                        <div className="font-bold text-white text-sm">Redaktionell geprüft</div>
-                        <div className="text-xs text-slate-400">Aktualisiert: 2026</div>
+                        <div className="font-bold text-white text-sm mb-1">{config.text_checked || "Redaktioneller Überblick"}</div>
+                        <div className="text-xs text-slate-400 leading-snug">
+                            {config.text_update || "Fortlaufend gepflegte Daten und nachvollziehbare Vergleiche."}
+                        </div>
                     </div>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed opacity-80">
-                    Unsere Vergleiche basieren auf echten Daten, Nutzer-Feedback und Experten-Analysen.
-                </p>
             </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
-          <p>© 2026 {title || "Rank-Scout"}. Alle Rechte vorbehalten.</p>
-          <p className="flex items-center gap-1">
-            Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> in Germany
-          </p>
+        <div className="pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 text-sm text-slate-300">
+          <p>{config.copyright_text || `© ${new Date().getFullYear()} Rank-Scout. Alle Rechte vorbehalten.`}</p>
+          
+          <div className="flex items-center gap-6">
+             <p className="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition-opacity">
+                {config.made_with_text} <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500 animate-pulse" /> {config.made_in_text}
+             </p>
+          </div>
         </div>
         
-        <p className="mt-8 text-[10px] text-slate-500 text-center max-w-2xl mx-auto leading-relaxed">
-            *Werbehinweis: Wir finanzieren uns über sogenannte Affiliate-Links. Wenn Sie über einen Link auf dieser Seite einkaufen, erhalten wir möglicherweise eine Provision. Der Preis für Sie ändert sich dabei nicht. Unsere redaktionelle Unabhängigkeit bleibt davon unberührt.
-        </p>
+        {/* Disclaimer - Sauber über Variable gerendert */}
+        {finalDisclaimer && (
+            <div className="mt-8 pt-6 border-t border-white/5">
+                <p className="text-xs text-slate-300 text-center max-w-4xl mx-auto leading-relaxed">
+                    {finalDisclaimer}
+                </p>
+            </div>
+        )}
       </div>
     </footer>
   );

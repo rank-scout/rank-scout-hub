@@ -1,1 +1,5 @@
+# Force HTTPS and non-www (Leitet www auf rank-scout.com um)
+https://www.rank-scout.com/* https://rank-scout.com/:splat 301!
+
+# React Router Fallback (Damit Unterseiten beim Neuladen funktionieren)
 /* /index.html 200

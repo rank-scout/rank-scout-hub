@@ -1,14 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-// KYRA FIX: Hardcoded Credentials, damit es sofort läuft
-const SUPABASE_URL = "https://oeshjjvhtmebjwbouayc.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_3Wk4Tcg02ylmxwh5Om45UQ_j7GlZ7Ic";
+// Wir ziehen die Keys dynamisch aus den Environment Variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-// Console Log zur Sicherheit (damit wir sehen, dass es geladen wird)
-console.log("Supabase Client Init mit:", SUPABASE_URL);
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error("FATAL ERROR: Supabase Keys fehlen in den Environment Variables!");
+}
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,

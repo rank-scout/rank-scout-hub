@@ -1,31 +1,176 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables, TablesInsert, TablesUpdate } from "@/integrations/supabase/types";
+import { toast } from "sonner";
 
-export type ForumThread = Tables<"forum_threads">;
-export type ForumReplyLike = Tables<"forum_reply_likes">;
-export type ForumReply = Tables<"forum_replies">;
-export type ForumCategory = Tables<"forum_categories">;
+// --- TYPES ---
 
-// ============ THREADS ============
-
-export function useForumThreads() {
-  return useQuery({
-    queryKey: ["forum-threads"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("forum_threads")
-        .select("*")
-        .order("is_pinned", { ascending: false })
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      return data as ForumThread[];
-    },
-  });
+export interface ForumThread {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  author_name: string;
+  category_id: string | null;
+  views: number; 
+  view_count?: number; 
+  is_pinned: boolean;
+  is_locked: boolean;
+  is_answered: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  seo_title?: string;
+  seo_description?: string;
+  featured_image_url?: string;
+  featured_image_alt?: string;
+  last_activity_at?: string;
+  admin_notes?: string;
+  status?: string;
+  raw_html_content?: string;
+  reply_count?: number; 
+  is_liked_by_user?: boolean;
+  likes_count?: number;
+  show_ad?: boolean;
+  ad_type?: string;
+  ad_image_url?: string;
+  ad_image_alt?: string;
+  ad_link_url?: string;
+  ad_html_code?: string;
+  ad_cta_text?: string;
 }
 
-export function useForumThread(slug: string) {
+export interface ForumThreadWritePayload {
+  title: string;
+  slug: string;
+  content: string;
+  author_name: string;
+  category_id: string | null;
+  seo_title?: string;
+  seo_description?: string;
+  featured_image_url?: string;
+  featured_image_alt?: string;
+  last_activity_at?: string;
+  is_pinned?: boolean;
+  is_locked?: boolean;
+  is_answered?: boolean;
+  is_active?: boolean;
+  admin_notes?: string;
+  status?: string;
+  raw_html_content?: string;
+  show_ad?: boolean;
+  ad_type?: string;
+  ad_image_url?: string;
+  ad_image_alt?: string;
+  ad_link_url?: string;
+  ad_html_code?: string;
+  ad_cta_text?: string;
+}
+
+export interface ForumThreadUpdatePayload extends Partial<ForumThreadWritePayload> {
+  id: string;
+}
+
+export interface ForumCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  thread_count?: number;
+  // SEO & Ads
+  seo_title?: string;
+  seo_description?: string;
+  ad_enabled?: boolean;
+  assigned_ad_id?: string;
+  ad_image_url?: string;
+  ad_link_url?: string;
+  ad_html_code?: string;
+  ad_headline?: string;
+  ad_subheadline?: string;
+  ad_cta_text?: string;
+}
+
+export interface ForumReply {
+  id: string;
+  thread_id: string;
+  content: string;
+  author_name: string;
+  author_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  is_spam: boolean;
+}
+
+export interface ForumReplyWithLikes extends ForumReply {
+  like_count: number;
+  user_has_liked: boolean;
+}
+
+// --- HOOKS ---
+
+export const useForumCategories = (includeInactive: boolean = false) => {
+  return useQuery({
+    queryKey: ["forum-categories", includeInactive],
+    queryFn: async () => {
+      let query = supabase
+        .from("forum_categories")
+        .select("*, forum_threads(count)")
+        .order("sort_order");
+        
+      if (!includeInactive) {
+          query = query.eq("is_active", true);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      return data.map(cat => ({
+        ...cat,
+        thread_count: cat.forum_threads?.[0]?.count || 0
+      })) as ForumCategory[];
+    },
+  });
+};
+
+export const useForumThreads = (categorySlug?: string, includeInactive: boolean = false) => {
+  return useQuery({
+    queryKey: ["forum-threads", categorySlug, includeInactive],
+    queryFn: async () => {
+      let query = supabase
+        .from("forum_threads")
+        .select("*, forum_replies(count)")
+        .order("is_pinned", { ascending: false })
+        .order("created_at", { ascending: false });
+
+      if (!includeInactive) {
+          query = query.eq("is_active", true);
+      }
+
+      if (categorySlug) {
+        const { data: cat } = await supabase.from("forum_categories").select("id").eq("slug", categorySlug).single();
+        if (cat) {
+          query = query.eq("category_id", cat.id);
+        } else {
+          return [];
+        }
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return data.map(thread => ({
+        ...thread,
+        views: thread.views || 0,
+        reply_count: thread.forum_replies?.[0]?.count || 0
+      })) as ForumThread[];
+    },
+  });
+};
+
+export const useForumThread = (slug: string) => {
   return useQuery({
     queryKey: ["forum-thread", slug],
     queryFn: async () => {
@@ -34,385 +179,185 @@ export function useForumThread(slug: string) {
         .select("*")
         .eq("slug", slug)
         .eq("is_active", true)
-        .maybeSingle();
-      
+        .single();
+
       if (error) throw error;
-      return data as ForumThread | null;
+      return data as ForumThread;
     },
     enabled: !!slug,
   });
-}
-
-export function useForumThreadById(id: string) {
-  return useQuery({
-    queryKey: ["forum-thread-id", id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("forum_threads")
-        .select("*")
-        .eq("id", id)
-        .maybeSingle();
-      
-      if (error) throw error;
-      return data as ForumThread | null;
-    },
-    enabled: !!id,
-  });
-}
-
-export function useLatestThreads(limit = 5) {
-  return useQuery({
-    queryKey: ["forum-threads-latest", limit],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("forum_threads")
-        .select("*")
-        .eq("is_active", true)
-        .order("is_pinned", { ascending: false })
-        .order("created_at", { ascending: false })
-        .limit(limit);
-      
-      if (error) throw error;
-      return data as ForumThread[];
-    },
-  });
-}
-
-export function useCreateThread() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (thread: TablesInsert<"forum_threads">) => {
-      const { data, error } = await supabase
-        .from("forum_threads")
-        .insert(thread)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-threads"] });
-    },
-  });
-}
-
-export function useUpdateThread() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: TablesUpdate<"forum_threads"> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("forum_threads")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-threads"] });
-    },
-  });
-}
-
-export function useDeleteThread() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("forum_threads")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-threads"] });
-    },
-  });
-}
-
-// ============ REPLIES ============
-
-export type ForumReplyWithLikes = Tables<"forum_replies"> & {
-  like_count: number;
-  user_has_liked: boolean;
 };
 
-export function useThreadReplies(threadId: string, userId?: string) {
+export const useRelatedThreads = ({
+  categoryId,
+  currentThreadId,
+  limit = 3,
+}: {
+  categoryId?: string | null;
+  currentThreadId?: string | null;
+  limit?: number;
+}) => {
   return useQuery({
-    queryKey: ["forum-replies", threadId, userId],
+    queryKey: ["forum-related-threads", categoryId, currentThreadId, limit],
     queryFn: async () => {
-      // Get replies
+      if (!categoryId) return [] as ForumThread[];
+
+      let query = supabase
+        .from("forum_threads")
+        .select("*, forum_replies(count)")
+        .eq("category_id", categoryId)
+        .eq("is_active", true)
+        .order("updated_at", { ascending: false })
+        .limit(limit + (currentThreadId ? 1 : 0));
+
+      if (currentThreadId) {
+        query = query.neq("id", currentThreadId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      return (data || []).slice(0, limit).map(thread => ({
+        ...thread,
+        views: thread.views || 0,
+        reply_count: thread.forum_replies?.[0]?.count || 0,
+        last_activity_at: thread.updated_at || thread.created_at,
+      })) as ForumThread[];
+    },
+    enabled: !!categoryId,
+  });
+};
+
+export const useIncrementThreadView = () => {
+  return useMutation({
+    mutationFn: async (threadId: string) => {
+      const { error } = await supabase.rpc('increment_thread_view', { t_id: threadId });
+      if (error) throw error;
+    }
+  });
+};
+
+export const useThreadReplies = (threadId: string, userId?: string) => {
+  return useQuery({
+    queryKey: ["thread-replies", threadId, userId],
+    queryFn: async () => {
+      if (!threadId) return [];
+      
       const { data: replies, error } = await supabase
         .from("forum_replies")
         .select("*")
         .eq("thread_id", threadId)
         .eq("is_active", true)
         .order("created_at", { ascending: true });
-      
+
       if (error) throw error;
+
+      const replyIds = replies.map(r => r.id);
       
-      // Get like counts for each reply
-      const replyIds = replies?.map(r => r.id) || [];
-      
-      if (replyIds.length === 0) {
-        return [] as ForumReplyWithLikes[];
-      }
-      
-      // Get all likes for these replies
-      const { data: likes, error: likesError } = await supabase
+      const { data: counts } = await supabase
         .from("forum_reply_likes")
-        .select("reply_id, user_id")
-        .in("reply_id", replyIds);
-      
-      if (likesError) throw likesError;
-      
-      // Calculate like counts and user's likes
-      const likeCounts = new Map<string, number>();
-      const userLikes = new Set<string>();
-      
-      likes?.forEach(like => {
-        likeCounts.set(like.reply_id, (likeCounts.get(like.reply_id) || 0) + 1);
-        if (userId && like.user_id === userId) {
-          userLikes.add(like.reply_id);
-        }
+        .select("reply_id");
+        
+      let userLikes: string[] = [];
+      if (userId) {
+        const { data: ul } = await supabase
+          .from("forum_reply_likes")
+          .select("reply_id")
+          .eq("user_id", userId);
+        if (ul) userLikes = ul.map(u => u.reply_id);
+      }
+
+      return replies.map(reply => {
+        const likeCount = counts?.filter(c => c.reply_id === reply.id).length || 0;
+        const hasLiked = userLikes.includes(reply.id);
+        return {
+          ...reply,
+          like_count: likeCount,
+          user_has_liked: hasLiked
+        } as ForumReplyWithLikes;
       });
-      
-      return replies.map(reply => ({
-        ...reply,
-        like_count: likeCounts.get(reply.id) || 0,
-        user_has_liked: userLikes.has(reply.id),
-      })) as ForumReplyWithLikes[];
     },
     enabled: !!threadId,
   });
-}
+};
 
-export function useAllReplies() {
-  return useQuery({
-    queryKey: ["forum-replies-all"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("forum_replies")
-        .select("*, forum_threads(title, slug)")
-        .order("created_at", { ascending: false });
-      
-      if (error) throw error;
-      return data;
-    },
-  });
-}
-
-export function useCreateReply() {
+export const useCreateThread = () => {
   const queryClient = useQueryClient();
-  
   return useMutation({
-    mutationFn: async (reply: TablesInsert<"forum_replies">) => {
-      const { data, error } = await supabase
-        .from("forum_replies")
-        .insert(reply)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["forum-replies", variables.thread_id] });
-    },
-  });
-}
-
-export function useUpdateReply() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: TablesUpdate<"forum_replies"> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("forum_replies")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
+    mutationFn: async (thread: ForumThreadWritePayload) => {
+      const { data, error } = await supabase.from("forum_threads").insert([thread]).select().single();
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-replies"] });
-      queryClient.invalidateQueries({ queryKey: ["forum-replies-all"] });
+      queryClient.invalidateQueries({ queryKey: ["forum-threads"] });
     },
   });
-}
+};
 
-export function useDeleteReply() {
+export const useUpdateThread = () => {
   const queryClient = useQueryClient();
-  
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: ForumThreadUpdatePayload) => {
+      const { error } = await supabase.from("forum_threads").update(updates).eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["forum-threads"] });
+      queryClient.invalidateQueries({ queryKey: ["forum-thread"] });
+    },
+  });
+};
+
+export const useDeleteThread = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("forum_replies")
-        .delete()
-        .eq("id", id);
-      
+      const { error } = await supabase.from("forum_threads").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-replies"] });
-      queryClient.invalidateQueries({ queryKey: ["forum-replies-all"] });
+      queryClient.invalidateQueries({ queryKey: ["forum-threads"] });
     },
   });
-}
+};
 
-// ============ CATEGORIES ============
-
-export function useForumCategories(includeInactive = false) {
-  return useQuery({
-    queryKey: ["forum-categories", includeInactive],
-    queryFn: async () => {
-      let query = supabase
-        .from("forum_categories")
-        .select("*")
-        .order("sort_order", { ascending: true });
-      
-      if (!includeInactive) {
-        query = query.eq("is_active", true);
-      }
-      
-      const { data, error } = await query;
-      if (error) throw error;
-      return data as ForumCategory[];
-    },
-  });
-}
-
-export function useCreateCategory() {
+export const useCreateReply = () => {
   const queryClient = useQueryClient();
-  
   return useMutation({
-    mutationFn: async (category: TablesInsert<"forum_categories">) => {
-      const { data, error } = await supabase
-        .from("forum_categories")
-        .insert(category)
-        .select()
-        .single();
-      
+    mutationFn: async (reply: { thread_id: string; content: string; author_name: string }) => {
+      const { data, error } = await supabase.from("forum_replies").insert([{ ...reply, is_active: false, is_spam: false }]).select().single();
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-categories"] });
+      queryClient.invalidateQueries({ queryKey: ["thread-replies"] });
     },
   });
-}
+};
 
-export function useUpdateCategory() {
+export const useToggleLike = () => {
   const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: TablesUpdate<"forum_categories"> & { id: string }) => {
-      const { data, error } = await supabase
-        .from("forum_categories")
-        .update(updates)
-        .eq("id", id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-categories"] });
-    },
-  });
-}
-
-export function useDeleteCategory() {
-  const queryClient = useQueryClient();
-  
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from("forum_categories")
-        .delete()
-        .eq("id", id);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-categories"] });
-    },
-  });
-}
-
-// ============ VIEW COUNT ============
-
-export function useIncrementViewCount() {
-  return useMutation({
-    mutationFn: async (threadId: string) => {
-      // Get current view count and increment
-      const { data: thread } = await supabase
-        .from("forum_threads")
-        .select("view_count")
-        .eq("id", threadId)
-        .maybeSingle();
-      
-      const newCount = (thread?.view_count || 0) + 1;
-      
-      await supabase
-        .from("forum_threads")
-        .update({ view_count: newCount })
-        .eq("id", threadId);
-    },
-  });
-}
-
-// ============ LIKES ============
-
-export function useToggleLike() {
-  const queryClient = useQueryClient();
-  
   return useMutation({
     mutationFn: async ({ replyId, userId, isLiked }: { replyId: string; userId: string; isLiked: boolean }) => {
       if (isLiked) {
-        // Remove like
-        const { error } = await supabase
-          .from("forum_reply_likes")
-          .delete()
-          .eq("reply_id", replyId)
-          .eq("user_id", userId);
-        
-        if (error) throw error;
+        await supabase.from("forum_reply_likes").delete().eq("reply_id", replyId).eq("user_id", userId);
       } else {
-        // Add like
-        const { error } = await supabase
-          .from("forum_reply_likes")
-          .insert({ reply_id: replyId, user_id: userId });
-        
-        if (error) throw error;
+        await supabase.from("forum_reply_likes").insert([{ reply_id: replyId, user_id: userId }]);
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["forum-replies"] });
+      queryClient.invalidateQueries({ queryKey: ["thread-replies"] });
     },
   });
-}
+};
 
-// Helper: Generate slug from title
-export function generateSlug(title: string): string {
-  return title
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue")
-    .replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .substring(0, 80);
-}
+export const generateSlug = (text: string) => {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+};
+
+export const useCreateCategory = () => { const qc = useQueryClient(); return useMutation({ mutationFn: async (c:any) => supabase.from("forum_categories").insert([c]), onSuccess: () => qc.invalidateQueries({ queryKey: ["forum-categories"] }) }) };
+export const useUpdateCategory = () => { const qc = useQueryClient(); return useMutation({ mutationFn: async ({id, ...u}:any) => supabase.from("forum_categories").update(u).eq("id", id), onSuccess: () => qc.invalidateQueries({ queryKey: ["forum-categories"] }) }) };
+export const useDeleteCategory = () => { const qc = useQueryClient(); return useMutation({ mutationFn: async (id:string) => supabase.from("forum_categories").delete().eq("id", id), onSuccess: () => qc.invalidateQueries({ queryKey: ["forum-categories"] }) }) };
+export const useAllReplies = () => useQuery({ queryKey: ["forum-all-replies"], queryFn: async () => (await supabase.from("forum_replies").select("*")).data || [] });
+export const useUpdateReply = () => { const qc = useQueryClient(); return useMutation({ mutationFn: async ({id, ...u}:any) => supabase.from("forum_replies").update(u).eq("id", id), onSuccess: () => qc.invalidateQueries({ queryKey: ["forum-all-replies"] }) }) };

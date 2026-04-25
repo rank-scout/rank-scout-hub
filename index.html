@@ -3,27 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Rank-Scout - Dein Vergleichsportal</title>
-    <meta name="description" content="Rank-Scout vergleicht die besten Dating Apps, Online Casinos und mehr. Finde den perfekten Anbieter für dich." />
-    <meta name="author" content="Rank-Scout" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <meta property="og:title" content="Rank-Scout - Dein Vergleichsportal" />
-    <meta property="og:description" content="Rank-Scout vergleicht die besten Dating Apps, Online Casinos und mehr." />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="/android-chrome-512x512.png" />
-    
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@rankscout" />
-    <meta name="twitter:image" content="/android-chrome-512x512.png" />
-    
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <title>Rank-Scout - Vergleiche, Rechner & Ratgeber im Überblick</title>
+
+    <link rel="preload" href="/fonts/inter-v20-latin-regular.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/fonts/inter-v20-latin-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preconnect" href="https://oeshjjvhtmebjwbouayc.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://oeshjjvhtmebjwbouayc.supabase.co" />
+
+    <meta property="og:image" content="/og-image.png">
+    <meta name="theme-color" content="#ffffff">
+    <script>
+      window.prerenderReady = false;
+      window.__RS_PRERENDER_BOOTSTRAP_TIMEOUT_ID__ = window.setTimeout(function () {
+        window.prerenderReady = true;
+      }, 12000);
+    </script>
+    <script>
+      (function () {
+        var ua = navigator.userAgent || "";
+        var botPattern = /(googlebot|googleother|google-inspectiontool|apis-google|adsbot-google|mediapartners-google|bingbot|applebot|duckduckbot|baiduspider|yandex|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|discordbot|redditbot|semrushbot|ahrefsbot|mj12bot|dotbot|rogerbot|embedly|quora link preview|pinterestbot|petalbot|sogou|prerender)/i;
+        var isBot = botPattern.test(ua);
+
+        window.__RS_IS_BOT__ = isBot;
+        window.__RS_IS_PRERENDER__ = /prerender/i.test(ua);
+
+        if (isBot) {
+          document.documentElement.setAttribute("data-rs-bot", "1");
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

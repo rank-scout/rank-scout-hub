@@ -17,6 +17,11 @@ interface CategoryFAQEditorProps {
 }
 
 export function CategoryFAQEditor({ form }: CategoryFAQEditorProps) {
+  // SAFETY CHECK: Verhindert den Absturz, falls form undefined ist
+  if (!form) {
+    return <div className="p-4 text-red-500 bg-red-50 rounded">Fehler: Formular-Kontext fehlt für FAQ Editor.</div>;
+  }
+
   // Watch ensures we always see current data
   const faqs = (form.watch("faq_data") as FAQItem[]) || [];
 

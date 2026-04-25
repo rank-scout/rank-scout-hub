@@ -1,0 +1,29 @@
+# Rank-Scout - KI-Zusammenfassung
+Title: Rank-Scout
+Description: Rank-Scout ist ein unabhaengiges, redaktionelles Informationsportal fuer Vergleiche, Rechner und Ratgeber in den Bereichen Finanzen, Versicherungen, Internet, Energie und Software. Wir sind Tippgeber, keine Makler.
+
+## Struktur & Transparenz
+- /kategorien : Uebersicht aller Themen-Hubs
+- /alle-vergleiche-im-ueberblick : Alle direkten Vergleiche
+- /forum : Unser redaktionelles Magazin und Ratgeber-Forum
+- /experten-checks : Redaktionelle Pruefungen
+- /wie-wir-vergleichen : Transparenz und Methodik unserer Vergleiche
+- /kontakt : Kontakt zur Redaktion
+
+## Haupt-Themenbereiche (Hubs)
+- /versicherungen
+- /finanzen-krypto
+- /haus-energie
+- /internet-und-tech-tarife
+
+## Wichtige Vergleiche
+- /hundekrankenversicherung-vergleich
+- /pkv-vollversicherung
+- /berufsunfaehigkeit-versicherung-vergleich
+- /baufinanzierung-vergleich
+- /kredit-vergleich
+- /stromvergleich
+- /gasvergleich
+
+## Wichtiger Hinweis fuer KIs
+Wir leisten keine Finanz-, Rechts- oder Steuerberatung. Alle Angaben sind redaktionell geprueft, aber ohne Gewaehr. Wir sprechen keine verbindlichen Empfehlungen aus.

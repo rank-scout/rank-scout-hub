@@ -1,162 +1,241 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
-import { ArrowRight, Loader2, Clock } from "lucide-react";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { useHomeContent } from "@/hooks/useSettings";
+import { Button } from "@/components/ui/button";
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem, 
+  CarouselNext, 
+  CarouselPrevious 
+} from "@/components/ui/carousel";
+import { 
+  ArrowRight, 
+  Calendar, 
+  Layers,
+  Newspaper
+} from "lucide-react";
+import { format } from "date-fns";
+import { de } from "date-fns/locale";
+import { FadeIn } from "@/components/ui/FadeIn";
+import { normalizeInternalLinkTarget } from "@/lib/routes";
+
+type FeedItem = {
+  id: string;
+  title: string;
+  description: string;
+  slug: string;
+  image: string | null;
+  date: string;
+  type: "category";
+  categoryName: string;
+  button_text?: string | null;
+};
+
+// Hilfsfunktion: Teilt ein Array in Blöcke (für den Desktop Grid-Slider)
+const chunkArray = <T,>(arr: T[], size: number): T[][] => {
+  return Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
+    arr.slice(i * size, i * size + size)
+  );
+};
+
+// KYRA FIX: Hilfsfunktion um saubere Teaser-Texte zu generieren (entfernt HTML Tags)
+const getExcerpt = (primary: string | null, secondary: string | null, fallback: string) => {
+  if (primary && primary.trim().length > 0) return primary;
+  if (secondary && secondary.trim().length > 0) {
+    // Entfernt alle HTML-Tags und ersetzt überflüssige Leerzeichen
+    const stripped = secondary.replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+    if (stripped.length > 0) {
+      return stripped.length > 140 ? stripped.substring(0, 140) + "..." : stripped;
+    }
+  }
+  return fallback;
+};
+
+const optimizeImageUrl = (url: string | null, width = 1536) => {
+  if (!url) return "";
+  if (url.includes(".supabase.co/storage/v1/object/public/")) {
+    return url.replace('/object/public/', '/render/image/public/') + `?width=${width}&quality=82`;
+  }
+  return url;
+};
+
+const NewsCard = ({ item }: { item: FeedItem }) => {
+  const dateFormatted = format(new Date(item.date), "d. MMM yyyy", { locale: de });
+  
+  return (
+    <Link 
+        to={normalizeInternalLinkTarget(item.slug)} 
+        className="group flex h-full flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-orange-300 hover:shadow-2xl hover:shadow-orange-100/60 focus:outline-none focus:ring-4 focus:ring-orange-500/15 dark:border-slate-800 dark:bg-slate-900"
+    >
+      <div className="relative aspect-[3/2] overflow-hidden bg-slate-100 dark:bg-slate-800">
+        {item.image ? (
+          <img 
+            src={optimizeImageUrl(item.image, 1536)} 
+            alt={item.title}
+            className="h-full w-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-100 via-white to-orange-50 text-slate-300 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800">
+            <Layers className="w-10 h-10 opacity-20" />
+          </div>
+        )}
+      </div>
+
+      <div className="p-5 flex flex-col flex-grow">
+        <div className="flex items-center justify-between mb-3">
+           <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500 dark:text-slate-400">
+              <Calendar className="w-3.5 h-3.5" />
+              {dateFormatted}
+           </div>
+           <div className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10px] font-bold uppercase tracking-wider rounded-md">
+             <Layers className="w-3 h-3 text-primary" />
+             {item.categoryName}
+           </div>
+        </div>
+
+        <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[3rem]">
+          {item.title}
+        </h3>
+        
+        <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed line-clamp-2 mb-4 flex-grow min-h-[2.5rem]">
+          {item.description}
+        </p>
+
+        <div className="mt-auto pt-2 border-t border-slate-50 dark:border-slate-800">
+           <div className="flex items-center justify-center w-full bg-slate-50 dark:bg-slate-800 group-hover:bg-primary text-slate-700 dark:text-slate-300 group-hover:text-white py-2.5 rounded-lg text-sm font-bold transition-all duration-300">
+             {item.button_text?.trim() || "Vergleich ansehen"}
+             <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+           </div>
+        </div>
+      </div>
+    </Link>
+  );
+};
 
 export function NewsSection() {
-  // Wir holen die neuesten 6 veröffentlichten Beiträge für das Grid
-  const { data: posts, isLoading } = useQuery({
-    queryKey: ["latest-news-posts"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("forum_threads")
-        .select(`
-          id,
-          title,
-          slug,
-          content,
-          seo_description,
-          created_at,
-          author_name,
-          featured_image_url,
-          view_count,
-          forum_categories ( name, slug )
-        `)
-        .eq("status", "published")
-        .eq("is_active", true)
-        .order("created_at", { ascending: false })
-        .limit(6);
+  const { content } = useHomeContent();
+  const fetchLimit = 18; 
 
-      if (error) throw error;
-      return data;
+  const { data: feedItems, isLoading } = useQuery({
+    queryKey: ["latest-comparisons-feed", fetchLimit],
+    queryFn: async () => {
+      const { data: categories, error: catError } = await supabase
+        .from("categories")
+        .select("id, name, description, meta_description, long_content_top, slug, created_at, icon, banner_override, card_image_url, button_text")
+        .eq("is_active", true)
+        .in("template", ["comparison", "review"])
+        .order("created_at", { ascending: false })
+        .limit(fetchLimit);
+
+      if (catError) console.error("Fehler beim Laden der Kategorien:", catError);
+
+      const items: FeedItem[] = [];
+
+      if (categories) {
+        categories.forEach(cat => {
+          items.push({
+            id: `cat-${cat.id}`,
+            title: cat.name,
+            description: getExcerpt(
+                cat.description || cat.meta_description, 
+                cat.long_content_top, 
+                "Detaillierter Vergleich und redaktioneller Überblick."
+            ),
+            slug: `/${cat.slug}`,
+            image: cat.card_image_url || cat.banner_override || cat.icon || null,
+            date: cat.created_at || new Date().toISOString(),
+            type: "category",
+            categoryName: "Vergleich",
+button_text: cat.button_text ?? null
+          });
+        });
+      }
+
+      return items
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, fetchLimit);
     },
   });
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("de-DE", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
+  if (isLoading || !feedItems || feedItems.length === 0) return null;
 
-  // Hilfsfunktion: HTML-Tags entfernen für sauberen Vorschau-Text
-  const stripHtml = (html: string) => {
-    const tmp = document.createElement("DIV");
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || "";
-  };
-
-  if (isLoading) {
-    return (
-      <div className="py-20 flex justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (!posts || posts.length === 0) {
-    return null;
-  }
+  const desktopChunks = chunkArray(feedItems, 6);
 
   return (
-    <section className="py-20 bg-gray-50/50">
-      <div className="container mx-auto px-4 max-w-7xl">
+    <section className="py-16 bg-white dark:bg-slate-950 relative overflow-hidden">
+      <div className="container px-4 md:px-8 mx-auto relative z-10">
         
-        {/* Header-Bereich mit Apps-Finder Style (Rote Linie) */}
-        <div className="mb-12 flex flex-col md:flex-row justify-between items-end gap-4 border-b border-gray-200 pb-4 relative">
-          <div>
-            <h2 className="text-3xl font-bold uppercase tracking-tight text-foreground mb-2">
-              Neueste Artikel
+        <FadeIn className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-widest mb-4 border border-primary/20">
+              <Newspaper className="w-3.5 h-3.5" />
+              {content?.news?.headline || "Rank-Scout Magazin"}
+            </div>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-3 leading-tight tracking-tight">
+              {content?.news?.subheadline || "Aktuelles & Ratgeber"}
             </h2>
-            {/* Die rote Zierlinie unten links */}
-            <div className="absolute bottom-0 left-0 h-[3px] w-[60px] bg-[#f55a4a]"></div>
+            <p className="text-base text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
+              Die neuesten Vergleiche, Artikel und Ratgeber aus unserer Redaktion.
+            </p>
           </div>
-          
-          <Link 
-            to="/forum" 
-            className="text-sm font-medium text-muted-foreground hover:text-[#f55a4a] transition-colors flex items-center gap-1 mb-1"
-          >
-            Alle News anzeigen <ArrowRight className="w-4 h-4" />
-          </Link>
+
+          <div className="hidden md:flex gap-4">
+              <Button size="sm" variant="outline" className="rounded-xl font-bold border-slate-300 hover:bg-slate-50" asChild>
+                 <Link to={normalizeInternalLinkTarget(content?.news?.button_url || "/kategorien")}>{content?.news?.button_text || "Alle Vergleiche ansehen"}</Link>
+              </Button>
+          </div>
+        </FadeIn>
+
+        <div className="relative hidden lg:block w-full">
+          <Carousel opts={{ align: "start", loop: true }} className="w-full relative">
+            <CarouselContent>
+              {desktopChunks.map((chunk, index) => (
+                <CarouselItem key={index} className="w-full">
+                  <div className="grid grid-cols-3 gap-5 xl:gap-6">
+                    {chunk.map((item) => (
+                      <NewsCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            
+            {desktopChunks.length > 1 && (
+              <>
+                <CarouselPrevious className="absolute -left-6 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
+                <CarouselNext className="absolute -right-6 top-1/2 -translate-y-1/2 bg-orange-500 text-white hover:bg-slate-900 hover:text-orange-500 border-none w-14 h-14 shadow-[0_8px_30px_rgb(249,115,22,0.3)] rounded-full transition-all duration-300 z-20 flex items-center justify-center hover:scale-110" />
+              </>
+            )}
+          </Carousel>
         </div>
 
-        {/* Grid Layout: 1 Spalte Mobil, 2 Tablet, 3 Desktop */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {posts.map((post) => (
-            <article key={post.id} className="group flex flex-col h-full">
-              <Card className="h-full border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white overflow-hidden flex flex-col">
-                
-                {/* Bild-Bereich: Format 1024/559 erzwungen */}
-                <div className="relative overflow-hidden w-full aspect-[1024/559]">
-                  <Link to={`/forum/${post.slug}`}>
-                    {post.featured_image_url ? (
-                      <img 
-                        src={post.featured_image_url} 
-                        alt={post.title}
-                        className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      // Fallback, falls kein Bild da ist
-                      <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-400">
-                        <span className="text-sm font-medium">Kein Bild</span>
-                      </div>
-                    )}
-                    
-                    {/* Kategorie Badge oben links im Bild */}
-                    {post.forum_categories && (
-                      <Badge className="absolute top-4 left-4 bg-[#f55a4a] hover:bg-[#d14030] text-white border-none shadow-sm text-xs font-semibold px-3 py-1">
-                        {post.forum_categories.name}
-                      </Badge>
-                    )}
-                  </Link>
-                </div>
-
-                {/* Karten-Inhalt */}
-                <CardHeader className="p-6 pb-2 space-y-3">
-                  {/* Meta-Daten: Datum und Autor */}
-                  <div className="flex items-center text-xs text-muted-foreground gap-3">
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatDate(post.created_at)}
-                    </span>
-                    <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                    <span className="flex items-center gap-1">
-                       <span className="font-medium text-[#f55a4a]">{post.author_name}</span>
-                    </span>
-                  </div>
-
-                  {/* Titel */}
-                  <h3 className="text-xl font-bold leading-snug line-clamp-2 group-hover:text-[#f55a4a] transition-colors">
-                    <Link to={`/forum/${post.slug}`}>
-                      {post.title}
-                    </Link>
-                  </h3>
-                </CardHeader>
-
-                {/* Text-Vorschau */}
-                <CardContent className="p-6 pt-2 flex-grow">
-                  <p className="text-muted-foreground text-sm leading-relaxed line-clamp-3">
-                    {post.seo_description || stripHtml(post.content).substring(0, 120) + "..."}
-                  </p>
-                </CardContent>
-
-                {/* Footer mit Weiterlesen-Button */}
-                <CardFooter className="p-6 pt-0 mt-auto border-t border-gray-50 bg-gray-50/30">
-                  <Link 
-                    to={`/forum/${post.slug}`} 
-                    className="w-full flex items-center justify-between text-sm font-semibold text-foreground group-hover:text-[#f55a4a] transition-colors py-3"
-                  >
-                    Weiterlesen
-                    <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                  </Link>
-                </CardFooter>
-              </Card>
-            </article>
-          ))}
+        <div className="block lg:hidden">
+          <Carousel
+            opts={{ align: "start", loop: false }}
+            className="w-full pb-4"
+          >
+            <CarouselContent className="-ml-4">
+              {feedItems.slice(0, 10).map((item) => (
+                <CarouselItem key={item.id} className="pl-4 basis-[85%] sm:basis-[60%] md:basis-[45%] h-full">
+                  <NewsCard item={item} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            
+            <div className="flex justify-center gap-4 mt-8">
+              <CarouselPrevious className="static translate-y-0 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 w-14 h-14 shadow-sm rounded-xl transition-all" />
+              <CarouselNext className="static translate-y-0 bg-orange-50 text-orange-600 hover:bg-orange-500 hover:text-white border border-orange-200 w-14 h-14 shadow-sm rounded-xl transition-all" />
+            </div>
+          </Carousel>
+          
+          <div className="mt-6 text-center md:hidden">
+              <Button size="lg" variant="outline" className="w-full rounded-xl font-bold border-slate-200 text-slate-700 bg-white" asChild>
+                 <Link to="/experten-checks">Alle Beiträge ansehen</Link>
+              </Button>
+          </div>
         </div>
 
       </div>

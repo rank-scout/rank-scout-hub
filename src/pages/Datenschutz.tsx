@@ -1,25 +1,41 @@
+import "@/styles/article-content.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Lock, ShieldCheck, Server, BarChart3, Globe, Mail } from "lucide-react";
+import { Helmet } from "react-helmet-async"; // KYRA FIX
 
 const Datenschutz = () => {
   return (
     <div className="min-h-screen flex flex-col bg-white font-sans text-slate-900">
+      {/* KYRA FIX: Unique Title für Datenschutz */}
+      <Helmet>
+        <title>Datenschutzerklärung | Rank-Scout</title>
+        <meta name="description" content="Informationen zum Datenschutz auf Rank-Scout. Wie wir deine Daten schützen." />
+        <link rel="canonical" href="https://rank-scout.com/datenschutz" />
+        <meta name="robots" content="noindex, follow" />
+      </Helmet>
+
       <Header />
       
-      <main className="flex-grow container mx-auto px-4 pt-40 pb-20">
-        <div className="max-w-4xl mx-auto">
-          {/* Header Section */}
-          <div className="mb-12 border-b border-slate-100 pb-8">
-            <h1 className="text-4xl md:text-5xl font-display font-bold text-primary mb-4 tracking-tight">
+      {/* --- HEADER BEREICH (ZENTRIERT) --- */}
+      <div className="bg-primary pt-32 pb-20 md:pt-40 md:pb-24 relative overflow-hidden">
+         <div className="absolute inset-0 bg-grid-white/[0.05] bg-[length:30px_30px]" />
+         <div className="absolute inset-0 bg-gradient-to-b from-transparent to-primary/90" />
+
+         <div className="container mx-auto px-4 relative z-10 text-center">
+            <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4 tracking-tight">
               Datenschutzerklärung
             </h1>
-            <p className="text-lg text-slate-500">
+            <p className="text-lg text-slate-300 mx-auto max-w-2xl">
               Transparenz ist uns wichtig. Hier erfahren Sie, wie wir Ihre Daten schützen.
             </p>
             <p className="text-sm text-secondary font-medium mt-2">Stand: 25.01.2026</p>
-          </div>
+         </div>
+      </div>
 
+      <main className="flex-grow container mx-auto px-4 -mt-12 relative z-20 pb-20">
+        <div className="max-w-4xl mx-auto bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-slate-100">
+          
           <div className="space-y-16">
             
             {/* 1. Datenschutz auf einen Blick */}
@@ -54,7 +70,7 @@ const Datenschutz = () => {
                <div className="absolute top-0 right-0 p-8 opacity-5">
                 <ShieldCheck className="w-32 h-32" />
               </div>
-              <h2 className="text-2xl font-display font-bold mb-6 relative z-10">2. Ihre Rechte & Widerruf</h2>
+              <h2 className="text-2xl font-display font-bold mb-6 relative z-10 text-white">2. Ihre Rechte & Widerruf</h2>
               <p className="text-slate-300 mb-8 relative z-10">
                 Sie haben jederzeit das Recht auf unentgeltliche Auskunft über Herkunft, Empfänger und Zweck Ihrer gespeicherten personenbezogenen Daten sowie ein Recht auf Berichtigung, Sperrung oder Löschung.
               </p>
@@ -72,7 +88,7 @@ const Datenschutz = () => {
                 <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><Server className="w-6 h-6" /></div>
                 3. Hosting & Content Delivery
               </h2>
-              <div className="prose prose-slate max-w-none text-slate-700 space-y-6">
+              <div className="article-content article-content--legal max-w-none text-slate-700 space-y-6">
                 <div className="p-6 rounded-xl border border-slate-100 bg-white">
                   <p><strong>Externes Hosting (Vercel / Supabase):</strong> Diese Website wird bei Vercel Inc. & Supabase Inc. gehostet. Erfasste Daten (IP-Adressen, Meta-Daten) werden auf deren Servern gespeichert (Art. 6 Abs. 1 lit. f DSGVO).</p>
                 </div>
@@ -82,6 +98,18 @@ const Datenschutz = () => {
                 <div className="p-6 rounded-xl border border-slate-100 bg-white">
                   <p><strong>E-Mail Hosting (IONOS):</strong> E-Mails werden auf Servern der IONOS SE in Deutschland gespeichert. Wir haben Verträge zur Auftragsverarbeitung (AVV) geschlossen.</p>
                 </div>
+              </div>
+            </section>
+
+            {/* NEU: Integration von Vergleichsrechnern */}
+            <section>
+              <h2 className="text-2xl font-display font-bold text-primary mb-6 flex items-center gap-3">
+                <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><Server className="w-6 h-6" /></div>
+                Eingebundene Vergleichsrechner (Partnerprogramme)
+              </h2>
+              <div className="space-y-6 text-slate-700 p-6 rounded-xl border border-slate-100 bg-slate-50">
+                <p>Auf unserer Website binden wir iFrames und Vergleichsrechner von externen Partnern ein (insbesondere der TARIFCHECK24 GmbH und CHECK24). Wenn Sie diese Rechner nutzen und Daten in die Formulare eingeben, werden diese Daten direkt auf den Servern der jeweiligen Partner verarbeitet. Wir selbst speichern die in den Rechnern eingegebenen sensiblen Formulardaten nicht.</p>
+                <p>Der jeweilige Partner ist datenschutzrechtlich für die im Rechner eingegebenen Daten verantwortlich. Weitere Informationen zur Datenverarbeitung finden Sie in den Datenschutzerklärungen der jeweiligen Partner in den iFrames.</p>
               </div>
             </section>
 
@@ -97,7 +125,7 @@ const Datenschutz = () => {
               </div>
             </section>
 
-            {/* 5. Analyse & Werbung */}
+            {/* 5. Analyse */}
             <section>
               <h2 className="text-2xl font-display font-bold text-primary mb-6 flex items-center gap-3">
                 <div className="p-2 bg-secondary/10 rounded-lg text-secondary"><BarChart3 className="w-6 h-6" /></div>

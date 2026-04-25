@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Info } from "lucide-react";
 import { useAdsEnabled, useAdSenseConfig } from "@/hooks/useSettings";
 
@@ -6,11 +6,34 @@ export const AdSenseBanner = ({ slotId }: { slotId?: string }) => {
   const adsEnabled = useAdsEnabled();
   const { clientId, defaultSlotId } = useAdSenseConfig();
   
+  // Consent State
+  const [marketingConsent, setMarketingConsent] = useState(false);
+
+  // Live-Check der Marketing-Zustimmung
+  useEffect(() => {
+    const checkConsent = () => {
+        const stored = localStorage.getItem("cookie-consent");
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                // AdSense braucht "marketing"
+                setMarketingConsent(!!parsed.marketing);
+            } catch(e) {}
+        } else {
+            setMarketingConsent(false);
+        }
+    };
+    checkConsent();
+    window.addEventListener("cookie-consent-update", checkConsent);
+    return () => window.removeEventListener("cookie-consent-update", checkConsent);
+  }, []);
+
   // Verwende die übergebene SlotId oder den Default aus den Settings
   const finalSlotId = slotId || defaultSlotId;
 
   useEffect(() => {
-    if (adsEnabled && clientId && finalSlotId) {
+    // Der Push passiert NUR, wenn alles konfiguriert UND erlaubt ist
+    if (adsEnabled && clientId && finalSlotId && marketingConsent) {
       try {
         // @ts-ignore
         (window.adsbygoogle = window.adsbygoogle || []).push({});
@@ -18,9 +41,13 @@ export const AdSenseBanner = ({ slotId }: { slotId?: string }) => {
         console.error("AdSense Error:", err);
       }
     }
-  }, [adsEnabled, clientId, finalSlotId]);
+  }, [adsEnabled, clientId, finalSlotId, marketingConsent]);
 
+  // Global deaktiviert? Raus.
   if (!adsEnabled) return null;
+
+  // RECHTSKONFORMITÄT: Kein Marketing-Consent? Keine Anzeige.
+  if (!marketingConsent) return null;
 
   // Prüfen ob Konfiguration vorhanden ist
   const isConfigured = clientId && finalSlotId;

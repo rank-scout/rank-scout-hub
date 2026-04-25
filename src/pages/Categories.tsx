@@ -6,8 +6,21 @@ import { useCategories } from "@/hooks/useCategories";
 import { useProjects } from "@/hooks/useProjects";
 import { Input } from "@/components/ui/input";
 import { Search, ArrowRight, Loader2 } from "lucide-react";
+import { Helmet } from "react-helmet-async"; 
+import { useTrackView } from "@/hooks/useTrackView";
+import { getCategoriesCanonicalUrl, getCategoryRoute } from "@/lib/routes";
+
+
+const CATEGORY_FALLBACK_LINKS = [
+  { label: "Forum", to: "/forum" },
+  { label: "Top Apps", to: "/top-apps" },
+  { label: "Kontakt", to: "/kontakt" },
+  { label: "Wie wir vergleichen", to: "/wie-wir-vergleichen" },
+];
 
 export default function Categories() {
+  useTrackView("categories-overview", "page");
+
   const { data: categories = [], isLoading } = useCategories();
   const { data: projects = [] } = useProjects();
   const [searchQuery, setSearchQuery] = useState("");
@@ -32,94 +45,144 @@ export default function Categories() {
           text: "text-casino",
           gradient: "from-casino/20 to-transparent",
         };
-      case "ADULT":
+      case "FINANCE":
         return {
-          bg: "bg-adult/10",
-          border: "border-adult/20 hover:border-adult/50",
-          text: "text-adult",
-          gradient: "from-adult/20 to-transparent",
+          bg: "bg-finance/10",
+          border: "border-finance/20 hover:border-finance/50",
+          text: "text-finance",
+          gradient: "from-finance/20 to-transparent",
+        };
+      case "HEALTH":
+        return {
+          bg: "bg-health/10",
+          border: "border-health/20 hover:border-health/50",
+          text: "text-health",
+          gradient: "from-health/20 to-transparent",
+        };
+      case "SOFTWARE":
+        return {
+          bg: "bg-software/10",
+          border: "border-software/20 hover:border-software/50",
+          text: "text-software",
+          gradient: "from-software/20 to-transparent",
         };
       default:
         return {
-          bg: "bg-primary/10",
-          border: "border-primary/20 hover:border-primary/50",
-          text: "text-primary",
-          gradient: "from-primary/20 to-transparent",
+          bg: "bg-slate-50",
+          border: "border-slate-200 hover:border-primary/50",
+          text: "text-slate-600",
+          gradient: "from-slate-100 to-transparent",
         };
     }
   };
 
-  const filteredCategories = categories.filter((cat) =>
-    cat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    cat.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCategories = categories.filter((category) => {
+    if (!category.is_active) return false;
+    if (searchQuery.trim() === "") return true;
+    return (
+      category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (category.description && category.description.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  });
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen flex flex-col bg-background font-sans">
+      <Helmet>
+        <title>Alle Kategorien 2026 im Überblick | Rank-Scout</title>
+        <meta name="description" content="Alle Rank-Scout Kategorien im Überblick: Versicherungen, Finanzen, Energie, Internet, KI, Apps und weitere Themen sachlich geordnet." />
+        <link rel="canonical" href={getCategoriesCanonicalUrl()} />
+      </Helmet>
+
       <Header />
-      <main className="pt-16">
-        {/* Hero */}
-        <section className="bg-hero-gradient py-16 md:py-24">
-          <div className="container mx-auto px-4">
-            <div className="max-w-3xl mx-auto text-center">
-              <h1 className="font-display font-bold text-4xl md:text-5xl text-foreground mb-4">
-                Alle Kategorien
-              </h1>
-              <p className="text-lg text-muted-foreground mb-8">
-                Entdecke alle Vergleichskategorien und finde die besten Anbieter für deine Bedürfnisse.
-              </p>
-              
-              {/* Search */}
-              <div className="relative max-w-md mx-auto">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Kategorien durchsuchen..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-12 pl-12 pr-4 bg-muted/50 border-border/50 rounded-xl"
-                />
+
+      <main className="flex-grow pt-24 pb-16">
+        <section className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center mb-16">
+            <h1 className="font-display font-bold text-4xl md:text-5xl text-foreground mb-4">
+              Unsere Vergleiche
+            </h1>
+            <p className="text-lg text-muted-foreground mb-6">
+              Wähle eine Kategorie, um passende Angebote, Vergleiche und Hintergrundinformationen im Überblick zu sehen.
+            </p>
+
+            <nav aria-label="Beliebte Kategorien" className="flex flex-wrap justify-center gap-3 mb-8">
+              {CATEGORY_FALLBACK_LINKS.map((link) => (
+                <Link
+                  key={link.to}
+                  to={link.to}
+                  className="inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+
+<div className="relative max-w-md mx-auto">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-muted-foreground" />
               </div>
+              <Input
+                type="text"
+                placeholder="Kategorie suchen..."
+                className="pl-10 h-12 rounded-xl bg-white shadow-sm border-slate-200 focus:border-primary"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
             </div>
           </div>
-        </section>
 
-        {/* Categories Grid */}
-        <section className="py-16">
-          <div className="container mx-auto px-4">
+          <div className="max-w-7xl mx-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="py-20">
+                <div className="flex justify-center items-center mb-8">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                </div>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {CATEGORY_FALLBACK_LINKS.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             ) : filteredCategories.length === 0 ? (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground">
-                  {searchQuery ? `Keine Kategorien gefunden für "${searchQuery}"` : "Keine Kategorien vorhanden."}
-                </p>
+              <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                <p className="text-muted-foreground mb-6">Keine Kategorien gefunden.</p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {CATEGORY_FALLBACK_LINKS.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className="inline-flex items-center rounded-full border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+                    >
+                      {link.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredCategories.map((category, index) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredCategories.map((category) => {
                   const theme = getThemeClasses(category.theme);
                   const projectCount = getProjectCount(category.id);
 
                   return (
-                    <Link
-                      key={category.id}
-                      to={`/kategorien/${category.slug}`}
-                      className={`group relative bg-card rounded-2xl p-6 border ${theme.border} transition-all duration-300 hover:-translate-y-2 hover:shadow-lg overflow-hidden`}
-                      style={{ animationDelay: `${index * 0.05}s` }}
+                    <Link 
+                      key={category.id} 
+                      to={getCategoryRoute(category.slug)}
+                      className="group block h-full"
                     >
-                      {/* Gradient overlay */}
-                      <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} opacity-0 group-hover:opacity-100 transition-opacity`} />
-                      
-                      <div className="relative z-10">
-                        {/* Icon */}
-                        <div className={`w-14 h-14 rounded-xl ${theme.bg} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
+                      <div className={`h-full bg-white rounded-3xl p-6 border transition-all duration-300 relative overflow-hidden flex flex-col ${theme.border} hover:shadow-lg`}>
+                        <div className={`absolute inset-0 bg-gradient-to-br ${theme.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                        
+                        <div className={`w-14 h-14 rounded-2xl ${theme.bg} ${theme.text} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform`}>
                           <span className="text-3xl">{category.icon || "📊"}</span>
                         </div>
 
-                        {/* Content */}
                         <h2 className="font-display font-bold text-xl text-foreground mb-2 group-hover:text-primary transition-colors">
                           {category.name}
                         </h2>
@@ -130,10 +193,9 @@ export default function Categories() {
                           </p>
                         )}
 
-                        {/* Footer */}
                         <div className="flex items-center justify-between mt-auto pt-4 border-t border-border/50">
                           <span className={`text-sm font-medium ${theme.text}`}>
-                            {projectCount} {projectCount === 1 ? "Anbieter" : "Anbieter"}
+                            {projectCount} Anbieter
                           </span>
                           <ArrowRight className={`w-5 h-5 ${theme.text} opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all`} />
                         </div>
