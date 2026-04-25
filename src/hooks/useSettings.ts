@@ -4,6 +4,7 @@ import type { Json } from "@/integrations/supabase/types";
 import type { TrendingLink } from "@/lib/schemas";
 import { getCategoriesRoute, normalizeNavigableHref } from "@/lib/routes";
 import { ABOUT_PAGE_SETTING_KEY } from "@/lib/aboutContent";
+import { useMemo } from "react";
 export const PUBLIC_SETTINGS_KEYS = [
   "active_theme",
   "home_sections",
@@ -146,17 +147,19 @@ export function useUpdateSetting() {
   return useMutation({
     mutationFn: async ({ key, value }: { key: string; value: Json }) => {
       if (BLOCKED_SERVER_ONLY_KEYS.has(key)) {
-        throw new Error(`Die Einstellung "${key}" darf nicht mehr clientseitig gespeichert werden.`);
+        throw new Error("Die Einstellung " + key + " darf nicht mehr clientseitig gespeichert werden.");
       }
 
-      const { error } = await supabase.from("settings").upsert(
+      const { data, error } = await supabase.from("settings").upsert(
         {
           key,
           value,
           updated_at: new Date().toISOString(),
         },
         { onConflict: "key" }
-      );
+      )
+      .select("key")
+      .maybeSingle();
 
       if (error) {
         console.error("Supabase Error:", error);
@@ -168,9 +171,13 @@ export function useUpdateSetting() {
 
         throw error;
       }
+
+      if (!data?.key) {
+        throw new Error("Setting " + key + " wurde von Supabase nicht bestätigt.");
+      }
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["settings"] });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["settings"], refetchType: "all" });
     },
   });
 }
@@ -452,13 +459,14 @@ export function normalizeHomeSectionsValue(rawSections?: HomeSection[] | null): 
 
 export function useHomeLayout() { 
   const { data: settings } = useSettings(); 
-  
-  const layoutV2 = settings?.home_layout_v2 as typeof defaultHomeLayout | undefined;
-  const layout = { ...defaultHomeLayout, ...(layoutV2 || {}) };
 
-  const sections = normalizeHomeSectionsValue(settings?.home_sections as HomeSection[] | undefined);
+  return useMemo(() => {
+    const layoutV2 = settings?.home_layout_v2 as typeof defaultHomeLayout | undefined;
+    const layout = { ...defaultHomeLayout, ...(layoutV2 || {}) };
 
-  const mappedSections = sections.map((s) => {
+    const sections = normalizeHomeSectionsValue(settings?.home_sections as HomeSection[] | undefined);
+
+    const mappedSections = sections.map((s) => {
       let isEnabled = typeof s.enabled === 'boolean' ? s.enabled : true;
       if (s.id === 'hero') isEnabled = layout.hero;
       else if (s.id === 'trust') isEnabled = layout.trust;
@@ -470,62 +478,101 @@ export function useHomeLayout() {
       else if (s.id === 'amazon_top' || s.id === 'adsense_middle') isEnabled = layout.ads;
       
       return { ...s, enabled: isEnabled };
-  });
+    });
 
-  return { 
+    return { 
       sections: mappedSections, 
       layout 
-  }; 
+    }; 
+  }, [settings?.home_layout_v2, settings?.home_sections]);
 }
 
-export function useHeaderConfig() { const { data } = useSettings(); return normalizeHeaderConfigValue({ ...defaultHeaderConfig, ...(data?.header_config as any || {}) }); }
-export function useFooterConfig() { const { data } = useSettings(); return normalizeFooterConfigValue({ ...defaultFooterConfig, ...(data?.footer_config as any || {}) }); }
-export function useScoutyConfig() { const { data } = useSettings(); return { ...defaultScoutyConfig, ...(data?.scouty_config as any || {}) }; }
-export function useHomeForumTeaser() { const { data } = useSettings(); return { ...defaultHomeForumTeaser, ...(data?.home_forum_teaser as any || {}) }; }
+export function useHeaderConfig() {
+  const { data } = useSettings();
+  return useMemo(
+    () => normalizeHeaderConfigValue({ ...defaultHeaderConfig, ...(data?.header_config as any || {}) }),
+    [data?.header_config]
+  );
+}
+export function useFooterConfig() {
+  const { data } = useSettings();
+  return useMemo(
+    () => normalizeFooterConfigValue({ ...defaultFooterConfig, ...(data?.footer_config as any || {}) }),
+    [data?.footer_config]
+  );
+}
+export function useScoutyConfig() {
+  const { data } = useSettings();
+  return useMemo(
+    () => ({ ...defaultScoutyConfig, ...(data?.scouty_config as any || {}) }),
+    [data?.scouty_config]
+  );
+}
+export function useHomeForumTeaser() {
+  const { data } = useSettings();
+  return useMemo(
+    () => ({ ...defaultHomeForumTeaser, ...(data?.home_forum_teaser as any || {}) }),
+    [data?.home_forum_teaser]
+  );
+}
 
 export function useHomeContent() { 
   const { data: settings } = useSettings(); 
-  const settingsContent = (settings?.home_content as any || {});
-  
-  const content = { 
-    ...defaultHomeContent, 
-    ...settingsContent,
-    seo: {
+
+  return useMemo(() => {
+    const settingsContent = (settings?.home_content as any || {});
+    
+    const content = { 
+      ...defaultHomeContent, 
+      ...settingsContent,
+      seo: {
         ...defaultHomeContent.seo,
         ...(settingsContent.seo || {})
-    }
-  }; 
-  
-  content.big_three = { ...defaultHomeContent.big_three, ...(content.big_three || {}) };
-  content.big_three.items = normalizeBigThreeItemsValue(content.big_three.items || defaultHomeContent.big_three.items);
-  content.big_three.finance_link = normalizeNavigableHref(String(content.big_three.finance_link || defaultHomeContent.big_three.finance_link || "/"));
-  content.big_three.software_link = normalizeNavigableHref(String(content.big_three.software_link || defaultHomeContent.big_three.software_link || "/"));
-  content.big_three.services_link = normalizeNavigableHref(String(content.big_three.services_link || defaultHomeContent.big_three.services_link || "/"));
-  
-  content.why_us = { ...defaultHomeContent.why_us, ...(content.why_us || {}) };
-  content.home_faq = { ...defaultHomeContent.home_faq, ...(content.home_faq || {}) };
-  content.home_faq.items = Array.isArray(content.home_faq.items) && content.home_faq.items.length > 0
-    ? content.home_faq.items
-    : defaultHomeContent.home_faq.items;
-  content.categories = { ...defaultHomeContent.categories, ...content.categories }; 
-  content.news = { ...defaultHomeContent.news, ...content.news }; 
-  content.news.button_url = normalizeNavigableHref(String(content.news.button_url || defaultHomeContent.news.button_url || getCategoriesRoute()));
-  content.trust = { ...defaultHomeContent.trust, ...content.trust }; 
-  content.hero = { ...defaultHomeContent.hero, ...content.hero };
-  content.hero.stats = Array.isArray(content.hero.stats) && content.hero.stats.length > 0
-    ? content.hero.stats
-    : defaultHomeContent.hero.stats;
-  content.how_it_works = { ...defaultHomeContent.how_it_works, ...(content.how_it_works || {}) };
-  content.how_it_works.steps = Array.isArray(content.how_it_works.steps) && content.how_it_works.steps.length > 0
-    ? content.how_it_works.steps
-    : defaultHomeContent.how_it_works.steps;
-  
-  return { content }; 
+      }
+    }; 
+    
+    content.big_three = { ...defaultHomeContent.big_three, ...(content.big_three || {}) };
+    content.big_three.items = normalizeBigThreeItemsValue(content.big_three.items || defaultHomeContent.big_three.items);
+    content.big_three.finance_link = normalizeNavigableHref(String(content.big_three.finance_link || defaultHomeContent.big_three.finance_link || "/"));
+    content.big_three.software_link = normalizeNavigableHref(String(content.big_three.software_link || defaultHomeContent.big_three.software_link || "/"));
+    content.big_three.services_link = normalizeNavigableHref(String(content.big_three.services_link || defaultHomeContent.big_three.services_link || "/"));
+    
+    content.why_us = { ...defaultHomeContent.why_us, ...(content.why_us || {}) };
+    content.home_faq = { ...defaultHomeContent.home_faq, ...(content.home_faq || {}) };
+    content.home_faq.items = Array.isArray(content.home_faq.items) && content.home_faq.items.length > 0
+      ? content.home_faq.items
+      : defaultHomeContent.home_faq.items;
+    content.categories = { ...defaultHomeContent.categories, ...content.categories }; 
+    content.news = { ...defaultHomeContent.news, ...content.news }; 
+    content.news.button_url = normalizeNavigableHref(String(content.news.button_url || defaultHomeContent.news.button_url || getCategoriesRoute()));
+    content.trust = { ...defaultHomeContent.trust, ...content.trust }; 
+    content.hero = { ...defaultHomeContent.hero, ...content.hero };
+    content.hero.stats = Array.isArray(content.hero.stats) && content.hero.stats.length > 0
+      ? content.hero.stats
+      : defaultHomeContent.hero.stats;
+    content.how_it_works = { ...defaultHomeContent.how_it_works, ...(content.how_it_works || {}) };
+    content.how_it_works.steps = Array.isArray(content.how_it_works.steps) && content.how_it_works.steps.length > 0
+      ? content.how_it_works.steps
+      : defaultHomeContent.how_it_works.steps;
+    
+    return { content }; 
+  }, [settings?.home_content]);
 }
 
 export function useAdSenseConfig() { const { data: settings } = useSettings(); return { clientId: (settings?.ads_sense_client_id as string) || "", defaultSlotId: (settings?.ads_sense_slot_id as string) || "", enabled: (settings?.ads_enabled as boolean) || false }; }
 export function useAmazonConfig() { const { data: settings } = useSettings(); return { headline: (settings?.ads_amazon_headline as string) || "", text: (settings?.ads_amazon_text as string) || "", buttonText: (settings?.ads_amazon_button_text as string) || "Zum Angebot", link: (settings?.ads_amazon_link as string) || "", enabled: (settings?.ads_enabled as boolean) || false }; }
-export function useForumBannerConfig() { const { data: settings } = useSettings(); return { headline: (settings?.forum_banner_headline as string) || "Diskussionen & Erfahrungen", subheadline: (settings?.forum_banner_subheadline as string) || "Tausche dich mit anderen aus, stelle Fragen und teile deine Erfahrungen", badge: (settings?.forum_banner_badge as string) || "Community Forum", enabled: true }; }
+export function useForumBannerConfig() {
+  const { data: settings } = useSettings();
+  return useMemo(
+    () => ({
+      headline: (settings?.forum_banner_headline as string) || "Diskussionen & Erfahrungen",
+      subheadline: (settings?.forum_banner_subheadline as string) || "Tausche dich mit anderen aus, stelle Fragen und teile deine Erfahrungen",
+      badge: (settings?.forum_banner_badge as string) || "Community Forum",
+      enabled: true,
+    }),
+    [settings?.forum_banner_headline, settings?.forum_banner_subheadline, settings?.forum_banner_badge]
+  );
+}
 
 
 export type ForumSidebarConfig = {
@@ -554,20 +601,23 @@ export const defaultForumSidebarConfig: ForumSidebarConfig = {
 
 export function useForumSidebarConfig() {
   const { data } = useSettings();
-  const config = (data?.forum_sidebar as Partial<ForumSidebarConfig> | undefined) || {};
-  return {
-    ...defaultForumSidebarConfig,
-    ...config,
-    hot_comparison_ids: Array.isArray(config.hot_comparison_ids) ? config.hot_comparison_ids : [],
-    popular_comparison_ids: Array.isArray(config.popular_comparison_ids) ? config.popular_comparison_ids : [],
-    random_count: Number.isFinite(Number(config.random_count)) ? Math.max(0, Number(config.random_count)) : defaultForumSidebarConfig.random_count,
-  } as ForumSidebarConfig;
+
+  return useMemo(() => {
+    const config = (data?.forum_sidebar as Partial<ForumSidebarConfig> | undefined) || {};
+
+    return {
+      ...defaultForumSidebarConfig,
+      ...config,
+      hot_comparison_ids: Array.isArray(config.hot_comparison_ids) ? config.hot_comparison_ids : [],
+      popular_comparison_ids: Array.isArray(config.popular_comparison_ids) ? config.popular_comparison_ids : [],
+      random_count: Number.isFinite(Number(config.random_count)) ? Math.max(0, Number(config.random_count)) : defaultForumSidebarConfig.random_count,
+    } as ForumSidebarConfig;
+  }, [data?.forum_sidebar]);
 }
 
 export function useForumAds() { 
-    const { data } = useSettings(); 
-    const ads = (data?.forum_ads as ForumAd[]) || []; 
-    return ads; 
+  const { data } = useSettings(); 
+  return useMemo(() => (data?.forum_ads as ForumAd[]) || [], [data?.forum_ads]);
 }
 
 export function useSiteTitle() { return useSetting<string>("site_title", ""); }

@@ -172,7 +172,6 @@ export default function AdminSettings() {
   const [topBarLink, setTopBarLink] = useState("");
   const [analyticsCode, setAnalyticsCode] = useState("");
   const [adsEnabled, setAdsEnabled] = useState(false);
-  const [initialized, setInitialized] = useState(false);
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
 
   // --- THEME STATES ---
@@ -327,23 +326,19 @@ export default function AdminSettings() {
     ]
   };
 
-  const mergeLinksByIdentity = (defaults: any[] = [], current: any[] = []) => {
-    const normalizedCurrent = Array.isArray(current) ? current : [];
-    const seen = new Set(
-      normalizedCurrent.map((item: any) => `${String(item?.label ?? "").trim().toLowerCase()}|${String(item?.url ?? "").trim().toLowerCase()}`)
-    );
-    const missingDefaults = defaults.filter((item: any) => {
-      const key = `${String(item?.label ?? "").trim().toLowerCase()}|${String(item?.url ?? "").trim().toLowerCase()}`;
-      return !seen.has(key);
-    });
-    return [...normalizedCurrent, ...missingDefaults];
-  };
-
   const [headerConfig, setHeaderConfig] = useState<any>(defaultHeaderConfig);
   const [footerConfig, setFooterConfig] = useState<any>(defaultFooterConfig);
 
-  // Initialisierung
-  if (settings && !initialized) {
+  // Stabile Dependency-Keys: verhindert React-18-Renderloops durch neue Objekt-Referenzen.
+  const serverContentKey = JSON.stringify(serverContent ?? null);
+  const forumSidebarConfigKey = JSON.stringify(forumSidebarConfig ?? defaultForumSidebarConfig);
+  const normalizedHomeSectionsKey = JSON.stringify(normalizedHomeSections ?? []);
+
+  // Initialisierung: niemals State während des Renderns setzen.
+  // React 18 + Router darf hier nur rendern; alle Syncs laufen nach dem Commit im Effekt.
+  useEffect(() => {
+    if (!settings) return;
+
     setSiteTitle((settings.site_title as string) || "Rank-Scout");
     setSiteLogoUrl((settings.site_logo_url as string) || "");
     setSiteDescription((settings.site_description as string) || "");
@@ -359,14 +354,11 @@ export default function AdminSettings() {
     setPopupActive((settings.popup_active as boolean) ?? false);
 
     // Forum Banner Init
-    if (settings.forum_banner_config) {
-      setForumBanner((prev: any) => ({ ...prev, ...(settings.forum_banner_config as any) }));
-    }
+    setForumBanner((prev: any) => ({
+      ...prev,
+      ...((settings.forum_banner_config as any) || {}),
+    }));
 
-    // Home Sections Init
-    if (normalizedHomeSections.length > 0) {
-      setHomeSections(JSON.parse(JSON.stringify(normalizedHomeSections)));
-    }
 
     // Load Analytics
     setGa4Id((settings as any).google_analytics_id || "");
@@ -385,45 +377,58 @@ export default function AdminSettings() {
     // @ts-ignore
     const scoutyConfig = settings.scouty_config as { high_ticket_url?: string; enabled?: boolean } | null;
     setScoutyHighTicketUrl(scoutyConfig?.high_ticket_url || "");
-    if (scoutyConfig?.enabled !== undefined) {
-      setScoutyEnabled(scoutyConfig.enabled);
-    }
+    setScoutyEnabled(scoutyConfig?.enabled ?? true);
 
-    // SICHERES MERGEN FÜR HEADER & FOOTER
-    // @ts-ignore
-    if (settings.header_config) {
-      setHeaderConfig((prev: any) => normalizeHeaderConfigValue({ ...prev, ...(settings.header_config as any) }));
-    }
-    // @ts-ignore
-    if (settings.footer_config) {
-      const nextFooter = normalizeFooterConfigValue({ ...defaultFooterConfig, ...(settings.footer_config as any) });
-      nextFooter.legal_links = mergeLinksByIdentity(defaultFooterConfig.legal_links, nextFooter.legal_links);
-      nextFooter.popular_links = mergeLinksByIdentity(defaultFooterConfig.popular_links, nextFooter.popular_links);
-      nextFooter.tools_links = mergeLinksByIdentity(defaultFooterConfig.tools_links, nextFooter.tools_links);
-      setFooterConfig(nextFooter);
-    }
+    // DB ist Single Source of Truth: Defaults nur bei komplett fehlender Config.
+    const savedHeaderConfig = settings.header_config as any;
+    setHeaderConfig(
+      savedHeaderConfig
+        ? normalizeHeaderConfigValue({ ...defaultHeaderConfig, ...savedHeaderConfig })
+        : normalizeHeaderConfigValue(defaultHeaderConfig)
+    );
 
-    setInitialized(true);
-  }
+    const savedFooterConfig = settings.footer_config as any;
+    setFooterConfig(
+      savedFooterConfig
+        ? normalizeFooterConfigValue({ ...defaultFooterConfig, ...savedFooterConfig })
+        : normalizeFooterConfigValue(defaultFooterConfig)
+    );
+  }, [settings]);
 
   useEffect(() => {
-    if (serverContent && !localContent) {
-      setLocalContent(JSON.parse(JSON.stringify(serverContent)));
-      if (serverContent.seo && serverContent.seo.long_text) {
-        setSeoLongText(serverContent.seo.long_text);
+    const nextContent = JSON.parse(serverContentKey || "null");
+    if (!nextContent || hasUnsavedChanges) return;
+
+    const nextSeoLongText = nextContent.seo?.long_text || "";
+
+    setLocalContent((currentContent) => {
+      if (currentContent && JSON.stringify(currentContent) === JSON.stringify(nextContent)) {
+        return currentContent;
       }
-    }
-  }, [serverContent, localContent]);
+      return nextContent;
+    });
+
+    setSeoLongText((currentText) => currentText === nextSeoLongText ? currentText : nextSeoLongText);
+  }, [serverContentKey, hasUnsavedChanges]);
 
   useEffect(() => {
-    setForumSidebarLocal(JSON.parse(JSON.stringify(forumSidebarConfig || defaultForumSidebarConfig)));
-  }, [forumSidebarConfig]);
+    const nextForumSidebarConfig = JSON.parse(forumSidebarConfigKey || JSON.stringify(defaultForumSidebarConfig));
+
+    setForumSidebarLocal((currentConfig: any) => {
+      if (currentConfig && JSON.stringify(currentConfig) === JSON.stringify(nextForumSidebarConfig)) {
+        return currentConfig;
+      }
+      return nextForumSidebarConfig;
+    });
+  }, [forumSidebarConfigKey]);
 
   useEffect(() => {
-    if (normalizedHomeSections.length > 0 && homeSections.length === 0) {
-      setHomeSections(JSON.parse(JSON.stringify(normalizedHomeSections)));
+    const nextHomeSections = JSON.parse(normalizedHomeSectionsKey || "[]");
+
+    if (nextHomeSections.length > 0 && homeSections.length === 0) {
+      setHomeSections(nextHomeSections);
     }
-  }, [normalizedHomeSections, homeSections.length]);
+  }, [normalizedHomeSectionsKey, homeSections.length]);
 
   useEffect(() => {
     const fetchLeads = async () => {
