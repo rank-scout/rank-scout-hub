@@ -387,7 +387,7 @@ export default function Forum() {
             "@type": "ListItem",
             position: index + 1,
             item: {
-              "@type": "DiscussionForumPosting",
+              "@type": "DiscussionForumPosting", 
               url: buildAbsoluteSiteUrl(getForumThreadRoute(thread.slug)),
               headline: thread.title,
               ...(thread.seo_description ? { text: thread.seo_description } : {}),
